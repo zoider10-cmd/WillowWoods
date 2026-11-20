@@ -6317,6 +6317,9 @@ def main():
                                       only=lesson_only, apart=frozenset(lessons) if a.songs == 2 else (),
                                       holds=holds or None, counted=counted, fixed_more=kept_tokens)
     except ValueError as e:
+        if "a lesson has nothing left" in str(e) and fairies and not a.event_chests:   # (seen 2026-11-20: magic on, Major items off)
+            sys.exit("%s: the Great Fairies may hold only items found once (a spell, the Lens, the Hammer...), and with Major items "
+                     "off most of those stay in their own chests. Nothing written. Turn Major items on." % e)
         sys.exit("%s. Nothing written. Try Chests: All, or --no-logic." % e)
     unknown = sorted({s[0] for h, s in spots.items() if s[0] not in RULES and h not in gifts and h not in joined})
     if a.magic:   # (no magic on a shop's shelf: its "You got" words are the shelf's own, the doubled magic's, not the meter's)
