@@ -231,7 +231,8 @@ def main():
           "a click on a Tracker row's arrows goes to the check instead of stepping (seen in play), or its name does not go there")
     check("const TrackerCheck* k = press[7] && cheats_on() ? tracker_row_check(row, tracker_pick[row]) : nullptr;" in menu and
           '"rando\\\\goto_check.txt"' in menu and "cheat_action.store(kTrackerGoAction);" in menu and
-          'fprintf(f, "%.2f %.2f %.2f %s %s\\n", k->stand[0], k->stand[1] + 1.0f, k->stand[2], k->folder, k->ages);' in menu and
+          'fprintf(f, "%.2f %.2f %.2f %s %s %.2f %.2f %.2f\\n", k->stand[0], k->stand[1] + 1.0f, k->stand[2], k->folder, k->ages,' in menu and
+          "k->pos[0], k->pos[1], k->pos[2]);" in menu and
           "if (got < 13) memcpy(k.stand, k.pos, sizeof k.stand);" in menu,
           "confirm does not send the check shown to the game, or does so with the debug tools off")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
@@ -244,7 +245,8 @@ def main():
           "c->x[0] = mgr, c->x[1] = value ? 1 : 0, c->x[2] = key;" in host,
           "a check with an actor's hash is not marked in the save, or not by the game's setter")
     check(m and "if ((action == %s && hos_rando_on()) || boss >= 0) {" % m.group(1) in host and '"goto_check.txt"' in host and
-          'fscanf(f, "%f %f %f %39s %7s"' in host, "the game does not take the menu's action, or reads the check otherwise than it is written")
+          'fscanf(f, "%f %f %f %39s %7s %f %f %f"' in host and "hos_hid_stick((int)(right * 12000), (int)(forward * 12000), 0, 0, 120);" in host,
+          "the game does not take the menu's action, or reads the check otherwise than it is written, or does not turn Link toward it")
     check("else if (oot_teleport(c, actor, index)) check.waiting = 1" in host and "} else if (oot_banc_in_folder(current, check.folder)) {" in host and
           "!strchr(check.ages, child ? 'C' : 'A')" in host and
           "} else if (!oot_banc_in_folder(current, check.folder) || loading || oot_event_playing(c)) {" in host,

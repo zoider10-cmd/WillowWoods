@@ -6696,7 +6696,9 @@ void tracker_press(int row, const bool* press, bool& changed) {
     if (!k) return;
     std::string path = game_folder_path() + "rando\\goto_check.txt";
     if (FILE* f = fopen(path.c_str(), "w")) {
-        fprintf(f, "%.2f %.2f %.2f %s %s\n", k->stand[0], k->stand[1] + 1.0f, k->stand[2], k->folder, k->ages);
+        // (Willow Woods: the check's own place after them, for Link to be turned toward it as he lands: host/hos_main.c)
+        fprintf(f, "%.2f %.2f %.2f %s %s %.2f %.2f %.2f\n", k->stand[0], k->stand[1] + 1.0f, k->stand[2], k->folder, k->ages,
+                k->pos[0], k->pos[1], k->pos[2]);
         fclose(f);
         cheat_action.store(kTrackerGoAction);
         logf("menu: tracker: go to the %s of %s at %.1f %.1f %.1f", k->kind, k->folder, k->pos[0], k->pos[1], k->pos[2]);
