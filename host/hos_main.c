@@ -3304,30 +3304,35 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
            stick toward it, as a player turns him: his rotation written while he is held did not stay (seen without a
            window, 2026-11-20: asked -2.47, he kept 1.94). The push is the camera's way round, as the flight reads the
            stick: world x = rx right + rz forward, z = rz right - rx forward, so right = rx x + rz z, forward = rz x - rx z) */
-        static int64_t face_after, face_said;
-        static float face_want;
+        static int64_t face_after, face_next;
+        static int face_tries;
         if (check.faces && hold_until && now < hold_until && mark[0] == check.place[0] && mark[2] == check.place[2]) face_after = hold_until;
-        if (face_after && now >= face_after) {
-            face_after = 0;
+        if (face_after && now >= face_after) face_after = 0, face_tries = 6, face_next = now;
+        /* (pushed again every 0.4 s, at most six times, until he faces it within 0.25 radians: a push while the area's
+           arrival or its autosave still held him did nothing, seen without a window in Kakariko and the Graveyard) */
+        if (face_tries > 0 && now >= face_next) {
             const float wx = check.face[0] - oot_load_float(c, actor + 796), wz = check.face[2] - oot_load_float(c, actor + 804);
-            const float length = hypotf(wx, wz);
-            const uint64_t view = oot_gameplay_view(c);
-            float rx = 1, rz = 0;
-            if (view && recomp_load64(c, view) == 0x84c18a88ULL) {
-                const float x = oot_load_float(c, view + 8), z = oot_load_float(c, view + 16), l = hypotf(x, z);
-                if (l > 0.01f) rx = x / l, rz = z / l;
-            }
-            if (length > 0.05f) {
+            const float length = hypotf(wx, wz), want = atan2f(wx, wz);
+            const float has = atan2f(oot_load_float(c, actor + 816), oot_load_float(c, actor + 840));
+            const float off = fabsf(remainderf(want - has, 6.28318531f));
+            if (length <= 0.05f || off < 0.25f) {
+                hos_log("cheats: go to a check: facing asked %.2f, Link %.2f", want, has);
+                face_tries = 0;
+            } else if (--face_tries == 0) {
+                hos_log("cheats: go to a check: facing asked %.2f, Link %.2f (not turned)", want, has);
+            } else {
+                const uint64_t view = oot_gameplay_view(c);
+                float rx = 1, rz = 0;
+                if (view && recomp_load64(c, view) == 0x84c18a88ULL) {
+                    const float x = oot_load_float(c, view + 8), z = oot_load_float(c, view + 16), l = hypotf(x, z);
+                    if (l > 0.01f) rx = x / l, rz = z / l;
+                }
                 void hos_hid_stick(int lx, int ly, int rx, int ry, int hold_ms);   /* host/nn_hid.c */
                 const float right = (rx * wx + rz * wz) / length, forward = (rz * wx - rx * wz) / length;
                 hos_hid_stick((int)(right * 12000), (int)(forward * 12000), 0, 0, 120);
-                face_want = atan2f(wx, wz), face_said = now + 1000000000LL;
+                face_next = now + 400000000LL;
                 hos_log("cheats: go to a check: Link turned toward it (the stick %.2f %.2f)", right, forward);
             }
-        }
-        if (face_said && now >= face_said) {   /* (a second later: the facing asked and the one he has) */
-            face_said = 0;
-            hos_log("cheats: go to a check: facing asked %.2f, Link %.2f", face_want, atan2f(oot_load_float(c, actor + 816), oot_load_float(c, actor + 840)));
         }
     }
     if (!flying && action != 2 && action != 3 && !go && now >= hold_until) return;
