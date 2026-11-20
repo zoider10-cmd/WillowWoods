@@ -5524,6 +5524,9 @@ OCARINA_KINDS = {"Dm_Kokiri_0155": (0, 4), "Dm_MelodyGet_Time": (0, 4)}
 MASTER = "Weapon_Sword_Master"
 MASTER_GIFT = Gift("master_sword", "", (), MASTER, "Market", "the Master Sword's pedestal: the first trip through time", CHILD, "master")
 MASTER_SHUFFLED = False   # (main sets it: door_need asks for the sword in an adult's places)
+# (where the Tracker's Go there puts Link for a gift whose place is not where he can stand: before the pedestal, as seen
+#  without a window 2026-11-20, his feet at 106.1)
+GIFT_STAND = {"master_sword": (137.6, 105.1, -32.3)}
 
 
 def pedestal_holds(item):
@@ -7368,7 +7371,7 @@ def main():
                                       [(pieces[h][0], pieces[h][1], check_ages(maps[h]), heart_asks(h),
                                         "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
                                         heart_drops.get(h, piece_own(h))) for h in pieces],
-                                      [(g.area, GIFT_PLACES[g.key][1], GIFT_PLACES[g.key][0], needs[h], g.name, gift_key[h], gives[h])
+                                      [(g.area, GIFT_PLACES[g.key][1], GIFT_PLACES[g.key][0], needs[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
                                        for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES] +
                                       [(shop.areas[0], shop.place, shop.ages, needs[h], gifts[h].name, None, gives[h])
                                        for h, (shop, _, _) in shelves.items() if h in gives])) + "\n")
