@@ -3860,6 +3860,31 @@ void hos_oot_get_name(Ctx *c, uint64_t node, int kind) {
             hos_log("rando: progressive: %s set to %s", key, name);
         }
         if (shop) return;
+        /* (a Piece of Heart lying in the world, or a boss's Heart Container, that the seed made another item: the window
+           names that item, as the add gives it (oot_piece_gives; with Progressive items the family's next), in the
+           spelling with "You got" words. Seen without a window 2026-11-20: Zora's River's piece of a Gold Skulltula
+           token said "You got a Piece of Heart!" and "Four pieces form one container". The piece itself is still what
+           Link holds up: it is the world's actor) */
+        if (!strcmp(name, OOT_PIECE) || !strcmp(name, OOT_PIECE_VALLEY) || !strcmp(name, OOT_CONTAINER)) {
+            char gives[64];
+            if (!oot_piece_gives(gives, sizeof gives, !strcmp(name, OOT_CONTAINER))) return;
+            const char *word = gives;
+            if (hos_rando_progressive() || oot_magic_family(gives)) {
+                uint64_t saved[31];
+                memcpy(saved, c->x, sizeof saved);   /* (oot_pouch_count calls the game) */
+                const char *next = oot_progressive_give(c, gives);
+                memcpy(c->x, saved, sizeof saved);
+                if (next) word = next;
+            }
+            for (size_t i = 0; i < sizeof oot_show_as / sizeof oot_show_as[0]; i++)
+                if (!strcmp(word, oot_show_as[i][0])) word = oot_show_as[i][1];
+            for (size_t i = 0; i < sizeof oot_no_show / sizeof oot_no_show[0]; i++)
+                if (!strcmp(word, oot_no_show[i])) return;
+            const uint64_t kept = oot_kept_name(word);
+            if (kept) recomp_store64(c, slot, kept);
+            hos_log("rando: a %s's window names the seed's %s%s", name, word, kept ? "" : " (NOT DONE: no kept name)");
+            return;
+        }
     } else {
         const uint64_t a = recomp_load64(c, node + 0x28) & ~3ULL, b = recomp_load64(c, node + 0x30) & ~3ULL;
         if (getenv("HOS_OOT_SHOW_LOG")) {   /* (a test's: every show item asked for, before the checks below) */
