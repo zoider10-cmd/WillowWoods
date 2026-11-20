@@ -138,7 +138,10 @@
       "Off", "On") \
     X(BRIDGE_MEDALLIONS, "Bridge medallions", "rando_bridge_medallions", \
       "With Ganon's Castle bridge at Medallions: how many of the six medallions Link must hold for the bridge to appear. Moves no item. The logic still asks for every progression item for the castle.", \
-      "6", "5", "4", "3")
+      "6", "5", "4", "3") \
+    X(MASTER_SWORD, "Shuffle the Master Sword", "rando_master_sword", \
+      "The Master Sword is an item of the shuffle, found in a chest or given like any other item, and the pedestal gives what the seed put there the first time young Link goes through time. Adult Link may travel without it; the logic asks for it wherever only an adult can go. Needs Open Door of Time.", \
+      "Off", "On")
 
 enum {
 #define OOT_RANDO_ENUM(NAME, label, key, help, ...) OOT_RANDO_##NAME,

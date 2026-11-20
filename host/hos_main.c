@@ -1404,6 +1404,7 @@ static int oot_event_request(Ctx *c, uint64_t actor, const char *event) {
 static float oot_link_place[3];   /* (where Link is: oot_tracker_refresh, below) */
 static int oot_pouch_count(Ctx *c, const char *name);
 static int oot_pouch_change(Ctx *c, const char *name, int by);
+static int oot_pedestal_give(Ctx *c);   /* (below: Shuffle the Master Sword) */
 #define OOT_SWORD_X 137.6f
 #define OOT_SWORD_Z (-34.0f)
 #define OOT_SWORD_NEAR 1.8f
@@ -1465,7 +1466,7 @@ static void oot_time_door(Ctx *c, int64_t now, uint64_t actor) {
     const char *event = child ? "Market_Child_Field_ChildToAdult" : "Market_Adult_Field_AdultToChild";
     /* (the plain way through time does not give the sword: the story's drawing does, Dm_TimeTemple_0030. Seen
        without a window: an adult made so had none. So Link is given it here the first time) */
-    if (child && oot_pouch_count(c, "Weapon_Sword_Master") == 0)
+    if (child && oot_pedestal_give(c) == 0 && oot_pouch_count(c, "Weapon_Sword_Master") == 0)   /* (Shuffle the Master Sword: the pedestal's own item) */
         hos_log("rando: Open Door of Time: the Master Sword is given (event status %d)", oot_pouch_change(c, "Weapon_Sword_Master", 1));
     hos_log("rando: Open Door of Time: %s asked for at the Master Sword (%s)", event, oot_event_request(c, actor, event) ? "sent" : "NOT SENT");
 }
@@ -2349,6 +2350,37 @@ static void oot_tracker_forget(void) {
     oot_tracker_save();
     ReleaseSRWLockExclusive(&oot_checks_lock);
     hos_log("rando: tracker: the record of what is collected is forgotten");
+}
+
+/* (Shuffle the Master Sword, tools/rando/rando_seed.py MASTER_GIFT) The first trip through time: the pedestal's check is
+   the seed's check in the Market at the sword's place. Its item is put in the pouch once, its key in the save marking it
+   given (a gift's key: kept by the save, so another save of the seed has its own). 1: the seed has the check (given now
+   or before), 0: it has none (the sword is not shuffled), -1: the checks are not read yet */
+static int oot_pedestal_give(Ctx *c) {
+    char item[64] = "";
+    uint64_t key = 0;
+    int found = 0;
+    AcquireSRWLockExclusive(&oot_checks_lock);
+    const int loaded = oot_check_count >= 0;
+    for (int i = 0; i < oot_check_count && !found; i++) {
+        const float dx = oot_checks[i].place[0] - OOT_SWORD_X, dz = oot_checks[i].place[2] - OOT_SWORD_Z;
+        if (!strcmp(oot_checks[i].folder, "Market") && dx * dx + dz * dz < 1.0f && oot_checks[i].key && oot_checks[i].item[0]) {
+            found = 1, key = oot_checks[i].key;
+            snprintf(item, sizeof item, "%s", oot_checks[i].item);
+        }
+    }
+    ReleaseSRWLockExclusive(&oot_checks_lock);
+    if (!found) return loaded ? 0 : -1;
+    int given = 0;
+    if (!oot_gamedata_keyed_bool(c, key, &given)) {
+        hos_log("rando: the Master Sword's pedestal: its key %016llx is not in the save's list: nothing given", (unsigned long long)key);
+        return 1;
+    }
+    if (given) return 1;
+    const int status = oot_pouch_change(c, item, 1);
+    const int marked = oot_gamedata_keyed_set_bool(c, key, 1);
+    hos_log("rando: the Master Sword's pedestal gives %s (event status %d)%s", item, status, marked ? "" : ", its key NOT SET");
+    return 1;
 }
 
 /* Where Link is, each frame, and each second: the seed's checks read when the seed is another, and each check's word to

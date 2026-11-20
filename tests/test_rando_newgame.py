@@ -251,7 +251,7 @@ def sources():
           'const char *event = child ? "Market_Child_Field_ChildToAdult" : "Market_Adult_Field_AdultToChild";' in host and
           "if (pressed && !ask_at && !oot_event_playing(c)) ask_at = now + 500000000LL;" in host and
           "if (oot_event_playing(c) || (oot_gamedata_bool(c, 0xef2b60c2u, &loading) && loading)) return;" in host and
-          'if (child && oot_pouch_count(c, "Weapon_Sword_Master") == 0)' in host and "oot_time_door(c, now, actor);" in host and
+          'if (child && oot_pedestal_give(c) == 0 && oot_pouch_count(c, "Weapon_Sword_Master") == 0)' in host and "oot_time_door(c, now, actor);" in host and
           "int hos_pad_a_held(void) {" in (ROOT / "host" / "nn_hid.c").read_text(encoding="utf-8"),
           "the game's side does not ask for the way through time at the Master Sword when the game itself does not answer, "
           "asks over an event of the game's, or does not give the sword")

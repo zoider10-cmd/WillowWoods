@@ -36,7 +36,8 @@ int main(int argc, char** argv) {
     for (int i = 0; i < OOT_RANDO_N; i++) {
         const OotRandoSetting& s = oot_rando_settings[i];
         CHECK("a setting has 2 to 4 choices (2 bits in an ID)", s.count >= 2 && s.count <= 4);
-        CHECK("a setting's first choice is Off, the game's own", !std::strcmp(s.choices[0], "Off") || !std::strcmp(s.choices[0], "As the game has it"));
+        CHECK("a setting's first choice is Off, the game's own", !std::strcmp(s.choices[0], "Off") || !std::strcmp(s.choices[0], "As the game has it") ||
+                                                                  (!std::strcmp(s.key, "rando_bridge_medallions") && !std::strcmp(s.choices[0], "6")));   // (the game's own count)
         CHECK("a setting's line starts with rando_", !std::strncmp(s.key, "rando_", 6) && std::strcmp(s.key, "rando_on") &&
                                                       std::strcmp(s.key, "rando_seed") && std::strcmp(s.key, "rando_import"));
         for (int k = 0; k < i; k++) CHECK("no two settings share a line", std::strcmp(s.key, oot_rando_settings[k].key));

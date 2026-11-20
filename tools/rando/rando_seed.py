@@ -218,8 +218,11 @@ def door_need(need, adult_only, open_forest=False, area=None, song=False):
     """what a place asks for with the Door of Time open (see above): `need` as the other settings made it;
     adult_only: only an adult has the place; open_forest: Open forest exit is on too; area: the place's (its Banc
     folder), for the dungeons gone through one by one"""
-    if not adult_only or not need >= ADULT:
+    if not adult_only:
         return need
+    sword = {MASTER} if MASTER_SHUFFLED else set()   # (Shuffle the Master Sword: an adult's place asks for it)
+    if not need >= ADULT:
+        return frozenset(need) | sword
     free = {BM}
     if "Item_Scale_Gold" not in need and area not in DOOR_SCALE:
         free.add(SSC)
@@ -229,7 +232,7 @@ def door_need(need, adult_only, open_forest=False, area=None, song=False):
         free.update((BB, BR))
     if area in DOOR_SONGS:
         free.update({_ZL, _SARIA, _TIME, _STORMS} - DOOR_SONGS[area])
-    return frozenset(need - free) | ({_TIME} if song else frozenset())   # (DOOR_SONG: the door opens by the Song of Time)
+    return frozenset(need - free) | ({_TIME} if song else frozenset()) | sword   # (DOOR_SONG: the door opens by the Song of Time)
 FLAG_LIST = "GameData"   # (the folder of the romfs: GameDataList.Product.<n>.byml.zs in it)
 # The clock of Hyrule Field. Until the owl's first cutscene there, the field's sky stays the day's whatever the time is
 # set to: no day turns to night, and the Sun's Song's night is day again at once (seen in play). What ends it is the
@@ -4304,7 +4307,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -4429,7 +4432,7 @@ CHECK_CODES = collections.OrderedDict((
     ("Item_Melody_ZeldaLullaby", "ZL"), ("Item_Melody_EponaSong", "EP"), ("Item_Melody_SariaSong", "SR"), ("Item_Melody_TimeSong", "ST"),
     ("Item_Melody_StormSong", "SO"), ("Item_Melody_SpiritRequiem", "RQ"), ("Item_Melody_ShadowNocturne", "NC"),
     ("Obj_Armor_Goron", "GT"), ("Obj_Armor_Zora", "ZT"), (BOTTLE, "BO"), ("Item_ZeldaLetter", "LE"), ("Item_Ocarina_Fairy", "FO"),
-    ("Item_FairyBless_MPDouble", "MG")))   # (the tunics, placement 12: TUNICS)
+    ("Item_FairyBless_MPDouble", "MG"), ("Weapon_Sword_Master", "MW")))   # (the tunics, placement 12: TUNICS; MW: Shuffle the Master Sword, MASTER)
 
 
 def token_codes(way):
@@ -4450,6 +4453,7 @@ def check_ages(names):
 # Link there (a mini-game's StartPos, a scene's anchor). (the ages whose map has it, the place). Its line's kind is the
 # gift's name. Read from the map files, not walked to: the four tried unattended are named in the README.
 GIFT_PLACES = {
+    "master_sword": ("C", (137.6, 106.6, -34.0)),          # (Obj_TimeTemple_MasterSword_A_01: the game's side finds the check by it)
     "darunia": ("C", (-0.2, 98.6, -38.5)),                 # (Npc_Goron_Darunia_Child at z -41.8, the door at -29.2)
     "lostwood_target": ("C", (41.1, 102.6, -4.9)),         # (HitTargetOfDekuScrub)
     "skulltula_house_10": ("CA", (-26.5, 109.9, 74.5)),    # (Npc_SkullDad at z 72.5)
@@ -5505,6 +5509,27 @@ OCARINA_TIME = "Item_Ocarina_Time"
 OCARINA_TIME_GIFT = Gift("ocarina_time", "Dm_MelodyGet_Time", (OCARINA_TIME,), OCARINA_TIME, "HyruleField",
                          "Zelda's gift at the moat: the Ocarina of Time", ADULT | {"Item_Melody_ZeldaLullaby", "Item_Melody_SariaSong"}, "ocarina")
 OCARINA_KINDS = {"Dm_Kokiri_0155": (0, 4), "Dm_MelodyGet_Time": (0, 4)}
+# ---- Shuffle the Master Sword (rando_master_sword, the owner's wish 2026-11-20) ----
+# With Open Door of Time the game's plain way through time gives no sword, and the game's side gives it the first time
+# young Link goes through (host/hos_main.c oot_time_door). With this setting the sword is an item of the shuffle and
+# that first trip a place (MASTER_GIFT): the game's side gives what this place holds in the seed's list of checks, and
+# marks it given by its key in the save (a gift's key, gift_keys), so it is given once. A chest gives the sword by
+# its own name (seen without a window, 2026-11-20: "You got the Master Sword!", held up as the game shows it). The
+# pedestal's item is put in the pouch by the game's side, so it holds only what the pouch takes by name
+# (pedestal_holds). The rules: wherever only an adult goes, the sword is asked for too (door_need), so the logic
+# never wants adult Link to fight without it. Adult Link can go through time and back without it (the game's side
+# asks for the plain ways itself). Left as it is: the story's own drawing at the quest's Step06
+# (Dm_TimeTemple_0030) gives the sword too, which can only make a seed easier. Needs Open Door of Time.
+MASTER = "Weapon_Sword_Master"
+MASTER_GIFT = Gift("master_sword", "", (), MASTER, "Market", "the Master Sword's pedestal: the first trip through time", CHILD, "master")
+MASTER_SHUFFLED = False   # (main sets it: door_need asks for the sword in an adult's places)
+
+
+def pedestal_holds(item):
+    """whether the pedestal may hold `item`: what the pouch takes by name (an item's or a weapon's own), not a song, a
+    dungeon's item, a token or a fairy's magic (each of those the game gives its own way)"""
+    return (item.startswith(("Item_", "Weapon_")) and not item.startswith(("Item_Melody_", "Item_FairyBless_")) and
+            item not in DUNGEON_ITEMS and item != TOKEN)
 
 
 def ocarina_need(need, lesson=False):
@@ -5744,7 +5769,10 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
     # everything else among the chests that are left, wherever they are
     rng.shuffle(items)
     if holds:   # (a spot of `holds` first: the first of the shuffled items it may hold; the others take the rest)
-        for h in [h for h in rest if h in holds]:
+        order = [h for h in rest if h in holds]
+        if MASTER_SHUFFLED:   # (the pedestal's few kinds before the shelves', which take nearly anything: the fewest first)
+            order.sort(key=lambda h: len(holds[h]))
+        for h in order:
             k = next((k for k, i in enumerate(items) if i in holds[h]), None)
             if k is None:
                 raise ValueError("a Gold Skulltula or a Piece of Heart has nothing left that it may hold")
@@ -5785,6 +5813,7 @@ def main():
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
     p.add_argument("--letter", action="store_true", help="as rando_letter=1, Kakariko gate: Letter shuffled (letter_need)")
+    p.add_argument("--master-sword", action="store_true", help="as rando_master_sword=1: the Master Sword is an item of the shuffle and the pedestal a place (MASTER_GIFT; needs Open Door of Time)")
     p.add_argument("--hints", action="store_true", help="as rando_hints=1: the Gossip Stones give hints (choose_hints)")
     p.add_argument("--skulltulas-day", action="store_true", help="as rando_skulltulas_day=1: the night-only Gold Skulltulas are out by day too (NOCTURNAL)")
     p.add_argument("--heart-pieces", action="store_true", help="as rando_heart_pieces=1: the Pieces of Heart lying in the world change places with "
@@ -5844,6 +5873,10 @@ def main():
     a.open_forest = a.open_forest or ini["rando_open_forest"] != 0
     a.door_song = not a.open_door and ini["rando_open_door"] == 2   # (DOOR_SONG: the door by the Song of Time)
     a.open_door = a.open_door or ini["rando_open_door"] == 1
+    a.master_sword = a.master_sword or ini["rando_master_sword"] == 1   # (Shuffle the Master Sword: MASTER_GIFT)
+    if a.master_sword and not (a.open_door or a.door_song):
+        print("Shuffle the Master Sword needs Open Door of Time: left off")
+        a.master_sword = False
     a.skip_intro = a.skip_intro or ini["rando_skip_intro"] != 0
     a.skip_cutscenes = a.skip_cutscenes or ini["rando_skip_cutscenes"] != 0
     a.start_rupees = a.start_rupees or ini["rando_start_rupees"] != 0
@@ -5910,7 +5943,7 @@ def main():
     # (the open ways are only named when one is open: the seeds made before them keep their stamp)
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" magic 1" if a.magic else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" master sword 1" if a.master_sword else "") + (" magic 1" if a.magic else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -6106,6 +6139,12 @@ def main():
         PROGRESSION = PROGRESSION | {LETTER}
         gifts[gift_hash(LETTER_GIFT.key)] = LETTER_GIFT
         spots[gift_hash(LETTER_GIFT.key)] = [LETTER_GIFT.area, LETTER_GIFT.item, None, None, "gift", LETTER_GIFT.name, ""]
+    global MASTER_SHUFFLED
+    MASTER_SHUFFLED = a.master_sword
+    if a.master_sword:   # (Shuffle the Master Sword: the pedestal a place, the sword a gating item, MASTER_GIFT)
+        PROGRESSION = PROGRESSION | {MASTER}
+        gifts[gift_hash(MASTER_GIFT.key)] = MASTER_GIFT
+        spots[gift_hash(MASTER_GIFT.key)] = [MASTER_GIFT.area, MASTER_GIFT.item, None, None, "gift", MASTER_GIFT.name, ""]
     lessons = collections.OrderedDict()   # a lesson's hash -> its Gift
     if a.songs:   # (Songs: with or without the others)
         PROGRESSION = PROGRESSION | SONG_GATES
@@ -6257,6 +6296,14 @@ def main():
             spots[h] = s
             needs[h] = skull_asks(h) if s[4] == "skulltula" else heart_asks(h)
             holds[h] = skull_may if s[4] == "skulltula" else piece_may | {CONTAINER} if h in bosses else piece_may
+    if a.master_sword:   # (the pedestal: what the pouch takes by name; the sword on no shelf, no scrub's sale and no Skulltula)
+        every = {s[1] for s in spots.values()}
+        holds[gift_hash(MASTER_GIFT.key)] = frozenset(i for i in every if pedestal_holds(i))
+        for h, s in spots.items():
+            if s[4] in ("shop", "scrub"):
+                holds[h] = frozenset(every - {MASTER})
+            elif h in holds and s[4] == "skulltula":
+                holds[h] = holds[h] - {MASTER}
     # (the tokens are placed by the logic when a rule counts them: the Skulltula house's rewards. The Skulltulas that
     #  keep their token, of another setting or whose file cannot take a drop, are counted where they are)
     counted = placement >= HOUSE_FROM and logic and any(token_count(word) for n in needs.values() for way in (n if isinstance(n, Either) else (n,)) for word in way)

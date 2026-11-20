@@ -1977,7 +1977,7 @@ static class RandoLayout {
                            "+shops", "rando_scrubs", "rando_major", "rando_progressive", "rando_sword_shield", "+forest", "rando_open_door", "rando_ageless", "rando_letter",
                            "+skips", "+rupees", "rando_ammo_pickups" } },
         new RandoSection { Title = "SHOULD WORK", Sub = "made and checked, not yet played through", Accent = ShouldWork,
-            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size" } },
+            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword" } },
         new RandoSection { Title = "DOES NOT WORK YET", Sub = "not made yet: leave these off, they can break a seed", Accent = Experimental,
             Rows = new[] { "rando_keys", "rando_dungeon_rewards" } },
     };
@@ -2705,7 +2705,9 @@ class LauncherForm : Form {
         new object[] { "rando_chest_size", "Chest size matches contents", new[] { "Off", "On" }, new[] { 0, 1 },
             "A chest holding a major item (one the seed's logic needs, a song or magic) is a big chest; any other is a small chest, so a chest's size tells you whether it is worth opening. Moves no item: it can be turned on for a seed being played. Big chests keep their long opening." },
         new object[] { "rando_bridge_medallions", "Bridge medallions", new[] { "6", "5", "4", "3" }, new[] { 0, 1, 2, 3 },
-            "With Ganon's Castle bridge at Medallions: how many of the six medallions Link must hold for the bridge to appear. Moves no item. The logic still asks for every progression item for the castle." }
+            "With Ganon's Castle bridge at Medallions: how many of the six medallions Link must hold for the bridge to appear. Moves no item. The logic still asks for every progression item for the castle." },
+        new object[] { "rando_master_sword", "Shuffle the Master Sword", new[] { "Off", "On" }, new[] { 0, 1 },
+            "The Master Sword is an item of the shuffle, found in a chest or given like any other item, and the pedestal gives what the seed put there the first time young Link goes through time. Adult Link may travel without it; the logic asks for it wherever only an adult can go. Needs Open Door of Time." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and
