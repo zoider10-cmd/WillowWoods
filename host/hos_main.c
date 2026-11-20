@@ -2598,6 +2598,21 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
             if (said++ < 4) hos_log("rando: the d-pad's HUD was not shown yet (flag 7be57cb0 put out): the flag is set%s", done ? "" : ", NOT FOUND");
         }
     }
+    {   /* (Willow Woods, 2026-11-20) The Water Temple's gate by Lake Hylia open: its switch's cutscene marked played
+           (HavePlayedEvent.Dm_WaterTemple_0000, 392b86fb) and the gate's pillars risen (WaterTemple_EmitGatePillar,
+           ab74fd3c), the state the game leaves once the switch is hit, which it would not be before the Ice Cavern
+           (seen in play). A seed's new game starts so (tools/rando/rando_seed.py WATER_GATE); a save made before has
+           them put out, so they are set here, once a second while they are not. */
+        static const uint32_t gate[2] = {0x392b86fbu, 0xab74fd3cu};
+        for (int g = 0; g < 2; g++) {
+            int on = 1;
+            if (oot_gamedata_bool(c, gate[g], &on) && !on) {
+                const int done = oot_gamedata_set_bool(c, gate[g], 1);
+                static int said;
+                if (said++ < 4) hos_log("rando: the Water Temple's gate was shut (flag %08x put out): the flag is set%s", gate[g], done ? "" : ", NOT FOUND");
+            }
+        }
+    }
     {   /* (the randomizer's fork) The minimap, the same way: a new game had none of it until the owl's scenes in Hyrule
            Field. Its flag too is known by its hash alone (tools/rando/rando_seed.py MINIMAP); set here for a save that
            has it put out, once a second while it is not. It comes at the next load of an area. */

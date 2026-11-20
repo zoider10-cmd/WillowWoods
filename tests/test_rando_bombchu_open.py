@@ -138,7 +138,13 @@ def main():
           "the bowling's question does not go on to its answer 0 (true: the quest done) either way")
     check(seed.WATER_WALL == ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp") and "changed[rel] = water_wall_out(data)" in script,
           "the Water Temple's gate wall is not taken out of the adult's Hyrule Field")
-    check(seed.FIXES_VERSION >= 59, "FIXES_VERSION not raised: seeds made before would keep the shut doors")
+    check(seed.WATER_GATE == {"HavePlayedEvent.Dm_WaterTemple_0000": True, "WaterTemple_EmitGatePillar": True} and "**WATER_GATE," in script,
+          "a new game does not start with the Water Temple's gate open (its cutscene played, its pillars risen)")
+    host = open(os.path.join(HERE, "..", "host", "hos_main.c"), encoding="utf-8").read()
+    check("static const uint32_t gate[2] = {0x392b86fbu, 0xab74fd3cu};" in host and
+          [seed.murmur3(n.encode()) for n in seed.WATER_GATE] == [0x392b86fb, 0xab74fd3c],
+          "the game's side does not open the Water Temple's gate on a save made before, or by other flags")
+    check(seed.FIXES_VERSION >= 60, "FIXES_VERSION not raised: seeds made before would keep the shut doors")
     print("FAIL" if failed else "PASS: Bombchu Bowling, the Bombchu Shop and the Water Temple's gate open")
     return 1 if failed else 0
 
