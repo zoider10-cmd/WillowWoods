@@ -73,6 +73,12 @@ SAVE="All Items unlocked" bash .claude/skills/rando-test/scripts/run_headless.sh
 - A character's talk can catch Link before a teleport (a shop keeper's greeting): start from a copy away from people.
 - The exit line: 124 ran to its end; 139 crashed (the backtrace is printed).
 - `SETFLAG="c1b29b0a=1"` sets flags from the start; `EVERY=20` takes pictures more often.
+- A `GO` step may carry the check's own place after the ages (`GO x y z Folder ages cx cy cz`, as the Tracker writes
+  it): Link is then turned toward it when let go, so `0:A` opens a chest. Before reading a chest's result, check the save
+  has not opened it already: `py -I savedata.py get "<copy>" IsTreasureBoxOpen.<the chest's hash in decimal>` (an
+  opened chest shows as an open box and A does nothing: seen 2026-11-20).
+- `HOS_OOT_SHOW_LOG=1 bash run_headless.sh ...` logs every item a get scene asks to show (a chest's never does: its
+  content actor is what Link holds up).
 
 ## 3. Look at it
 
