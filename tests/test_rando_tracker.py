@@ -123,7 +123,7 @@ def main():
                         "Market|The gallery|Market|C|7.0 8.0 9.5|-"], "a line does not end with the item it gives, after its hash or a dash: %r" % given[1:])
     check('named("Chest", h, spots[h][0], spots[h][5], spots[h][1]), h, gives[h],' in script and
           'named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN)' in script and
-          "needs[h], g.name, gift_key[h], gives[h])" in script and "needs[h], gifts[h].name, None, gives[h])" in script,
+          "needs[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))" in script and "needs[h], gifts[h].name, None, gives[h])" in script,
           "what the chests, the Gold Skulltulas, the gifts and the shelves give is not written with the checks")
     items = (ROOT / "gpu" / "vk" / "oot_cheat_items.h").read_text(encoding="utf-8")
     m = re.search(r"#define OOT_TRACKER_MAX (\d+)", items)
