@@ -4531,6 +4531,7 @@ ITEM_WORDS = {
     "Item_HoverBoot": "Hover Boots", "Item_Longshot": "Longshot", "Item_Gauntlet_Silver": "Silver Gauntlets", "Item_Shield_Mirror": "Mirror Shield",
     "Item_Gauntlet_Gold": "Golden Gauntlets", "Item_Gauntlet_Goron": "Goron's Bracelet", "Item_Dungeon_SmallKey": "small key", "Item_Dungeon_BossKey": "boss key", "Item_Dungeon_Map": "map",
     "Item_Dungeon_Compass": "compass", "Item_ZeldaLetter": "Zelda's Letter", "Item_Ocarina_Fairy": "Fairy Ocarina", "Item_Ocarina_Time": "Ocarina of Time",
+    "Weapon_Sword_Master": "Master Sword",   # (Shuffle the Master Sword: a chest's name and a hint's, MASTER)
 }
 EXIT_NEAR = 40.0
 MARKS = ("LocationArea", "MapIconEntranceAnchor")
