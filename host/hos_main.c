@@ -2604,7 +2604,21 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
            (seen in play). A seed's new game starts so (tools/rando/rando_seed.py WATER_GATE); a save made before has
            them put out, so they are set here, once a second while they are not. */
         static const uint32_t gate[2] = {0x392b86fbu, 0xab74fd3cu};
-        for (int g = 0; g < 2; g++) {
+        static int skip = -1;   /* (a test's: HOS_OOT_NO_WATER_GATE=1 leaves the gate as the save has it, to try its switch;
+                                   =clear also puts the two out once, in the first area the save is in that is not Hyrule
+                                   Field (the lake's gate reads them when the field loads, so they go before it):
+                                   the gate shut and its cutscene not played) */
+        static int cleared;
+        if (skip < 0) skip = getenv("HOS_OOT_NO_WATER_GATE") != NULL;
+        if (skip && !cleared && !strcmp(getenv("HOS_OOT_NO_WATER_GATE"), "clear")) {
+            char map[80];
+            if (oot_gamedata_string(c, 0x1d6189dau, map, sizeof map) && map[0] && strncmp(map, "HyruleField", 11)) {   /* Sequence_CurrentBanc */
+                cleared = 1;
+                for (int g = 0; g < 2; g++)
+                    hos_log("test: the Water Temple's gate shut: flag %08x put out (%s)", gate[g], oot_gamedata_set_bool(c, gate[g], 0) ? "done" : "NOT DONE");
+            }
+        }
+        for (int g = 0; g < 2 && !skip; g++) {
             int on = 1;
             if (oot_gamedata_bool(c, gate[g], &on) && !on) {
                 const int done = oot_gamedata_set_bool(c, gate[g], 1);

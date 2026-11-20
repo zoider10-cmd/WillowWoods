@@ -129,6 +129,30 @@ def main():
         except ValueError:
             pass
 
+    # ---- the lake's switch without the boots check: the AND's boots input given its other input ----
+    names = b"OperateAND\0HoldPlayerCheckBoots\0"
+    lake = bytearray(0x74 + 2 * 0x3C)
+    lake[:4] = b"AIB "
+    struct.pack_into("<I", lake, 4, 0x408)
+    struct.pack_into("<I", lake, 0x10, 2)
+    struct.pack_into("<I", lake, 0x74 + 8, 0)
+    struct.pack_into("<I", lake, 0x74 + 0x3C + 8, 11)
+    multi = len(lake)
+    lake += struct.pack("<8I", 7, 0, 0xd, 0, 1 | 1 << 16, 0, 9, 0)   # (two pairs: the second's first reads the boots)
+    struct.pack_into("<III", lake, 0x30, len(lake), 0, multi)
+    struct.pack_into("<I", lake, 0x24, len(lake))
+    lake = bytes(lake + names)
+    out = seed.water_switch_no_boots(lake)
+    check(len(out) == len(lake) and struct.unpack_from("<I", out, multi + 16)[0] == 9 and
+          out[:multi + 16] == lake[:multi + 16] and out[multi + 20:] == lake[multi + 20:],
+          "the boots check's input is not given the other input of its pair, or more of the file changed")
+    for bad, what in ((out, "a file made already"),):
+        try:
+            seed.water_switch_no_boots(bad)
+            check(False, "water_switch_no_boots took %s" % what)
+        except ValueError:
+            pass
+
     # ---- the files and the seed's steps ----
     script = open(seed.__file__, encoding="utf-8").read()
     check(len(seed.CHU_LOGIC) == 3 and seed.BOMBCHU_DOOR_LOGIC in seed.CHU_LOGIC and "new = always_exp(new if new is not None else was)" in script,
@@ -144,7 +168,9 @@ def main():
     check("static const uint32_t gate[2] = {0x392b86fbu, 0xab74fd3cu};" in host and
           [seed.murmur3(n.encode()) for n in seed.WATER_GATE] == [0x392b86fb, 0xab74fd3c],
           "the game's side does not open the Water Temple's gate on a save made before, or by other flags")
-    check(seed.FIXES_VERSION >= 60, "FIXES_VERSION not raised: seeds made before would keep the shut doors")
+    check("changed[rel] = water_switch_no_boots(data)" in script and seed.WATER_SWITCH_LOGIC.endswith("_6a9d.logic.module.ainb"),
+          "the lake's logic is not written without the boots check")
+    check(seed.FIXES_VERSION >= 61, "FIXES_VERSION not raised: seeds made before would keep the shut doors and the boots check")
     print("FAIL" if failed else "PASS: Bombchu Bowling, the Bombchu Shop and the Water Temple's gate open")
     return 1 if failed else 0
 
