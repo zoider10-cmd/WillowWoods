@@ -97,7 +97,7 @@ DAMPE_RACE_CHESTS = frozenset((0x4ccffbd5778b67e2,))
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
 # while it is shut: without the Bow the room is left by a warp song, as any other. Nothing new to learn for a player.
 FIXES = {0x74fb0489585fe0e2: {"IsDisableSaveAndWarp": False}}
-FIXES_VERSION = 58   # (58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
+FIXES_VERSION = 59   # (59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
 # The forest's two closed ways. Each is a flag of the game that starts set and is put out by the story: Mido stands in
 # the way to the Deku Tree until Link has a sword and a shield (KokiriForest_Npc_Kokiri_Mido_Child_Blocker), and a
 # Kokiri in the forest's way out until the Deku Tree is done (KokiriForest_Npc_Kokiri_007_Child_Blocker_00). An
@@ -3310,6 +3310,144 @@ def bombchu_door_open(data):
     return bytes(out)
 
 
+# Bombchu Bowling and the Bombchu Shop open from the start, the shop by day too (asked 2026-11-20, every seed from
+# fixes 59; OOTRR v0.8.0 did the first, 525dace, and was the lead). What kept them shut is the Goron's Ruby's quest done,
+# Get_StoneOfFire_IsCompleted_Exp (BOMBCHU_QUEST), read in three AI files (CHU_LOGIC: the shop's door, the bowling's
+# attendant and the bowling game), two talk flows (CHU_FLOWS: a question of it, the bowling's and the Bazaar man's) and
+# the Market's map (BOMBCHU_ACTORS, BOMBCHU_SIGN, above). The flows' question is sent to its "done" answer either way
+# (flow_switch_yes); the AI files read ALWAYS_EXP instead, a formula of the game's list of flags that nothing in the
+# game reads (looked for in every AI, flow, map and pack file) made always true: "ALWAYS_FLAG or not ALWAYS_FLAG"
+# (always_exp). The shop's door, already made "the quest OR the night" (bombchu_door_open), is then open day and night.
+ALWAYS_EXP = "Get_StoneOfFire_IsAfter_Ready_Exp"
+ALWAYS_FLAG = "Market_Child_TimeTempleDoor_Opened"   # (any truth value would do: one some formula already reads)
+CHU_LOGIC = ("Logic/Market_Child_Prefab_0c76.logic.module.ainb", "Logic/Market_Child_Prefab_d0eb.logic.module.ainb",
+             "Logic/MiniGame_BombchuBowling_e64e.logic.module.ainb")
+CHU_FLOWS = (("Event/EventFlow/MiniGame_BombchuBowling.bfevfl.zs", "Event137"),
+             ("Event/EventFlow/Npc_Hylia_018_Shop_Child.bfevfl.zs", "Event14"))   # (the Bazaar man's: his talk of the Gorons back)
+# The Water Temple's gate switch by Lake Hylia without the Ice Cavern (asked 2026-11-20, every seed from fixes 59; OOTRR
+# v0.8.0, 224e19c, the lead): an invisible wall (FldObj_AirWall_All) stands over the switch and the gate in the adult's
+# Hyrule Field map until the Water Sage's quest is past Step03, at the Ice Cavern's end. It is taken out of the map
+# (water_wall_out). The rules never asked for the Ice Cavern there (AREAS' WaterTemple), so they are as they were.
+WATER_WALL_FILE = "Banc/HyruleField/HyruleField_Adult_Dynamic.bcett.byml.zs"
+WATER_WALL = ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")
+
+
+def always_exp(data):
+    """The game's list of flags (GameDataList, a big-endian BYML) with ALWAYS_EXP made "ALWAYS_FLAG or not ALWAYS_FLAG":
+    the new bytes, 24 longer. A formula (Data.BoolExp) is {Hash, Values: an array of steps}, a step an array of an
+    operation (a 64-bit number: 0 a truth value's flag, 4 OR, 5 NOT, 12 an enum after a value, 2 that value) and its
+    flag's or value's hash; the steps are shared among formulas, so the formula is given a new array of its own (put
+    at the file's end) of steps the file already has. ValueError: not the file, or the formula not the game's."""
+    if data[:2] != b"BY":
+        raise ValueError("not a big-endian BYML (%r)" % data[:4])
+    key_at, _, root = struct.unpack_from(">III", data, 4)
+    count = lambda at: int.from_bytes(data[at + 1:at + 4], "big")
+    u32 = lambda at: struct.unpack_from(">I", data, at)[0]
+    keys = [data[key_at + u32(key_at + 4 + 4 * k):data.index(b"\0", key_at + u32(key_at + 4 + 4 * k))].decode("utf-8", "replace")
+            for k in range(count(key_at))]
+
+    def fields(at):   # (a dictionary: {key: (type, value, where the value is)})
+        if data[at] != 0xC1:
+            raise ValueError("no dictionary at %#x" % at)
+        return {keys[int.from_bytes(data[at + 4 + 8 * k:at + 7 + 8 * k], "big")]: (data[at + 7 + 8 * k], u32(at + 8 + 8 * k), at + 8 + 8 * k)
+                for k in range(count(at))}
+
+    def items(at):   # (an array: [(type, value)])
+        if data[at] != 0xC0:
+            raise ValueError("no array at %#x" % at)
+        n = count(at)
+        return [(data[at + 4 + i], u32(at + 4 + (n + 3 & ~3) + 4 * i)) for i in range(n)]
+
+    def step(at):   # (a step: its numbers, each a 64-bit one)
+        parts = items(at)
+        return tuple(struct.unpack_from(">Q", data, v)[0] if t == 0xD5 else None for t, v in parts)
+
+    data_at = fields(root).get("Data", (0, 0, 0))[1]
+    exps = items(fields(data_at)["BoolExp"][1])
+    bools = {fields(v).get("Hash", (0, None))[1] for t, v in items(fields(data_at)["Bool"][1]) if t == 0xC1}
+    want, flag = murmur3(ALWAYS_EXP.encode()), murmur3(ALWAYS_FLAG.encode())
+    if flag not in bools:
+        raise ValueError("the list has no truth value %s" % ALWAYS_FLAG)
+    target, done, steps = None, None, {}
+    for t, at in exps:
+        f = fields(at)
+        if f.get("Hash", (0, None))[1] == want:
+            target = f
+        if f.get("Hash", (0, None))[1] == murmur3(BOMBCHU_QUEST.encode()):
+            done = f
+        for t2, s in items(f["Values"][1]):
+            steps.setdefault(step(s), s)
+    if target is None or done is None:
+        raise ValueError("the list has no formula %s or %s" % (ALWAYS_EXP, BOMBCHU_QUEST))
+    quest = step(items(done["Values"][1])[0][1])   # (the quest done: (1, the quest's enum), (2, Complete))
+    if [step(s) for _, s in items(target["Values"][1])] != [(12, quest[1]), (2, murmur3(b"Ready"))]:
+        raise ValueError("%s is not the formula this was written for (or is made already)" % ALWAYS_EXP)
+    use = [(0, flag), (0, flag), (5,), (4,)]
+    missing = [s for s in use if s not in steps]
+    if missing:
+        raise ValueError("no formula has the step %r to share" % (missing[0],))
+    out = bytearray(data) + bytes(-len(data) & 3)
+    at = len(out)
+    out += bytes((0xC0, 0, 0, len(use))) + bytes((0xC0,)) * len(use) + b"".join(struct.pack(">I", steps[s]) for s in use)
+    struct.pack_into(">I", out, target["Values"][2], at)
+    return bytes(out)
+
+
+def ainb_exp_swap(data, old=BOMBCHU_QUEST, new=ALWAYS_EXP):
+    """An AI file (AIB, version 0x408) whose one reading of the flag `old` reads `new`: the new name put at the end of
+    its strings (the file's last part: a string is its place there) and the reading's place of the name changed. The new
+    bytes. ValueError: not such a file, or the name not there once, or read in more than one place."""
+    u32 = lambda at: struct.unpack_from("<I", data, at)[0]
+    if data[:4] != b"AIB " or u32(4) != 0x408:
+        raise ValueError("not an AI file of the version this was written for")
+    pool = u32(0x24)
+    name = old.encode() + b"\0"
+    places = [i for i in range(pool, len(data)) if data.startswith(name, i) and (i == pool or data[i - 1] == 0)]
+    if len(places) != 1 or new.encode() + b"\0" in data:
+        raise ValueError("the file has %s %d times (or %s already)" % (old, len(places), new))
+    off = places[0] - pool
+    refs = [at for at in range(0x74, pool - 3, 4) if u32(at) == off]
+    if len(refs) != 1:
+        raise ValueError("%s is read in %d places, not one" % (old, len(refs)))
+    out = bytearray(data)
+    struct.pack_into("<I", out, refs[0], len(data) - pool)
+    return bytes(out + new.encode() + b"\0")
+
+
+def flow_switch_yes(data, event, query="EventQueryIsGameDataBoolExp", flag=BOMBCHU_QUEST):
+    """A talk flow (BFEVFL) whose question `event` (a `query` of `flag`, its answers 0 and 1) goes on to its "yes" (0:
+    a true/false question's answer 0 is its true one, seen in the Bazaar man's lines here) either way: the new bytes,
+    of the same size. ValueError: not such a file, or the step not the one written for."""
+    steps = scene_steps(data)[0]
+    u16 = lambda at: struct.unpack_from("<H", data, at)[0]
+    u64 = lambda at: struct.unpack_from("<Q", data, at)[0]
+    named = [s for s in steps if data[u64(s["at"]) + 2:u64(s["at"]) + 2 + u16(u64(s["at"]))] == event.encode()]
+    if len(named) != 1 or named[0]["kind"] != 1 or named[0]["what"] != query or data.count(flag.encode()) != 1:
+        raise ValueError("%s is not the question of %s this was written for" % (event, flag))
+    e = named[0]["at"]
+    cases = u64(e + 0x18)
+    if u16(e + 0x0a) != 2 or [struct.unpack_from("<I", data, cases + 8 * k)[0] for k in (0, 1)] != [0, 1]:
+        raise ValueError("%s does not have the answers 0 and 1" % event)
+    out = bytearray(data)
+    out[cases + 12:cases + 14] = data[cases + 4:cases + 6]   # (answer 1's next step: answer 0's)
+    return bytes(out)
+
+
+def water_wall_out(data):
+    """The adult's Hyrule Field map file without the invisible wall over the Water Temple's gate switch (WATER_WALL):
+    the file written anew. ValueError: not one such wall in it."""
+    tree, version = byml_parse(data)
+    actors = tree[1].get("Actors")
+    if not actors or actors[0] != "array":
+        raise ValueError("the map file has no actors")
+    walls = [a for a in actors[1] if a[1].get("Gyaml", ("", ""))[1] == WATER_WALL[0] and a[1].get("Presence", ("", {}))[0] == "dict"
+             and a[1]["Presence"][1].get("FlagName", ("", ""))[1] == WATER_WALL[1]]
+    if len(walls) != 1:
+        raise ValueError("%d walls of the Water Sage's quest in it, not 1" % len(walls))
+    tree[1]["Actors"] = ("array", [a for a in actors[1] if a is not walls[0]])
+    return byml_build(tree, version)
+
+
 # The cucco lady's game wants one cucco (asked 2026-11-17, every seed from fixes 43). Her pen's logic
 # (CUCCO_LOGIC) compares the count in the pen with a fixed 7 (an OperateCompareInt's unlinked Int_A, its one fixed
 # number), and her flow (CUCCO_FLOW) counts "how many are left" from 7 for her lines (Captured_Npc_Hylia_CalcRemainCount
@@ -6261,10 +6399,11 @@ def main():
                 if a.start_rupees:   # (the same file: the rupees after the flags)
                     more = flag_defaults(new if new is not None else was, {RUPEES: START_RUPEES}, kind="Int")
                     new = more if more is not None else new
+                new = always_exp(new if new is not None else was)   # (the same file: ALWAYS_EXP, for the Bombchu Shop and Bowling)
             except Exception as e:
                 sys.exit("%s: %s. Nothing written." % (n, e))
-            if new is not None:
-                flag_files[FLAG_LIST + "/" + n] = new
+            flag_files[FLAG_LIST + "/" + n] = new
+            sizes[FLAG_LIST + "/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(new)
         if a.start_rupees:
             print("a new game starts with %d rupees" % START_RUPEES)
         print("Hyrule Field's day and night run from a new game's start (the Sun's Song works before the owl is met)")
@@ -6848,6 +6987,24 @@ def main():
     if chu_done != 3:
         sys.exit("the Bombchu Shop: %d of its keeper, music and sign found in the child's Market, not 3. Nothing written." % chu_done)
     print("the Bombchu Shop's keeper is there from the start, and its sign gone")
+    try:   # (every seed: the shop's door and Bombchu Bowling by ALWAYS_EXP, CHU_LOGIC; the door's AND made OR first)
+        for rel in CHU_LOGIC:
+            data = changed[rel] if rel in changed else open(os.path.join(romfs, *rel.split("/")), "rb").read()
+            if rel == BOMBCHU_DOOR_LOGIC:
+                data = bombchu_door_open(data)
+            changed[rel] = ainb_exp_swap(data)
+            sizes[rel] = len(changed[rel])
+    except (OSError, ValueError, struct.error) as e:
+        sys.exit("Bombchu Bowling and the Bombchu Shop: %s: %s. Nothing written." % (rel, e))
+    print("Bombchu Bowling is open from the start, and the Bombchu Shop day and night")
+    try:   # (every seed: the Water Temple's gate switch without the Ice Cavern, WATER_WALL)
+        rel = WATER_WALL_FILE
+        data = changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+        changed[rel] = water_wall_out(data)
+        sizes[rel[:-3]] = len(changed[rel])
+    except (OSError, ValueError, struct.error, IndexError) as e:
+        sys.exit("the Water Temple's gate: %s. Nothing written." % e)
+    print("the Water Temple's gate switch can be hit without the Ice Cavern done")
 
     # ---- three red rupees on Hyrule Castle's drawbridge, in every seed (DRAWBRIDGE_RUPEES) ----
     try:
@@ -7019,11 +7176,6 @@ def main():
         except (OSError, ValueError, struct.error) as e:
             sys.exit("%s: %s. Nothing written." % (OPENING, e))
         print("a new game starts without its two opening cutscenes")
-    try:   # (every seed: the Bombchu Shop's door open at night from the start, BOMBCHU_DOOR_LOGIC)
-        flag_files[BOMBCHU_DOOR_LOGIC] = bombchu_door_open(unpack(open(os.path.join(romfs, *BOMBCHU_DOOR_LOGIC.split("/")), "rb").read(), zs, dicts))
-    except (OSError, ValueError, struct.error) as e:
-        sys.exit("%s: %s. Nothing written." % (BOMBCHU_DOOR_LOGIC, e))
-    print("the Bombchu Shop's door opens at night from a new game's start")
     try:   # (every seed: the cucco lady's game wants one cucco, CUCCO_LOGIC; her flow's count with the flows above)
         flag_files[CUCCO_LOGIC] = cucco_logic_one(unpack(open(os.path.join(romfs, *CUCCO_LOGIC.split("/")), "rb").read(), zs, dicts))
     except (OSError, ValueError, struct.error) as e:
@@ -7110,6 +7262,12 @@ def main():
         print("Skip cutscenes: the videos %s are left out" % ", ".join(sorted(videos)))
     # (the last seed's files are taken away only now, when everything is made: a step above that fails leaves it whole.
     #  Seen: a flow a lesson calls that could not be quieted left the mod without its stamp and its checks)
+    for rel, event in CHU_FLOWS:   # (every seed: the bowling's questions of the quest go on to "done", CHU_FLOWS; on what the steps above made)
+        files = next((d for d in (gift_files, scene_files, shop_files, flag_files) if rel in d), flag_files)
+        try:
+            files[rel] = flow_switch_yes(files[rel] if rel in files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts), event)
+        except (OSError, ValueError, struct.error) as e:
+            sys.exit("Bombchu Bowling: %s: %s. Nothing written." % (rel, e))
     removed = remove_old(mod)
     for rel, data in (list(changed.items()) + list(new_tables.items()) + list(flag_files.items()) + list(pack_files.items()) + list(gift_files.items()) +
                       list(shop_files.items()) + list(scene_files.items())):
