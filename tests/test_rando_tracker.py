@@ -220,7 +220,7 @@ def main():
           '" checks 10" +' in script and
           # (a gift's mark is kept by a chest's second value of the save: gift_keys)
           seed.gift_keys([7, 3], [0x10, 0x30, 0x20]) == {3: 0x12, 7: 0x22} and
-          "g.name, gift_key[h], gives[h])" in script and "gift_key = gift_keys(" in script, "the checks' file is not written with the seed, or a seed made before it is not made again")
+          "g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))" in script and "gift_key = gift_keys(" in script, "the checks' file is not written with the seed, or a seed made before it is not made again")
     m = re.search(r"constexpr int kTrackerChecks = (\d+);", menu)
     check(m and int(m.group(1)) == seed.CHECK_ROWS, "the menu does not keep as many checks as the script may write")
     check('"%47[^|]|%79[^|]|%39[^|]|%3[^|]|%f %f %f|%191[A-Z0-9,/-]|%31[^|]|%63[^|]|%f %f %f"' in menu and "char area[48], kind[80], folder[40], ages[4];" in menu and seed.CHECK_NAME == 79 and '+ "checks.txt";' in menu, "the menu does not read the checks' file as it is written")
