@@ -233,6 +233,7 @@ SW(RX_NVN_WATCH_TEXELS_SRC, diag, string, "off", "Page-watches the source data o
 SW(RX_VK_9E5_SWAP, diag, bool, "off", "Swaps R and B in sampled views of RGB9E5 textures, for diagnosing a colour-order fault.")
 SW(RX_VK_ALLOWED_AT_COUNT, kill, bool, "on: an allowance equal to the count once past it is taken as a tenth under the count", "=0 takes the driver's VRAM allowance as reported, even when it just follows the process's use.")
 SW(RX_VK_ALL_COMPONENTS, kill, bool, "colour write mask limited to the components the fragment shader writes", "1 turns off the amd-fix that masks out colour components the fragment shader does not write.")
+SW(RX_VK_ACQUIRE_AHEAD, attempt, bool, "on where the presenter thread runs (RX_VK_PRESENT_THREAD)", "0 asks for each image at its present (#1458's order); on, the presenter thread asks for the next present's image right after each present (no wait there), never with frame generation or FIFO; set to 0 or 1, the image-wait counter is logged every 600 presents.")
 SW(RX_VK_ALL_GLOBAL_PROGS, diag, string, "unset: none", "Comma list of compute program key prefixes none of whose memory accesses are bound to a descriptor (a test).")
 SW(RX_VK_ANISO, player, int, "the Insert menu's anisotropic filtering row", "Anisotropy 0 to 16 (0: the game's own) over the menu row for one run.")
 SW(RX_VK_ANTILAG, player, enum, "the Insert menu's AMD Anti-Lag 2 row (opts.antilag)", "0/1 overrides the Anti-Lag 2 menu row for one run; '-' leaves the VK_AMD_anti_lag extension not even enabled.")
