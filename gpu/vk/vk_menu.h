@@ -63,6 +63,7 @@ struct Options {
     int show_fps = 0;     // (hookshot) the FPS counter: 0 Off, 1 FPS, 2 Frame time, 3 Graph, 4 Breakdown (fps_stats.h; saved as fps_counter=, an old On is 1)
     int fps_corner = 0;   // (hookshot) its corner: 0 top right, 1 top left, 2 bottom right, 3 bottom left
     int fps_size = 0;     // (hookshot) its size: 0 Auto (the window's height and Menu size), 1 Small, 2 Medium, 3 Large (fixed)
+    int show_clock = 0;   // (Willow Woods) the In-game clock row: the game's time of day at the top of the screen (OOT_CLOCK_ID)
     int fps_version_always = 0;   // (hookshot) the version and the hardware lines at every level of the counter, not only at Dev
     // (hookshot) which of the Dev level's lines show: fps_stats.h's DevLine order, then the CPU, GPU and driver lines; all by default
     int fps_dev_show[12] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};

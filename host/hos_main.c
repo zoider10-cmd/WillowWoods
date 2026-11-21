@@ -891,6 +891,13 @@ static void oot_inventory_refresh(Ctx *c, int64_t now) {
         int child = 1;
         rx_option_set(OOT_CHEAT_AGE_ID, loaded && oot_gamedata_bool(c, 0xcea220d3u, &child) ? (child ? 0 : 1) : -1);
     }
+    {   /* (Willow Woods) the time of day for the In-game clock row: the world's clock (the world manager's +0x510, its +0x28 the
+           seconds in the day, as ExecuteWmSetTime sets them: oot_set_time); -1 with no save loaded */
+        const uint64_t singleton = recomp_load64(c, 0x84c9e898ULL);
+        const uint64_t world = singleton ? recomp_load64(c, singleton) : 0;
+        const uint64_t clock = world ? recomp_load64(c, world + 0x510) : 0;
+        rx_option_set(OOT_CLOCK_ID, loaded && clock ? (int)recomp_load32(c, clock + 0x28) : -1);
+    }
     static char logged[100];
     if (!loaded && logged[0]) {   /* back to the title or the file select: the summary's time there is not the last map's */
         logged[0] = 0;

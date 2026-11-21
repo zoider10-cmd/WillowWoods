@@ -1970,6 +1970,9 @@ Row rows[] = {
      "The corner the FPS counter shows in. While this menu is open it shows at the top right.", nullptr, false, true},
     {TAB_GAMEPLAY, "Performance monitor", &opts.resource_monitor, 0, 1, 1, tx_onoff,
      "CPU, frame time, VRAM, GPU time, RAM and FPS in panels on the left of the screen.", nullptr, false, true},
+    {TAB_GAMEPLAY, "In-game clock", &opts.show_clock, 0, 1, 1, tx_onoff,
+     "The game's time of day at the top of the screen, as hours and minutes (18:30), for what comes with the day: pots and grass "
+     "back after a day, the night's Gold Skulltulas, the shops' hours.", nullptr, false, true},
     {TAB_GAMEPLAY, "FPS counter size", &opts.fps_size, 0, 3, 1, tx_fps_size,
      "How large the FPS counter is drawn. Auto grows with the window, as the menu does; Small, Medium and Large keep one size "
      "whatever the window, the size Auto has in a 720p, 1080p and 1440p window.", nullptr, false, true},
@@ -6414,7 +6417,12 @@ bool fps_take(int64_t now, int64_t shown, int64_t game, int64_t* next, int64_t* 
 // (the game's) and the control bridge's menu_setting and menu_setting_set (its own thread). Recursive: a setter reached from
 // inside menu_tick's frame on the same thread does not lock itself out
 std::recursive_mutex menu_mu;
+std::atomic<int> game_clock{-1};   // (the game side's time of day in seconds, OOT_CLOCK_ID: -1 no save loaded)
 void menu_option_set(int id, int value) {
+    if (id == OOT_CLOCK_ID) {   // (the In-game clock row's time)
+        game_clock.store(value, std::memory_order_relaxed);
+        return;
+    }
     if (id == OOT_CHEAT_AGE_ID) {   // (Link's age: the Switch age row shows it)
         if (link_age.exchange(value, std::memory_order_relaxed) != value && page == 0 && cur_tab == TAB_DEBUG) menu_refresh = true;
         return;
@@ -7468,11 +7476,28 @@ void menu_tick() {
     if (opts.resource_monitor && perf_monitor_sample()) perf_new = true;   // (Mako: drawn by draw_perf)
 }
 
+/// (Willow Woods) The In-game clock row: the game's time of day (game_clock, seconds since midnight) as "18:30" at the top of
+/// the screen, in its middle, white with a dark outline as the FPS counter's number; not while the menu is open or no save is loaded.
+bool clock_shows() { return opts.show_clock && game_clock.load(std::memory_order_relaxed) >= 0; }
+void draw_clock(ui::Ctx& c) {
+    const int secs = game_clock.load(std::memory_order_relaxed);
+    if (secs < 0) return;
+    char text[8];
+    snprintf(text, sizeof text, "%02d:%02d", secs / 3600 % 24, secs / 60 % 60);
+    const float s = fps_scale(c), size = 24 * s, o = std::max(1.0f, s);
+    const float x = (c.w - ui::size_of(c.f.strong, size, text).x) * 0.5f, y = c.safe;
+    for (int dy = -1; dy <= 1; dy++)
+        for (int dx = -1; dx <= 1; dx++)
+            if (dx || dy) c.d->AddText(c.f.strong, size, ImVec2(x + dx * o, y + dy * o), ui::rgba(0, 0, 0, 230), text);
+    c.d->AddText(c.f.strong, size, ImVec2(x, y), ui::rgba(255, 255, 255), text);
+}
+
 void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool start = startup_on.load(std::memory_order_acquire);
     const bool fps = (opts.show_fps || opts.resource_monitor) && !start;   // (no game frames yet: not "0 FPS" over the start-up screen)
     const bool open = open_now.load(std::memory_order_relaxed);
-    if (!start && !fps && !open) {   // (nothing shows: no ImGui frame, no render pass)
+    const bool clock = clock_shows() && !start && !open;   // (the In-game clock row)
+    if (!start && !fps && !open && !clock) {   // (nothing shows: no ImGui frame, no render pass)
         // (but a new window size or Menu size since the last bake: one frame with nothing drawn that bakes the menu's glyphs
         // and measures its page for the new size, so the next open has no hitch whatever was resized while nothing showed)
         if (prebake_needed(w, h) && ui::begin(w, h)) {
@@ -7498,6 +7523,7 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     if (opts.resource_monitor && !start && !open) draw_perf(c);   // (Mako)
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
+    if (clock) draw_clock(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record(cmd, index, w, h);
 }
@@ -7505,11 +7531,13 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
 void menu_record_image(VkCommandBuffer cmd, VkImage image, VkImageView view, uint32_t w, uint32_t h) {
     const bool open = open_now.load(std::memory_order_relaxed);
     const bool fps = opts.show_fps && !startup_on.load(std::memory_order_acquire);
-    if (!open && !fps) return;
+    const bool clock = clock_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the In-game clock row)
+    if (!open && !fps && !clock) return;
     if (!ui::begin(w, h)) return;
     ui::Ctx c = ui_ctx(w, h);
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
+    if (clock) draw_clock(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record_to(cmd, image, view, w, h);
 }
