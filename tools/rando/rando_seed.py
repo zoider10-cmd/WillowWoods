@@ -92,6 +92,25 @@ LOCKED_ROOMS = ("ForestTemple_GetBow",)
 # takes part. The Hookshot chest stays: the rules have no Hookshot (an adult is taken to have it from here) and the tomb
 # can't be left without it; shuffling it needs the Hookshot as a gating item in every rule that leans on it.
 DAMPE_RACE_CHESTS = frozenset((0x4ccffbd5778b67e2,))
+# Shuffle Dampe's Hookshot (rando_dampe_hookshot, the owner's go-ahead 2026-11-21; the audit: share/hookshot-audit.md).
+# With it the race's Hookshot chest takes part too, and the Hookshot is a gating item of the rules (HOOK, hook_need).
+# The race's flow asks "has Link the Hookshot" (in the pouch, or got once) to mean "is the first race's prize won", and
+# asks for the Longshot the same way (MiniGame_DampeRace steps 39, 74-75, 90, 95, 108, 165-167, 422-424); the tomb's
+# two logic files read IsGet.Item_Hookshot (UnderTheGrave_Prefab_0a7f, _6971). So the chest is a place asked about by
+# name, as a lesson is (it may hold only lesson_items: got nowhere else, with flags of its own), and each of those
+# questions is made to name what the chest gives now (race_words): a Hookshot found first does not skip the chest, and
+# the race goes on to its second prize once Link has the chest's item. The rules: where the audit found the Hookshot
+# needed (HOOK_AREAS, HOOK_GIFTS, HOOK_SKULLS, and the race's own chests, DAMPE_EVENT: the tomb can't be left without
+# it) the Hookshot or the Longshot is asked for. NOT SEEN IN PLAY yet.
+HOOK = "Item_Hookshot"
+DAMPE_HOOK_CHEST = 0xde9e62394333948e
+DAMPE_EVENT = "MiniGame_DampeRace_OpenGoalTBox"
+DAMPE_FLOW = "Event/EventFlow/MiniGame_DampeRace.bfevfl.zs"
+DAMPE_LOGIC = ("Logic/UnderTheGrave_Prefab_0a7f.logic.module.ainb", "Logic/UnderTheGrave_Prefab_6971.logic.module.ainb")
+HOOK_AREAS = frozenset(("ForestTemple", "FireTemple"))   # (the temple's way in: the meadow's branch; the crater's grab points)
+HOOK_GIFTS = frozenset(("song_bolero",))                 # (Sheik on the crater's middle platform)
+HOOK_SKULLS = frozenset((0xfbbc2d490276c68e,))           # (Goron City's adult Gold Skulltula by the Lost Woods exit)
+HOOK_SHUFFLED = False   # (main sets it)
 # Changes to the map that a shuffled game needs, written with every seed (and so only with the randomizer on):
 # {an actor's hash: {a key of its Dynamic block: the truth value it gets}}.
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
@@ -1078,8 +1097,10 @@ SHELF_BOARD, SHELF_BOARD_NEAR, SHELF_BOARD_AWAY = "Shop_Board_Bundle_", 0.5, 200
 # asks for them and for the Goron's Bracelet, the Giant's Wallet for the Adult's too (progressive_need). Only the
 # ones the seed shuffles are added: the others are where the game has them, and the rules count on that already.
 # Too much, never too little: with both found he has the second, whichever came first.
+# The hookshots (Shuffle Dampe's Hookshot): the Longshot asks for the Hookshot under it only when the Hookshot is
+# shuffled; before, Dampe's race gave it first, as the rules count on.
 PROGRESSIVE_TIERS = (("Item_Gauntlet_Goron", "Item_Gauntlet_Silver", "Item_Gauntlet_Gold"), ("Item_Wallet_Medium", "Item_Wallet_Large"),
-                     ("Item_Scale_Silver", "Item_Scale_Gold"))
+                     ("Item_Scale_Silver", "Item_Scale_Gold"), ("Item_Hookshot", "Item_Longshot"))
 
 
 def progressive_need(need, shuffled):
@@ -1816,6 +1837,26 @@ def either(ways):
     return Either(ways) if len(ways) > 1 else ways[0]
 
 
+def hook_need(need):
+    """one way of a rule with the Hookshot asked for (Shuffle Dampe's Hookshot): the Longshot does as well, the game
+    keeping them as two items (the race asks for either). A way that names one of them already is as it was."""
+    return need if HOOK in need or LONG in need else either((need | {HOOK}, need | {LONG}))
+
+
+def hook_asks(area, event="", key=None, h=None):
+    """whether a check's rule asks for the Hookshot (Shuffle Dampe's Hookshot): by its area, its chest's event, its
+    gift's key or its Gold Skulltula's hash"""
+    return area in HOOK_AREAS or event == DAMPE_EVENT or key in HOOK_GIFTS or h in HOOK_SKULLS
+
+
+def race_words(gives_now):
+    """{what the race's flow names: what it names now} when its Hookshot chest gives another item: both hookshots' names
+    (its questions of the pouch and of what was got) become the name of the item's flags (lesson_flag)"""
+    if gives_now == HOOK:
+        return {}
+    return {HOOK: lesson_flag(gives_now), LONG: lesson_flag(gives_now)}
+
+
 # Zora's Domain for a child (placement 5, the game's owner's word): by Zora's River, which asks for bombs (its boulders)
 # and Zelda's Lullaby (the waterfall), or by Lake Hylia, which asks for the Silver Scale (the dive into the Domain)
 # and the way out of the forest. A rule of a child's place in Zora's Domain or Jabu-Jabu that asks for the river's
@@ -1952,6 +1993,8 @@ def stays_why(c, events, placement=PLACEMENT):
         kept = []   # (SUBSTITUTE_CHESTS: a chest that gives another item when Link has one already takes part)
     if placement >= 12 and c.hash in DAMPE_RACE_CHESTS:
         return None   # (Dampe's race's Piece of Heart chest takes part: DAMPE_RACE_CHESTS)
+    if HOOK_SHUFFLED and c.hash == DAMPE_HOOK_CHEST:
+        return None   # (Shuffle Dampe's Hookshot: its chest takes part, HOOK)
     if "GetEventName" in kept and (c.event in PLAIN_EVENTS or events and not c.event.startswith("MiniGame")):
         kept.remove("GetEventName")
     if kept == ["GetEventName"]:
@@ -4350,7 +4393,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -4475,7 +4518,7 @@ CHECK_CODES = collections.OrderedDict((
     ("Item_Melody_ZeldaLullaby", "ZL"), ("Item_Melody_EponaSong", "EP"), ("Item_Melody_SariaSong", "SR"), ("Item_Melody_TimeSong", "ST"),
     ("Item_Melody_StormSong", "SO"), ("Item_Melody_SpiritRequiem", "RQ"), ("Item_Melody_ShadowNocturne", "NC"),
     ("Obj_Armor_Goron", "GT"), ("Obj_Armor_Zora", "ZT"), (BOTTLE, "BO"), ("Item_ZeldaLetter", "LE"), ("Item_Ocarina_Fairy", "FO"),
-    ("Item_FairyBless_MPDouble", "MG"), ("Weapon_Sword_Master", "MW")))   # (the tunics, placement 12: TUNICS; MW: Shuffle the Master Sword, MASTER)
+    ("Item_FairyBless_MPDouble", "MG"), ("Weapon_Sword_Master", "MW"), (HOOK, "HS")))   # (the tunics, placement 12: TUNICS; MW: Shuffle the Master Sword, MASTER; HS: Shuffle Dampe's Hookshot, HOOK)
 
 
 def token_codes(way):
@@ -5861,6 +5904,7 @@ def main():
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
     p.add_argument("--letter", action="store_true", help="as rando_letter=1, Kakariko gate: Letter shuffled (letter_need)")
     p.add_argument("--master-sword", action="store_true", help="as rando_master_sword=1: the Master Sword is an item of the shuffle and the pedestal a place (MASTER_GIFT; needs Open Door of Time)")
+    p.add_argument("--dampe-hookshot", action="store_true", help="as rando_dampe_hookshot=1: Dampe's race's Hookshot chest takes part and the Hookshot is a gating item (HOOK)")
     p.add_argument("--hints", action="store_true", help="as rando_hints=1: the Gossip Stones give hints (choose_hints)")
     p.add_argument("--skulltulas-day", action="store_true", help="as rando_skulltulas_day=1: the night-only Gold Skulltulas are out by day too (NOCTURNAL)")
     p.add_argument("--heart-pieces", action="store_true", help="as rando_heart_pieces=1: the Pieces of Heart lying in the world change places with "
@@ -5921,6 +5965,9 @@ def main():
     a.door_song = not a.open_door and ini["rando_open_door"] == 2   # (DOOR_SONG: the door by the Song of Time)
     a.open_door = a.open_door or ini["rando_open_door"] == 1
     a.master_sword = a.master_sword or ini["rando_master_sword"] == 1   # (Shuffle the Master Sword: MASTER_GIFT)
+    a.dampe_hookshot = a.dampe_hookshot or ini["rando_dampe_hookshot"] == 1   # (Shuffle Dampe's Hookshot: HOOK)
+    global HOOK_SHUFFLED
+    HOOK_SHUFFLED = a.dampe_hookshot
     if a.master_sword and not (a.open_door or a.door_song):
         print("Shuffle the Master Sword needs Open Door of Time: left off")
         a.master_sword = False
@@ -5990,7 +6037,7 @@ def main():
     # (the open ways are only named when one is open: the seeds made before them keep their stamp)
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" master sword 1" if a.master_sword else "") + (" magic 1" if a.magic else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" master sword 1" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -6155,6 +6202,8 @@ def main():
     # ---- Quest rewards: the gifts that take part, as spots among the chests' ----
     gifts = collections.OrderedDict()   # its hash -> the Gift
     global PROGRESSION
+    if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: a gating item, HOOK)
+        PROGRESSION = PROGRESSION | {HOOK}
     if a.quests:
         PROGRESSION = PROGRESSION | QUEST_GATES | (TUNICS if placement >= 12 else frozenset())
         for g in GIFTS:
@@ -6305,7 +6354,7 @@ def main():
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
     lesson_safe, lesson_only = frozenset(), {}
     fairies = [h for h, g in gifts.items() if g.key in FAIRY_GIFTS or g in MAGIC_GIFTS]
-    if a.songs == 2 or fairies:
+    if a.songs == 2 or fairies or a.dampe_hookshot:
         try:
             folder = os.path.join(romfs, FLAG_LIST)
             n = sorted(n for n in os.listdir(folder) if n.startswith("GameDataList.") and ".byml" in n.lower())[0]
@@ -6323,6 +6372,8 @@ def main():
         lesson_safe = lesson_items(collections.Counter(s[1] for s in spots.values()), a.progressive, flagged)
         lesson_only = {gift_hash(key): (lesson_safe, frozenset(SONG_ITEMS)) for key in SONG_ASKED} if a.songs == 2 else {}
         lesson_only.update((h, (lesson_safe, frozenset(SONG_ITEMS) if a.songs == 2 else frozenset())) for h in fairies)
+        if a.dampe_hookshot and DAMPE_HOOK_CHEST in spots:   # (the race's chest is asked about by name: race_words)
+            lesson_only[DAMPE_HOOK_CHEST] = (lesson_safe, frozenset(SONG_ITEMS) if a.songs == 2 else frozenset())
     # (placement 12, SHUFFLED_FROM: the Gold Skulltulas of the setting and the Pieces of Heart lying in the world are
     #  spots of the placement, with their token and their piece in the pool, each holding what it can: holds)
     skull_drops, able, mine = {}, [], []
@@ -6355,6 +6406,12 @@ def main():
     #  keep their token, of another setting or whose file cannot take a drop, are counted where they are)
     counted = placement >= HOUSE_FROM and logic and any(token_count(word) for n in needs.values() for way in (n if isinstance(n, Either) else (n,)) for word in way)
     kept_tokens = [(skull_asks(h, every_skull[h][0]), TOKEN) for h in every_skull if h not in joined] if counted else []
+    if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: the Hookshot or the Longshot where the audit found it needed, hook_asks)
+        for h, s in spots.items():
+            if hook_asks(s[0], s[6] if len(s) > 6 else "", gifts[h].key if h in gifts else None, h):
+                needs[h] = each(hook_need, needs[h])
+        kept_tokens = [(each(hook_need, n) if hook_asks(every_skull[h][0], h=h) else n, t)
+                       for (n, t), h in zip(kept_tokens, [h for h in every_skull if h not in joined])]
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,
@@ -7119,6 +7176,23 @@ def main():
         except (OSError, ValueError, struct.error) as e:
             sys.exit("the Fire Temple's jailed Gorons: %s: %s. Nothing written." % (rel, e))
         print("the Fire Temple's jailed Gorons are gone, and the chests behind them unlocked")
+    if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: the race's questions name what its chest gives now, race_words)
+        race_now = gives.get(DAMPE_HOOK_CHEST, HOOK)
+        words = race_words(race_now)
+        rel = DAMPE_FLOW
+        try:
+            if words:
+                now, found = gift_items(unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts), words, kinds=(0, 1))
+                if now is None or set(words) - found:
+                    raise ValueError("it names no %s" % ", ".join(sorted(set(words) - found)))
+                changed[rel], sizes[rel[:-3]] = now, len(now)
+                for rel in DAMPE_LOGIC:
+                    data = changed[rel] if rel in changed else open(os.path.join(romfs, *rel.split("/")), "rb").read()
+                    changed[rel] = ainb_exp_swap(data, "IsGet." + HOOK, "IsGet." + lesson_flag(race_now))
+                    sizes[rel] = len(changed[rel])
+        except (OSError, ValueError, struct.error) as e:
+            sys.exit("Shuffle Dampe's Hookshot: %s: %s. Nothing written." % (rel, e))
+        print("Dampe's race: its first prize is %s%s" % (race_now, ", and the race and the tomb ask for it by name" if words else ""))
 
     # ---- three red rupees on Hyrule Castle's drawbridge, in every seed (DRAWBRIDGE_RUPEES) ----
     try:

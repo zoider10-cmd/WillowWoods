@@ -141,6 +141,9 @@
       "6", "5", "4", "3") \
     X(MASTER_SWORD, "Shuffle the Master Sword", "rando_master_sword", \
       "The Master Sword is an item of the shuffle, found in a chest or given like any other item, and the pedestal gives what the seed put there the first time young Link goes through time. Adult Link may travel without it; the logic asks for it wherever only an adult can go. Needs Open Door of Time.", \
+      "Off", "On") \
+    X(DAMPE_HOOKSHOT, "Shuffle Dampe's Hookshot", "rando_dampe_hookshot", \
+      "Dampe's Hookshot chest, the race's first prize in the Graveyard's tomb, holds a shuffled item, and the Hookshot is found elsewhere. The logic asks for the Hookshot (or the Longshot) where it is needed: the Forest Temple, the middle of Death Mountain Crater and the Fire Temple, and the race itself, since the tomb can't be left without it. Not tried in play yet.", \
       "Off", "On")
 
 enum {

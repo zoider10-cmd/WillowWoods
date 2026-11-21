@@ -2416,6 +2416,8 @@ constexpr LogicItem kLogicItems[] = {
     {"MG", "magic", {"Magic Power", "Double Magic"}},
     // (Shuffle the Master Sword: an adult's places ask for it. tools/rando/rando_seed.py MASTER)
     {"MW", "Master Sword", {"Master Sword"}},
+    // (Shuffle Dampe's Hookshot: where it is needed the Longshot does as well. tools/rando/rando_seed.py HOOK)
+    {"HS", "Hookshot", {"Hookshot", "Longshot"}},
 };
 // (a rule's "T<N>": N Gold Skulltula tokens, by the Inventory page's count of them. tools/rando/rando_seed.py token_codes,
 // placement 12: the Skulltula house's rewards)

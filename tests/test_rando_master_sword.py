@@ -88,7 +88,7 @@ def main():
     launcher = read("launcher", "Launcher.cs")
     check('X(MASTER_SWORD, "Shuffle the Master Sword", "rando_master_sword",' in header and
           '"rando_master_sword", "Shuffle the Master Sword", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher and
-          '"rando_chest_size", "rando_master_sword" } },' in launcher,
+          '"rando_chest_size", "rando_master_sword"' in launcher,
           "the setting has no row in the game's table or the launcher's, or the launcher does not show it")
     no_item = launcher.split("NoItemKeys = new HashSet<string> {", 1)[1].split("};", 1)[0]
     check('"rando_master_sword"' not in no_item, "the setting is counted as one that moves no item")

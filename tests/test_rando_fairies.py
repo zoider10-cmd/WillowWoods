@@ -47,7 +47,7 @@ def main():
           "not every fountain's flow and the mark's are made to ask for what the fountains give now")
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
     check("lesson_only.update((h, (lesson_safe, frozenset(SONG_ITEMS) if a.songs == 2 else frozenset())) for h in fairies)" in script and
-          "if a.songs == 2 or fairies:" in script and "now, found = gift_items(was, words, kinds=(0, 1))" in script and
+          "if a.songs == 2 or fairies or a.dampe_hookshot:" in script and "now, found = gift_items(was, words, kinds=(0, 1))" in script and
           'sys.exit("a Great Fairy gives what has no flag of its own' in script,
           "a fountain may hold what has no flag of its own, or its flows are not changed")
     print("PASS: the Great Fairies of the spells")
