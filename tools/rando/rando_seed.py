@@ -60,7 +60,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 18  # 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 19  # 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -121,6 +121,7 @@ HOOK_SKULLS = frozenset((0xfbbc2d490276c68e,             # (Goron City's adult G
                          0x853b892663c0215d))
 HOOK_OR = {0x853b892663c0215d: "Item_Range_Bow"}         # (another item that does as well, by the Skulltula's rule)
 HOOK_SHUFFLED = False   # (main sets it)
+DAMPE_HOOK_FROM = 19   # (the owner, 2026-11-21: "it should be randomized the same as most general items", no setting)
 # Changes to the map that a shuffled game needs, written with every seed (and so only with the randomizer on):
 # {an actor's hash: {a key of its Dynamic block: the truth value it gets}}.
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
@@ -211,6 +212,17 @@ DOOR_ADULT_AREAS = frozenset(("ForestTemple", "FireTemple", "IceCavern", "WaterT
 DOOR_SCALE = frozenset(("ZoraFountain", "IceCavern"))
 DOOR_NO_BOMBS = frozenset(("ForestTemple", "IceCavern"))
 _ZL, _SARIA, _TIME, _STORMS = ("Item_Melody_" + n for n in ("ZeldaLullaby", "SariaSong", "TimeSong", "StormSong"))   # (ZL and the rest, named below)
+# The Song of Time by the remake's own blocks (placement 19, TIME_BLOCKS_FROM; the owner's ask 2026-11-21: "make the
+# logic ask for more exact items"). Its blue blocks (Obj_SongOfTimeBlock_A_01) are in these areas' maps and no others
+# (actors.py): the Sacred Forest Meadow (8), the Gerudo Training Ground (7), the Spirit Temple, the Ice Cavern and the
+# Fire Temple (3 each), the Forest Temple and Ganon's Castle (1 each). None in the Water or Shadow Temple, none in the
+# rest of the overworld. So with the door open an adult's place asks for the song only in those areas (the Forest
+# Temple's way in is the meadow's), and the Ice Cavern, which kept only the Lullaby, asks for it too. (Adult Mido in
+# the Lost Woods stands aside for Saria's Song, Npc_Kokiri_Mido_Adult_OcarinaReactionStop: the meadow keeps it.)
+TIME_BLOCK_AREAS = frozenset(("SacredForestMeadow", "GerudoTrainingGround", "SpiritTemple", "IceCavern", "FireTemple", "ForestTemple",
+                              "InsideGanonCastle"))
+TIME_BLOCKS_FROM = 19
+TIME_BLOCKS = False   # (main sets it: placement >= TIME_BLOCKS_FROM)
 DOOR_SONGS = {"ForestTemple": frozenset((_SARIA, _TIME)), "FireTemple": frozenset((_TIME,)), "IceCavern": frozenset((_ZL,)),
               "WaterTemple": frozenset((_ZL, _TIME)), "ShadowTemple": frozenset((_TIME,)), "GerudoTrainingGround": frozenset((_TIME,))}
 
@@ -261,6 +273,11 @@ def door_need(need, adult_only, open_forest=False, area=None, song=False):
         free.update((BB, BR))
     if area in DOOR_SONGS:
         free.update({_ZL, _SARIA, _TIME, _STORMS} - DOOR_SONGS[area])
+    if TIME_BLOCKS:   # (placement 19: the Song of Time where its area has blocks, and only there)
+        if area in TIME_BLOCK_AREAS:
+            free.discard(_TIME)
+        else:
+            free.add(_TIME)
     return frozenset(need - free) | ({_TIME} if song else frozenset()) | sword   # (DOOR_SONG: the door opens by the Song of Time)
 FLAG_LIST = "GameData"   # (the folder of the romfs: GameDataList.Product.<n>.byml.zs in it)
 # The clock of Hyrule Field. Until the owl's first cutscene there, the field's sky stays the day's whatever the time is
@@ -6064,9 +6081,10 @@ def main():
     a.door_song = not a.open_door and ini["rando_open_door"] == 2   # (DOOR_SONG: the door by the Song of Time)
     a.open_door = a.open_door or ini["rando_open_door"] == 1
     a.master_sword = a.master_sword or ini["rando_master_sword"] == 1   # (Shuffle the Master Sword: MASTER_GIFT)
-    a.dampe_hookshot = a.dampe_hookshot or ini["rando_dampe_hookshot"] == 1   # (Shuffle Dampe's Hookshot: HOOK)
+    # (Dampe's Hookshot: shuffled in every seed from placement 19 (DAMPE_HOOK_FROM); before, by the setting it had for a
+    #  day, rando_dampe_hookshot, which a seed made with it keeps: its stamp says " dampe hookshot 1")
+    a.dampe_hookshot = a.dampe_hookshot or ini.get("rando_dampe_hookshot", 0) == 1
     global HOOK_SHUFFLED
-    HOOK_SHUFFLED = a.dampe_hookshot
     if a.master_sword and not (a.open_door or a.door_song):
         print("Shuffle the Master Sword needs Open Door of Time: left off")
         a.master_sword = False
@@ -6134,6 +6152,11 @@ def main():
         if opened:
             flags.update(OPEN[name])
     # (the open ways are only named when one is open: the seeds made before them keep their stamp)
+    try:   # (a seed made with Shuffle Dampe's Hookshot keeps it, whether or not the options file still names it)
+        if " dampe hookshot 1" in open(stamp_path, encoding="utf-8").read().split("\n")[0]:
+            a.dampe_hookshot = True
+    except OSError:
+        pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
                                                                (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" master sword 1" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
@@ -6156,6 +6179,8 @@ def main():
             placement = int(was.split()[1])
     except (OSError, ValueError):
         pass
+    a.dampe_hookshot = a.dampe_hookshot or placement >= DAMPE_HOOK_FROM   # (Dampe's Hookshot shuffled: HOOK)
+    HOOK_SHUFFLED = a.dampe_hookshot
     stamp = "placement %d%sfixes %d\n" % (placement, rest, FIXES_VERSION)   # (the fixes: the same items, written again)
     if qol:
         stamp = stamp[:-1] + qol + "\n"
@@ -6336,6 +6361,8 @@ def main():
         spots[gift_hash(LETTER_GIFT.key)] = [LETTER_GIFT.area, LETTER_GIFT.item, None, None, "gift", LETTER_GIFT.name, ""]
     global MASTER_SHUFFLED
     MASTER_SHUFFLED = a.master_sword
+    global TIME_BLOCKS
+    TIME_BLOCKS = placement >= TIME_BLOCKS_FROM   # (the Song of Time by its blocks, door_need)
     if a.master_sword:   # (Shuffle the Master Sword: the pedestal a place, the sword a gating item, MASTER_GIFT)
         PROGRESSION = PROGRESSION | {MASTER}
         gifts[gift_hash(MASTER_GIFT.key)] = MASTER_GIFT

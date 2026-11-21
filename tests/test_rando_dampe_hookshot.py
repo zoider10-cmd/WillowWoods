@@ -80,9 +80,12 @@ def main():
 
     # ---- the seed's steps ----
     script = read("tools", "rando", "rando_seed.py")
-    check('a.dampe_hookshot = a.dampe_hookshot or ini["rando_dampe_hookshot"] == 1' in script and
-          '(" dampe hookshot 1" if a.dampe_hookshot else "")' in script and '"rando_dampe_hookshot": 0}' in script,
-          "the setting is not read, has no default, or is not in the seed's stamp")
+    # (every seed from placement 19; a seed made with the day-old setting keeps it by its stamp's words)
+    check(S.DAMPE_HOOK_FROM == 19 <= S.PLACEMENT and
+          "a.dampe_hookshot = a.dampe_hookshot or placement >= DAMPE_HOOK_FROM" in script and
+          'if " dampe hookshot 1" in open(stamp_path, encoding="utf-8").read().split(' in script and
+          '(" dampe hookshot 1" if a.dampe_hookshot else "")' in script,
+          "the Hookshot is not shuffled in every new seed, or a seed made with the setting does not keep it")
     check("PROGRESSION = PROGRESSION | {HOOK}" in script and
           "lesson_only[DAMPE_HOOK_CHEST] = (lesson_safe," in script and
           "needs[h] = each(hook_need, needs[h], HOOK_OR.get(h))" in script and
@@ -102,16 +105,12 @@ def main():
     menu_codes = re.findall(r'^\s*\{"([A-Z]{2})", "', menu.split("constexpr LogicItem kLogicItems[] = {", 1)[1].split("};", 1)[0], re.M)
     check(codes == menu_codes, "the seed tool's codes and the menu's are not the same list in the same order")
 
-    # ---- the setting's rows ----
+    # ---- no setting's rows: it is the shuffle's own (the owner, 2026-11-21) ----
     header = read("gpu", "vk", "oot_rando.h")
     launcher = read("launcher", "Launcher.cs")
-    check('X(DAMPE_HOOKSHOT, "Shuffle Dampe\'s Hookshot", "rando_dampe_hookshot",' in header and
-          '"rando_dampe_hookshot", "Shuffle Dampe\'s Hookshot", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher and
-          '"rando_master_sword", "rando_dampe_hookshot" } },' in launcher,
-          "the setting has no row in the game's table or the launcher's, or the launcher does not show it")
-    no_item = launcher.split("NoItemKeys = new HashSet<string> {", 1)[1].split("};", 1)[0]
-    check('"rando_dampe_hookshot"' not in no_item, "the setting is counted as one that moves no item")
-    print("FAIL" if failed else "PASS: Shuffle Dampe's Hookshot")
+    check("rando_dampe_hookshot" not in header and "rando_dampe_hookshot" not in launcher,
+          "the Hookshot still has a setting of its own in the game's table or the launcher's")
+    print("FAIL" if failed else "PASS: Dampe's Hookshot shuffled")
     return 1 if failed else 0
 
 
