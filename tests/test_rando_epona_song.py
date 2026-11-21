@@ -1,8 +1,9 @@
-"""Epona by Epona's Song (rando_epona_song, asked 2026-11-21, bugs.md 98): the setting from the options file to the seed
+"""Epona by Epona's Song (rando_epona_song, asked 2026-11-21, bugs.md 98; it replaced Skip Ingo's races): the setting from the options file to the seed
 tool, the launcher and the stamp; evfl kept beside the seed tool with its licence; and the event table rows written
 from a small made-up table (epona_event_rows). The flows themselves need the game's files: not read here."""
 import collections
 import os
+import re
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -42,8 +43,12 @@ def main():
           and "ask.data.cases[0].v = finish" in seed, "calling an owned Epona does not finish the quest")
     check('X(EPONA_SONG, "Epona by Epona\'s Song", "rando_epona_song",' in read("gpu", "vk", "oot_rando.h"), "the settings table has no row for it")
     launcher = read("launcher", "Launcher.cs")
-    check('"rando_skip_races", "rando_epona_song" };' in launcher and 'new object[] { "rando_epona_song",' in launcher,
+    check('"rando_infinite_ammo", "rando_epona_song" };' in launcher and 'new object[] { "rando_epona_song",' in launcher,
           "the launcher has no row for it, or does not keep a seed when it changes")
+    # (Skip Ingo's races, which this replaced, is gone; and every launcher settings row ends its own array: the Infinite
+    #  ammo row was once written inside the Master Sword's)
+    check("rando_skip_races" not in launcher and "rando_skip_races" not in seed, "Skip Ingo's races is still offered")
+    check(not re.search(r'"\s*,\s*\n\s*new object\[\] \{ "rando_', launcher), "a launcher settings row is written inside the one before it")
     here = os.path.join(ROOT, "tools", "rando", "evfl")
     check(os.path.isfile(os.path.join(here, "LICENSE")) and os.path.isfile(os.path.join(here, "evfl.py")), "evfl is not beside the seed tool with its licence")
     check(S.evfl_module().EventFlow is not None, "evfl does not load from beside the seed tool")
