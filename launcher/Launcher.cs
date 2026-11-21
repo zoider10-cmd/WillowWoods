@@ -202,7 +202,7 @@ public static class SaveSlots {
     // (the randomizer's settings that move no item: changed on a save being played, its seed is written again as it was,
     // tools/rando/rando_seed.py QOL_STAMP and the stamp's second line; the others are the game's side's alone)
     static readonly HashSet<string> NoItemKeys = new HashSet<string> { "rando_skip_intro", "rando_skip_cutscenes", "rando_start_rupees",
-        "rando_skulltulas_day", "rando_hints", "rando_ageless", "rando_ageless_items", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo" };
+        "rando_skulltulas_day", "rando_hints", "rando_ageless", "rando_ageless_items", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_skip_races" };
     static bool MovesNoItem(string line) { int eq = line.IndexOf('='); return eq > 0 && NoItemKeys.Contains(line.Substring(0, eq).Trim()); }
 
     // (the seed there is now is not the one that save was last played on: settings that move no item aside. A line one
@@ -1977,7 +1977,7 @@ static class RandoLayout {
                            "+shops", "rando_scrubs", "rando_major", "rando_progressive", "rando_sword_shield", "+forest", "rando_open_door", "rando_ageless", "rando_letter",
                            "+skips", "+rupees", "rando_ammo_pickups" } },
         new RandoSection { Title = "SHOULD WORK", Sub = "made and checked, not yet played through", Accent = ShouldWork,
-            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword", "rando_infinite_ammo" } },
+            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_skip_races" } },
         new RandoSection { Title = "DOES NOT WORK YET", Sub = "not made yet: leave these off, they can break a seed", Accent = Experimental,
             Rows = new[] { "rando_keys", "rando_dungeon_rewards" } },
     };
@@ -2707,9 +2707,11 @@ class LauncherForm : Form {
         new object[] { "rando_bridge_medallions", "Bridge medallions", new[] { "6", "5", "4", "3" }, new[] { 0, 1, 2, 3 },
             "With Ganon's Castle bridge at Medallions: how many of the six medallions Link must hold for the bridge to appear. Moves no item. The logic still asks for every progression item for the castle." },
         new object[] { "rando_master_sword", "Shuffle the Master Sword", new[] { "Off", "On" }, new[] { 0, 1 },
-            "The Master Sword is an item of the shuffle, found in a chest or given like any other item, and the pedestal gives what the seed put there the first time young Link goes through time. Adult Link may travel without it; the logic asks for it wherever only an adult can go. Needs Open Door of Time." ,
+            "The Master Sword is an item of the shuffle, found in a chest or given like any other item, and the pedestal gives what the seed put there the first time young Link goes through time. Adult Link may travel without it; the logic asks for it wherever only an adult can go. Needs Open Door of Time." },
         new object[] { "rando_infinite_ammo", "Infinite ammo", new[] { "Off", "On" }, new[] { 0, 1 },
-            "Deku Sticks, Deku Nuts, bombs, Bombchus, arrows and Deku Seeds are not used up: a moment after one is used, Link has as many as before (the bag filled again). Only what Link already carries: it gives nothing he has none of. Moves no item: it can be turned on for a seed being played." }}
+            "Deku Sticks, Deku Nuts, bombs, Bombchus, arrows and Deku Seeds are not used up: a moment after one is used, Link has as many as before (the bag filled again). Only what Link already carries: it gives nothing he has none of. Moves no item: it can be turned on for a seed being played." },
+        new object[] { "rando_skip_races", "Skip Ingo's races", new[] { "Off", "On" }, new[] { 0, 1 },
+            "Adult Link wins Epona from Ingo in one talk: say you want to race and pay the 20 rupees, and the race and its rematch are passed over as if Link had won both; Epona's scene and the ranch's locked gate follow as the game has them. Moves no item: it can be turned on for a seed being played." }
 
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file

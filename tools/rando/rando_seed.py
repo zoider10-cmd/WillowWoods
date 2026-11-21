@@ -3780,6 +3780,70 @@ def cucco_flow_one(data, want=CUCCOS):
     return bytes(out)
 
 
+# ---- Skip Ingo's races (rando_skip_races, asked 2026-11-21, bugs.md 92) ----
+# Adult Link wins Epona from Ingo in two races (Get_Epona's flow). Each race starts with Sub_Get_Epona_GambleRace_Start:
+# the race made ready (a sub-flow), the quest moved on (ProgressChallengeStep: AfterTalkMalon to GambleRacePlaying), then
+# the course; the race system plays Sub_Get_Epona_GambleRace_End at the line, whose Sub_Get_Epona_GambleRaceAfter asks
+# who crossed first (LonLonRanch_GambleRaceGoaledPlayer) and then the wins so far (LonLonRanch_GambleRaceWinCount
+# against 0): none yet, the quest moved on and the rematch (Dm_LonLon_0030, a second race); one, the race's end and
+# Epona (the quest moved on, Dm_LonLon_0040, then the fence's escape as the game has it). Three same-size changes:
+# the quest moved on at the start goes on to Sub_Get_Epona_GambleRaceAfter in place of the course; its question of who
+# crossed first answers Link either way; and the first win's step that moves the quest on goes on to the second win's
+# steps in place of the rematch. One talk with Ingo ("I want to race", 20 rupees) then gives Epona, the quest moved
+# through the same steps as two races won. Moves no item. NOT SEEN IN PLAY.
+EPONA_FLOW = "Event/EventFlow/Get_Epona.bfevfl.zs"
+
+
+def ingo_races_skip(data):
+    """Ingo's races flow (EPONA_FLOW) with the races passed over (above): the new bytes, of the same size. ValueError:
+    not the file, or its steps not the ones this was written for."""
+    u16 = lambda at: struct.unpack_from("<H", data, at)[0]
+    u32 = lambda at: struct.unpack_from("<I", data, at)[0]
+    u64 = lambda at: struct.unpack_from("<Q", data, at)[0]
+    if data[:6] != b"BFEVFL" or u16(0x20) != 1:
+        raise ValueError("not an event flow file of one flowchart")
+    chart = u64(u64(0x28))
+    actors, count, events = u64(chart + 0x28), u16(chart + 0x16), u64(chart + 0x30)
+    names, entries, nent = u64(chart + 0x38), u64(chart + 0x40), u16(chart + 0x18)
+    text = lambda ptr: bytes(data[ptr + 2:ptr + 2 + u16(ptr)]).decode("utf-8", "replace") if 0 < ptr < len(data) - 2 else ""
+    ev = lambda i: events + 0x30 * i
+    kind = lambda i: data[ev(i) + 8]
+    act = lambda i: text(u64(u64(actors + 0x38 * u16(ev(i) + 0x0c) + (0x18 if kind(i) == 0 else 0x20)) + 8 * u16(ev(i) + 0x0e)))
+    cases = lambda i: {u32(u64(ev(i) + 0x18) + 8 * c): u64(ev(i) + 0x18) + 8 * c + 4 for c in range(u16(ev(i) + 0x0a))}
+
+    def flag(i):   # (a step's GameDataName, or "")
+        at = u64(ev(i) + 0x10)
+        keys = u64(at + 8) if at else 0
+        for k in range(u16(at + 2) if at and keys else 0):
+            if text(u64(keys + 8 + 16 * (k + 1) + 8)) == "GameDataName":
+                item = u64(at + 0x10 + 8 * k)
+                return text(u64(item + 0x10)) if data[item] in (0, 5) else ""
+        return ""
+    entry = {text(u64(names + 8 + 16 * (k + 1) + 8)): u16(entries + 0x20 * k + 0x1c) for k in range(nent)}
+    start, after = entry.get("Sub_Get_Epona_GambleRace_Start"), entry.get("Sub_Get_Epona_GambleRaceAfter")
+    if start is None or after is None or kind(start) != 4:
+        raise ValueError("no race start or race's end entry, or the start is not a sub-flow call")
+    moved = u16(ev(start) + 0x0a)   # (the quest moved on, after the race made ready)
+    if kind(moved) != 0 or act(moved) != "EventExecuteProgressChallengeStep":
+        raise ValueError("the race's start does not move the quest on after making the race ready")
+    who = [i for i in range(count) if kind(i) == 1 and flag(i) == "LonLonRanch_GambleRaceGoaledPlayer"]
+    # (the wins so far: the question Link's crossing first leads to; another, before a race, picks Ingo's horse's look)
+    wins = [u16(cases(who[0])[0])] if len(who) == 1 and set(cases(who[0])) == {0, 1} else []
+    wins = [i for i in wins if kind(i) == 1 and flag(i) == "LonLonRanch_GambleRaceWinCount"]
+    if len(who) != 1 or len(wins) != 1 or set(cases(who[0])) != {0, 1} or set(cases(wins[0])) != {0, 1, 2}:
+        raise ValueError("not one question of who crossed first and one of the wins so far, with the answers written for")
+    w = cases(wins[0])
+    first, second = u16(w[0]), u16(w[2])
+    if u16(w[1]) != first or kind(first) != 0 or act(first) != "EventExecuteProgressChallengeStep":
+        raise ValueError("the first win does not move the quest on")
+    out = bytearray(data)
+    struct.pack_into("<H", out, ev(moved) + 0x0a, after)   # (the race's start: on to the race's end)
+    c = cases(who[0])
+    struct.pack_into("<H", out, c[1], u16(c[0]))   # (who crossed first: Link either way)
+    struct.pack_into("<H", out, ev(first) + 0x0a, second)   # (the first win: on to the second's steps, Epona)
+    return bytes(out)
+
+
 # ---- Every Great Fairy from the start (asked for 2026-11-19) ----
 # Zelda's Lullaby on a fountain's Triforce mark plays TriForcePoint (FOUNTAIN_FLOW). For every fountain but one it then
 # asks IsGet.Item_DinFire and sends one answer to Navi's lines ("It doesn't seem like anything happened... Let's come
@@ -4440,7 +4504,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_skip_races": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6160,6 +6224,7 @@ def main():
     p.add_argument("--sword-shield", type=int, choices=(0, 1), help="in place of rando_sword_shield: 0 the Kokiri Sword stays in its chest and the Deku Shield on "
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
+    p.add_argument("--skip-races", action="store_true", help="as rando_skip_races=1: Ingo's two races passed over, Epona won at the first talk (ingo_races_skip); moves no item")
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
     p.add_argument("--letter", action="store_true", help="as rando_letter=1, Kakariko gate: Letter shuffled (letter_need)")
     p.add_argument("--master-sword", action="store_true", help="as rando_master_sword=1: the Master Sword is an item of the shuffle and the pedestal a place (MASTER_GIFT; needs Open Door of Time)")
@@ -6210,6 +6275,7 @@ def main():
     a.skulltulas_day = a.skulltulas_day or ini["rando_skulltulas_day"] != 0
     a.hints = a.hints or ini["rando_hints"] != 0
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
+    a.skip_races = a.skip_races or ini["rando_skip_races"] != 0
     a.letter = a.letter or ini["rando_letter"] == 1   # (Kakariko gate: 1 the letter shuffled, 2 open: the game's side's,
     #  host/hos_main.c oot_open_death_mountain, and the letter stays Zelda's)
     # (two settings since 2026-11-19: rando_ageless the swords, rando_ageless_items the age-only items; an older seed's
@@ -6335,6 +6401,8 @@ def main():
         stamp = stamp[:-1] + " hints %d\n" % HINTS_VERSION
     if a.chest_size:   # (moves no item: the same line)
         stamp = stamp[:-1] + " chests sized\n"
+    if a.skip_races:   # (moves no item either: the same line)
+        stamp = stamp[:-1] + " races skipped\n"
     if a.ageless:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " ageless %d\n" % a.ageless
     print("randomizer %s, seed %d, chests %s, dungeon keys %s, major items %s" % (
@@ -7030,6 +7098,14 @@ def main():
     except (OSError, ValueError, struct.error) as e:
         sys.exit("%s: %s. Nothing written." % (FOUNTAIN_FLOW, e))
     print("the Great Fairies' fountains: every one answers Zelda's Lullaby from the start")
+    if a.skip_races:   # (Ingo's races passed over: ingo_races_skip)
+        try:
+            was = gift_files[EPONA_FLOW] if EPONA_FLOW in gift_files else unpack(open(os.path.join(romfs, *EPONA_FLOW.split("/")), "rb").read(), zs, dicts)
+            gift_files[EPONA_FLOW] = ingo_races_skip(was)
+            gift_sizes[EPONA_FLOW[:-3]] = len(gift_files[EPONA_FLOW])
+        except (OSError, ValueError, struct.error) as e:
+            sys.exit("%s: %s. Nothing written." % (EPONA_FLOW, e))
+        print("Ingo's races: passed over, Epona won at the first talk")
     if fairy_cost:   # (the offerings: FAIRY_PRICES)
         try:
             for flow, price in fairy_cost.items():
