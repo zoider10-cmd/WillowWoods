@@ -109,7 +109,17 @@ DAMPE_FLOW = "Event/EventFlow/MiniGame_DampeRace.bfevfl.zs"
 DAMPE_LOGIC = ("Logic/UnderTheGrave_Prefab_0a7f.logic.module.ainb", "Logic/UnderTheGrave_Prefab_6971.logic.module.ainb")
 HOOK_AREAS = frozenset(("ForestTemple", "FireTemple"))   # (the temple's way in: the meadow's branch; the crater's grab points)
 HOOK_GIFTS = frozenset(("song_bolero",))                 # (Sheik on the crater's middle platform)
-HOOK_SKULLS = frozenset((0xfbbc2d490276c68e,))           # (Goron City's adult Gold Skulltula by the Lost Woods exit)
+# The Gold Skulltulas whose own rule (SKULLTULA_RULES, from the original's logic) says an adult kills them with the
+# Hookshot, which those rules folded into ADULT: Lake Hylia's lab tank, Kakariko's, the Kokiri Forest's, the Sacred
+# Forest Meadow's, Zora's River's two and Zora's Fountain's (night ones on walls), the Ice Cavern's three ("hookshot or
+# boomerang": the Boomerang is a child's, and only an adult goes in). Zora's Domain's takes the Bow as well (HOOK_OR).
+# The temples' and the desert's are covered by their areas or ask for the Longshot already. (Added 2026-11-21, the
+# owner's ask to make the Gold Skulltulas' logic accurate.)
+HOOK_SKULLS = frozenset((0xfbbc2d490276c68e,             # (Goron City's adult Gold Skulltula by the Lost Woods exit)
+                         0x6689bdebc95368eb, 0x2df265292516bdf0, 0x62c340f0b876c195, 0xc8db3346f78ea31b, 0x97824c2ffeaa877c,
+                         0x8325fea55edfbe97, 0x845ba51dc18c855e, 0xcdb49f5d0a67fcf6, 0x63701a2cf70b201c, 0x165fc0bc0aca1f6c,
+                         0x853b892663c0215d))
+HOOK_OR = {0x853b892663c0215d: "Item_Range_Bow"}         # (another item that does as well, by the Skulltula's rule)
 HOOK_SHUFFLED = False   # (main sets it)
 # Changes to the map that a shuffled game needs, written with every seed (and so only with the randomizer on):
 # {an actor's hash: {a key of its Dynamic block: the truth value it gets}}.
@@ -1854,10 +1864,12 @@ def either(ways):
     return Either(ways) if len(ways) > 1 else ways[0]
 
 
-def hook_need(need):
+def hook_need(need, also=None):
     """one way of a rule with the Hookshot asked for (Shuffle Dampe's Hookshot): the Longshot does as well, the game
-    keeping them as two items (the race asks for either). A way that names one of them already is as it was."""
-    return need if HOOK in need or LONG in need else either((need | {HOOK}, need | {LONG}))
+    keeping them as two items (the race asks for either), and `also` where a check's own rule takes another (HOOK_OR).
+    A way that names one of them already is as it was."""
+    ways = (HOOK, LONG) + ((also,) if also else ())
+    return need if any(w in need for w in ways) else either([need | {w} for w in ways])
 
 
 def hook_asks(area, event="", key=None, h=None):
@@ -6370,6 +6382,11 @@ def main():
         (lambda n: quest_need(n, pieces[h][0], placement >= 12, deep) if a.quests else n)(
             boss_need(bosses[h]) if h in bosses else TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0])))), h, pieces[h][0])
     piece_own = lambda h: CONTAINER if h in bosses else HEART   # (what a piece's or a container's spot holds of its own)
+    if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: a Skulltula's and a piece's rule too, wherever it is written: hook_asks)
+        skull_plain, heart_plain = skull_asks, heart_asks
+        skull_asks = lambda h, at=None: (lambda n, area: each(hook_need, n, HOOK_OR.get(h)) if hook_asks(area, h=h) else n)(
+            skull_plain(h, at), at or skulls[h][0])
+        heart_asks = lambda h: (lambda n: each(hook_need, n) if hook_asks(pieces[h][0], h=h) else n)(heart_plain(h))
     # (Songs: Anywhere: what the lessons asked about by name may hold, by this seed's items and the game's flags; the
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
     lesson_safe, lesson_only = frozenset(), {}
@@ -6429,9 +6446,7 @@ def main():
     if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: the Hookshot or the Longshot where the audit found it needed, hook_asks)
         for h, s in spots.items():
             if hook_asks(s[0], s[6] if len(s) > 6 else "", gifts[h].key if h in gifts else None, h):
-                needs[h] = each(hook_need, needs[h])
-        kept_tokens = [(each(hook_need, n) if hook_asks(every_skull[h][0], h=h) else n, t)
-                       for (n, t), h in zip(kept_tokens, [h for h in every_skull if h not in joined])]
+                needs[h] = each(hook_need, needs[h], HOOK_OR.get(h))
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,

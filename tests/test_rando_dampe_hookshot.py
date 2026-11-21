@@ -48,6 +48,14 @@ def main():
     check(not any(S.hook_asks(a) for a in ("KakarikoVillage", "HyruleField", "WaterTemple", "IceCavern", "Graveyard", "GoronCity",
                                            "DeathMountainCrater", "DodongoCavern")),
           "a place the audit found does not need the Hookshot asks for it")
+    # (the Gold Skulltulas an adult kills with the Hookshot, by their own rules: eleven of them, one taking the Bow too)
+    skulls = S.HOOK_SKULLS - {0xfbbc2d490276c68e}
+    check(len(skulls) == 11 and all(S.SKULLTULA_RULES.get(h, frozenset()) >= S.ADULT for h in skulls),
+          "the Gold Skulltulas an adult kills with the Hookshot are not the eleven adult ones of their rules")
+    zd = S.each(S.hook_need, S.ADULT, S.HOOK_OR.get(0x853b892663c0215d))
+    check(isinstance(zd, S.Either) and set(zd) == {S.ADULT | {S.HOOK}, S.ADULT | {S.LONG}, S.ADULT | {S.BOW}},
+          "Zora's Domain's Gold Skulltula does not take the Hookshot, the Longshot or the Bow")
+    check(S.each(S.hook_need, S.ADULT | {S.BOW}, S.BOW) == S.ADULT | {S.BOW}, "a rule with the other item asks for a hookshot too")
     check(S.DAMPE_EVENT == "MiniGame_DampeRace_OpenGoalTBox" and 0x4ccffbd5778b67e2 in S.DAMPE_RACE_CHESTS,
           "the race's chests are not known by their event (the Piece of Heart's asks for the Hookshot too: the tomb)")
 
@@ -77,7 +85,8 @@ def main():
           "the setting is not read, has no default, or is not in the seed's stamp")
     check("PROGRESSION = PROGRESSION | {HOOK}" in script and
           "lesson_only[DAMPE_HOOK_CHEST] = (lesson_safe," in script and
-          "needs[h] = each(hook_need, needs[h])" in script,
+          "needs[h] = each(hook_need, needs[h], HOOK_OR.get(h))" in script and
+          "skull_asks = lambda h, at=None: (lambda n, area: each(hook_need, n, HOOK_OR.get(h)) if hook_asks(area, h=h) else n)(" in script,
           "the Hookshot is not a gating item, the race's chest may hold anything, or the rules do not ask for it")
     check("gift_items(unpack(open(os.path.join(romfs, *rel.split(\"/\")), \"rb\").read(), zs, dicts), words, kinds=(0, 1))" in script and
           'ainb_exp_swap(data, "IsGet." + HOOK, "IsGet." + lesson_flag(race_now))' in script,
