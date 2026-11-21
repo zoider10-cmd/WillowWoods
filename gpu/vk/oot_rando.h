@@ -146,7 +146,7 @@
       "Deku Sticks, Deku Nuts, bombs, Bombchus, arrows and Deku Seeds are not used up: a moment after one is used, Link has as many as before (the bag filled again). Only what Link already carries: it gives nothing he has none of. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On") \
     X(SKIP_RACES, "Skip Ingo's races", "rando_skip_races", \
-      "Adult Link wins Epona from Ingo in one talk: say you want to race and pay the 20 rupees, and the race and its rematch are passed over as if Link had won both; Epona's scene and the ranch's locked gate follow as the game has them. Moves no item: it can be turned on for a seed being played.", \
+      "Adult Link wins Epona from Ingo in one race: win the first race and Epona's scene follows at once, with no rematch; the ranch's locked gate follows as the game has it. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On")
 
 enum {

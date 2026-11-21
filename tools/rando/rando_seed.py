@@ -3786,11 +3786,10 @@ def cucco_flow_one(data, want=CUCCOS):
 # the course; the race system plays Sub_Get_Epona_GambleRace_End at the line, whose Sub_Get_Epona_GambleRaceAfter asks
 # who crossed first (LonLonRanch_GambleRaceGoaledPlayer) and then the wins so far (LonLonRanch_GambleRaceWinCount
 # against 0): none yet, the quest moved on and the rematch (Dm_LonLon_0030, a second race); one, the race's end and
-# Epona (the quest moved on, Dm_LonLon_0040, then the fence's escape as the game has it). Three same-size changes:
-# the quest moved on at the start goes on to Sub_Get_Epona_GambleRaceAfter in place of the course; its question of who
-# crossed first answers Link either way; and the first win's step that moves the quest on goes on to the second win's
-# steps in place of the rematch. One talk with Ingo ("I want to race", 20 rupees) then gives Epona, the quest moved
-# through the same steps as two races won. Moves no item. NOT SEEN IN PLAY.
+# Epona (the quest moved on, Dm_LonLon_0040, then the fence's escape as the game has it). One same-size change: the
+# first win's step that moves the quest on goes on to the second win's steps in place of the rematch, so one race won
+# gives Epona. (Both races passed over, the start sent on to the race's end with Link counted the winner, crashed the
+# game in play as the race began, 2026-11-21.) Moves no item. NOT SEEN IN PLAY.
 EPONA_FLOW = "Event/EventFlow/Get_Epona.bfevfl.zs"
 
 
@@ -3837,9 +3836,8 @@ def ingo_races_skip(data):
     if u16(w[1]) != first or kind(first) != 0 or act(first) != "EventExecuteProgressChallengeStep":
         raise ValueError("the first win does not move the quest on")
     out = bytearray(data)
-    struct.pack_into("<H", out, ev(moved) + 0x0a, after)   # (the race's start: on to the race's end)
-    c = cases(who[0])
-    struct.pack_into("<H", out, c[1], u16(c[0]))   # (who crossed first: Link either way)
+    # (the race's start sent on to the race's end, Link counted the winner, crashed the game in play 2026-11-21 as the
+    # race began (an indirect call to no function in the event system, lr 0x8124948c): the first race is played)
     struct.pack_into("<H", out, ev(first) + 0x0a, second)   # (the first win: on to the second's steps, Epona)
     return bytes(out)
 
@@ -6224,7 +6222,7 @@ def main():
     p.add_argument("--sword-shield", type=int, choices=(0, 1), help="in place of rando_sword_shield: 0 the Kokiri Sword stays in its chest and the Deku Shield on "
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
-    p.add_argument("--skip-races", action="store_true", help="as rando_skip_races=1: Ingo's two races passed over, Epona won at the first talk (ingo_races_skip); moves no item")
+    p.add_argument("--skip-races", action="store_true", help="as rando_skip_races=1: Ingo's rematch passed over, Epona won with the first race (ingo_races_skip); moves no item")
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
     p.add_argument("--letter", action="store_true", help="as rando_letter=1, Kakariko gate: Letter shuffled (letter_need)")
     p.add_argument("--master-sword", action="store_true", help="as rando_master_sword=1: the Master Sword is an item of the shuffle and the pedestal a place (MASTER_GIFT; needs Open Door of Time)")
@@ -7105,7 +7103,7 @@ def main():
             gift_sizes[EPONA_FLOW[:-3]] = len(gift_files[EPONA_FLOW])
         except (OSError, ValueError, struct.error) as e:
             sys.exit("%s: %s. Nothing written." % (EPONA_FLOW, e))
-        print("Ingo's races: passed over, Epona won at the first talk")
+        print("Ingo's races: the rematch passed over, Epona won with the first race")
     if fairy_cost:   # (the offerings: FAIRY_PRICES)
         try:
             for flow, price in fairy_cost.items():
