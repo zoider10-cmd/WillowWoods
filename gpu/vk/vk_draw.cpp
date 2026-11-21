@@ -98,6 +98,7 @@ extern "C" unsigned ZSTD_isError(size_t code);
 #include "vk_pipelines.h"
 #include "warm_bounded.h"
 #include "crash_markers.h"   // (the files that count the starts that crashed in a step: a close puts them back)
+#include "foliage_shadow.h"   // ((Triforce v0.6.0) RX_VK_FOLIAGE_SHADOW_CULL: the foliage in the far shadow cascades, one face culled)
 #include "vk_work.h"   // (after the others: counts the commands that do GPU work, for full_barrier)
 
 namespace mkwvk {
@@ -5525,7 +5526,37 @@ bool dyn_same(const float* fp, int nf, const uint32_t* up, int nu, const uint8_t
         if (raw[i] != craw[i]) return false;
     return true;
 }
+/// (Triforce v0.6.0, after NX2navi 754ded9) The face a draw culls, NVN's: the game's, or with RX_VK_FOLIAGE_SHADOW_CULL (on from
+/// layer 1 unless it is off) a mesh program's draw into the sun's far shadow cascades with one face culled (foliage_shadow.h).
+/// dyn_pack keeps it, so a draw into another cascade layer with the same state is not taken for the same dynamic state
+uint32_t draw_cull(const NvnState& s, const Targets& at) {
+    static_assert(foliage_shadow::kNone == NVN_FACE_NONE && foliage_shadow::kFront == NVN_FACE_FRONT &&
+                  foliage_shadow::kBack == NVN_FACE_BACK);
+    static const foliage_shadow::Rule rule = [] {
+        const char* e = getenv("RX_VK_FOLIAGE_SHADOW_CULL");
+        const foliage_shadow::Rule r = foliage_shadow::parse(e);
+        if (r.from >= 0)
+            logf("vk: RX_VK_FOLIAGE_SHADOW_CULL=%s: mesh draws into the sun's shadow cascades from layer %d on that cull neither face "
+                 "drawn with their %s faces culled (=off: as the game draws them)", e && *e ? e : "(default)", r.from,
+                 r.front ? "front" : "back");
+        else
+            logf("vk: RX_VK_FOLIAGE_SHADOW_CULL=%s: the sun's shadow cascades' mesh draws cull as the game asks", e);
+        return r;
+    }();
+    const uint32_t game = (uint32_t)s.poly.cull;
+    if (rule.from < 0) return game;
+    const bool mesh_program = cur_program && (cur_program->mesh || cur_program->fallback);
+    const int c = foliage_shadow::cull(rule, (int)game, mesh_program, at.n, at.depth != nullptr, at.width, at.height, at.depth_layer);
+    if (c != (int)game) {
+        static std::atomic<int> told{0};
+        if (told.fetch_add(1, std::memory_order_relaxed) < 6)
+            logf("vk: foliage shadow cull: program %016llx's draw into the cascade layer %u (%ux%u) with its %s faces culled",
+                 (unsigned long long)cur_program->key, at.depth_layer, at.width, at.height, c == foliage_shadow::kFront ? "front" : "back");
+    }
+    return (uint32_t)c;
+}
 constexpr int kDynF = 13, kDynU = 35;
+constexpr int kDynCull = 23;   // ((Triforce) the packed word draw_cull's face is in, which dynamic_state takes)
 struct DynFast {
     bool on = false;
     float fp[kDynF]{};
@@ -5550,7 +5581,7 @@ int dyn_pack(const NvnState& s, const Targets& at, VkPrimitiveTopology topo, boo
     up[15] = (uint32_t)s.color.blend_en, up[16] = s.chmask.mask;
     up[17] = (uint32_t)topo, up[18] = mesh ? 1u : 0u;
     up[19] = s.restart ? 1u : 0u, up[20] = s.raster_discard ? 1u : 0u, up[21] = s.depth_clamp ? 1u : 0u, up[22] = s.ms.a2c ? 1u : 0u;
-    up[23] = (uint32_t)s.poly.cull, up[24] = (uint32_t)s.poly.front, up[25] = (uint32_t)s.poly.mode, up[26] = (uint32_t)s.poly.offset_en;
+    up[kDynCull] = draw_cull(s, at), up[24] = (uint32_t)s.poly.front, up[25] = (uint32_t)s.poly.mode, up[26] = (uint32_t)s.poly.offset_en;
     for (int i = 0; i < 8; i++) up[27 + i] = (uint32_t)at.color_format[i];
     static_assert(sizeof(s.ds) + sizeof(s.blend) + 8 <= 160);
     int atb = 0;
@@ -5645,10 +5676,11 @@ void dynamic_state(VkCommandBuffer cmd, const NvnState& s, const Targets& at, Vk
             if (cu != 0 || cs != 0) d.bias[0] += cu, d.bias[2] += cs, d.bias_en = true;
         }
     }
+    const uint32_t cull = du[kDynCull];   // ((Triforce) the game's face, or RX_VK_FOLIAGE_SHADOW_CULL's: draw_cull, by dyn_pack)
     d.cull = sw().no_cull ? VK_CULL_MODE_NONE
-           : s.poly.cull == NVN_FACE_FRONT ? VK_CULL_MODE_FRONT_BIT
-           : s.poly.cull == NVN_FACE_BACK ? VK_CULL_MODE_BACK_BIT
-           : s.poly.cull == NVN_FACE_FRONT_AND_BACK ? VK_CULL_MODE_FRONT_AND_BACK : VK_CULL_MODE_NONE;
+           : cull == NVN_FACE_FRONT ? VK_CULL_MODE_FRONT_BIT
+           : cull == NVN_FACE_BACK ? VK_CULL_MODE_BACK_BIT
+           : cull == NVN_FACE_FRONT_AND_BACK ? VK_CULL_MODE_FRONT_AND_BACK : VK_CULL_MODE_NONE;
     // The viewport is flipped (negative height), which reverses the screen-space winding, so NVN's front face maps
     // straight across: telling Vulkan the opposite is what culled every triangle (the frame was black).
     d.front = s.poly.front == NVN_FRONT_FACE_CCW ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
