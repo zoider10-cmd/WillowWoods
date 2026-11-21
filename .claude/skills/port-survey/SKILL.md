@@ -77,6 +77,8 @@ bash .claude/skills/port-survey/scripts/bench.sh <name> base <variant> [reps=3] 
 - `gate.py` prints each run (mean fps, 1% low, worst frame) and the verdict: **FAIL** when the mean or the 1% low
   drops by more than the noise (the larger spread of either side's runs, at least 2%: an A/A of one build spread 67-73 fps, so a speed change needs 5 reps or more), PASS when one rises past it, NOISE when
   neither. FAIL is dropped; NOISE is kept only for a fix or a feature, not for a speed change.
+- The Market's circling drifts out to the drawbridge now and then (about 1 run in 10): `gate.py` lists a run with a
+  scene load in its window as left the scene and doesn't count it. When many are left out, add reps.
 - Picture: look at the runs' `shots/` side by side (rando-test's grid.py); a change that alters the picture is a
   question for the owner.
 - A switch's measured result goes into the findings file with the runs' names.

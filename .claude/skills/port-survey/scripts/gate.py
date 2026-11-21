@@ -4,10 +4,13 @@ Per run, over the last --win seconds: mean fps, the 1% low (fps of the 99th-perc
 frame. FAIL when the median mean-fps or 1% low drops more than 2% and B loses
 nearly every pair of runs (Mann-Whitney, U <= 16% of pairs), or drops more than 5% at all; PASS when one rises more
 than 2% and B wins nearly every pair. A same-build A/A on this PC spread 67-73 fps: use 5 reps a side. Prints a table and PASS, FAIL or NOISE (no clear change either way, which also passes the gate:
-'no worse'). A run with fewer than 500 frames (crashed, did not load) makes it FAIL."""
+'no worse'). A run with fewer than 500 frames (crashed, did not load) makes it FAIL. A run with a frame over
+LOAD_MS in its window walked out of the scene (the Market's circling drifts out to the drawbridge now and then, and a
+scene load is ~0.3 s): it is listed but not counted."""
 import sys, os, glob, re, statistics as st
 
 P = "F:/Games/perf-ab/runs"
+LOAD_MS = 150.0   # (a scene load; the Market's worst frames in the window are 20-35 ms)
 
 
 def one(path, win):
@@ -18,6 +21,8 @@ def one(path, win):
     w = sorted(ms for s, ms in t if s >= t[-1][0] - win)
     if len(w) < 500:
         return None
+    if w[-1] > LOAD_MS:
+        return {"left": next(s for s, ms in t if s >= t[-1][0] - win and ms > LOAD_MS), "worst": w[-1]}
     return {"fps": 1000 / st.mean(w), "low1": 1000 / w[int(len(w) * .99)], "worst": w[-1], "n": len(w)}
 
 
@@ -31,8 +36,11 @@ def main(a):
         res[v] = []
         for f in sorted(glob.glob(os.path.join(P, "%s_%s_*" % (name, v), "frames.csv"))):
             r = one(f, win)
-            print("%-40s %s" % (os.path.basename(os.path.dirname(f)),
-                                "no good run" if r is None else "%.1f fps, 1%% low %.1f, worst %.1f ms (%d frames)" % (r["fps"], r["low1"], r["worst"], r["n"])))
+            run = os.path.basename(os.path.dirname(f))
+            if r is not None and "left" in r:
+                print("%-40s left the scene (a %.0f ms load at %.0f s): not counted" % (run, r["worst"], r["left"]))
+                continue
+            print("%-40s %s" % (run, "no good run" if r is None else "%.1f fps, 1%% low %.1f, worst %.1f ms (%d frames)" % (r["fps"], r["low1"], r["worst"], r["n"])))
             res[v].append(r)
     def upscaler(v):   # (what each side's runs actually used, from their logs: two sides set up differently are not comparable)
         out = set()
