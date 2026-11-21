@@ -147,6 +147,9 @@
       "Off", "On") \
     X(SKIP_RACES, "Skip Ingo's races", "rando_skip_races", \
       "Adult Link wins Epona from Ingo in one race: win the first race and Epona's scene follows at once, with no rematch; the ranch's locked gate follows as the game has it. Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
+    X(EPONA_SONG, "Epona by Epona's Song", "rando_epona_song", \
+      "The first time adult Link plays Epona's Song where he can ride, Epona becomes his horse and comes: no ranch, no races. Once young Link has had Malon's lesson, the Epona quest is done as well (Talon goes home, the horseback archery opens). Experimental. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On")
 
 enum {

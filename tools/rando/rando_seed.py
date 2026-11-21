@@ -3842,6 +3842,187 @@ def ingo_races_skip(data):
     return bytes(out)
 
 
+# ---- Epona by Epona's Song (rando_epona_song, asked 2026-11-21, bugs.md 98) ----
+# Owning a horse is not a flag: only EventCopyAndRegisterOwnedHorse on an Epona actor writes it (Get_Epona's ranch
+# escape, its _Warp entries), and Epona's Song (EPONA_SONG_FLOW) only calls an owned horse: an adult without one is
+# answered by the ranch's horses inside its fence and by nothing elsewhere. With this setting the song's question
+# "does Link own a horse?" sends "no", where riding is allowed, to a step that starts an event of our own (EPONA_OWN,
+# as the ocarina event starts Pierre's: EventSystemActor.EventTransition) and then on to the song's own "yes" (it calls
+# the horse). The event makes an Epona (EventMemberCreateMethod 1: no flow of the game makes a horse, NPCs and props
+# are made this way), registers her as the escape does, takes her off stage, and, once Malon's lesson has played
+# (HavePlayedEvent.Dm_MelodyGet_Epona), moves the Epona quest to Complete and sets the escape's
+# Skullchild_JustAfterGetEpona, as the escape does: before the lesson the quest is left as it is, so the lesson (a
+# check of the shuffle, made only at the quest's step ReadyForGetEponaSong) is not taken away. The event is listed in
+# the event tables (EVENT_TABLES) from Pierre's rows, and among the ocarina event's child events as his is.
+# The idea is REALAZK's OOTRR (randomizer/core/src/open_world/skips.rs, GPL-3.0-or-later, untested there); the steps
+# and their settings are the game's own (Get_Epona's escape, Dm_SY_Ocarina's Pierre). Flow files are written with
+# evfl (tools/rando/evfl, leoetlino, GPL-2.0-or-later). Moves no item. NOT SEEN IN PLAY.
+EPONA_SONG_FLOW = "Event/EventFlow/Dm_SY_Ocarina_EponaSong.bfevfl.zs"
+EPONA_OWN = "WillowEponaOwn"
+EPONA_OWN_FLOW = "Event/EventFlow/%s.bfevfl.zs" % EPONA_OWN
+EVENT_TABLES = ("RSDB/EventSetting.Product.111.rstbl.byml.zs", "RSDB/GameAnalyzedEventInfo.Product.111.rstbl.byml.zs")
+EPONA_TEMPLATE = "AppearPierre_ByScarecrowSong"   # (the rows copied: a flowchart event the ocarina event starts)
+EPONA_LESSON = "HavePlayedEvent.Dm_MelodyGet_Epona"
+
+
+def evfl_module():
+    """the evfl library kept beside this file (tools/rando/evfl; -I leaves this folder off the path)"""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import evfl
+    return evfl
+
+
+def epona_song_flows(song_raw):
+    """(Epona's Song's flow with the unowned answer sent to EPONA_OWN, the new event's flow) as bytes, from the game's
+    EPONA_SONG_FLOW unpacked. ValueError: the song's flow is not the one this was written for."""
+    import copy
+    import io
+    evfl = evfl_module()
+
+    def holder(actor, name, kind="actions"):
+        got = [h for h in getattr(actor, kind) if h.v == name]
+        if got:
+            return got[0]
+        h = evfl.common.StringHolder(name)
+        getattr(actor, kind).append(h)
+        return h
+
+    def container(**items):
+        c = evfl.Container()
+        c.data.update(items)
+        return c
+
+    def action(name, actor, act, params, nxt=None):
+        e = evfl.Event()
+        e.name = name
+        e.data = evfl.ActionEvent()
+        e.data.actor.v, e.data.actor_action.v, e.data.params = actor, holder(actor, act), params
+        e.data.nxt.v = nxt
+        return e
+
+    def switch(name, actor, query, params, cases):
+        e = evfl.Event()
+        e.name = name
+        e.data = evfl.SwitchEvent()
+        e.data.actor.v, e.data.actor_query.v, e.data.params = actor, holder(actor, query, "queries"), params
+        for value, to in cases.items():
+            e.data.cases[value] = evfl.util.RequiredIndex()
+            e.data.cases[value].v = to
+        return e
+
+    song = evfl.EventFlow()
+    song.read(song_raw)
+    fc = song.flowchart
+    if fc is None or fc.name != "Dm_SY_Ocarina_EponaSong" or any(e.name.startswith("WillowEpona") for e in fc.events):
+        raise ValueError("not the game's Epona's Song flow, or already changed")
+    asks = [e for e in fc.events if isinstance(e.data, evfl.SwitchEvent) and e.data.actor_query.v.v == "EventQueryHasOwnedHorse"
+            and set(e.data.cases) == {0, 1}]
+    if len(asks) != 1:
+        raise ValueError("not one question of an owned horse with both answers")
+    ask = asks[0]
+    owned, unowned = ask.data.cases[0].v, ask.data.cases[1].v
+    if not isinstance(owned.data, evfl.SwitchEvent) or owned.data.actor_query.v.v != "EventQueryIsCurrentSceneEnableRide":
+        raise ValueError("the owned horse's way does not start by asking whether riding is allowed here")
+    base = fc.actors[0].params
+    mover = [a for a in fc.actors if a.identifier.name == "EventSystemActor" and not a.identifier.sub_name]
+    if not mover:
+        a = evfl.Actor()
+        a.identifier = evfl.ActorIdentifier("EventSystemActor")
+        a.params = copy.deepcopy(base)
+        a.params.data["EventMemberCreateMethod"] = 0
+        a.concurrent_clips = fc.actors[0].concurrent_clips
+        fc.actors.append(a)
+        mover = [a]
+    start = action("WillowEpona1", mover[0], "EventTransition",
+                   container(EventName=EPONA_OWN, IsWaitEnd=True, SpecialEventActionType=1, FadeInTypeEventEnd=0), owned)
+    ride = switch("WillowEpona0", owned.data.actor.v, "EventQueryIsCurrentSceneEnableRide", copy.deepcopy(owned.data.params),
+                  {0: start, 1: unowned})
+    fc.events += [ride, start]
+    ask.data.cases[1].v = ride
+    out = io.BytesIO()
+    song.write(out)
+    song_new = out.getvalue()
+
+    # ---- the new event: its own flowchart in a copy of the song's file ----
+    own = evfl.EventFlow()
+    own.read(song_raw)
+    own.name = EPONA_OWN
+    f = own.flowchart
+    f.name = EPONA_OWN
+    like = {a.identifier.name: a for a in f.actors if not a.identifier.sub_name}
+    if "GameDataActor" not in like:
+        raise ValueError("the song's flow has no GameDataActor to copy")
+    plain = copy.deepcopy(like["GameDataActor"].params)
+
+    def member(name, **extra):
+        a = evfl.Actor()
+        a.identifier = evfl.ActorIdentifier(name)
+        a.params = copy.deepcopy(plain)
+        a.params.data.update(extra)
+        a.concurrent_clips = like["GameDataActor"].concurrent_clips
+        return a
+    # (an Epona the event makes: the member settings Get_Epona gives the ranch's Epona, made by the event)
+    epona = member("Animal_Epona_Adult", EventMemberCreateMethod=1)
+    for slot in ("Weapon", "SubWeapon", "Shield", "Bow"):
+        epona.params.data["EquipmentUser_%s" % slot] = ""
+        epona.params.data["EquipmentUser_%s_EquipmentState" % slot] = 0
+    for slot in ("Tool", "SubTool", "Accessory1", "Accessory2", "Accessory3", "Accessory4"):
+        epona.params.data["EquipmentUser_%s" % slot] = ""
+    data, quest = member("GameDataActor", EventMemberCreateMethod=0), member("ChallengeSystemActor", EventMemberCreateMethod=0)
+    f.actors = [epona, data, quest]
+    flag = action("WillowEponaOwn4", data, "EventTriggerSetGameDataBool",
+                  container(Value=True, Index=-1, GameDataName="Skullchild_JustAfterGetEpona"))
+    done = action("WillowEponaOwn3", quest, "EventExecuteProgressChallengeStep",
+                  container(ChallengeName="Get_Epona", IsWaitEnd=True, IsIgnoreCompletedChallenge=False, StepName="Complete",
+                            IsIgnoreChallengeProgressUI=False), flag)
+    lesson = switch("WillowEponaOwn2", data, "EventQueryIsGameDataBool", container(GameDataName=EPONA_LESSON, Index=-1),
+                    {0: done, 1: None})
+    off = action("WillowEponaOwn1", epona, "EventGoOffstageForUser",
+                 container(IsWaitEnd=True, IsSleepXLink=True, ExecuteSetSpeedZeroEveryFrame=False, IsRidingTargetGoOffstage=False), lesson)
+    reg = action("WillowEponaOwn0", epona, "EventCopyAndRegisterOwnedHorse", container(IsWaitEnd=True), off)
+    f.events = [reg, off, lesson, done, flag]
+    lesson.data.cases.pop(1)   # (not played: the event ends there, the quest as it was)
+    entry = evfl.EntryPoint(EPONA_OWN)
+    entry.main_event.v = reg
+    f.entry_points = [entry]
+    out = io.BytesIO()
+    own.write(out)
+    return song_new, out.getvalue()
+
+
+def epona_event_rows(data, analyzed):
+    """An event table (EVENT_TABLES: analyzed False the settings', True the analyzed one's) with a row for EPONA_OWN
+    copied from EPONA_TEMPLATE's, and (the analyzed one) EPONA_OWN among the ocarina event's child events: the new bytes.
+    ValueError: no such rows, or EPONA_OWN there already."""
+    tree, version = byml_parse(data)
+    if tree is None or tree[0] != "array":
+        raise ValueError("an event table that is not a list of rows")
+    by = {r[1]["__RowId"][1]: r for r in tree[1] if r[0] == "dict" and "__RowId" in r[1]}
+    if EPONA_TEMPLATE not in by or EPONA_OWN in by:
+        raise ValueError("the table has no row of %s, or one of %s already" % (EPONA_TEMPLATE, EPONA_OWN))
+    row = collections.OrderedDict(by[EPONA_TEMPLATE][1])
+    row["__RowId"] = ("string", EPONA_OWN)
+    if analyzed:
+        if "SubFlowList" in row:
+            row["SubFlowList"] = ("array", [])
+        ocarina = by.get("Dm_SY_Ocarina")
+        kids = ocarina[1].get("ChildEventList") if ocarina else None
+        if not kids or kids[0] != "array":
+            raise ValueError("the ocarina event has no list of child events")
+        names = sorted([k[1] for k in kids[1]] + [EPONA_OWN])
+        ocarina[1]["ChildEventList"] = ("array", [("string", n) for n in names])
+    else:
+        row["FlowchartFileName"] = ("string", "Work/Event/EventFlow/%s.evfc" % EPONA_OWN)
+        row["EntryPointName"] = ("string", EPONA_OWN)
+        if "Dm_SY_Ocarina" in by and "EventBaseSetting" in by["Dm_SY_Ocarina"][1]:   # (at Link, as the ocarina event)
+            row["EventBaseSetting"] = by["Dm_SY_Ocarina"][1]["EventBaseSetting"]
+    rows = list(tree[1]) + [("dict", row)]
+    rows.sort(key=lambda r: r[1]["__RowId"][1])
+    return byml_build(("array", rows), version)
+
+
 # ---- Every Great Fairy from the start (asked for 2026-11-19) ----
 # Zelda's Lullaby on a fountain's Triforce mark plays TriForcePoint (FOUNTAIN_FLOW). For every fountain but one it then
 # asks IsGet.Item_DinFire and sends one answer to Navi's lines ("It doesn't seem like anything happened... Let's come
@@ -4502,7 +4683,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_skip_races": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_skip_races": 0, "rando_epona_song": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6222,7 +6403,8 @@ def main():
     p.add_argument("--sword-shield", type=int, choices=(0, 1), help="in place of rando_sword_shield: 0 the Kokiri Sword stays in its chest and the Deku Shield on "
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
-    p.add_argument("--skip-races", action="store_true", help="as rando_skip_races=1: Ingo's rematch passed over, Epona won with the first race (ingo_races_skip); moves no item")
+    p.add_argument("--epona-song", action="store_true", help="as rando_epona_song=1: the first time an adult plays Epona's Song where Link can ride, Epona is his (epona_song_flows); moves no item")
+    p.add_argument("--skip-races",action="store_true", help="as rando_skip_races=1: Ingo's rematch passed over, Epona won with the first race (ingo_races_skip); moves no item")
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
     p.add_argument("--letter", action="store_true", help="as rando_letter=1, Kakariko gate: Letter shuffled (letter_need)")
     p.add_argument("--master-sword", action="store_true", help="as rando_master_sword=1: the Master Sword is an item of the shuffle and the pedestal a place (MASTER_GIFT; needs Open Door of Time)")
@@ -6274,6 +6456,7 @@ def main():
     a.hints = a.hints or ini["rando_hints"] != 0
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.skip_races = a.skip_races or ini["rando_skip_races"] != 0
+    a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.letter = a.letter or ini["rando_letter"] == 1   # (Kakariko gate: 1 the letter shuffled, 2 open: the game's side's,
     #  host/hos_main.c oot_open_death_mountain, and the letter stays Zelda's)
     # (two settings since 2026-11-19: rando_ageless the swords, rando_ageless_items the age-only items; an older seed's
@@ -6401,6 +6584,8 @@ def main():
         stamp = stamp[:-1] + " chests sized\n"
     if a.skip_races:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " races skipped\n"
+    if a.epona_song:   # (moves no item either: the same line)
+        stamp = stamp[:-1] + " epona by song\n"
     if a.ageless:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " ageless %d\n" % a.ageless
     print("randomizer %s, seed %d, chests %s, dungeon keys %s, major items %s" % (
@@ -7004,6 +7189,7 @@ def main():
     # ---- TEST: a character's gift made another item ----
     # ---- the gifts: each scene's flow made to give what the shuffle put there (and the tests' of test_gifts.txt) ----
     gift_files, gift_sizes = {}, {}
+    gift_new = set()   # (files of our own, not the game's: their size table entries are made, EPONA_OWN_FLOW)
     swaps = collections.OrderedDict()   # a flow -> {the item it names: the item it gives now}
     for h, g in gifts.items():
         if gives[h] != g.item and g.flow and h not in lessons:   # (a shop's shelf has no scene: its actor is the sale; the songs: below)
@@ -7104,6 +7290,19 @@ def main():
         except (OSError, ValueError, struct.error) as e:
             sys.exit("%s: %s. Nothing written." % (EPONA_FLOW, e))
         print("Ingo's races: the rematch passed over, Epona won with the first race")
+    if a.epona_song:   # (Epona by Epona's Song: epona_song_flows, epona_event_rows)
+        try:
+            was = gift_files[EPONA_SONG_FLOW] if EPONA_SONG_FLOW in gift_files else unpack(open(os.path.join(romfs, *EPONA_SONG_FLOW.split("/")), "rb").read(), zs, dicts)
+            gift_files[EPONA_SONG_FLOW], gift_files[EPONA_OWN_FLOW] = epona_song_flows(was)
+            gift_new.add(EPONA_OWN_FLOW[:-3])
+            for rel, analyzed in zip(EVENT_TABLES, (False, True)):
+                was = gift_files[rel] if rel in gift_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+                gift_files[rel] = epona_event_rows(was, analyzed)
+            for rel in (EPONA_SONG_FLOW, EPONA_OWN_FLOW) + EVENT_TABLES:
+                gift_sizes[rel[:-3]] = len(gift_files[rel])
+        except (OSError, ValueError, struct.error, ImportError) as e:
+            sys.exit("Epona by Epona's Song: %s. Nothing written." % e)
+        print("Epona's Song: the first time an adult plays it where Link can ride, Epona is his")
     if fairy_cost:   # (the offerings: FAIRY_PRICES)
         try:
             for flow, price in fairy_cost.items():
@@ -7704,7 +7903,7 @@ def main():
         try:
             new_tables["System/Resource/" + n] = shop_table(size_table_update(size_table_add(size_table_raise(size_table_update(
                 size_table_update(unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts), sizes), pack_sizes, PACK_EXTRA),
-                pack_parts - pack_new), pack_new), gift_sizes, FLOW_EXTRA))
+                pack_parts - pack_new), pack_new | gift_new), gift_sizes, FLOW_EXTRA))
         except Exception as e:
             sys.exit("the size table %s could not be updated (%s). Nothing written." % (n, e))
 
