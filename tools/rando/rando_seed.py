@@ -60,7 +60,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 16  # 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 17  # 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -493,6 +493,21 @@ QUEST_GATES = frozenset((BR, SSC))
 GT, ZT = "Obj_Armor_Goron", "Obj_Armor_Zora"
 TUNICS = frozenset((GT, ZT))
 TUNIC_AREAS = {"DeathMountainCrater": GT, "FireTemple": GT, "WaterTemple": ZT, "ZoraFountain": ZT}
+# From placement 17 (TUNIC_WATER_FROM, the owner's ask 2026-11-21 "make the logic more accurate"), checked against the
+# game's own data. Heat: each dungeon's rooms are marked hot in Scene/Component/DungeonParam (EnvParamFile
+# ScorchingRoom): Death Mountain Crater's whole field (its grottos and the Great Fairy's fountain are not, but are
+# reached through it), Fire Temple rooms (the temple is reached through the crater), the Gerudo Training Ground's rooms
+# 4 and 6, Ganon's Castle's room 10, Volvagia's. All already ask for the Goron Tunic: the crater and the Fire Temple
+# by TUNIC_AREAS, the others by every rule past the Fire and Water Temples. No other place is hot (Dodongo's Cavern,
+# Goron City and the trail are not). Deep water has no mark of its own: it is where the Iron Boots sink Link. So from
+# 17 a way of a rule that asks for the Iron Boots asks for the Zora Tunic too (deep_need), which adds Lake Hylia's lab
+# tank Gold Skulltula (it asked for the boots alone), and Zora's Fountain leaves TUNIC_AREAS: only its Piece of Heart
+# at the bottom (70.9 m; the others stand at 103-133 m, on the ice and the shore) asks for the boots and the tunic.
+# Its purple rupee chest and its Piece of Heart on the ice ask for an adult alone (TUNIC_DRY), not its area's boots.
+# The "ColdRoom" mark (the Ice Cavern, adult Zora's Domain and Fountain while frozen, two of Ganon's Castle's rooms) is
+# not a tunic's: the original asks for none there, and the owner has met no harm from cold.
+TUNIC_WATER_FROM = 17
+TUNIC_DRY = {0xd0ee852c5e8a8bea: ADULT, 0xac2e26b5ec7da3a2: ADULT}   # (Zora's Fountain: the purple rupee chest; Piece of Heart #2)
 CHILD_BOMBS = CHILD | {BB}   # (with the bracelet too, until a bomb was lifted without it: bomb_lift)
 GROWN = ADULT | QUEST_GATES
 Gift = collections.namedtuple("Gift", "key flow olds item area name need when entry", defaults=(None,))
@@ -1780,7 +1795,7 @@ def gift_hash(key):
     return 0xF1F7000000000000 | zlib.crc32(key.encode())
 
 
-def quest_need(need, area, tunics=False):
+def quest_need(need, area, tunics=False, deep=False):
     """what a chest or a Gold Skulltula asks for (by the rules made before Quest rewards) with the gifts' two gating
     items named: the bracelet in Dodongo's Cavern, whose way in is a bomb flower's, and where a rule asks for
     everything; the Silver Scale wherever an adult is. Bombs no longer ask for the bracelet: every seed lets Link
@@ -1791,8 +1806,10 @@ def quest_need(need, area, tunics=False):
     if need >= ADULT:
         need.add(SSC)
     if tunics:   # (placement 12: an adult's check where heat or deep water hurts, and every rule past the Fire and Water Temples)
-        if need >= ADULT and area in TUNIC_AREAS:
+        if need >= ADULT and area in TUNIC_AREAS and not (deep and area == "ZoraFountain"):
             need.add(TUNIC_AREAS[area])
+        if deep and IRON in need:   # (placement 17: the Iron Boots sink Link into deep water, TUNIC_WATER_FROM)
+            need.add(ZT)
         if need >= MEDALS3 or need >= THIRTEEN:
             need |= TUNICS
     return frozenset(need)
@@ -6289,6 +6306,9 @@ def main():
     rng = random.Random("stage2:%d:%d:%d%s%s%s" % (seed, which, min(keys_mode, 1), ":events" if a.event_chests else "", ":logic" if logic else "",
                                                    ":songs2" if a.songs == 2 else ":songs" if a.songs else ""))
     needs = {h: rule(s[0], s[6]) for h, s in spots.items()}
+    deep = a.quests and placement >= TUNIC_WATER_FROM   # (the tunics by hot rooms and deep water, TUNIC_WATER_FROM)
+    if deep:   # (Zora's Fountain's chest above its water: an adult alone, TUNIC_DRY)
+        needs = {h: TUNIC_DRY.get(h, n) for h, n in needs.items()}
     door_rules = a.open_door or (a.door_song and _TIME in PROGRESSION)   # (DOOR_SONG with the songs shuffled)
     if placement >= 10:   # (a chest's own rule, CHEST_NEEDS)
         needs = {h: chest_need(h, n, door_rules) for h, n in needs.items()}
@@ -6296,7 +6316,7 @@ def main():
     slingshot_room |= {h for h in DEKU_THIRD_FLOOR if h in needs} if placement >= DEKU_THIRD_FROM else set()
     needs = {h: n | CHILD if h in slingshot_room else n for h, n in needs.items()}
     if a.quests:   # (the rules with the gifts' two gating items named; a gift asks for what its line of GIFTS says)
-        needs = {h: quest_need(gifts[h].need, gifts[h].area, placement >= 12) if h in gifts else quest_need(n, spots[h][0], placement >= 12) for h, n in needs.items()}
+        needs = {h: quest_need(gifts[h].need, gifts[h].area, placement >= 12, deep) if h in gifts else quest_need(n, spots[h][0], placement >= 12, deep) for h, n in needs.items()}
     elif gifts:    # (the scrubs alone)
         needs = {h: gifts[h].need if h in gifts else n for h, n in needs.items()}
     if a.songs:    # (the songs named: a lesson's line names its own; the frogs ask for everything)
@@ -6342,13 +6362,13 @@ def main():
     bottles = BOTTLE in PROGRESSION   # (placement BOTTLE_FROM with the bottles shuffled: soil_need)
     skull_rule = lambda h, area: skulltula_rule(h, area) | (CHILD if placement >= DEKU_THIRD_FROM and h in DEKU_THIRD_FLOOR else NONE)
     skull_asks = lambda h, at=None: (lambda area: skull_door(step((lambda n: song_need(n, area) if a.songs else n)(
-        quest_need(soil_need(skull_rule(h, area), about.get(h, {}).get("soil"), bottles), area, placement >= 12) if a.quests else
+        quest_need(soil_need(skull_rule(h, area), about.get(h, {}).get("soil"), bottles), area, placement >= 12, deep) if a.quests else
         skull_rule(h, area))), h, area))(at or skulls[h][0])
     # (a boss's container: without Open forest exit's step, as a Skulltula's: its CHILD is the weapons to beat the boss.
     #  Seen 2026-11-18: Gohma's asked for nothing)
     heart_asks = lambda h: (skull_door if h in bosses else door)(step((lambda n: song_need(n, pieces[h][0]) if a.songs else n)(
-        (lambda n: quest_need(n, pieces[h][0], placement >= 12) if a.quests else n)(
-            boss_need(bosses[h]) if h in bosses else heart_rule(h, pieces[h][0])))), h, pieces[h][0])
+        (lambda n: quest_need(n, pieces[h][0], placement >= 12, deep) if a.quests else n)(
+            boss_need(bosses[h]) if h in bosses else TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0])))), h, pieces[h][0])
     piece_own = lambda h: CONTAINER if h in bosses else HEART   # (what a piece's or a container's spot holds of its own)
     # (Songs: Anywhere: what the lessons asked about by name may hold, by this seed's items and the game's flags; the
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
