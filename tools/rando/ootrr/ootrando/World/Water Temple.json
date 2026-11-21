@@ -1,0 +1,217 @@
+# Water Temple, rebuilt from a remake 100% walkthrough (docs/dungeon-logic/water-temple.md).
+# The remake has 4 small keys (Torches, Dragon, Compass Room and Central Bow Target chests)
+# and 4 locked doors, opened in this order: the central pillar door on 1F, the pink pillar
+# door on 2F west (the room that raises the water to 3F), the 3F door to the falling
+# platforms and Dark Link, and the 1F north door to the Boss Key. water_keys(n) keeps one
+# key of slack when keys roam, because the 3F door can take a key on the first visit.
+[
+    {
+        "region_name": "Water Temple Lobby",
+        "dungeon": "Water Temple",
+        "exits": {
+            "Lake Hylia": "True",
+            "Water Temple Dive": "
+                is_adult and Iron_Boots and (Zora_Tunic or logic_fewer_tunic_requirements)",
+            # The boss door hangs above the 3F water line, so the water must be raised again
+            # once it was lowered.
+            "Water Temple Before Boss": "can_use(Longshot) and Raise_Water_Level",
+            "Farores Wind Warp": "can_use(Farores_Wind)"
+        }
+    },
+    {
+        "region_name": "Water Temple Before Boss",
+        "dungeon": "Water Temple",
+        "savewarp": "Lake Hylia -> Water Temple Lobby",
+        "locations": {
+            "Water Temple Near Boss Pot 1": "True",
+            "Water Temple Near Boss Pot 2": "True",
+            "Fairy Pot": "has_bottle"
+        },
+        "exits": {
+            "Morpha Boss Room": "Boss_Key_Water_Temple"
+        }
+    },
+    {
+        "region_name": "Water Temple Dive",
+        "dungeon": "Water Temple",
+        "locations": {
+            # On a 3F ledge after Ruto. It is taken before the first lowering, but once the
+            # water is down only the 3F triforce brings it back.
+            "Water Temple Map Chest": "Raise_Water_Level"
+        },
+        "exits": {
+            "Water Temple Lowered Water Levels": "can_play(Zeldas_Lullaby)"
+        }
+    },
+    {
+        "region_name": "Water Temple Lowered Water Levels",
+        "dungeon": "Water Temple",
+        "locations": {
+            # Arrows shot through the lit candle light the two braziers.
+            "Water Temple Torches Chest": "Bow or can_use(Dins_Fire)",
+            "Water Temple L1 Torch Pot 1": "True",
+            "Water Temple L1 Torch Pot 2": "True"
+        },
+        "exits": {
+            # Bomb the rocks of the south room, then sink and hookshot along the channel.
+            "Water Temple South Basement": "has_explosives and can_use(Hookshot)",
+            # Push the block, dive, hookshot the dragon's eye.
+            "Water Temple Dragon Statue": "Progressive_Strength_Upgrade and can_use(Hookshot)",
+            # The locked door at the foot of the central pillar is the only way in.
+            "Water Temple Central Pillar": "water_keys(2)"
+        }
+    },
+    {
+        "region_name": "Water Temple South Basement",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple Compass Chest": "True",
+            "Water Temple Behind Gate Pot 1": "True",
+            "Water Temple Behind Gate Pot 2": "True",
+            "Water Temple Behind Gate Pot 3": "True",
+            "Water Temple Behind Gate Pot 4": "True",
+            "Water Temple Near Compass Pot 1": "True",
+            "Water Temple Near Compass Pot 2": "True",
+            "Water Temple Near Compass Pot 3": "True"
+        }
+    },
+    {
+        "region_name": "Water Temple Central Pillar",
+        "dungeon": "Water Temple",
+        "locations": {
+            # At the top of the pillar shaft, with the water at 1F.
+            "Water Temple GS Central Pillar": "can_use(Longshot)"
+        },
+        "exits": {
+            # Zelda's Lullaby inside the pillar raises the water to 2F; a hole in the pillar
+            # floor then leads down to the basement.
+            "Water Temple Central Pillar Basement": "can_play(Zeldas_Lullaby)",
+            "Water Temple Middle Water Level": "can_play(Zeldas_Lullaby)"
+        }
+    },
+    {
+        "region_name": "Water Temple Central Pillar Basement",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple Central Pillar Chest": "can_use(Hookshot)",
+            # Behind a gate that a green switch opens.
+            "Water Temple GS Behind Gate": "can_use(Hookshot)",
+            "Water Temple Main Room L2 Pot 1": "True",
+            "Water Temple Main Room L2 Pot 2": "True"
+        }
+    },
+    {
+        "region_name": "Water Temple Middle Water Level",
+        "dungeon": "Water Temple",
+        "exits": {
+            # The bombable door of the 2F east rooms.
+            "Water Temple Cracked Wall": "has_explosives",
+            # The north room is above the 2F water line.
+            "Water Temple Central Bow Target": "can_use(Longshot)",
+            # The pink pillar door.
+            "Water Temple High Water Room": "water_keys(3)",
+            # Drop to 1F and swim north to the last locked door.
+            "Water Temple North Basement": "(Small_Key_Water_Temple, 4)"
+        }
+    },
+    {
+        "region_name": "Water Temple Cracked Wall",
+        "dungeon": "Water Temple",
+        "locations": {
+            # The remake's skulltula behind the first cracked wall takes the N64 falling
+            # platform name; the falling platform room has none.
+            "Water Temple GS Falling Platform Room": "True",
+            # A second cracked wall and a crystal switch further east.
+            "Water Temple Compass Room Chest": "True"
+        }
+    },
+    {
+        "region_name": "Water Temple Central Bow Target",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple Central Bow Target Chest": "True",
+            "Water Temple Central Bow Target Pot 1": "True",
+            "Water Temple Central Bow Target Pot 2": "True"
+        }
+    },
+    {
+        "region_name": "Water Temple High Water Room",
+        "dungeon": "Water Temple",
+        "events": {
+            # The triforce here raises the water to 3F. Pierre waits here too.
+            "Raise Water Level": "can_play(Zeldas_Lullaby)"
+        },
+        "exits": {
+            "Water Temple Falling Platform Room": "can_play(Zeldas_Lullaby) and water_keys(4)"
+        }
+    },
+    {
+        "region_name": "Water Temple Falling Platform Room",
+        "dungeon": "Water Temple",
+        "exits": {
+            "Water Temple Dark Link Region": "can_use(Hookshot)"
+        }
+    },
+    {
+        "region_name": "Water Temple Dark Link Region",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple Longshot Chest": "True",
+            "Water Temple Like Like Pot 1": "True",
+            "Water Temple Like Like Pot 2": "True"
+        },
+        "exits": {
+            # The Longshot pulls Link through the bars; there is no Song of Time block.
+            "Water Temple River": "can_use(Longshot)"
+        }
+    },
+    {
+        "region_name": "Water Temple River",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple River Recovery Heart 1": "True",
+            "Water Temple River Recovery Heart 2": "True",
+            "Water Temple River Recovery Heart 3": "True",
+            "Water Temple River Recovery Heart 4": "True",
+            "Water Temple River Pot 1": "True",
+            "Water Temple River Pot 2": "True",
+            # On a rock wall, taken with the Longshot.
+            "Water Temple GS River": "True",
+            "Fairy Pot": "has_bottle"
+        },
+        "exits": {
+            "Water Temple Dragon Statue": "Bow"
+        }
+    },
+    {
+        "region_name": "Water Temple Dragon Statue",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple Dragon Chest": "True"
+        }
+    },
+    {
+        "region_name": "Water Temple North Basement",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple North Basement Block Puzzle Pot 1": "True",
+            "Water Temple North Basement Block Puzzle Pot 2": "True",
+            # In the passage beside the Boss Key chest.
+            "Water Temple GS Near Boss Key Chest": "True"
+        },
+        "exits": {
+            # A cracked wall, then a block to push.
+            "Water Temple Boss Key Chest Room": "has_explosives and Progressive_Strength_Upgrade"
+        }
+    },
+    {
+        "region_name": "Water Temple Boss Key Chest Room",
+        "dungeon": "Water Temple",
+        "locations": {
+            "Water Temple Boss Key Chest": "True",
+            "Water Temple Boss Key Pot 1": "True",
+            "Water Temple Boss Key Pot 2": "True",
+            "Fairy Pot": "has_bottle"
+        }
+    }
+]

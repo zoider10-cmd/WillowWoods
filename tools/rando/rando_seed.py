@@ -49,6 +49,7 @@ Needs the zstandard package.
 import argparse
 import collections
 import itertools
+import json
 import math
 import os
 import random
@@ -60,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 20  # 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 21  # 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -4564,7 +4565,7 @@ CHECK_CODES = collections.OrderedDict((
     ("Item_Melody_ZeldaLullaby", "ZL"), ("Item_Melody_EponaSong", "EP"), ("Item_Melody_SariaSong", "SR"), ("Item_Melody_TimeSong", "ST"),
     ("Item_Melody_StormSong", "SO"), ("Item_Melody_SpiritRequiem", "RQ"), ("Item_Melody_ShadowNocturne", "NC"),
     ("Obj_Armor_Goron", "GT"), ("Obj_Armor_Zora", "ZT"), (BOTTLE, "BO"), ("Item_ZeldaLetter", "LE"), ("Item_Ocarina_Fairy", "FO"),
-    ("Item_FairyBless_MPDouble", "MG"), ("Weapon_Sword_Master", "MW"), (HOOK, "HS")))   # (the tunics, placement 12: TUNICS; MW: Shuffle the Master Sword, MASTER; HS: Shuffle Dampe's Hookshot, HOOK)
+    ("Item_FairyBless_MPDouble", "MG"), ("Weapon_Sword_Master", "MW"), (HOOK, "HS"), ("Item_DinFire", "DF")))   # (the tunics, placement 12: TUNICS; MW: Shuffle the Master Sword, MASTER; HS: Shuffle Dampe's Hookshot, HOOK)
 
 
 def token_codes(way):
@@ -5164,6 +5165,26 @@ def gift_keys(gifts, chests):
 CHECK_NEED = 191   # (a check's rule in the tracker's file: the menu's needs[192] and the game's side's)
 
 
+def rule_text(way):
+    """one way of a rule as the tracker's file writes it"""
+    return ",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way)) or "-"
+
+
+def fit_rule(need):
+    """a rule with no more ways than the tracker reads (CHECK_NEED letters): the fewest-item ways kept first. A way left
+    out only asks for more, never less (placement 21, where a dungeon's ways and its ways in multiply)"""
+    if not isinstance(need, Either):
+        return need
+    kept, size = [], -1
+    for way in sorted(need, key=lambda w: (len(w), sorted(w))):
+        text = len(rule_text(way)) + 1
+        if kept and size + text > CHECK_NEED:
+            continue
+        kept.append(way)
+        size += text
+    return either(kept)
+
+
 def check_lines(chests, skulls, gifts=()):
     """The checks file's lines. chests, skulls and gifts: [(area (the Banc folder), position, ages, what its rule asks
     for, its name, its actor's hash)]; a chest or a Gold Skulltula without a name is "Chest" or "Gold Skulltula". The
@@ -5180,7 +5201,7 @@ def check_lines(chests, skulls, gifts=()):
                 continue
             name = more[0] if more else plain
             rows.append([AREA_NAMES.get(area, area).replace("|", "/")[:47], (name[:1].upper() + name[1:]).replace("|", "/"), area, ages, pos,
-                         "/".join(",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way)) or "-" for way in (need if isinstance(need, Either) else (need,))),
+                         "/".join(rule_text(way) for way in (need if isinstance(need, Either) else (need,))),
                          order, more[1] if len(more) > 1 else None,
                          more[2] if len(more) > 2 else "", more[3] if len(more) > 3 else None])
     too_long = [r for r in rows if len(r[5]) > CHECK_NEED]
@@ -5660,6 +5681,83 @@ LETTER_BOLERO = "Item_Melody_FireBolero"
 # shuffled (Zelda gives it) or the gate is open. Grass and Deku Babas need a weapon first; the Kokiri shop's sticks may
 # be shuffled away: not counted. NOT SEEN IN PLAY as a seed's logic.
 STICKS_FROM = 20
+
+
+# ---- Each dungeon check by its own rule (placement 21, the owner's ask 2026-11-21) ----
+# Before, every check of a dungeon asked for what the whole dungeon could (RULES), written from the original game. From
+# placement 21 each chest, Gold Skulltula and boss's Heart Container of the twelve dungeons that the table knows asks for
+# its dungeon's way in (DUNGEON_ENTRY: what RULES asked, the dungeon's inner items taken out) and any one of its own
+# ways, worked out by tools/rando/dungeon_logic.py from the other randomizers' logic of the remake (OotrR's engine and
+# world, ootrr 0.8.2's dungeons rewritten for the remake's layout and its pins of each remake actor to its N64 location;
+# tools/rando/ootrr/README.md) into DUNGEON_RULES_FILE, which is installed beside this script (without it the rules are
+# as before, and the seed says so). An actor pinned only as one of a pool of equal items asks for every candidate's.
+# The ways name the other randomizers' items: DUNGEON_AP_ITEMS turns them into ours. One the seed doesn't shuffle is held
+# (the rules counted on it before too); Din's Fire and the Fire Arrows, shuffled but no gating items, are asked for only
+# where no other way is: the Shadow Temple's first hall wants Din's Fire for its torches (ootrr 0.8.2, not seen in play
+# yet), so with the Great Fairies' gifts shuffled Din's Fire is a gating item (DUNGEON_GATES). Every other step (the
+# Door of Time, the songs, the tunics, the Hookshot, the sticks...) then works on these rules as on the old ones.
+DUNGEON_RULES_FROM = 21
+DUNGEON_RULES_FILE = "dungeon_rules.json"
+DIN = "Item_DinFire"
+DUNGEON_GATES = frozenset((DIN,))
+DUNGEON_AP_ITEMS = {("Kokiri Sword", 1): S, ("Master Sword", 1): "Weapon_Sword_Master", ("Slingshot", 1): SL, ("Boomerang", 1): BM,
+                 ("Bomb Bag", 1): BB, ("Bombchus", 1): BB, ("Lens of Truth", 1): LENS, ("Bow", 1): BOW, ("Megaton Hammer", 1): HAM,
+                 ("Iron Boots", 1): IRON, ("Hover Boots", 1): HOVER, ("Progressive Hookshot", 1): "Item_Hookshot",
+                 ("Progressive Hookshot", 2): LONG, ("Progressive Strength Upgrade", 1): "Item_Gauntlet_Goron",
+                 ("Progressive Strength Upgrade", 2): SG, ("Progressive Strength Upgrade", 3): GG,
+                 ("Progressive Scale", 1): "Item_Scale_Silver", ("Progressive Scale", 2): "Item_Scale_Gold", ("Mirror Shield", 1): MS,
+                 ("Goron Tunic", 1): "Obj_Armor_Goron", ("Zora Tunic", 1): "Obj_Armor_Zora", ("Magic Meter", 1): "Item_FairyBless_MPDouble",
+                 ("Dins Fire", 1): DIN, ("Fire Arrows", 1): "Item_Arrow_Fire", ("Ocarina", 1): "Item_Ocarina_Fairy",
+                 ("Bottle", 1): "Item_Bottle", ("Deku Shield", 1): "TBox_Shield_Deku",
+                 ("Zeldas Lullaby", 1): "Item_Melody_ZeldaLullaby", ("Eponas Song", 1): "Item_Melody_EponaSong",
+                 ("Sarias Song", 1): "Item_Melody_SariaSong", ("Suns Song", 1): "Item_Melody_SunSong",
+                 ("Song of Time", 1): "Item_Melody_TimeSong", ("Song of Storms", 1): "Item_Melody_StormSong",
+                 ("Minuet of Forest", 1): "Item_Melody_ForestMinuet", ("Bolero of Fire", 1): "Item_Melody_FireBolero",
+                 ("Serenade of Water", 1): "Item_Melody_WaterSerenade", ("Requiem of Spirit", 1): "Item_Melody_SpiritRequiem",
+                 ("Nocturne of Shadow", 1): "Item_Melody_ShadowNocturne", ("Prelude of Light", 1): "Item_Melody_LightPrelude"}
+DUNGEON_SHUFFLED_ONLY = frozenset(("Item_Arrow_Fire", DIN))   # (shuffled, no gating items: asked for where no other way is)
+DUNGEON_ENTRY = {"InsideTheDekuTree": frozenset((S,)), "DodongoCavern": CHILD | {BB}, "InsideJabuJabuBelly": ADULT,
+                 "BottomOfTheWell": ADULT, "ForestTemple": ADULT, "FireTemple": ADULT, "IceCavern": ADULT,
+                 "WaterTemple": ADULT | {IRON}, "ShadowTemple": MEDALS3, "SpiritTemple": DESERT,
+                 "GerudoTrainingGround": ADULT | {HOVER, LONG, BOW}, "InsideGanonCastle": None}   # (None: everything, as RULES)
+# (with the songs shuffled, the Nocturne and the Requiem are items: the Shadow Temple's way in is an adult and the
+#  Nocturne, which song_need names; the Spirit Temple's the desert crossed or the Requiem with an adult's (the rules
+#  don't tell the child's side from the adult's: too much, never too little). Without, the lessons wait on the three
+#  temples (MEDALS3) and the desert is the way)
+DUNGEON_ENTRY_SONGS = {"ShadowTemple": ADULT}
+DUNGEON_REQUIEM = "SpiritTemple"
+_DUNGEON_TABLE = []
+
+
+def dungeon_table():
+    """the table of DUNGEON_RULES_FILE beside this script: {an actor's hash: [way, ...]}, each way {item: tier}; {} without it"""
+    if not _DUNGEON_TABLE:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), DUNGEON_RULES_FILE), encoding="utf-8") as f:
+                table = json.load(f)["by_actor"]
+            _DUNGEON_TABLE.append({int(h): e["ways"] for h, e in table.items()})
+        except (OSError, ValueError, KeyError):
+            _DUNGEON_TABLE.append({})
+    return _DUNGEON_TABLE[0]
+
+
+def dungeon_rule(h, area, progression, pool=frozenset()):
+    """a dungeon check's own rule (see above), or None where the table doesn't know it: its dungeon's way in and any of
+    its ways, in our items (progression: the seed's gating items; pool: what the seed shuffles. The others are held)"""
+    ways = dungeon_table().get(h)
+    if not ways or area not in DUNGEON_ENTRY:
+        return None
+    songs = "Item_Melody_ShadowNocturne" in progression
+    entries = [frozenset(progression) if DUNGEON_ENTRY[area] is None else DUNGEON_ENTRY_SONGS.get(area, DUNGEON_ENTRY[area]) if songs
+               else DUNGEON_ENTRY[area]]
+    if area == DUNGEON_REQUIEM and "Item_Melody_SpiritRequiem" in progression:
+        entries.append(ADULT | {"Item_Melody_SpiritRequiem"})
+    plain, other = [], []
+    for way in ways:
+        mine = frozenset(DUNGEON_AP_ITEMS[(name, level)] for name, level in way.items()
+                         if DUNGEON_AP_ITEMS.get((name, level)) in progression or DUNGEON_AP_ITEMS.get((name, level)) in DUNGEON_SHUFFLED_ONLY & pool)
+        (other if mine & DUNGEON_SHUFFLED_ONLY - progression else plain).extend(base | mine for base in entries)
+    return either(plain or other)
 
 
 def stick_need(need, letter, bolero=False):
@@ -6439,7 +6537,18 @@ def main():
     logic = logic_now   # (without the event chests or the songs no gating item moves: nothing to ask)
     rng = random.Random("stage2:%d:%d:%d%s%s%s" % (seed, which, min(keys_mode, 1), ":events" if a.event_chests else "", ":logic" if logic else "",
                                                    ":songs2" if a.songs == 2 else ":songs" if a.songs else ""))
-    needs = {h: rule(s[0], s[6]) for h, s in spots.items()}
+    dungeon_on = placement >= DUNGEON_RULES_FROM and bool(dungeon_table())   # (each dungeon check by its own rule)
+    if placement >= DUNGEON_RULES_FROM and not dungeon_table():
+        print("each dungeon check's own rule: %s is not beside the script, so the dungeons ask as before" % DUNGEON_RULES_FILE)
+    if dungeon_on and any(g.key == "fairy_din" for g in gifts.values()):   # (Din's Fire shuffled: the Shadow Temple's torches)
+        PROGRESSION = PROGRESSION | DUNGEON_GATES
+    pool = frozenset(s[1] for s in spots.values())
+
+    def own_rule(h, area, otherwise):
+        """a dungeon check's own rule (dungeon_rule), or what the rules asked before"""
+        made = dungeon_rule(h, area, PROGRESSION, pool) if dungeon_on else None
+        return otherwise() if made is None else made
+    needs = {h: own_rule(h, s[0], lambda s=s: rule(s[0], s[6])) for h, s in spots.items()}
     deep = a.quests and placement >= TUNIC_WATER_FROM   # (the tunics by hot rooms and deep water, TUNIC_WATER_FROM)
     if deep:   # (Zora's Fountain's chest above its water: an adult alone, TUNIC_DRY)
         needs = {h: TUNIC_DRY.get(h, n) for h, n in needs.items()}
@@ -6448,16 +6557,16 @@ def main():
         needs = {h: chest_need(h, n, door_rules) for h, n in needs.items()}
     slingshot_room = {h for h in SLINGSHOT_ROOM if h in needs} if placement >= 7 else set()
     slingshot_room |= {h for h in DEKU_THIRD_FLOOR if h in needs} if placement >= DEKU_THIRD_FROM else set()
-    needs = {h: n | CHILD if h in slingshot_room else n for h, n in needs.items()}
+    needs = {h: each(lambda w: w | CHILD, n) if h in slingshot_room else n for h, n in needs.items()}
     if a.quests:   # (the rules with the gifts' two gating items named; a gift asks for what its line of GIFTS says)
-        needs = {h: quest_need(gifts[h].need, gifts[h].area, placement >= 12, deep) if h in gifts else quest_need(n, spots[h][0], placement >= 12, deep) for h, n in needs.items()}
+        needs = {h: quest_need(gifts[h].need, gifts[h].area, placement >= 12, deep) if h in gifts else each(quest_need, n, spots[h][0], placement >= 12, deep) for h, n in needs.items()}
     elif gifts:    # (the scrubs alone)
         needs = {h: gifts[h].need if h in gifts else n for h, n in needs.items()}
     if a.songs:    # (the songs named: a lesson's line names its own; the frogs ask for everything)
         malon_hard = a.songs == 2 and MALON_HARD_FROM <= placement < MALON_FREE_FROM   # (Malon's lesson asked for everything: MALON_HARD)
         needs = {h: frozenset(PROGRESSION) if malon_hard and h in lessons and gifts[h].key in MALON_HARD else
                  n if h in lessons else frozenset(PROGRESSION) if h in gifts and gifts[h].key in SONGS_HARD else
-                 song_need(n, spots[h][0], gifts[h].key if h in gifts else None) for h, n in needs.items()}
+                 each(song_need, n, spots[h][0], gifts[h].key if h in gifts else None) for h, n in needs.items()}
     if a.magic:   # (magic where the Lens of Truth is asked for: magic_need)
         needs = {h: each(magic_need, n) for h, n in needs.items()}
     if placement >= 5:   # (Zora's Domain by the river or by the lake, zora_ways)
@@ -6494,15 +6603,15 @@ def main():
         lambda need, h, area: gate(need, area))
     skull_door = skull_door if placement >= 8 else door
     bottles = BOTTLE in PROGRESSION   # (placement BOTTLE_FROM with the bottles shuffled: soil_need)
-    skull_rule = lambda h, area: skulltula_rule(h, area) | (CHILD if placement >= DEKU_THIRD_FROM and h in DEKU_THIRD_FLOOR else NONE)
-    skull_asks = lambda h, at=None: (lambda area: skull_door(step((lambda n: song_need(n, area) if a.songs else n)(
-        quest_need(soil_need(skull_rule(h, area), about.get(h, {}).get("soil"), bottles), area, placement >= 12, deep) if a.quests else
+    skull_rule = lambda h, area: own_rule(h, area, lambda: skulltula_rule(h, area) | (CHILD if placement >= DEKU_THIRD_FROM and h in DEKU_THIRD_FLOOR else NONE))
+    skull_asks = lambda h, at=None: (lambda area: skull_door(step((lambda n: each(song_need, n, area) if a.songs else n)(
+        each(quest_need, soil_need(skull_rule(h, area), about.get(h, {}).get("soil"), bottles), area, placement >= 12, deep) if a.quests else
         skull_rule(h, area))), h, area))(at or skulls[h][0])
     # (a boss's container: without Open forest exit's step, as a Skulltula's: its CHILD is the weapons to beat the boss.
     #  Seen 2026-11-18: Gohma's asked for nothing)
-    heart_asks = lambda h: (skull_door if h in bosses else door)(step((lambda n: song_need(n, pieces[h][0]) if a.songs else n)(
-        (lambda n: quest_need(n, pieces[h][0], placement >= 12, deep) if a.quests else n)(
-            boss_need(bosses[h]) if h in bosses else TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0])))), h, pieces[h][0])
+    heart_asks = lambda h: (skull_door if h in bosses else door)(step((lambda n: each(song_need, n, pieces[h][0]) if a.songs else n)(
+        (lambda n: each(quest_need, n, pieces[h][0], placement >= 12, deep) if a.quests else n)(
+            own_rule(h, pieces[h][0], lambda: boss_need(bosses[h]) if h in bosses else TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0]))))), h, pieces[h][0])
     piece_own = lambda h: CONTAINER if h in bosses else HEART   # (what a piece's or a container's spot holds of its own)
     if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: a Skulltula's and a piece's rule too, wherever it is written: hook_asks)
         skull_plain, heart_plain = skull_asks, heart_asks
@@ -6515,6 +6624,10 @@ def main():
         skull_sword, heart_sword = skull_asks, heart_asks
         skull_asks = lambda h, at=None: each(stick_need, skull_sword(h, at), a.letter, bolero)
         heart_asks = lambda h: each(stick_need, heart_sword(h), a.letter, bolero)
+    if dungeon_on:   # (no more ways than the tracker reads: fit_rule)
+        skull_long, heart_long = skull_asks, heart_asks
+        skull_asks = lambda h, at=None: fit_rule(skull_long(h, at))
+        heart_asks = lambda h: fit_rule(heart_long(h))
     # (Songs: Anywhere: what the lessons asked about by name may hold, by this seed's items and the game's flags; the
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
     lesson_safe, lesson_only = frozenset(), {}
@@ -6577,6 +6690,8 @@ def main():
                 needs[h] = each(hook_need, needs[h], HOOK_OR.get(h))
     if sticks:   # (Deku Sticks for the Kokiri Sword, stick_need)
         needs = {h: each(stick_need, n, a.letter, bolero) for h, n in needs.items()}
+    if dungeon_on:   # (no more ways than the tracker reads: fit_rule)
+        needs = {h: fit_rule(n) for h, n in needs.items()}
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,

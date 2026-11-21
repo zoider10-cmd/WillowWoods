@@ -266,7 +266,8 @@ def main():
           "the menu does not know a gating song's letters, or names a row the Inventory page has not")
     longest = len(",".join(S.CHECK_CODES.values()))
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
-    check(2 * longest + 1 <= S.CHECK_NEED == 191 and "char needs[192];" in menu and "|%191[A-Z0-9,/-]|" in menu and 'needs[192] = ""' in host and "|%191[A-Z0-9,/-]|" in host,
+    # (a rule of two whole ways fits since placement 21 trims its ways to the line, fit_rule; one whole way always does)
+    check(longest + 1 <= S.CHECK_NEED == 191 and len(S.rule_text(S.fit_rule(S.Either((frozenset(S.CHECK_CODES), frozenset(S.CHECK_CODES) - {S.S}))))) <= S.CHECK_NEED and "char needs[192];" in menu and "|%191[A-Z0-9,/-]|" in menu and 'needs[192] = ""' in host and "|%191[A-Z0-9,/-]|" in host,
           "a rule that names every item (%d letters and commas) does not fit the menu's or the game's line" % longest)
     # (a song looks like Sheik's harp: its ModelInfo in its pack, and its row in the list of actors)
     info = lambda model: seed.byml_build(("dict", collections.OrderedDict((("FmdbName", ("string", model)), ("ModelProjectName", ("string", model))))), 7)

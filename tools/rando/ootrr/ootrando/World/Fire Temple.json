@@ -1,0 +1,207 @@
+[
+    # Remake layout, checked against a full playthrough and the FireTemple Banc
+    # actors. docs/dungeon-logic/fire-temple.md has the route and every change
+    # from the N64 rules.
+    #
+    # Key doors, in the only order they can be met: lobby to the Big Lava Room,
+    # two doors in a row out of the Big Lava Room, boulder maze to the eye switch
+    # landing, fire wall room to the flame maze, flame maze to its far side, the
+    # Flare Dancer door, and last the Boss Key loop door. The loop door sits behind
+    # a hammer pillar, so with an early Hammer a key can be spent there first.
+    # fire_keys keeps one key of slack for that, as the N64 rules did.
+    {
+        "region_name": "Fire Temple Lower",
+        "dungeon": "Fire Temple",
+        "exits": {
+            "DMC Fire Temple Entrance": "True",
+            "Fire Temple Near Boss": "logic_fewer_tunic_requirements or can_use(Goron_Tunic)",
+            "Fire Temple Big Lava Room": "
+                fire_keys(2) and
+                (logic_fewer_tunic_requirements or can_use(Goron_Tunic))",
+            # Hammer the pillar in front of the door first.
+            "Fire Temple Lower Locked Door": "
+                (Small_Key_Fire_Temple, 8) and can_use(Megaton_Hammer)",
+            "Farores Wind Warp": "can_use(Farores_Wind)"
+        }
+    },
+    {
+        "region_name": "Fire Temple Near Boss",
+        "dungeon": "Fire Temple",
+        "locations": {
+            # Cross the platforms to the cell. Its floor switch opens it.
+            "Fire Temple Near Boss Chest": "True",
+            "Fire Temple Near Boss Pot 1": "is_adult and (Hover_Boots or Hookshot)",
+            "Fire Temple Near Boss Pot 2": "is_adult and (Hover_Boots or Hookshot)",
+            "Fire Temple Near Boss Pot 3": "is_adult and (Hover_Boots or Hookshot)",
+            "Fire Temple Near Boss Pot 4": "is_adult and (Hover_Boots or Hookshot)",
+            "Fairy Pot": "is_adult and has_bottle and (Hover_Boots or Hookshot)"
+        },
+        # The boss door ledge is reached on the pillar that the Hammer drops from
+        # the top floor, so the way in is from Fire Temple Upper.
+        "exits": {
+            "Fire Temple Lower": "True"
+        }
+    },
+    {
+        "region_name": "Fire Temple Before Boss",
+        "dungeon": "Fire Temple",
+        "savewarp": "DMC Fire Temple Entrance -> Fire Temple Lower",
+        "exits": {
+            "Volvagia Boss Room": "Boss_Key_Fire_Temple"
+        }
+    },
+    {
+        "region_name": "Fire Temple Lower Locked Door",
+        "dungeon": "Fire Temple",
+        "locations": {
+            # The second Flare Dancer guards this chest.
+            "Fire Temple Flare Dancer Chest": "True",
+            # A hammer switch opens the cell.
+            "Fire Temple Boss Key Chest": "True",
+            # Behind a rock that the Hammer breaks.
+            "Fire Temple GS Boss Key Loop": "True"
+        }
+    },
+    {
+        "region_name": "Fire Temple Big Lava Room",
+        "dungeon": "Fire Temple",
+        "locations": {
+            # The open cell's floor switch is out on the lava platforms.
+            "Fire Temple Big Lava Room Lower Open Door Chest": "True",
+            # Bomb the cracked wall, then step on the cell switch.
+            "Fire Temple Big Lava Room Blocked Door Chest": "is_adult and has_explosives",
+            "Fire Temple Big Lava Room Pot 1": "True",
+            "Fire Temple Big Lava Room Pot 2": "True",
+            "Fire Temple Big Lava Room Pot 3": "True",
+            # Song of Time makes the block that leads up to the tile room door.
+            "Fire Temple GS Song of Time Room": "is_adult and can_play(Song_of_Time)"
+        },
+        "exits": {
+            # Two locked doors in a row, with nothing between them.
+            "Fire Temple Elevator Room": "
+                is_adult and Goron_Tunic and fire_keys(4)"
+        }
+    },
+    {
+        "region_name": "Fire Temple Elevator Room",
+        "dungeon": "Fire Temple",
+        "locations": {
+            "Fire Temple Elevator Room Recovery Heart 1": "True",
+            "Fire Temple Elevator Room Recovery Heart 2": "True",
+            "Fire Temple Elevator Room Recovery Heart 3": "True"
+        },
+        "exits": {
+            # Push the block onto the lava geyser and ride it to 2F. There, hit the
+            # crystal switch with the sword, push the block and climb the grate.
+            # No locked door, no Goron's Bracelet block.
+            "Fire Temple Boulder Maze Lower": "True"
+        }
+    },
+    {
+        "region_name": "Fire Temple Boulder Maze Lower",
+        "dungeon": "Fire Temple",
+        "locations": {
+            "Fire Temple Boulder Maze Lower Chest": "True",
+            # The remake's Map big chest in an alcove of the lower maze.
+            "Fire Temple Boulder Maze Side Room Chest": "True",
+            # Behind a cracked wall.
+            "Fire Temple GS Boulder Maze": "has_explosives"
+        },
+        "exits": {
+            "Fire Temple Narrow Path Room": "fire_keys(5)"
+        }
+    },
+    {
+        # The landing past the locked door and the fire wall room after it.
+        "region_name": "Fire Temple Narrow Path Room",
+        "dungeon": "Fire Temple",
+        "locations": {
+            # The remake moved the cage chest here, and it holds the Compass. An eye
+            # switch over the gate opens it. The playthrough hits it with the
+            # Hookshot, and arrows hit eye switches.
+            "Fire Temple Map Chest": "can_use(Hookshot) or can_use(Bow)",
+            "Fire Temple Narrow Path Room Recovery Heart 1": "True",
+            "Fire Temple Narrow Path Room Recovery Heart 2": "True",
+            "Fire Temple Narrow Path Room Recovery Heart 3": "True"
+        },
+        "exits": {
+            # Outrun the fire wall. The far door opens onto the upper maze.
+            "Fire Temple Boulder Maze Upper": "True"
+        }
+    },
+    {
+        "region_name": "Fire Temple Boulder Maze Upper",
+        "dungeon": "Fire Temple",
+        "locations": {
+            "Fire Temple Boulder Maze Upper Chest": "True",
+            # Bomb the cracked floor and drop into the cell room on 2F.
+            "Fire Temple Boulder Maze Shortcut Chest": "has_explosives",
+            # Pierre answers the Scarecrow song here. Hookshot to him, climb to both
+            # Skulltulas, then a timed floor switch and Hookshot targets lead to the
+            # three chests.
+            "Fire Temple Scarecrow Chest": "can_use(Scarecrow)",
+            "Fire Temple Scarecrow Ledge Second Chest": "can_use(Scarecrow)",
+            "Fire Temple Scarecrow Ledge Third Chest": "can_use(Scarecrow)",
+            "Fire Temple GS Scarecrow Climb": "can_use(Scarecrow)",
+            "Fire Temple GS Scarecrow Top": "can_use(Scarecrow)",
+            "Fire Temple Moving Fire Room Recovery Heart 1": "True",
+            "Fire Temple Moving Fire Room Recovery Heart 2": "True",
+            "Fire Temple Moving Fire Room Recovery Heart 3": "True"
+        },
+        "exits": {
+            # Back through the fire wall room to the locked door at its far end.
+            "Fire Temple Flame Maze": "fire_keys(6)"
+        }
+    },
+    {
+        "region_name": "Fire Temple Flame Maze",
+        "dungeon": "Fire Temple",
+        "locations": {
+            "Fire Temple Compass Chest": "True",
+            "Fire Temple Flame Maze Left Side Pot 1": "True",
+            "Fire Temple Flame Maze Left Side Pot 2": "True",
+            "Fire Temple Flame Maze Left Side Pot 3": "True",
+            "Fire Temple Flame Maze Left Side Pot 4": "True"
+        },
+        "exits": {
+            # A locked door leads down a corridor past the hammer switch Goron's cell
+            # and back out on the far side of the maze.
+            "Fire Temple Flame Maze Far Side": "fire_keys(7)"
+        }
+    },
+    {
+        "region_name": "Fire Temple Flame Maze Far Side",
+        "dungeon": "Fire Temple",
+        "exits": {
+            # Carry a crate through the fire walls to the Flare Dancer's locked door.
+            # After the fight the floor rises to the next floor. A caged crystal
+            # switch there takes down a fire wall. The playthrough throws a bomb
+            # flower at it.
+            "Fire Temple Upper": "
+                fire_keys(8) and (has_explosives or Progressive_Strength_Upgrade)"
+        }
+    },
+    {
+        "region_name": "Fire Temple Upper",
+        "dungeon": "Fire Temple",
+        "locations": {
+            # Up the grate, then a timed floor switch raises the stairs.
+            "Fire Temple Megaton Hammer Chest": "True",
+            # Hammer through the floor, smash the rocks, clear the Song of Time
+            # block, then hammer the switch that opens the cell.
+            "Fire Temple Highest Goron Chest": "
+                can_use(Megaton_Hammer) and can_play(Song_of_Time)",
+            "Fire Temple Flame Maze Right Side Pot 1": "True",
+            "Fire Temple Flame Maze Right Side Pot 2": "True",
+            "Fire Temple Flame Maze Right Side Pot 3": "True",
+            "Fire Temple Flame Maze Right Side Pot 4": "True",
+            "Fire Temple Hammer Staircase Small Wooden Crate 1": "Megaton_Hammer",
+            "Fire Temple Hammer Staircase Small Wooden Crate 2": "Megaton_Hammer"
+        },
+        "exits": {
+            # The second hammer floor drops onto a pillar in the room before the
+            # boss, and the pillar stays down as the way to the boss door.
+            "Fire Temple Before Boss": "can_use(Megaton_Hammer)"
+        }
+    }
+]

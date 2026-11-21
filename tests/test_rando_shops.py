@@ -551,14 +551,15 @@ def main():
     check("if placement >= 5:   # (Zora's Domain by the river or by the lake, zora_ways)" in script and
           "needs = {h: n if h in story else forest(n, spots[h][0]) for h, n in needs.items()}" in script and "met(needs[h], have)" in script and
           seed.forest_open(seed.CHILD, "DodongoCavern") == frozenset({seed.BB}) and seed.forest_open(seed.CHILD | {seed.BB}, "DodongoCavern") == frozenset({seed.BB}) and
-          '"/".join(",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way))' in script,
+          '",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way)) or "-"' in script and
+          '"/".join(rule_text(way) for way in (need if isinstance(need, Either) else (need,)))' in script,
           "the rules' ways are not made, read by the placement, or written for the tracker")
     check(seed.PLACEMENT >= 6 and set(seed.DEKU_STORY) == {"song_zelda", "song_saria", "zelda_letter", "fairy_ocarina"} and
           "story = ({h for h, g in gifts.items() if g.key in DEKU_STORY} if placement >= 6 else set()) | slingshot_room" in script and
           all('Gift("%s", ' % k in script for k in seed.DEKU_STORY),
           "Impa's and Saria's lessons do not keep the Deku Tree done with Open forest exit (DEKU_STORY)")
     check(seed.PLACEMENT >= 7 and seed.SLINGSHOT_ROOM == (0x0b66198d17d6584e, 0xb4ca60d52ca4d05f) and
-          "needs = {h: n | CHILD if h in slingshot_room else n for h, n in needs.items()}" in script and
+          "needs = {h: each(lambda w: w | CHILD, n) if h in slingshot_room else n for h, n in needs.items()}" in script and
           "| slingshot_room" in script,
           "the Deku Tree's Slingshot room's chests do not ask for the Slingshot, with Open forest exit too (SLINGSHOT_ROOM)")
     check(seed.PLACEMENT >= 8 and "skull_door = skull_door if placement >= 8 else door" in script and

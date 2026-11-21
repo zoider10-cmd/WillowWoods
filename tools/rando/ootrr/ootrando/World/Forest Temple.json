@@ -1,0 +1,232 @@
+[
+    # Remake layout, checked against a full playthrough and the ForestTemple Banc
+    # actors (room indexes, switches, eye switches, ice and hookshot targets).
+    {
+        "region_name": "Forest Temple Lobby",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple First Room Chest": "True",
+            "Forest Temple GS First Room": "
+                (is_adult and (Hookshot or Bow or Bombs)) or (is_child and (Boomerang or Slingshot)) or
+                has_bombchus or can_use(Dins_Fire) or (logic_forest_first_gs and (Bombs or can_jumpslash))"
+        },
+        "exits": {
+            "SFM Forest Temple Entrance Ledge": "True",
+            "Forest Temple Central Area": "
+                (Small_Key_Forest_Temple, 1) and (is_adult or can_child_attack or Nuts)",
+            "Farores Wind Warp": "can_use(Farores_Wind)"
+        }
+    },
+    {
+        "region_name": "Forest Temple Central Area",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple First Stalfos Chest": "is_adult or Kokiri_Sword",
+            "Forest Temple Center Room Right Pot 1": "True",
+            "Forest Temple Center Room Right Pot 2": "True",
+            "Forest Temple Center Room Right Pot 3": "True",
+            "Forest Temple Center Room Left Pot 1": "True",
+            "Forest Temple Center Room Left Pot 2": "True",
+            "Forest Temple Center Room Left Pot 3": "True",
+            "Forest Temple Lower Stalfos Pot 1": "True",
+            "Forest Temple Lower Stalfos Pot 2": "True",
+            "Forest Temple GS Lobby": "can_use(Hookshot) or can_use(Boomerang)",
+            "Fairy Pot": "has_bottle"
+        },
+        "exits": {
+            # The Song of Time block stands in front of the west gate.
+            "Forest Temple NW Outdoors": "can_play(Song_of_Time) or is_child",
+            # The east gate has no eye switch in the remake. Its floor switch is on
+            # the courtyard side, so the hall never opens it.
+            "Forest Temple Block Push Room": "(Small_Key_Forest_Temple, 2)",
+            "Forest Temple Basement": "
+                (Forest_Temple_Jo_and_Beth and Forest_Temple_Amy_and_Meg) or forest_temple_shortcuts"
+        }
+    },
+    {
+        "region_name": "Forest Temple NW Outdoors",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple GS Level Island Courtyard": "
+                can_use(Longshot) or
+                at('Forest Temple Outside Upper Ledge', can_use(Hookshot) or can_use(Boomerang))",
+            "Deku Baba Sticks": "is_adult or Kokiri_Sword or Boomerang",
+            "Deku Baba Nuts": "
+                is_adult or Slingshot or Sticks or
+                has_explosives or Kokiri_Sword or can_use(Dins_Fire)"
+        },
+        "exits": {
+            # Climb the vines, then Hookshot across the gap to the target over the arch.
+            "Forest Temple Outdoors High Balconies": "can_use(Hookshot)",
+            "Forest Temple Well": "Forest_Temple_Drain_Well",
+            "Forest Temple NW Outdoors Freestandings": "logic_forest_courtyard_hearts and can_use(Boomerang)"
+        }
+    },
+    {
+        "region_name": "Forest Temple Outdoors High Balconies",
+        "dungeon": "Forest Temple",
+        "events": {
+            # The floor switch on the west balcony drains the well.
+            "Forest Temple Drain Well": "True"
+        },
+        "exits": {
+            "Forest Temple NW Outdoors": "True"
+        }
+    },
+    {
+        "region_name": "Forest Temple Well",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple Well Chest": "True",
+            "Forest Temple Well Recovery Heart 1": "True",
+            "Forest Temple Well Recovery Heart 2": "True"
+        },
+        "exits": {
+            # Vines up the west well, a ladder up the east well.
+            "Forest Temple NW Outdoors": "True",
+            "Forest Temple NE Outdoors": "True"
+        }
+    },
+    {
+        "region_name": "Forest Temple NE Outdoors",
+        "dungeon": "Forest Temple",
+        "locations": {
+            # Hookshot to the target on the pillar, then walk to the alcove.
+            "Forest Temple Map Chest": "can_use(Hookshot)",
+            # No remake chest matches this N64 location. It keeps the Map Chest rule.
+            "Forest Temple Raised Island Courtyard Chest": "can_use(Hookshot)",
+            "Deku Baba Sticks": "is_adult or Kokiri_Sword or Boomerang",
+            "Deku Baba Nuts": "
+                is_adult or Slingshot or Sticks or
+                has_explosives or Kokiri_Sword or can_use(Dins_Fire)"
+        },
+        "exits": {
+            # The floor switch in front of the east gate opens it from this side.
+            "Forest Temple Central Area": "True",
+            "Forest Temple Well": "Forest_Temple_Drain_Well"
+        }
+    },
+    {
+        "region_name": "Forest Temple Block Push Room",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple Eye Switch Chest": "
+                Progressive_Strength_Upgrade and (can_use(Bow) or can_use(Slingshot))"
+        },
+        "exits": {
+            "Forest Temple Bow Region": "
+                Progressive_Strength_Upgrade and (Small_Key_Forest_Temple, 3) and is_adult",
+            "Forest Temple Straightened Hall": "
+                Progressive_Strength_Upgrade and (Small_Key_Forest_Temple, 3) and can_use(Bow)"
+            # Child cannot climb these large blocks
+        }
+    },
+    {
+        "region_name": "Forest Temple Straightened Hall",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple Boss Key Chest": "True"
+        },
+        "exits": {
+            # Drop into the pool room, then the stairs lead to the west balcony.
+            "Forest Temple Outside Upper Ledge": "True"
+        }
+    },
+    {
+        "region_name": "Forest Temple Outside Upper Ledge",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple Floormaster Chest": "True"
+        },
+        "exits": {
+            "Forest Temple NW Outdoors": "True",
+            "Forest Temple NW Outdoors Freestandings": "True"
+        }
+    },
+    {
+        "region_name": "Forest Temple NW Outdoors Freestandings",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple Courtyard Recovery Heart 1": "True",
+            "Forest Temple Courtyard Recovery Heart 2": "True"
+        }
+    },
+    {
+        "region_name": "Forest Temple Bow Region",
+        "dungeon": "Forest Temple",
+        "events": {
+            "Forest Temple Jo and Beth": "(Small_Key_Forest_Temple, 4) and can_use(Bow)"
+        },
+        "locations": {
+            "Forest Temple Bow Chest": "True",
+            "Forest Temple Red Poe Chest": "can_use(Bow)",
+            "Forest Temple Blue Poe Chest": "(Small_Key_Forest_Temple, 4) and can_use(Bow)",
+            "Forest Temple Upper Stalfos Pot 1": "True",
+            "Forest Temple Upper Stalfos Pot 2": "True",
+            "Forest Temple Upper Stalfos Pot 3": "True",
+            "Forest Temple Upper Stalfos Pot 4": "True",
+            "Forest Temple Blue Poe Room Pot 1": "(Small_Key_Forest_Temple, 4) and can_use(Bow)",
+            "Forest Temple Blue Poe Room Pot 2": "(Small_Key_Forest_Temple, 4) and can_use(Bow)",
+            "Forest Temple Blue Poe Room Pot 3": "(Small_Key_Forest_Temple, 4) and can_use(Bow)"
+        },
+        "exits": {
+            # The Bow Room door to the poe rooms opens from an eye behind a grate,
+            # which only arrows hit. The blue hallway is past the Blue Poe room.
+            "Forest Temple Frozen Eye Switch Room": "(Small_Key_Forest_Temple, 5) and can_use(Bow)"
+        }
+    },
+    {
+        "region_name": "Forest Temple Frozen Eye Switch Room",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple Frozen Eye Switch Room Pot 1": "True",
+            "Forest Temple Frozen Eye Switch Room Pot 2": "True"
+        },
+        "exits": {
+            # A floor switch raises a lit torch. An arrow through it melts the ice.
+            "Forest Temple Falling Room": "can_use(Bow) or can_use(Dins_Fire)"
+        }
+    },
+    {
+        "region_name": "Forest Temple Falling Room",
+        "dungeon": "Forest Temple",
+        "events": {
+            "Forest Temple Amy and Meg": "can_use(Bow)"
+        },
+        "locations": {
+            "Forest Temple Falling Ceiling Room Chest": "True",
+            # Pushing the shortcut block reaches the east courtyard balcony, where
+            # Scarecrow's Song calls Pierre beside this skulltula.
+            "Forest Temple GS Raised Island Courtyard": "can_use(Scarecrow)",
+            "Forest Temple Green Poe Room Pot 1": "True",
+            "Forest Temple Green Poe Room Pot 2": "True"
+        },
+        "exits": {
+            "Forest Temple NE Outdoors": "True",
+            "Forest Temple Central Area": "True"
+        }
+    },
+    {
+        "region_name": "Forest Temple Basement",
+        "dungeon": "Forest Temple",
+        "locations": {
+            "Forest Temple Basement Chest": "True",
+            "Forest Temple GS Basement": "can_use(Hookshot) or can_use(Boomerang)"
+        },
+        "exits": {
+            "Forest Temple Central Area": "forest_temple_shortcuts",
+            # An arrow through the torch window melts the ice on the eye switch
+            # that opens the gate to the boss corridor.
+            "Forest Temple Before Boss": "forest_temple_shortcuts or can_use(Bow)"
+        }
+    },
+    {
+        "region_name": "Forest Temple Before Boss",
+        "dungeon": "Forest Temple",
+        "savewarp": "SFM Forest Temple Entrance Ledge -> Forest Temple Lobby",
+        "exits": {
+            "Forest Temple Basement": "forest_temple_shortcuts",
+            "Phantom Ganon Boss Room": "Boss_Key_Forest_Temple"
+        }
+    }
+]
