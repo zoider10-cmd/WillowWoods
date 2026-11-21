@@ -60,7 +60,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 17  # 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 18  # 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -4783,8 +4783,13 @@ SONG_GIFTS = {"darunia": {ZL, SARIA}, "skull_kid_song": {SARIA}, "archery_heart"
 # learns from Malon: what her lesson holds is then out of reach. So from placement 15 it asks for everything, as the frogs
 # do: it only ever holds what the game can be finished without. (Their fix opens the lesson by a spare flag instead, a
 # logic module edit that adds nodes: not built here.)
+# SEEN IN PLAY 2026-11-21 (the owner, a new seed, Debug's Add all and adult): Epona won from Ingo in both races and the
+# fence jumped (the quest done), then back as a child, Talon woken at the castle, and at the ranch Malon taught and gave the
+# seed's item as usual. So the lesson is not shut once the quest is done, and from placement 18 (MALON_FREE_FROM) it asks
+# for its own rule again; placements 15-17 keep asking for everything, as their seeds were made.
 MALON_HARD = ("song_epona",)
 MALON_HARD_FROM = 15
+MALON_FREE_FROM = 18
 SONGS_HARD = ("frogs",)   # (the frogs ask for six songs: with the songs shuffled, for everything, so no gating item is theirs)
 SONGS = (
     Gift("song_zelda", "Dm_MelodyGet_Zelda", (ZL,), ZL, "HyruleCastle", "Impa's lesson: Zelda's Lullaby", CHILD, "songs"),
@@ -5483,6 +5488,71 @@ def ageless_actors(which):
     """the actors made usable by both ages: which's bit 1 the swords, bit 2 the age-only items (AGELESS_ITEMS but the swords)"""
     return (AGELESS_SWORDS if which & 1 else ()) + (tuple(x for x in AGELESS_ITEMS if x not in AGELESS_SWORDS) if which & 2 else ())
 AGELESS_TRUE = (208, b"\x01\x00\x00\x00")
+
+
+# ---- Zelda's Letter in a slot of its own (the owner, 2026-11-21) ----
+# The menu's trade slot (the pouch table's ItemArray, Pa_ItemIcon_23) lists every trade item, the adult's and then the
+# child's: Zelda's Letter, the Chicken (Item_AlarmCucco), the Weird Egg; it shows the first one Link holds that his age
+# may use. The original's sequence never let a child hold two, but the randomizer does (the letter shuffled, or the
+# Debug tab's Add all): with the letter the egg and its chicken can't be chosen again (the chicken is never taken: after
+# Talon wakes it stays, under the letter as in the game). So the letter moves to the amiibo slot (Pa_ItemIcon_24, which
+# does nothing here), before the amiibo: the egg and the chicken keep the trade slot, the letter is shown beside it.
+LETTER_SLOT = ("ItemArray", 22, 23, "Item_ZeldaLetter")
+
+
+def pouch_letter_slot(data, slots=LETTER_SLOT):
+    """the pouch table with an item moved from one slot's list to the front of another's (LETTER_SLOT): (the new bytes).
+    As pouch_ageless: the game's bytes are kept, the two new lists written after the file's end and the two slots
+    pointed at them. ValueError: not the table known, or the item not in the first slot's list."""
+    array_key, src, dst, name = slots
+    if data[:2] != b"YB":
+        raise ValueError("not a little-endian BYML")
+    key_at, str_at, root = struct.unpack_from("<III", data, 4)
+    keys, strings = table(data, key_at), table(data, str_at)
+    u32 = lambda at: struct.unpack_from("<I", data, at)[0]
+
+    def entries_of(at):   # a dict: [(key, type, value, the value's place)]
+        if data[at] != 0xC1:
+            raise ValueError("not a dictionary at %#x" % at)
+        n = int.from_bytes(data[at + 1:at + 4], "little")
+        return [(keys[int.from_bytes(data[at + 4 + 8 * k:at + 7 + 8 * k], "little")], data[at + 7 + 8 * k], u32(at + 8 + 8 * k),
+                 at + 8 + 8 * k) for k in range(n)]
+
+    def items_of(at):   # an array: [(type, value)]
+        if data[at] != 0xC0:
+            raise ValueError("not an array at %#x" % at)
+        n = int.from_bytes(data[at + 1:at + 4], "little")
+        base = at + 4 + ((n + 3) & ~3)
+        return [(data[at + 4 + k], u32(base + 4 * k)) for k in range(n)]
+
+    def field(at, key):
+        hit = [e for e in entries_of(at) if e[0] == key]
+        if len(hit) != 1:
+            raise ValueError("no %s" % key)
+        return hit[0]
+
+    slots_at = field(root, array_key)[2]
+    rows = items_of(slots_at)
+    src_list, dst_list = field(rows[src][1], "Actor"), field(rows[dst][1], "Actor")
+    src_items, dst_items = items_of(src_list[2]), items_of(dst_list[2])
+    mine = [(t, v) for t, v in src_items if strings[field(v, "ActorShort")[2]] == name]
+    if len(mine) != 1:
+        raise ValueError("slot %d holds %d of %s" % (src, len(mine), name))
+    if any(strings[field(v, "ActorShort")[2]] == name for _, v in dst_items):
+        raise ValueError("slot %d holds %s already" % (dst, name))
+    out = bytearray(data)
+
+    def array(items):
+        out.extend(bytes(-len(out) % 4))
+        at = len(out)
+        out.extend(bytes((0xC0,)) + len(items).to_bytes(3, "little") + bytes(t for t, _ in items))
+        out.extend(bytes(-len(out) % 4))
+        out.extend(b"".join(struct.pack("<I", v) for _, v in items))
+        return at
+
+    struct.pack_into("<I", out, src_list[3], array([i for i in src_items if i != mine[0]]))
+    struct.pack_into("<I", out, dst_list[3], array(mine + dst_items))
+    return bytes(out)
 
 
 def pouch_ageless(data, actors):
@@ -6332,7 +6402,7 @@ def main():
     elif gifts:    # (the scrubs alone)
         needs = {h: gifts[h].need if h in gifts else n for h, n in needs.items()}
     if a.songs:    # (the songs named: a lesson's line names its own; the frogs ask for everything)
-        malon_hard = a.songs == 2 and placement >= MALON_HARD_FROM   # (Malon's lesson can be shut: MALON_HARD)
+        malon_hard = a.songs == 2 and MALON_HARD_FROM <= placement < MALON_FREE_FROM   # (Malon's lesson asked for everything: MALON_HARD)
         needs = {h: frozenset(PROGRESSION) if malon_hard and h in lessons and gifts[h].key in MALON_HARD else
                  n if h in lessons else frozenset(PROGRESSION) if h in gifts and gifts[h].key in SONGS_HARD else
                  song_need(n, spots[h][0], gifts[h].key if h in gifts else None) for h, n in needs.items()}
@@ -7068,6 +7138,13 @@ def main():
         except (OSError, ValueError, KeyError, struct.error, IndexError) as e:
             sys.exit("either age's items: %s. Nothing written." % e)
         print("Either age's items: %s usable by both ages (%d marks set)" % (("", "the swords", "the age-only items", "the swords and the age-only items")[a.ageless], count))
+    try:   # (Zelda's Letter in the amiibo slot, every seed: the egg and the chicken stay choosable, LETTER_SLOT)
+        was = gift_files[AGELESS_TABLE] if AGELESS_TABLE in gift_files else open(os.path.join(romfs, *AGELESS_TABLE.split("/")), "rb").read()
+        gift_files[AGELESS_TABLE] = pouch_letter_slot(was)
+        shop_parts.add(AGELESS_TABLE)
+    except (OSError, ValueError, KeyError, struct.error, IndexError) as e:
+        sys.exit("Zelda's Letter's slot: %s. Nothing written." % e)
+    print("Zelda's Letter has a slot of its own (the amiibo slot): the Weird Egg and its Chicken keep the trade slot")
     if a.ageless & 2:   # (the age-only items: each Link lent the other's clips, AGELESS_ANIMS)
         try:
             lent = 0
