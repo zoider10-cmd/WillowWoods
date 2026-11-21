@@ -484,7 +484,8 @@ public static class SaveSlots {
 
     // (Willow Woods) A save emptied for a new seed, its name kept: what it held is kept first as a copy (SaveCopies, named
     // "<name> before a new seed <date>"), with its record of the checks collected; its seed goes (the new one is set after).
-    public static string StartOver(string dir, string saveFolder, string name) {
+    // (keepSeed: the save's own seed is left, for a seed just made for it: New seed's "Use this save")
+    public static string StartOver(string dir, string saveFolder, string name, bool keepSeed = false) {
         string current;
         var names = Names(dir, saveFolder, out current);
         int at = names.FindIndex(n => Same(n, name));
@@ -503,7 +504,7 @@ public static class SaveSlots {
             if (record != null && File.Exists(record)) { File.Copy(record, to + ".collected.txt", true); File.Delete(record); }
             if (played) { foreach (string f in Directory.GetFiles(from)) File.Delete(f); foreach (string d in Directory.GetDirectories(from)) Directory.Delete(d, true); }
             else if (Directory.Exists(from)) Directory.Delete(from, true);
-            if (saveFolder == Rando) {
+            if (saveFolder == Rando && !keepSeed) {
                 string seed = Path.Combine(SeedRoot(dir), names[at]);
                 if (File.Exists(seed + ".txt")) File.Delete(seed + ".txt");
                 if (Directory.Exists(seed)) Directory.Delete(seed, true);
@@ -1158,6 +1159,7 @@ class PlayChoiceForm : Form {
     void OnSeed() {
         if (list.SelectedIndex < 0 || Mode != 1) return;
         string n = (string)list.SelectedItem;
+        bool startOver = false;
         if (LauncherForm.GameRunning()) {
             MessageBox.Show(this, "Close the game first.", "Saves", MessageBoxButtons.OK, MessageBoxIcon.Information); return;
         }
@@ -1166,11 +1168,13 @@ class PlayChoiceForm : Form {
         if (!empty.Contains(n)) {
             int answer;
             using (var ask = new AskForm("New seed", "\"" + n + "\" has progress. On a new seed its chests will not be the ones it was played with.\n\n" +
-                                         "Make the new seed for a new save, and leave this one as it is?", "Create a new save", "Use this save")) {
+                                         "Make the new seed for a new save, and leave this one as it is? \"Use this save\" starts it over on the new seed " +
+                                         "(its progress is kept as a copy first: More > Files and help > Save copies brings it back).", "Create a new save", "Use this save")) {
                 ask.ShowDialog(this);
                 answer = ask.Answer;
             }
             if (answer < 0) return;
+            startOver = answer == 1;   // (the owner's ask 2026-11-21: this save's old progress goes, once the seed is made)
             if (answer == 0) {
                 string made = SaveSlots.Free(dir, SaveCopies.Folders[Mode]);
                 if (made == null) { MessageBox.Show(this, "A new save could not be made.", "Saves", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
@@ -1180,6 +1184,10 @@ class PlayChoiceForm : Form {
         }
         using (var f = new RandoSeedForm(dir, n, SaveSlots.Shown(n, empty.Contains(n)).Replace(":  empty", "")))
             if (f.ShowDialog(this) != DialogResult.OK) { Fill(n); return; }
+        if (startOver) {
+            string error = SaveSlots.StartOver(dir, SaveCopies.Folders[Mode], n, true);
+            if (error != null) { MessageBox.Show(this, error, "Saves", MessageBoxButtons.OK, MessageBoxIcon.Warning); Fill(n); return; }
+        }
         Save = n;   // (Create and start: the window closes as Play does, and the launcher plays this save)
         DialogResult = DialogResult.OK; Close();
     }

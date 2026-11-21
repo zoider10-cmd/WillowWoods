@@ -94,7 +94,19 @@ def main():
     check(script.index('stamp = "placement %d%sfixes %d\\n"') < script.index('stamp = stamp[:-1] + " hints %d\\n"'),
           "the hints are not on the fixes' line")
     # (the stone's talk: its first question, the Mask of Truth, leads to the line whatever the answer)
-    check("gift_files[HINT_FLOW] = stone_talk_open(was)" in script and 'HINT_TALK, HINT_RUMOR = "Talk", "InitTalk_GossipStone"' in script and
+    # (and a stone talked to is heard: its flow sets the game's flag, the game's side keeps the stone nearest Link, and the
+    #  Tracker's Gossip Stones row lists what the heard ones say, asked 2026-11-21)
+    host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
+    menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
+    check("stones = stone_places(romfs, zs, dicts, gift_files)" in script and 'HINT_HEARD_FLAG = "GossipStone_NaviTalk_Temporary"' in script
+          and '"%s|%s|%.1f %.1f %.1f|%s\\n" % (label, folder, pos[0], pos[1], pos[2], words)' in script,
+          "the hints file does not name each stone and its place")
+    check("#define OOT_STONE_FLAG 0x05ab3f3du" in host and S.murmur3(b"GossipStone_NaviTalk_Temporary") == 0x05ab3f3d
+          and "oot_stone_heard(c);" in host and '"rando/hints_heard.txt"' in host, "the game's side does not keep the stones heard")
+    check("constexpr int kTrackerStoneRow = 3;" in menu and "constexpr int kTrackerFirstArea = 4;" in menu and
+          'snprintf(tracker_name[kTrackerStoneRow], sizeof tracker_name[0], "Gossip Stones");' in menu and
+          'hints_heard.txt' in menu and "tracker_hints_help" not in menu, "the Tracker has no Gossip Stones row of the hints heard")
+    check("gift_files[HINT_FLOW] = stone_heard_flow(stone_talk_open(was))" in script and 'HINT_TALK, HINT_RUMOR = "Talk", "InitTalk_GossipStone"' in script and
           "struct.pack_into(\"<H\", out, cases + 8 * c + 4, rumor[0])" in script,
           "a stone talked to without the Mask of Truth does not go to its line")
     header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
@@ -102,8 +114,8 @@ def main():
     check('X(HINTS, "Gossip Stone hints", "rando_hints",' in header and 'new object[] { "rando_hints", "Gossip Stone hints",' in launcher,
           "the setting is not a row of the game's table or the launcher's")
     menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
-    check('+ "rando_hints.txt";' in menu and "selr.tracker == 0 && !tracker_hints_help.empty() ? tracker_hints_help.c_str() : selr.help;" in menu,
-          "the Tracker's first row does not show the hints")
+    check('(folder + "rando_hints.txt")' in menu and "selr.tracker == kTrackerStoneRow && tracker_check_count ? tracker_stone_help.c_str() : selr.help;" in menu,
+          "the Tracker's Gossip Stones row does not show the hints heard")
     print("PASS: the Gossip Stones' hints")
 
 

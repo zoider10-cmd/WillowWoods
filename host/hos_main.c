@@ -2392,6 +2392,67 @@ static int oot_pedestal_give(Ctx *c) {
 
 /* Where Link is, each frame, and each second: the seed's checks read when the seed is another, and each check's word to
    the menu, in the file's order */
+/* (the randomizer's fork, asked 2026-11-21) The Gossip Stones heard, for the Tracker tab's row of them (vk_menu.cpp
+   tracker_stones_load). A stone's talk sets the game's flag GossipStone_NaviTalk_Temporary just before the stone speaks
+   (tools/rando/rando_seed.py stone_heard_flow; the flow's question of it is passed over with the hints on, so it has no
+   other use then): seen set here, it is put out and the stone nearest Link in the map he is in (within OOT_STONE_NEAR) is
+   heard. The stones and their places: <game folder>/mods/rando-seed/rando_hints.txt, "<name>|<folder>|<x y z>|<words>";
+   the record: <game folder>/rando/hints_heard.txt, "seed <the seed's stamp>", then each stone's name, once. */
+#define OOT_STONE_FLAG 0x05ab3f3du
+#define OOT_STONE_NEAR 8.0f
+#define OOT_STONES_MAX 64
+static void oot_stone_heard(Ctx *c) {
+    static char names[OOT_STONES_MAX][48], folders[OOT_STONES_MAX][40];
+    static float places[OOT_STONES_MAX][3];
+    static int count = -1;
+    static char seed_of[sizeof oot_checks_seed];
+    int set = 0;
+    if (!oot_gamedata_bool(c, OOT_STONE_FLAG, &set) || !set) return;
+    oot_gamedata_set_bool(c, OOT_STONE_FLAG, 0);
+    char path[MAX_PATH + 48];
+    if (count < 0 || strcmp(seed_of, oot_checks_seed)) {   /* (the stones of this seed, read again when the seed is another) */
+        count = 0;
+        snprintf(seed_of, sizeof seed_of, "%s", oot_checks_seed);
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/rando_hints.txt") ? fopen(path, "r") : NULL;
+        char line[512];
+        while (f && count < OOT_STONES_MAX && fgets(line, sizeof line, f)) {
+            if (line[0] == '#') continue;
+            if (sscanf(line, "%47[^|]|%39[^|]|%f %f %f|", names[count], folders[count], &places[count][0], &places[count][1], &places[count][2]) == 5) count++;
+        }
+        if (f) fclose(f);
+    }
+    int best = -1;
+    float best_d = OOT_STONE_NEAR * OOT_STONE_NEAR;
+    for (int i = 0; i < count; i++) {
+        if (!oot_banc_in_folder(oot_link_map, folders[i])) continue;
+        float d = 0;
+        for (int k = 0; k < 3; k++) d += (places[i][k] - oot_link_place[k]) * (places[i][k] - oot_link_place[k]);
+        if (d < best_d) best_d = d, best = i;
+    }
+    if (best < 0) { hos_log("rando: a Gossip Stone talked to, but none of the seed's is near Link"); return; }
+    /* (the record: kept when it is this seed's and has the stone already, else written with it) */
+    char seen[OOT_STONES_MAX][48];
+    int n = 0, ours = 0, had = 0;
+    FILE *f = oot_game_file(path, sizeof path, "rando/hints_heard.txt") ? fopen(path, "r") : NULL;
+    if (f) {
+        char line[1100];
+        while (fgets(line, sizeof line, f)) {
+            line[strcspn(line, "\r\n")] = 0;
+            if (!strncmp(line, "seed ", 5)) { ours = !strcmp(line + 5, oot_checks_seed); continue; }
+            if (ours && n < OOT_STONES_MAX) { snprintf(seen[n], sizeof seen[n], "%s", line); had |= !strcmp(line, names[best]); n++; }
+        }
+        fclose(f);
+    }
+    if (had) return;
+    f = oot_game_file(path, sizeof path, "rando/hints_heard.txt") ? fopen(path, "w") : NULL;
+    if (!f) return;
+    fprintf(f, "seed %s\n", oot_checks_seed);
+    for (int i = 0; i < n; i++) fprintf(f, "%s\n", seen[i]);
+    fprintf(f, "%s\n", names[best]);
+    fclose(f);
+    hos_log("rando: Gossip Stone %s heard", names[best]);
+}
+
 static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     void rx_option_set(int id, int value);
     static int64_t next, next_stamp;
@@ -2404,6 +2465,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
         const int changed = oot_shelf_flags(c);
         if (changed) hos_log("rando: tracker: %d shop shelves put out, or marked as the save says", changed);
     }
+    oot_stone_heard(c);   /* (a Gossip Stone talked to: its hint is the Tracker's) */
     {   /* (a test's: HOS_OOT_SETFLAG="<hash in hex>=<0 or 1>,..." sets those truth values of the game's list once, some
            seconds into the game, and says what each was: to try a scene's steps one at a time) */
         static int turn;

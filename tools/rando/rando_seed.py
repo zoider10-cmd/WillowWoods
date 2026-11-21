@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 22  # 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 23  # 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -5554,6 +5554,85 @@ def stone_talk_open(data):
     return bytes(out)
 
 
+HINT_HEARD_FLAG = "GossipStone_NaviTalk_Temporary"   # (the game's own, set by its Navi talk: passed over with the hints on)
+HINT_SAY = "EventTalkWithInstanceNameLabel"
+HINT_STONE_ACTOR = "Obj_GossipStone"
+
+
+def stone_heard_flow(data):
+    """GossipStone's flow (after stone_talk_open) with the stone's line said after HINT_HEARD_FLAG is set (a copy of the
+    flow's own step that sets it), for the Tracker's row of the hints heard: the game's side sees the flag, puts it out
+    and keeps the stone nearest Link (host/hos_main.c oot_stone_heard). The new bytes; ValueError: not the flow known."""
+    import copy
+    import io
+    evfl = evfl_module()
+    flow = evfl.EventFlow()
+    flow.read(data)
+    fc = flow.flowchart
+    says = [e for e in fc.events if isinstance(e.data, evfl.ActionEvent) and e.data.actor_action.v.v == HINT_SAY]
+    sets = [e for e in fc.events if isinstance(e.data, evfl.ActionEvent) and e.data.actor_action.v.v == "EventTriggerSetGameDataBool"
+            and e.data.params and e.data.params.data.get("GameDataName") == HINT_HEARD_FLAG]
+    if len(says) != 1 or not sets or any(e.name == "WillowStoneHeard" for e in fc.events):
+        raise ValueError("not one step that says the stone's line and one that sets %s, or changed already" % HINT_HEARD_FLAG)
+    say = says[0]
+    mark = evfl.Event()
+    mark.name = "WillowStoneHeard"
+    mark.data = evfl.ActionEvent()
+    mark.data.actor.v, mark.data.actor_action.v = sets[0].data.actor.v, sets[0].data.actor_action.v
+    mark.data.params = copy.deepcopy(sets[0].data.params)
+    mark.data.params.data["Value"] = True
+    mark.data.nxt.v = say
+    for e in fc.events:   # (every way to the line goes through the mark first)
+        d = e.data
+        if hasattr(d, "nxt") and d.nxt.v is say:
+            d.nxt.v = mark
+        for case in getattr(d, "cases", {}).values():
+            if case.v is say:
+                case.v = mark
+        for fork in getattr(d, "forks", []):
+            if fork.v is say:
+                fork.v = mark
+    for entry in fc.entry_points:
+        if entry.main_event.v is say:
+            entry.main_event.v = mark
+    fc.events.append(mark)
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
+
+
+def stone_places(romfs, zs, dicts, read=None):
+    """{(a Gossip Stone's name (its line's label), its map folder): (x, y, z)} from the maps (Banc/<folder>/*.bcett.byml.zs;
+    a stone in a child's and an adult's map is the same stone; a few stand in two folders). read: the seed's changed
+    files, by path, first."""
+    out = {}
+    root = os.path.join(romfs, "Banc")
+
+    def walk(node, folder):
+        kind, value = node if isinstance(node, tuple) and len(node) == 2 else (None, None)
+        if kind == "dict":
+            gy, name, at = value.get("Gyaml"), value.get("Name"), value.get("Translate")
+            if gy and gy[0] == "string" and gy[1].startswith(HINT_STONE_ACTOR) and name and name[0] == "string" and at and at[0] == "array":
+                pos = tuple(struct.unpack("<f", v[1][:4])[0] if isinstance(v[1], (bytes, bytearray)) else float(v[1]) for v in at[1][:3])
+                out.setdefault((name[1], folder), pos)
+            for v in value.values():
+                walk(v, folder)
+        elif kind == "array":
+            for v in value:
+                walk(v, folder)
+    for folder in sorted(os.listdir(root)) if os.path.isdir(root) else []:
+        here = os.path.join(root, folder)
+        for n in sorted(os.listdir(here)) if os.path.isdir(here) else []:
+            if not n.endswith(".bcett.byml.zs"):
+                continue
+            rel = "Banc/%s/%s" % (folder, n)
+            raw = (read or {}).get(rel) or unpack(open(os.path.join(here, n), "rb").read(), zs, dicts)
+            if HINT_STONE_ACTOR.encode() not in raw:
+                continue
+            walk(byml_parse(raw)[0], folder)
+    return out
+
+
 def hint_line(data, label, words):
     """the text file with the stone's line `label` saying `words`: its opening tags (the box, the voice, the colour)
     kept, the rest of the line made the words (msbt_set)"""
@@ -5972,6 +6051,87 @@ def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=T
                          if DUNGEON_AP_ITEMS.get((name, level)) in progression or DUNGEON_AP_ITEMS.get((name, level)) in DUNGEON_SHUFFLED_ONLY & pool)
         (other if mine & DUNGEON_SHUFFLED_ONLY - progression else plain).extend(base | mine for base in entries)
     return either(plain or other)
+
+
+# ---- Each overworld check by its own rule (placement 23, the owner's ask 2026-11-21) ----
+# Before, every overworld check asked for its area's hardest (RULES: Kakariko's child Gold Skulltulas the Slingshot and
+# the sword, the out-of-the-forest CHILD, though a weapon and the night are all they take; most of a young Link's checks
+# out of logic at a new game's start with the forest and Kakariko's gate open). From placement 23 each chest, Gold
+# Skulltula and Piece of Heart lying in the world that the table knows asks for any one of its own ways from a new
+# game's start, worked out by tools/rando/overworld_logic.py from the same logic as the dungeons' (OVERWORLD_RULES_FILE,
+# beside this script, one table for each OVERWORLD_VARIANT of the seed's settings). Its ways are the whole of its rule:
+# the old steps that folded the story into CHILD and ADULT (the forest's way out, the Door of Time, Kakariko's gate, the
+# songs' and the gifts' areas, Zora's Domain's two ways) are the table's already and are not done again; the items'
+# own steps are (progressive items, magic, the ocarina, sticks for the sword, the Hookshot's audit). Its items:
+# DUNGEON_AP_ITEMS and OVERWORLD_AP_ITEMS (sticks bought are the Kokiri Sword, which the sticks step widens); a song
+# the seed doesn't shuffle asks for its lesson's rule (SONGS), any other item it doesn't shuffle is held, as in the
+# dungeons'. A Gold Skulltula only a child reaches asks for a weapon as well (OVERWORLD_KILL: the logic takes the child to
+# have one). Gifts and shelves keep their own rules (GIFTS, shop_need): the table has no actor of theirs.
+# NOT SEEN IN PLAY.
+OVERWORLD_FROM = 23
+OVERWORLD_RULES_FILE = "overworld_rules.json"
+OVERWORLD_AP_ITEMS = {("Buy Deku Stick (1)", 1): S, ("Zeldas Letter", 1): "Item_ZeldaLetter"}
+OVERWORLD_KILL = frozenset((S, SL, BM, BB))
+# Bombchu Bowling has been open from the start in every seed since fixes 59 (ALWAYS_EXP, CHU_LOGIC: no longer after
+# Dodongo's Cavern), and the game lends its Bombchus: its two prizes ask for a child out of the forest alone, not bombs
+# (the owner, 2026-11-21: they asked for the Bomb Bag).
+BOWLING_FREE = ("bowling_bag", "bowling_heart")   # (any one: the sword (or sticks), the Slingshot, the Boomerang, bombs)
+_OVERWORLD_TABLE = {}
+
+
+def overworld_variant(open_deku, open_forest, gate_open, open_door):
+    """the table's key for the seed's settings (overworld_logic.py variant_key): the forest (both ways open, the way out
+    only, closed), Kakariko's gate (open from the start, or the letter's), the Door of Time"""
+    forest = "open" if open_deku and open_forest else "closed_deku" if open_forest else "closed"
+    return "%s,%s,%d" % (forest, "open" if gate_open else "zelda", 1 if open_door else 0)
+
+
+# (the checks taken by name, not by a map's actor: a character's gift by its key, a shop's shelves by its key (each
+#  shelf asks as its shop's first does, then for its price's wallet). The lessons keep their own rules (the story they
+#  wait for in the remake: DEKU_STORY, Malon's), as do the Skulltula house (its tokens), the frogs, the bowling and the
+#  Bombchu Shop (open from the start here; the other logic asks for bombs), the Great Fairies (their prices), and the
+#  Potion Shop keeper's bottle (the remake's own errand))
+OVERWORLD_GIFTS = {"darunia": "GC Darunias Joy", "lostwood_target": "LW Target in Woods", "forest_stage_skull": "Deku Theater Skull Mask",
+                   "forest_stage_truth": "Deku Theater Mask of Truth", "diving": "ZD Diving Minigame", "fishing_child": "LH Child Fishing",
+                   "fishing_adult": "LH Adult Fishing", "gallery_market": "Market Shooting Gallery Reward",
+                   "gallery_kakariko": "Kak Shooting Gallery Reward", "cucco_lady": "Kak Anju as Child", "archery_heart": "GF HBA 1000 Points",
+                   "archery_quiver": "GF HBA 1500 Points", "goron_tunic": "GC Rolling Goron as Adult", "zora_tunic": "ZD King Zora Thawed",
+                   "rolling_goron": "GC Rolling Goron as Child", "roof_man": "Kak Man on Roof", "skull_kid_song": "LW Skull Kid",
+                   "skull_kid_game": "LW Ocarina Memory Game", "dog_lady": "Market Lost Dog"}
+OVERWORLD_SHOPS = {"kokiri": "KF Shop Item 1", "general": "Market Bazaar Item 1", "medicine": "Market Potion Shop Item 1",
+                   "goron": "GC Shop Item 1", "zora": "ZD Shop Item 1",
+                   "kgeneral": "Kak Bazaar Item 1", "kmedicine": "Kak Potion Shop Item 1"}
+
+
+def overworld_table(variant):
+    """({an actor's hash: [way, ...]}, {a check's name: [way, ...]}) of OVERWORLD_RULES_FILE's variant; ({}, {}) without it"""
+    if variant not in _OVERWORLD_TABLE:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), OVERWORLD_RULES_FILE), encoding="utf-8") as f:
+                table = json.load(f)["variants"][variant]
+            _OVERWORLD_TABLE[variant] = ({int(h): e["ways"] for h, e in table["by_actor"].items()}, table.get("named", {}))
+        except (OSError, ValueError, KeyError):
+            _OVERWORLD_TABLE[variant] = ({}, {})
+    return _OVERWORLD_TABLE[variant]
+
+
+def overworld_rule(ways, progression, lessons=None, child_skulltula=False):
+    """an overworld check's own rule from its table ways (see above), in our items. lessons: {a song: its lesson's
+    rule} for the songs not shuffled; child_skulltula: a Gold Skulltula only a child reaches (a weapon asked for)"""
+    out = []
+    for way in ways:
+        mine = set()
+        for name, level in way.items():
+            item = DUNGEON_AP_ITEMS.get((name, level)) or OVERWORLD_AP_ITEMS.get((name, level))
+            if item in progression:
+                mine.add(item)
+            elif item and lessons and item in lessons:
+                lesson = lessons[item]
+                mine |= set(lesson if not isinstance(lesson, Either) else min(lesson, key=len))
+        if child_skulltula and not mine & OVERWORLD_KILL:
+            mine.add(S)
+        out.append(frozenset(mine))
+    return either(out) if out else None
 
 
 def stick_need(need, letter, bolero=False):
@@ -6406,6 +6566,7 @@ def main():
     a.hints = a.hints or ini["rando_hints"] != 0
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
+    a.gate_open = ini["rando_letter"] == 2   # (Kakariko gate Open: the overworld's rules by it, placement 23, OVERWORLD_RULES)
     a.letter = a.letter or ini["rando_letter"] == 1   # (Kakariko gate: 1 the letter shuffled, 2 open: the game's side's,
     #  host/hos_main.c oot_open_death_mountain, and the letter stays Zelda's)
     # (two settings since 2026-11-19: rando_ageless the swords, rando_ageless_items the age-only items; an older seed's
@@ -6498,7 +6659,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" master sword 1" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" master sword 1" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -6742,6 +6903,9 @@ def main():
     except ValueError as e:
         sys.exit("the shops: %s. Nothing written." % e)
     shelf_start = {} if os.environ.get("RANDO_TEST_SHELF_FLAGS") == "0" else {name: True for name in shelf_flag.values()}
+    # (Bombchu Bowling open from the start, every seed since fixes 59: its prizes a child's alone, BOWLING_FREE)
+    if placement >= OVERWORLD_FROM:
+        gifts.update((h, g._replace(need=CHILD)) for h, g in list(gifts.items()) if g.key in BOWLING_FREE)
     # (the Skulltula house's rewards ask for their tokens from placement 12: house_need)
     gifts.update((h, g._replace(need=house_need(g.key, g.need, placement))) for h, g in list(gifts.items()) if g.key in HOUSE_TOKENS)
     # (the Great Fairies' offerings: rolled with Shops, and a fairy past the child's wallet asks for its wallet: FAIRY_PRICES)
@@ -6813,6 +6977,32 @@ def main():
     needs = {h: gate(n, spots[h][0]) for h, n in needs.items()}
     if a.ocarina:   # (a lesson: its notes are played back on an ocarina)
         needs = {h: ocarina_need(n, True) if h in lessons else n for h, n in needs.items()}
+    # (each overworld check by its own rule, placement 23: its table ways, through the items' own steps alone)
+    over, over_named = overworld_table(overworld_variant(a.open_deku, a.open_forest, a.gate_open, a.open_door)) if placement >= OVERWORLD_FROM else ({}, {})
+    if placement >= OVERWORLD_FROM and not over:
+        print("each overworld check's own rule: %s is not beside the script, so the overworld asks as before" % OVERWORLD_RULES_FILE)
+    song_lessons = {g.item: g.need for g in SONGS if g.item not in PROGRESSION}
+
+    def over_rule(h, area, child_skulltula=False, name=None):
+        """an overworld check's own rule (by its actor, or by name), its items' steps done; None where the table doesn't know it"""
+        ways = over_named.get(name) if name else over.get(h) if area not in DUNGEON_ENTRY else None
+        made = overworld_rule(ways, PROGRESSION, song_lessons, child_skulltula) if ways else None
+        if made is None:
+            return None
+        made = step(made)
+        if a.magic:
+            made = each(magic_need, made)
+        return ocarina_need(made) if a.ocarina else made
+    for h, s in spots.items():
+        if h in shelves:   # (a shop's shelf: its shop's first, and its price's wallet)
+            made = over_rule(h, s[0], name=OVERWORLD_SHOPS.get(shelves[h][0].key)) if over else None
+            made = None if made is None else each(lambda w: w | wallet_need(shelf_prices[h]), made)
+        elif h in gifts:
+            made = over_rule(h, s[0], name=OVERWORLD_GIFTS.get(gifts[h].key)) if over and gifts[h].key in OVERWORLD_GIFTS else None
+        else:
+            made = over_rule(h, s[0])
+        if made is not None:
+            needs[h] = made
     door = (lambda need, h, area: gate(each(door_need, forest(need, area), grown(h, area), a.open_forest, area, a.door_song), area)) if door_rules else (
         lambda need, h, area: gate(forest(need, area), area))   # (with Open forest exit's step: the Gold Skulltulas' and the Pieces of Heart's)
     # (what a Gold Skulltula asks for, by the same settings; from placement 8 without Open forest exit's step: in a
@@ -6847,6 +7037,21 @@ def main():
         skull_long, heart_long = skull_asks, heart_asks
         skull_asks = lambda h, at=None: fit_rule(skull_long(h, at))
         heart_asks = lambda h: fit_rule(heart_long(h))
+    if over:   # (an overworld Gold Skulltula's or Piece of Heart's own rule: over_rule, then sticks and the tracker's fit)
+        skull_old, heart_old = skull_asks, heart_asks
+
+        def over_done(made):
+            return fit_rule(each(stick_need, made, a.letter, bolero) if sticks else made)
+
+        def skull_over(h, at=None):
+            area = at or skulls[h][0]
+            made = over_rule(h, area, child_skulltula=h in maps and check_ages(maps[h]) == "C")
+            return skull_old(h, at) if made is None else over_done(made)
+
+        def heart_over(h):
+            made = over_rule(h, pieces[h][0]) if h not in bosses else None
+            return heart_old(h) if made is None else over_done(made)
+        skull_asks, heart_asks = skull_over, heart_over
     # (Songs: Anywhere: what the lessons asked about by name may hold, by this seed's items and the game's flags; the
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
     lesson_safe, lesson_only = frozenset(), {}
@@ -7491,7 +7696,7 @@ def main():
             *(sum(1 for p in shelf_prices.values() if wallet_need(p) == need) for _, need in WALLETS)))
 
     # ---- Hints from the Gossip Stones (rando_hints): every stone's line, in every language's archive ----
-    hints = []
+    hints, stones = [], {}
     if a.hints:
         held = [(spots[h][0], gives.get(h, spots[h][1]), h in gives) for h in spots]
         held += [(skulls[h][0], skull_drops.get(h) or TOKEN, True) for h in able]
@@ -7513,7 +7718,8 @@ def main():
                 gift_files[rel] = sarc_write(parts)
                 shop_sizes[rel[:-3]] = len(gift_files[rel])
             was = gift_files[HINT_FLOW] if HINT_FLOW in gift_files else unpack(open(os.path.join(romfs, HINT_FLOW), "rb").read(), zs, dicts)
-            gift_files[HINT_FLOW] = stone_talk_open(was)
+            gift_files[HINT_FLOW] = stone_heard_flow(stone_talk_open(was))   # (and a stone talked to is heard: the Tracker's row)
+            stones = stone_places(romfs, zs, dicts, gift_files)
             gift_sizes[HINT_FLOW[:-3]] = len(gift_files[HINT_FLOW])
         except (OSError, KeyError, ValueError, struct.error, IndexError) as e:
             sys.exit("the Gossip Stones' hints: %s. Nothing written." % e)
@@ -7998,8 +8204,10 @@ def main():
         print("Progressive items: %d map file%s of shops with shelves of a family, written for each tier" % (len(tier_maps), "" if len(tier_maps) == 1 else "s"))
     if hints:
         spoiler += ["", "the Gossip Stones' hints (the stone's name -> what it says)"] + ["  %-34s %s" % h for h in sorted(hints)]
-    with open(os.path.join(mod, HINTS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the Tracker's: each hint once)
-        f.write("".join("%s\n" % w for w in sorted(set(w for _, w in hints))))
+    with open(os.path.join(mod, HINTS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the Tracker's: each stone, its place and its hint)
+        f.write("# <the stone's name>|<its map folder>|<x y z>|<what it says>: the Tracker's Gossip Stones row lists the ones heard\n")
+        f.write("".join("%s|%s|%.1f %.1f %.1f|%s\n" % (label, folder, pos[0], pos[1], pos[2], words)
+                        for label, words in sorted(hints) for (name, folder), pos in sorted(stones.items()) if name == label))
     with open(os.path.join(mod, "spoiler.txt"), "w", encoding="utf-8") as f:
         f.write("seed %d, chests setting %d, dungeon keys setting %d\n(area: chest type, position, what it held -> what it holds now)\n" % (
             seed, which, keys_mode) + "\n".join(spoiler) + "\n")

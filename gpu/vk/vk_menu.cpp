@@ -159,13 +159,22 @@ constexpr int kTrackerShowRow = 1;    // (the tab's second row: what it lists)
 // other way back leaves a child in the desert, and no rule of a seed can keep a song from being played. It is the
 // randomizer's own, not a debug tool: there with the debug tools off)
 constexpr int kTrackerHomeRow = 2;
-constexpr int kTrackerFirstArea = 3;  // (the first of the areas' rows, after the whole game's and those two)
+constexpr int kTrackerStoneRow = 3;   // (the Gossip Stones' hints heard: tracker_stone_lines)
+constexpr int kTrackerFirstArea = 4;  // (the first of the areas' rows, after the whole game's and those three)
 const char kTrackerHomeHelp[] =
     "Takes Link home: to the Kokiri Forest as a child, to the Market as an adult; in a dungeon, to its entrance. For when "
     "there is no way back from where he is, a warp song played with no other to leave by. Confirm twice.";
-// (the Gossip Stones' hints, rando_hints: the seed writes each once to rando_hints.txt beside the tracker's file. The
-// whole game's row shows them above its words, read with the tracker's file. Empty: no hints in the seed)
-std::string tracker_hints_help;
+// (the Gossip Stones' hints, rando_hints, a row of their own (asked 2026-11-21): the seed writes each stone's line to
+// rando_hints.txt beside the tracker's file, "<the stone's name>|<folder>|<x y z>|<what it says>", and the game's side
+// writes each stone talked to into <game folder>\rando\hints_heard.txt (host/hos_main.c oot_stone_heard): "seed <the
+// seed's stamp>", then the stones' names. The row lists the hints heard, each once, read with the tracker's file; Left
+// and Right scroll them (tracker_pick of the row: the first one shown). A seed's file of before, the hints alone a line,
+// shows them all)
+std::vector<std::string> tracker_stone_lines;   // (the hints heard, in the order first heard)
+int tracker_stone_total = 0;                    // (how many hints the seed has: 0 none)
+const char kTrackerStoneHelp[] =
+    "Talk to a Gossip Stone and what it says is kept here. Left and Right scroll the list.";
+std::string tracker_stone_help;
 ULONGLONG tracker_home_asked = 0;         // (when the row was confirmed once; within kTrackerForgetMs the next one goes)
 // The checks one by one: tools/rando/rando_seed.py writes <game folder>\mods\rando-seed\checks.txt beside the tracker's
 // file, a line "<area>|<kind>|<folder>|<ages>|<x> <y> <z>" for each chest and Gold Skulltula of the seed (tracker_load
@@ -348,6 +357,10 @@ std::string tracker_says(int row) {
     if (!k) {   // (its own words, how many of its checks are left and how many of those are in logic: the first row is the whole game's)
         if (!row && tracker_forget_asked && GetTickCount64() - tracker_forget_asked < kTrackerForgetMs)
             return "Press again to forget what is collected";
+        if (row == kTrackerStoneRow && tracker_check_count) {
+            if (!tracker_stone_total) return "No hints in this seed";
+            return std::to_string(tracker_stone_lines.size()) + " of " + std::to_string(tracker_stone_total) + " hints heard";
+        }
         if (row == kTrackerHomeRow && tracker_check_count)
             return tracker_home_asked && GetTickCount64() - tracker_home_asked < kTrackerForgetMs ? "Press again to go home" : "Kokiri Forest, the Market, or the dungeon's entrance";
         int in = 0, known = 0, left = 0, told = 0, all = 0, junk = 0;
@@ -2715,6 +2728,57 @@ bool env_holds(const int* value) {
 Out player_custom_output{0, 0};   // (the player's own Output resolution size when HOS_OUTPUT_RES names another of its own)
 std::string ini_path() { return options_path(); }   // (the user folder's when --user names one: vk_paths.h)
 /// The Tracker tab's rows from the seed's file, or one row saying there is none; read again at most once a second
+/// The Gossip Stones' row (see tracker_stone_lines): the seed's stones and what each says (mods\rando-seed\rando_hints.txt,
+/// in folder), the ones heard (rando\hints_heard.txt, this seed's), and the row's panel words
+void tracker_stones_load(const std::string& folder, bool on) {
+    std::vector<std::pair<std::string, std::string>> stones;   // (a stone's name, what it says)
+    std::vector<std::string> all;                            // (what the stones say, each once)
+    bool old = false;
+    if (FILE* f = on ? fopen((folder + "rando_hints.txt").c_str(), "r") : nullptr) {
+        char line[512];
+        while (fgets(line, sizeof line, f)) {
+            line[strcspn(line, "\r\n")] = 0;
+            if (!line[0] || line[0] == '#') continue;
+            const char* words = strrchr(line, '|');
+            const char* bar = strchr(line, '|');
+            old |= !words;   // (a seed's file of before: the hints alone, all shown)
+            const std::string said = words ? words + 1 : line;
+            stones.push_back({bar ? std::string(line, bar - line) : std::string(), said});
+            if (std::find(all.begin(), all.end(), said) == all.end()) all.push_back(said);
+        }
+        fclose(f);
+    }
+    tracker_stone_total = (int)all.size();
+    std::vector<std::string> heard;
+    if (old) heard = all;
+    else if (FILE* f = !stones.empty() ? fopen((game_folder_path() + "rando\\hints_heard.txt").c_str(), "r") : nullptr) {
+        std::string stamp;
+        if (FILE* g = fopen((folder + "rando_stamp.txt").c_str(), "r")) {
+            char line[1024] = {};
+            if (fgets(line, sizeof line, g)) stamp = std::string(line, strcspn(line, "\r\n"));
+            fclose(g);
+        }
+        char line[1100];
+        bool ours = false;
+        while (fgets(line, sizeof line, f)) {
+            line[strcspn(line, "\r\n")] = 0;
+            if (!strncmp(line, "seed ", 5)) { ours = !stamp.empty() && stamp == line + 5; continue; }
+            if (!ours) continue;
+            for (const auto& st : stones)
+                if (st.first == line && std::find(heard.begin(), heard.end(), st.second) == heard.end()) heard.push_back(st.second);
+        }
+        fclose(f);
+    }
+    tracker_stone_lines = heard;
+    std::string help;
+    const int first = std::clamp(tracker_pick[kTrackerStoneRow], 0, std::max(0, (int)heard.size() - 1));
+    if (heard.empty()) help = tracker_stone_total ? "No Gossip Stone has been talked to yet." : "This seed has no hints.";
+    else {
+        help = "Hints heard (" + std::to_string(first + 1) + "-" + std::to_string(heard.size()) + " of " + std::to_string(heard.size()) + "):";
+        for (size_t i = first; i < heard.size(); i++) help += "\n- " + heard[i];
+    }
+    tracker_stone_help = help + "\n\n" + kTrackerStoneHelp;
+}
 void tracker_load() {
     static ULONGLONG last = 0, called = 0;
     static std::vector<std::string> order;   // (the areas' rows as they were last put in order)
@@ -2750,29 +2814,19 @@ void tracker_load() {
         n = 1;
     }
     const bool seed = on && n > 0 && strcmp(tracker_name[0], "No seed");
-    if (seed) {   // (the second and third rows are the tab's own: what it lists, and the way home. The areas follow them)
-        n = std::min(n + 2, kTrackerRows);
-        for (int i = n - 1; i > kTrackerHomeRow; i--)
-            memcpy(tracker_name[i], tracker_name[i - 2], sizeof tracker_name[i]), memcpy(tracker_value[i], tracker_value[i - 2], sizeof tracker_value[i]);
+    if (seed) {   // (the second to fourth rows are the tab's own: what it lists, the way home, the hints heard. The areas follow them)
+        n = std::min(n + 3, kTrackerRows);
+        for (int i = n - 1; i > kTrackerStoneRow; i--)
+            memcpy(tracker_name[i], tracker_name[i - 3], sizeof tracker_name[i]), memcpy(tracker_value[i], tracker_value[i - 3], sizeof tracker_value[i]);
         snprintf(tracker_name[kTrackerShowRow], sizeof tracker_name[0], "Show");
         tracker_value[kTrackerShowRow][0] = 0;
         snprintf(tracker_name[kTrackerHomeRow], sizeof tracker_name[0], "Return home");
         tracker_value[kTrackerHomeRow][0] = 0;
+        snprintf(tracker_name[kTrackerStoneRow], sizeof tracker_name[0], "Gossip Stones");
+        tracker_value[kTrackerStoneRow][0] = 0;
     }
     tracker_count = n;
-    {   // (the hints: above the whole game's words when the seed has them)
-        std::string hints;
-        const std::string hints_path = path.substr(0, path.find_last_of("\\/") + 1) + "rando_hints.txt";
-        if (FILE* f = on ? fopen(hints_path.c_str(), "r") : nullptr) {
-            char line[256];
-            while (fgets(line, sizeof line, f)) {
-                line[strcspn(line, "\r\n")] = 0;
-                if (line[0] && line[0] != '#') hints += std::string(hints.empty() ? "" : "\n") + "- " + line;
-            }
-            fclose(f);
-        }
-        tracker_hints_help = hints.empty() ? std::string() : "The Gossip Stones' hints:\n" + hints + "\n\n" + kTrackerHelp;
-    }
+    tracker_stones_load(path.substr(0, path.find_last_of("\\/") + 1), on);
     int checks = 0;
     path = path.substr(0, path.find_last_of("\\/") + 1) + "checks.txt";
     if (FILE* f = on ? fopen(path.c_str(), "r") : nullptr) {
@@ -2863,7 +2917,8 @@ void tracker_load() {
         }
     }
     for (int row = 0; row < kTrackerRows; row++)   // (a seed made anew: a row stepped past its area's checks is its own words again)
-        if (row >= n || tracker_pick[row] > tracker_row_checks(row)) tracker_pick[row] = 0;
+        if (row != kTrackerStoneRow && (row >= n || tracker_pick[row] > tracker_row_checks(row))) tracker_pick[row] = 0;
+    if (tracker_pick[kTrackerStoneRow] >= (int)tracker_stone_lines.size()) tracker_pick[kTrackerStoneRow] = 0;
 }
 const char* ini_key(const Row& r) {
     if (r.value == &monitor_pick) return "fullscreen_monitor";
@@ -4674,6 +4729,7 @@ void draw_options(ui::Ctx& c) {
         if (selr.tracker == kTrackerShowRow && tracker_check_count) prompt_list[prompts_n++] = {ui::kLeftRight, "Change"};
         if (!selr.tracker && tracker_check_count) prompt_list[prompts_n++] = {ui::kConfirm, "Forget"};   // (the whole game's row: the record forgotten)
         if (selr.tracker == kTrackerHomeRow && tracker_check_count) prompt_list[prompts_n++] = {ui::kConfirm, "Go home"};
+        if (selr.tracker == kTrackerStoneRow && tracker_stone_lines.size() > 1) prompt_list[prompts_n++] = {ui::kLeftRight, "Scroll"};
         if (const TrackerCheck* k = tracker_pick[selr.tracker] ? tracker_row_check(selr.tracker, tracker_pick[selr.tracker]) : nullptr)   // (Y or J: tracker_junk)
             prompt_list[prompts_n++] = {ui::kExtra, tracker_junk[k - tracker_checks] ? "Not junk" : "Junk", "J"};
         if (tracker_pick[selr.tracker] && cheats_on()) prompt_list[prompts_n++] = {ui::kConfirm, "Go there"};
@@ -4703,7 +4759,7 @@ void draw_options(ui::Ctx& c) {
     const bool area_panel = selr.tracker >= kTrackerFirstArea && tracker_check_count > 0 && tracker_row_checks(selr.tracker, true) > 0;
     const char* row_help = selr.tracker == kTrackerShowRow && tracker_check_count ? kTrackerShowHelp :
                            selr.tracker == kTrackerHomeRow && tracker_check_count ? kTrackerHomeHelp :
-                           selr.tracker == 0 && !tracker_hints_help.empty() ? tracker_hints_help.c_str() : selr.help;
+                           selr.tracker == kTrackerStoneRow && tracker_check_count ? tracker_stone_help.c_str() : selr.help;
     if (narrow) {   // (help over the column's foot: normally half the room, up to 65% for the mic meter and its explanation)
         const float help_h = std::min(22 * s + 32 * s + help_tall + (after ? 30 * s : 0) + (pending_line.empty() ? 0 : 52 * s) + 22 * s,
                                       (bottom - hh) * (mic_help ? 0.65f : 0.5f));
@@ -6668,6 +6724,15 @@ void tracker_press(int row, const bool* press, bool& changed) {
         if (press[3] || press[4] || press[7]) {
             tracker_show = (tracker_show + kTrackerShows + (press[3] ? -1 : 1)) % kTrackerShows;
             for (int r = 1; r < kTrackerRows; r++) tracker_pick[r] = 0;   // (the rows' own words again: their checks are other ones now)
+            changed = true;
+        }
+        return;
+    }
+    if (row == kTrackerStoneRow && tracker_check_count) {   // (the hints heard: Left and Right scroll them, a line at a time)
+        const int n = (int)tracker_stone_lines.size();
+        if ((press[3] || press[4]) && n > 1) {
+            tracker_pick[row] = std::clamp(tracker_pick[row] + (press[4] ? 1 : -1), 0, n - 1);
+            tracker_stones_load(game_folder_path() + "mods\\rando-seed\\", tracker_on.load(std::memory_order_relaxed) != 0);
             changed = true;
         }
         return;
