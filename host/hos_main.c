@@ -3034,9 +3034,42 @@ static void oot_skip_cutscene_locked(Ctx *c) {
     *c = saved;
 }
 
+/* (the randomizer's fork) Infinite ammo (a launcher setting, asked for 2026-11-21: a stick broken, a bomb or a Bombchu
+   used, an arrow or a seed shot, a nut thrown is not used up). The game's own taking was not found as one call, so the
+   counts are watched instead: every OOT_AMMO_EVERY player updates each is read, and one that went down since the last
+   look, Link having some, is made up again: a bag's ammunition by the bag's fill (oot_fill_start: added until the count
+   stops going up, so never more than the bag holds), the Bombchus, which have no bag, by what went. What Link never had
+   (a count of 0, never higher) is never added. A count read is the one of an update before (oot_fill_note): a fill
+   made is looked at again only after OOT_AMMO_EVERY. With the randomizer on only. */
+enum { OOT_AMMO_EVERY = 8 };
+static const char *const oot_ammo_kept[] = {"Item_Bomb", "Item_Arrow_Normal", "Item_DekuSeed", "Item_DekuStick", "Item_DekuNut", "Item_Bombchu"};
+enum { OOT_AMMO_KEPT = sizeof oot_ammo_kept / sizeof oot_ammo_kept[0] };
+static int oot_ammo_seen[OOT_AMMO_KEPT] = {-1, -1, -1, -1, -1, -1};
+int hos_rando_infinite_ammo(void);   /* host/oot_rando.c */
+static void oot_infinite_ammo(Ctx *c) {
+    static unsigned tick;
+    if (!hos_rando_infinite_ammo() || ++tick % OOT_AMMO_EVERY) return;
+    for (int k = 0; k < (int)OOT_AMMO_KEPT; k++) {
+        const int now = oot_pouch_count(c, oot_ammo_kept[k]);
+        if (now < 0) continue;
+        const int was = oot_ammo_seen[k];
+        oot_ammo_seen[k] = now;
+        if (was <= 0 || now >= was) continue;
+        if (!strcmp(oot_ammo_kept[k], "Item_Bombchu")) {
+            const int result = oot_pouch_change(c, oot_ammo_kept[k], was - now);
+            hos_log("rando: infinite ammo: %s %d -> %d, %d given back (%d)", oot_ammo_kept[k], was, now, was - now, result);
+            oot_ammo_seen[k] = was;   /* (the add is counted an update later: not given twice meanwhile) */
+        } else {
+            hos_log("rando: infinite ammo: %s %d -> %d, the bag filled again", oot_ammo_kept[k], was, now);
+            oot_fill_start(oot_ammo_kept[k], "infinite ammo");
+        }
+    }
+}
+
 static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components) {
     int rx_option(int id, int otherwise);
     oot_skip_cutscene(c);
+    oot_infinite_ammo(c);
     for (int k = 0; k < (int)OOT_FILLS; k++) {   /* (a bag found is a full bag: oot_fill_note) */
         if (__atomic_load_n(&oot_fill_wait[k], __ATOMIC_ACQUIRE) <= 0) continue;
         if (__atomic_sub_fetch(&oot_fill_wait[k], 1, __ATOMIC_RELEASE) > 0) continue;

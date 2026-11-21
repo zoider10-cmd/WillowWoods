@@ -60,6 +60,12 @@ int hos_rando_ammo_pickups(void) {
     if (e && *e >= '0' && *e <= '2') return rando_active ? *e - '0' : 0;
     return rando_active ? rando.v[OOT_RANDO_AMMO_PICKUPS] : 0;
 }
+/* Infinite ammo (hos_main.c oot_infinite_ammo): on with the randomizer. A test's: HOS_OOT_INFINITE_AMMO=<0|1> over the options */
+int hos_rando_infinite_ammo(void) {
+    const char *e = getenv("HOS_OOT_INFINITE_AMMO");
+    if (e && (*e == '0' || *e == '1')) return rando_active ? *e - '0' : 0;
+    return rando_active ? rando.v[OOT_RANDO_INFINITE_AMMO] : 0;
+}
 int hos_rando_rupee_fill(void) {
     const char *e = getenv("HOS_OOT_RUPEE_FILL");
     if (e && (*e == '0' || *e == '1')) return rando_active && *e == '1';

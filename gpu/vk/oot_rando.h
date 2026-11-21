@@ -141,6 +141,9 @@
       "6", "5", "4", "3") \
     X(MASTER_SWORD, "Shuffle the Master Sword", "rando_master_sword", \
       "The Master Sword is an item of the shuffle, found in a chest or given like any other item, and the pedestal gives what the seed put there the first time young Link goes through time. Adult Link may travel without it; the logic asks for it wherever only an adult can go. Needs Open Door of Time.", \
+      "Off", "On") \
+    X(INFINITE_AMMO, "Infinite ammo", "rando_infinite_ammo", \
+      "Deku Sticks, Deku Nuts, bombs, Bombchus, arrows and Deku Seeds are not used up: a moment after one is used, Link has as many as before (the bag filled again). Only what Link already carries: it gives nothing he has none of. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On")
 
 enum {
