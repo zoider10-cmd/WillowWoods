@@ -60,7 +60,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 19  # 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 20  # 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -5649,6 +5649,31 @@ LETTER_AREAS = frozenset(("DeathMountainTrail", "GoronCity", "DodongoCavern", "D
 LETTER_BOLERO = "Item_Melody_FireBolero"
 
 
+# ---- Deku Sticks in the Kokiri Sword's place (placement 20, the owner's ask 2026-11-21) ----
+# With the Deku Tree and the forest's way out both open, nothing asks a child for the Kokiri Sword itself (Mido checks
+# for it only at the Deku Tree's path): where a rule names it, it stands for a weapon, and Deku Sticks do as well (the
+# Deku Tree's Gohma, Dodongo's Cavern, Jabu-Jabu, a Skulltula "sword or slingshot"). Where sticks come from without a
+# weapon (bug 96): pots, which Link lifts and throws: child Goron City's two (one drops a stick, one a stick table at
+# 100%), Zora's Domain's and Zora's River's; they come back after about a day and night. The game gives no first bag
+# (the first stick makes room for itself). So a way that asks for the sword may instead ask for the way to Goron City,
+# a child's way up the mountain (letter_need: the letter, bombs, or the Bolero), or nothing more when the letter isn't
+# shuffled (Zelda gives it) or the gate is open. Grass and Deku Babas need a weapon first; the Kokiri shop's sticks may
+# be shuffled away: not counted. NOT SEEN IN PLAY as a seed's logic.
+STICKS_FROM = 20
+
+
+def stick_need(need, letter, bolero=False):
+    """one way of a rule with Deku Sticks for the Kokiri Sword (see above): the way as it was, or without the sword and
+    with a child's way to Goron City's pots (letter: Zelda's Letter is shuffled; bolero: as letter_need's)"""
+    if S not in need:
+        return need
+    base = frozenset(need - {S})
+    if not letter or BB in base or LETTER in base:
+        return base
+    ways = letter_need(base, "GoronCity", bolero)
+    return either([need] + (list(ways) if isinstance(ways, Either) else [ways]))
+
+
 def letter_need(need, area, bolero=False):
     """a rule of a check on Death Mountain with the ways past Kakariko's gate named: each way that asks for neither bombs
     nor the letter becomes three, the letter's, the bombs' and (bolero) the Bolero's. Elsewhere, as it was."""
@@ -6484,6 +6509,12 @@ def main():
         skull_asks = lambda h, at=None: (lambda n, area: each(hook_need, n, HOOK_OR.get(h)) if hook_asks(area, h=h) else n)(
             skull_plain(h, at), at or skulls[h][0])
         heart_asks = lambda h: (lambda n: each(hook_need, n) if hook_asks(pieces[h][0], h=h) else n)(heart_plain(h))
+    # (Deku Sticks for the Kokiri Sword, placement 20, with the Deku Tree and the forest's way out open: stick_need)
+    sticks = placement >= STICKS_FROM and a.open_deku and a.open_forest
+    if sticks:
+        skull_sword, heart_sword = skull_asks, heart_asks
+        skull_asks = lambda h, at=None: each(stick_need, skull_sword(h, at), a.letter, bolero)
+        heart_asks = lambda h: each(stick_need, heart_sword(h), a.letter, bolero)
     # (Songs: Anywhere: what the lessons asked about by name may hold, by this seed's items and the game's flags; the
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
     lesson_safe, lesson_only = frozenset(), {}
@@ -6544,6 +6575,8 @@ def main():
         for h, s in spots.items():
             if hook_asks(s[0], s[6] if len(s) > 6 else "", gifts[h].key if h in gifts else None, h):
                 needs[h] = each(hook_need, needs[h], HOOK_OR.get(h))
+    if sticks:   # (Deku Sticks for the Kokiri Sword, stick_need)
+        needs = {h: each(stick_need, n, a.letter, bolero) for h, n in needs.items()}
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,
