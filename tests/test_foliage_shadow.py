@@ -1,7 +1,7 @@
 """The foliage in the sun's far shadow cascades drawn with one face culled (gpu/vk/foliage_shadow.h; vk_draw.cpp draw_cull;
 Triforce v0.6.0 after NX2navi 754ded9; no game, no GPU).
 
-Compiles the header's rules and checks them: the switch's values and default (from layer 1, the back faces; "off" off), which
+Compiles the header's rules and checks them: the switch's values and default (off here; "1" from layer 1, the back faces), which
 draws are taken (mesh programs only, no colour target, a depth target square and wider than 768, the layer), and that a draw
 the game already culls keeps its own face. Reads vk_draw.cpp for what needs the game: the face goes through the packed dynamic
 state (so a draw into another cascade layer is not taken for the same state), and the cull mode is set from it as dynamic
@@ -28,23 +28,25 @@ static int bad = 0;
 #define EXPECT(x) do { if (!(x)) { std::printf("FAIL: %s\n", #x); bad = 1; } } while (0)
 int main() {
     Rule d = parse(nullptr), e = parse(""), off = parse("off"), neg = parse("-1"), two = parse("2"), f = parse("0f");
-    EXPECT(d.from == 1 && !d.front);
-    EXPECT(e.from == 1 && !e.front);
+    EXPECT(d.from == -1);   // (off unless asked for here)
+    EXPECT(e.from == -1);
+    Rule one = parse("1");
+    EXPECT(one.from == 1 && !one.front);
     EXPECT(off.from == -1 && neg.from == -1);
     EXPECT(two.from == 2 && !two.front);
     EXPECT(f.from == 0 && f.front);
     // (a far cascade's foliage: a mesh program, no colour, a depth target 1600 square, layer 1 or 2)
-    EXPECT(cull(d, kNone, true, 0, true, 1600, 1600, 1) == kBack);
-    EXPECT(cull(d, kNone, true, 0, true, 1600, 1600, 2) == kBack);
+    EXPECT(cull(one, kNone, true, 0, true, 1600, 1600, 1) == kBack);
+    EXPECT(cull(one, kNone, true, 0, true, 1600, 1600, 2) == kBack);
     EXPECT(cull(f, kNone, true, 0, true, 1600, 1600, 0) == kFront);
     // (left as the game draws it)
-    EXPECT(cull(d, kNone, true, 0, true, 1600, 1600, 0) == kNone);    // the near cascade
-    EXPECT(cull(d, kNone, false, 0, true, 1600, 1600, 2) == kNone);   // not a mesh program
-    EXPECT(cull(d, kNone, true, 1, true, 1600, 1600, 2) == kNone);    // a colour target
-    EXPECT(cull(d, kNone, true, 0, false, 1600, 1600, 2) == kNone);   // no depth target
-    EXPECT(cull(d, kNone, true, 0, true, 768, 768, 2) == kNone);      // a character's shadow map
-    EXPECT(cull(d, kNone, true, 0, true, 1600, 900, 2) == kNone);     // not square
-    EXPECT(cull(d, kFront, true, 0, true, 1600, 1600, 2) == kFront);  // the game culls already
+    EXPECT(cull(one, kNone, true, 0, true, 1600, 1600, 0) == kNone);    // the near cascade
+    EXPECT(cull(one, kNone, false, 0, true, 1600, 1600, 2) == kNone);   // not a mesh program
+    EXPECT(cull(one, kNone, true, 1, true, 1600, 1600, 2) == kNone);    // a colour target
+    EXPECT(cull(one, kNone, true, 0, false, 1600, 1600, 2) == kNone);   // no depth target
+    EXPECT(cull(one, kNone, true, 0, true, 768, 768, 2) == kNone);      // a character's shadow map
+    EXPECT(cull(one, kNone, true, 0, true, 1600, 900, 2) == kNone);     // not square
+    EXPECT(cull(one, kFront, true, 0, true, 1600, 1600, 2) == kFront);  // the game culls already
     EXPECT(cull(off, kNone, true, 0, true, 1600, 1600, 2) == kNone);  // off
     if (!bad) std::printf("ok: the rules\n");
     return bad;

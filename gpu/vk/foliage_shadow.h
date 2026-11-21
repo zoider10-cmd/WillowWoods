@@ -44,10 +44,10 @@ struct Rule {
 
 /// RX_VK_FOLIAGE_SHADOW_CULL=<layer>[f]: from that layer of the cascades on (the game has three, 0 to 2), the back faces culled,
 /// the front ones with an "f" after the number. Unset or empty: from layer 1, the back faces (NX2navi's). Anything not starting
-/// with a digit ("off", "-1"): off
+/// with a digit ("off", "-1"): off. (Here unset is off too: measured even on an RX 9070 XT, 2026-11-20)
 inline Rule parse(const char* e) {
     Rule r;
-    if (!e || !*e) return r.from = kCullFrom, r;
+    if (!e || !*e) return r;   // (here: off unless asked for. An RX 9070 XT at Kokiri Forest was even with it, 104.0 against 104.2 fps)
     if (*e < '0' || *e > '9') return r;
     r.from = std::atoi(e);
     r.front = std::strchr(e, 'f') != nullptr;
