@@ -81,6 +81,7 @@ SW(HOS_LONG_WAITS, diag, bool, "off", "Logs an untimed event wait still blocked 
 SW(HOS_MAP_TRACE, diag, bool, "off", "Logs every GPU address space mapping change in nvdrv.")
 SW(HOS_MARK_BITMAP_ALL, diag, bool, "off: the lifted stores mark GPU pages only (unless built with RX_MARK_BITMAP=0)", "=1 sets every page's bit at the start, so every store marks as without the bitmap, plus its test (the control of an A/B).")
 SW(HOS_MEMINFO_OLD, kill, bool, "used memory reported to the game counts its mapped pages too", "=1 reports used memory as program + system alone, as before.")
+SW(HOS_TEXELS_KEEP_CORE, kill, bool, "a CPU read or write of texels gives its virtual core up while it waits for the GPU", "=1 keeps the core through the wait, as before (Longshot 1780fbe0: ~1 s freezes at area changes).")
 SW(HOS_MEMORY_MB, tune, int, "9809 MB (a Switch 2 application's; 3285 in the web build)", "Sets how much memory the game is told it has, in MB.")
 SW(HOS_MEM_MAP, diag, bool, "off", "Logs how much of the guest window is committed and resident, with the renderer's mem: lines.")
 SW(HOS_MENU_DRAG_GAIN, tune, float, "6.0", "Gain of a mouse drag turned into the stick for the game's menus.")
