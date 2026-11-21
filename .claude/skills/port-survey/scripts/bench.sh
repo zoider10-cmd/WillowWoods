@@ -1,10 +1,10 @@
 #!/bin/bash
-# bench.sh <name> <variant A> <variant B> [reps=5, stops at 3 when clear] [seconds=150]   (or: VARIANTS="A B C D" bench.sh <name> - - [reps] [secs])
+# bench.sh <name> <variant A> <variant B> [reps=5, stops at 3 when clear] [seconds=180]   (or: VARIANTS="A B C D" bench.sh <name> - - [reps] [secs])
 # The Market A/B: the test copy of the game (F:/Games/perf-ab/game) runs headless with each variant's files in turn,
 # interleaved A B A B..., from the copy's newest save, teleported to the Market's fountain by day and walking, frame
 # rate uncapped, from one pinned options file (bench_options.ini), after a warm-up run of each side (WARMUP=0: none). STEPS="<s>:<what>;..." another route ("GO x y z Folder ages" teleports as the Tracker's Go there). A variant is a folder under F:/Games/perf-ab/variants/ holding hookshot.exe and/or hookshot_vk.dll
 # (a missing file is the base's) and/or env.txt (switches for the run, one NAME=value a line). Frame times go to runs/<name>_<variant>_<rep>/frames.csv; gate.py reads them.
-P=/f/Games/perf-ab; G=$P/game; V=$P/variants; name=$1; A=$2; B=$3; reps=${4:-5}; secs=${5:-150}
+P=/f/Games/perf-ab; G=$P/game; V=$P/variants; name=$1; A=$2; B=$3; reps=${4:-5}; secs=${5:-180}
 if tasklist | grep -qi "hookshot.exe\|Mako Launcher\|Willow Woods Launcher"; then echo "the game or the launcher is running: not now"; exit 1; fi
 VS=${VARIANTS:-"$A $B"}
 for v in $VS; do [ -d "$V/$v" ] || { echo "no variant $V/$v"; exit 1; }; done
@@ -14,9 +14,13 @@ for v in $VS; do [ -d "$V/$v" ] || { echo "no variant $V/$v"; exit 1; }; done
 CUR=$P/cache_owner.txt
 swap_cache() { [ "${CACHES:-0}" = 1 ] || return 0; local was; was=$(cat "$CUR" 2>/dev/null); [ "$was" = "$1" ] && return 0
   [ -n "$was" ] && [ -d "$G/cache" ] && mv "$G/cache" "$V/$was/cache"; [ -d "$V/$1/cache" ] && mv "$V/$1/cache" "$G/cache"; echo "$1" > "$CUR"; }
-# (the default route: the Market's fountain by day, then running in circles round the square with the camera swinging,
-# as a player does: the crowd and the buildings keep coming on screen. The measured window is the last 50 s)
-ROUTE="72:!cheat 1003;10:0:LUP/2000"; for i in $(seq 1 14); do ROUTE="$ROUTE;2:0:LUP/1400;2:0:LRIGHT/700;1:0:RRIGHT/600"; done
+# (the default route: the Market by day, Link teleported to the fountain's south side among the crowd (the GO step: the
+# fountain's basin is at -1.7 100.3 5.8, actors.py) and standing there while the camera turns round and round: the crowd
+# and the buildings keep coming on screen, and nothing walks him out of the square. The measured window is the last
+# 50 s of the 180 s run (the teleport's load takes 25-40 s). Before 2026-11-21 the route was !cheat 1003, which lands at
+# the Market's gate, then circling from there: the runs from 2026-11-18 to 2026-11-21 measured the quiet entrance and
+# about 1 in 10 drifted out to the drawbridge)
+ROUTE="72:GO -1.7 100.2 11.5 Market CA -1.7 100.3 5.8"; for i in $(seq 1 36); do ROUTE="$ROUTE;3:0:RRIGHT/2600"; done
 put() { swap_cache "$1"; cp "$V/base/hookshot.exe" "$V/base/hookshot_vk.dll" "$G/"; for f in hookshot.exe hookshot_vk.dll; do [ -f "$V/$1/$f" ] && cp "$V/$1/$f" "$G/"; done; }
 run() {  # run <label>
   local R=$P/runs/$1; rm -rf "$R"; mkdir -p "$R/shots" "$R/user"; cp -r "$G/user/save_rando" "$R/user/save_rando"

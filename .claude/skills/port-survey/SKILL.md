@@ -53,7 +53,7 @@ The ranked list goes to `share/port-survey/<port>-<date>.md`: taken, tried and d
 ## 4. The gate: the Market A/B on this PC
 
 ```bash
-bash .claude/skills/port-survey/scripts/bench.sh <name> base <variant> [reps=3] [seconds=150]
+bash .claude/skills/port-survey/scripts/bench.sh <name> base <variant> [reps=3] [seconds=180]
 ```
 
 - `F:/Games/perf-ab/variants/<name>/` holds a variant's `hookshot.exe` and/or `hookshot_vk.dll`; `base` is the
@@ -73,7 +73,9 @@ bash .claude/skills/port-survey/scripts/bench.sh <name> base <variant> [reps=3] 
   frame generation) and refuses to compare sides that differ.
 - Keep the PC quiet during a bench (no browser, Discord, games): they spoil runs.
 - The test copy of the game (`F:/Games/perf-ab/game`) loads its newest save, teleports to the Market's fountain by
-  day and walks, uncapped, headless; A and B interleave.
+  day by coordinates (among the crowd, ~80 fps on the owner's PC) and stands there turning the camera, uncapped,
+  headless; A and B interleave. Look at a run's pictures before trusting a new route: `!cheat 1003` lands at the
+  Market's gate, not the fountain, and from 2026-11-18 to 2026-11-21 every A/B measured the quiet entrance (~105 fps).
 - `gate.py` prints each run (mean fps, 1% low, worst frame) and the verdict: **FAIL** when the mean or the 1% low
   drops by more than the noise (the larger spread of either side's runs, at least 2%: an A/A of one build spread 67-73 fps, so a speed change needs 5 reps or more), PASS when one rises past it, NOISE when
   neither. FAIL is dropped; NOISE is kept only for a fix or a feature, not for a speed change.
