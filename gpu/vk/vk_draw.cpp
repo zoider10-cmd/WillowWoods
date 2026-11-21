@@ -6109,7 +6109,6 @@ uint16_t draw_hazards(VkCommandBuffer cmd, const Program& p, const NvnState& s, 
 }
 
 } // namespace
-bool draw_pass_open() { return pass().open; }   // ((Longshot a3565ac) for vk_replay.cpp maybe_split: a part ends where the game ended its pass)
 
 void clear_color_target(VkCommandBuffer cmd, NvnState& s, int index, const float rgba[4], uint32_t mask) {
     ParLock lk;

@@ -2071,41 +2071,9 @@ bool part_ends_before_draw() {
     return on;
 }
 
-/// (Longshot a3565ac's maybe_split) Where a submission's part ends: where the game has already ended its render pass, once the
-/// part is worth a cut. A part ends to give the GPU what is recorded so far while the rest is replayed; but a part that ends
-/// inside a render pass ends the pass early (its targets written out and read in again by the next part). The game ends its
-/// passes ~150 times a frame, and a cut there breaks no pass. So a part ends at the first such place once it is RX_VK_PART_MIN
-/// (120) draws or dispatches long, and wherever it is at RX_VK_PART_MAX (512). Longshot's Market (RTX 3090), against a part every
-/// 240: standing +4%, walking +15% (p99 26.8 ms against 36.7), turning +2.5%. A submission's first part ends at the first pass
-/// end past RX_VK_PART_FIRST (32) draws: on an RX 9070 XT the GPU sat idle ~4.9 ms a frame before a frame's first recording
-/// with a draw. RX_VK_CHUNK=<n>: a part every n draws wherever it falls, as before (120 here before)
-}   // namespace
-bool draw_pass_open();   // (vk_draw.cpp)
-namespace {
-struct {
-    int64_t at_pass_end = 0, ceiling = 0;
-} part_st;
 void maybe_split(VkCommandBuffer& cmd) {
-    static const int64_t every = getenv("RX_VK_CHUNK") ? atoll(getenv("RX_VK_CHUNK")) : 0;   // (set: the old fixed count)
-    static const int64_t kPartMin = std::max<int64_t>(1, env_int("RX_VK_PART_MIN", 120)),
-                         kPartMax = std::max<int64_t>(kPartMin, env_int("RX_VK_PART_MAX", 512)),
-                         kPartFirst = std::clamp<int64_t>(env_int("RX_VK_PART_FIRST", 32), 0, kPartMin);
-    if (split_off || !rec_cur || rec_parts + 1 >= kMaxParts || dump_on()) {
-        ++part_work;
-        return;
-    }
-    if (getenv("RX_VK_CHUNK")) {
-        if (every <= 0 || ++part_work < every) return;
-    } else {
-        const int64_t need = rec_parts == 0 && kPartFirst ? kPartFirst : kPartMin;
-        if (++part_work < need) return;
-        const bool ceiling = part_work >= kPartMax;
-        if (!ceiling && draw_pass_open()) return;   // (the next place the game ends its pass)
-        (ceiling ? part_st.ceiling : part_st.at_pass_end)++;
-        if ((part_st.ceiling + part_st.at_pass_end) % 20000 == 0)
-            logf("vk: a submission's parts ended: %lld where the game had ended its render pass, %lld at %lld draws",
-                 (long long)part_st.at_pass_end, (long long)part_st.ceiling, (long long)kPartMax);
-    }
+    static const int64_t every = getenv("RX_VK_CHUNK") ? atoll(getenv("RX_VK_CHUNK")) : 120;
+    if (split_off || !rec_cur || every <= 0 || ++part_work < every || rec_parts + 1 >= kMaxParts || dump_on()) return;
     if (part_ends_before_draw()) {   // (at the next plain draw: replay(). The submission's end comes first when none follows)
         part_end_wanted = true;
         return;

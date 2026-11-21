@@ -71,9 +71,6 @@ uint64_t rec_cur_value = 0;
 int rec_parts = 0;
 int64_t part_work = 0;
 constexpr int kMaxParts = 32;
-struct { int64_t at_pass_end = 0, ceiling = 0; } part_st;   // (maybe_split's counts of where parts ended)
-static bool draw_pass_open() { return false; }   // (vk_draw.cpp: no pass open here)
-static void logf(const char*, ...) {}
 thread_local bool split_off = false;
 bool part_end_wanted = false;
 bool early_split_pending = false;
@@ -177,8 +174,7 @@ def main():
            .replace("/* SPLIT_PART */", block(replay, "void split_part(VkCommandBuffer& cmd) {"))
            .replace("/* EARLY_SPLIT */", block(replay, "void early_split(VkCommandBuffer& cmd) {"))
            .replace("/* REPLAY_BEFORE */", before).replace("/* REPLAY_AFTER */", after))
-    base = dict({k: v for k, v in os.environ.items() if not k.startswith("RX_VK_")},
-                RX_VK_CHUNK="120")   # (the parts by their count, which these cases are written for; the pass-end rule: test_part_pass_end.py)
+    base = {k: v for k, v in os.environ.items() if not k.startswith("RX_VK_")}
     runs = (("before-draw", dict(base, VENDOR="0x8086")),                               # (Intel: the rule by default)
             ("before-draw", dict(base, VENDOR="0x1002", RX_VK_SPLIT_BEFORE_DRAW="1")),   # (asked for elsewhere)
             ("at-once", dict(base, VENDOR="0x1002")),                                    # (the Steam Deck's AMD APU)
