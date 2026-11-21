@@ -31,7 +31,9 @@ def main():
     used = {(k, v) for e in table["by_actor"].values() for w in e["ways"] for k, v in w.items()}
     check(used <= known, "the table names an item the seed tool can't turn into its own: %r" % sorted(used - known)[:5])
     # ---- a rule from a way: its dungeon's way in and the way's items the seed gates; the others held ----
-    S._DUNGEON_TABLE[:] = [{7: [{"Bow": 1}, {"Progressive Hookshot": 2, "Dins Fire": 1, "Magic Meter": 1}]}]
+    S._DUNGEON_TABLE[:] = [{7: ([{"Bow": 1}, {"Progressive Hookshot": 2, "Dins Fire": 1, "Magic Meter": 1}], None),
+                            9: ([{"Boomerang": 1}], {"child": [{"Boomerang": 1}], "adult": [], "both": [{"Boomerang": 1}]}),
+                            10: ([{"Bow": 1}], {"child": [], "adult": [{"Bow": 1}], "both": [{"Bow": 1}]})}]
     try:
         prog = frozenset(S.PROGRESSION) | {S.LONG}
         made = S.dungeon_rule(7, "ForestTemple", prog, frozenset((S.DIN,)))
@@ -45,6 +47,16 @@ def main():
         made = S.dungeon_rule(7, "SpiritTemple", prog | {"Item_Melody_ShadowNocturne", "Item_Melody_SpiritRequiem"})
         check(S.ADULT | {S.BOW, "Item_Melody_SpiritRequiem"} in ways(made) and S.DESERT | {S.BOW} in ways(made),
               "with the songs shuffled the Spirit Temple is not reached by the Requiem as well as across the desert")
+        # (the Spirit Temple by age: a child's check by the Requiem alone, an adult's across the desert or by the Requiem)
+        req = "Item_Melody_SpiritRequiem"
+        made = S.dungeon_rule(9, "SpiritTemple", prog | {req})
+        check(S.CHILD | {S.BM, req} in ways(made) and not any(S.ADULT <= w for w in ways(made) if S.BM in w and len(w) <= 4),
+              "a child's Spirit Temple check is not reached by the Requiem without being an adult: %r" % (made,))
+        made = S.dungeon_rule(10, "SpiritTemple", prog | {req})
+        check(S.DESERT | {S.BOW} in ways(made) and S.ADULT | {S.BOW, req} in ways(made) and S.CHILD | {S.BOW, req} not in ways(made),
+              "an adult's Spirit Temple check is not across the desert or by the Requiem as an adult: %r" % (made,))
+        made = S.dungeon_rule(9, "SpiritTemple", prog)
+        check(all(S.DESERT <= w for w in ways(made)), "without the songs shuffled a child's check does not wait for the desert crossed (the Requiem's lesson)")
     finally:
         S._DUNGEON_TABLE[:] = []
     # ---- no more ways than the tracker reads ----

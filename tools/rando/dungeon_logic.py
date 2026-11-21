@@ -65,6 +65,12 @@ TRIED = [("Kokiri Sword", 1), ("Master Sword", 1), ("Slingshot", 1), ("Boomerang
 NEVER = ("Small Key", "Boss Key", "Silver Rupee", "Triforce", "Heart Container", "Piece of Heart")
 SETTINGS = {"open_forest": "open", "open_door_of_time": True, "open_kakariko": "open"}
 WAYS_MOST = 10
+# The dungeons that both ages enter by one door, worked out for each age alone and for both (AGE_MODES): the Spirit
+# Temple, whose child's and adult's sides need different things and different ways in. Its door from the Colossus is
+# closed in the logic here (CLOSED_DOORS), so that an age not given the way in can't walk round to it.
+AGE_SPLIT = ("Spirit Temple",)
+AGE_MODES = {"child": ("child",), "adult": ("adult",), "both": ("child", "adult")}
+CLOSED_DOORS = (("Desert Colossus", "Spirit Temple Lobby"),)
 
 
 def load_commented(path):
@@ -174,7 +180,9 @@ def tiers():
 class Calc:
     def __init__(self):
         self.data, settings, self.pins = world()
-        self.logic = Logic(self.data, settings)
+        # (the Spirit Temple's door from the Colossus closed: its way in is given to the ages asked for, AGE_SPLIT)
+        self.logic = Logic(self.data, settings, extra_exit_requirements={DOOR: ["Never Held"] for DOOR in CLOSED_DOORS})
+        self.ages_now = None
         self.fixed = {loc: self.data.vanilla_item(loc) for loc in self.logic.location_names()
                       if self.data.vanilla_item(loc) and any(w in self.data.vanilla_item(loc) for w in ("Key", "Silver Rupee"))}
         self.locations = {}
@@ -190,6 +198,7 @@ class Calc:
     def reached(self, dungeon, held):
         """the dungeon's locations reached with held ({item: level}) and its way in"""
         lobby, ages = DUNGEONS[dungeon]
+        ages = self.ages_now or ages
         counts = dict(self.always)
         counts.update({k: v for k, v in held.items() if v})
         state = self.logic.new_state(counts)
@@ -258,11 +267,16 @@ def both(a, b, most=12):
     return unique[:most]
 
 
-def by_actor(rules, pins):
+def by_actor(rules, pins, ages=None):
     """{a remake actor's hash (decimal, as the pins have it): {"names": [N64 locations], "conf": ..., "ways": [...]}}: a
     pinned actor takes its location's ways; one pinned only as one of a pool of equal items, or left unmatched with
     candidates, takes the ways that meet every candidate's (it may be any of them)"""
     flat = {loc: ways for locs in rules.values() for loc, ways in locs.items()}
+    by_age = {}   # (location: {mode: ways}, for AGE_SPLIT's dungeons)
+    for modes in (ages or {}).values():
+        for mode, locs in modes.items():
+            for loc, ways in locs.items():
+                by_age.setdefault(loc, {})[mode] = ways
     pools = {}
     for e in pins["locations"]:
         if e.get("pool"):
@@ -278,8 +292,18 @@ def by_actor(rules, pins):
         ways = flat[names[0]]
         for n in names[1:]:
             ways = both(ways, flat[n])
+        age_ways = None
+        if all(n in by_age for n in names):   # (a dungeon both ages enter: the ways of each age alone, and of both)
+            age_ways = {}
+            for mode in AGE_MODES:
+                got = by_age[names[0]][mode]
+                for n in names[1:]:
+                    got = both(got, by_age[n][mode]) if got and by_age[n][mode] else []
+                age_ways[mode] = got
         for ref in e.get("refs", []):
             out[ref["hash"]] = {"names": names, "conf": conf, "folder": e.get("folder"), "kind": e.get("kind"), "ways": ways}
+            if age_ways:
+                out[ref["hash"]]["age_ways"] = age_ways
     return out
 
 
@@ -290,16 +314,21 @@ def main():
     p.add_argument("--all", action="store_true", help="list pots, hearts and the like too")
     a = p.parse_args()
     calc = Calc()
-    result = {}
+    result, ages = {}, {}
     for dungeon in a.dungeon or DUNGEONS:
         result[dungeon] = calc.rules(dungeon)
+        if dungeon in AGE_SPLIT:
+            for mode, age in AGE_MODES.items():
+                calc.ages_now = age
+                ages.setdefault(dungeon, {})[mode] = calc.rules(dungeon)
+            calc.ages_now = None
         for loc, ways in sorted(result[dungeon].items()):
             if not a.all and re.search(r"Pot|Recovery Heart|Fairy|Crate|Beehive|Grass|Silver Rupee|Wonderitem|Rupee \d", loc):
                 continue
             print("%-52s %s" % (loc, " | ".join(show(w) for w in ways) if ways else "UNREACHED"))
     if a.write:
         with open(a.write, "w", encoding="utf-8", newline="\n") as f:
-            json.dump({"source": "tools/rando/dungeon_logic.py", "rules": result, "by_actor": by_actor(result, calc.pins)},
+            json.dump({"source": "tools/rando/dungeon_logic.py", "rules": result, "ages": ages, "by_actor": by_actor(result, calc.pins, ages)},
                       f, indent=1, sort_keys=True)
 
 

@@ -1,6 +1,2512 @@
 {
+ "ages": {
+  "Spirit Temple": {
+   "adult": {
+    "Spirit Temple Adult Boulder Silver Rupee Back Left": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Back Right": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Front Left": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Front Right": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Ledge": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Climb Flying Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Climb Flying Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Beamos Hall Pot": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Before Child Climb Small Wooden Crate 1": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Before Child Climb Small Wooden Crate 2": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 3": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 4": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 5": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 6": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Boss Key Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Flying Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Flying Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 3": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 4": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 5": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 6": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Anubis Pot": [],
+    "Spirit Temple Child Anubis Pot 1": [],
+    "Spirit Temple Child Anubis Pot 2": [],
+    "Spirit Temple Child Anubis Pot 3": [],
+    "Spirit Temple Child Anubis Pot 4": [],
+    "Spirit Temple Child Bridge Chest": [],
+    "Spirit Temple Child Bridge Flying Pot": [],
+    "Spirit Temple Child Bridge Flying Pot 1": [],
+    "Spirit Temple Child Bridge Flying Pot 2": [],
+    "Spirit Temple Child Climb East Chest": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Climb North Chest": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Climb Pot": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Early Torches Chest": [],
+    "Spirit Temple Child Early Torches Silver Rupee Bottom Left": [],
+    "Spirit Temple Child Early Torches Silver Rupee Bottom Right": [],
+    "Spirit Temple Child Early Torches Silver Rupee Near Torch": [],
+    "Spirit Temple Child Early Torches Silver Rupee Top Left": [],
+    "Spirit Temple Child Early Torches Silver Rupee Top Right": [],
+    "Spirit Temple Compass Chest": [
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Early Adult Right Chest": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple First Mirror Left Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple First Mirror Right Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple GS Boulder Room": [
+     {
+      "Bow": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     },
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     }
+    ],
+    "Spirit Temple GS Hall After Sun Block Room": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple GS Lobby": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple GS Metal Fence": [],
+    "Spirit Temple GS Sun on Floor Room": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Hall After Sun Block Room Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Hall After Sun Block Room Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Hallway Left Invisible Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Hallway Right Invisible Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Lobby Flying Pot 1": [
+     {}
+    ],
+    "Spirit Temple Lobby Flying Pot 2": [
+     {}
+    ],
+    "Spirit Temple Lobby Pot 1": [
+     {}
+    ],
+    "Spirit Temple Lobby Pot 2": [
+     {}
+    ],
+    "Spirit Temple Map Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Mirror Shield Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Near Four Armos Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Shifting Wall Recovery Heart 1": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Shifting Wall Recovery Heart 2": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Silver Gauntlets Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Statue Room Hand Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Statue Room Northeast Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Sun Block Room Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Center Back": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Center Front": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Left": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Right Back": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Right Front": [
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Topmost Chest": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Twinrova Heart": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ]
+   },
+   "both": {
+    "Spirit Temple Adult Boulder Silver Rupee Back Left": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Back Right": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Front Left": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Front Right": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Boulder Silver Rupee Ledge": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Climb Flying Pot 1": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Adult Climb Flying Pot 2": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Beamos Hall Pot": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Before Child Climb Small Wooden Crate 1": [
+     {}
+    ],
+    "Spirit Temple Before Child Climb Small Wooden Crate 2": [
+     {}
+    ],
+    "Spirit Temple Big Mirror Flying Pot 1": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 2": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 3": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 4": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 5": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Big Mirror Flying Pot 6": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Boss Key Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Flying Pot 1": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Flying Pot 2": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 1": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 2": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 3": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 4": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 5": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 6": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Anubis Pot": [],
+    "Spirit Temple Child Anubis Pot 1": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Anubis Pot 2": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Anubis Pot 3": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Anubis Pot 4": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Bridge Chest": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Bridge Flying Pot": [],
+    "Spirit Temple Child Bridge Flying Pot 1": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Bridge Flying Pot 2": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Climb East Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Climb North Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Climb Pot": [
+     {
+      "Boomerang": 1
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Child Early Torches Chest": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Bottom Left": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Bottom Right": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Near Torch": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Top Left": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Top Right": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Compass Chest": [
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Early Adult Right Chest": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple First Mirror Left Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple First Mirror Right Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple GS Boulder Room": [
+     {
+      "Bow": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     },
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     }
+    ],
+    "Spirit Temple GS Hall After Sun Block Room": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple GS Lobby": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple GS Metal Fence": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple GS Sun on Floor Room": [
+     {
+      "Boomerang": 1
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Hall After Sun Block Room Pot 1": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Hall After Sun Block Room Pot 2": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Hallway Left Invisible Chest": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Hallway Right Invisible Chest": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Lobby Flying Pot 1": [
+     {}
+    ],
+    "Spirit Temple Lobby Flying Pot 2": [
+     {}
+    ],
+    "Spirit Temple Lobby Pot 1": [
+     {}
+    ],
+    "Spirit Temple Lobby Pot 2": [
+     {}
+    ],
+    "Spirit Temple Map Chest": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Mirror Shield Chest": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Near Four Armos Chest": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Shifting Wall Recovery Heart 1": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Shifting Wall Recovery Heart 2": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Silver Gauntlets Chest": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Statue Room Hand Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Statue Room Northeast Chest": [
+     {
+      "Boomerang": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Sun Block Room Chest": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Center Back": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Center Front": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Left": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Right Back": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Right Front": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "Spirit Temple Topmost Chest": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "Spirit Temple Twinrova Heart": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ]
+   },
+   "child": {
+    "Spirit Temple Adult Boulder Silver Rupee Back Left": [],
+    "Spirit Temple Adult Boulder Silver Rupee Back Right": [],
+    "Spirit Temple Adult Boulder Silver Rupee Front Left": [],
+    "Spirit Temple Adult Boulder Silver Rupee Front Right": [],
+    "Spirit Temple Adult Boulder Silver Rupee Ledge": [],
+    "Spirit Temple Adult Climb Flying Pot 1": [],
+    "Spirit Temple Adult Climb Flying Pot 2": [],
+    "Spirit Temple Beamos Hall Pot": [],
+    "Spirit Temple Before Child Climb Small Wooden Crate 1": [
+     {}
+    ],
+    "Spirit Temple Before Child Climb Small Wooden Crate 2": [
+     {}
+    ],
+    "Spirit Temple Big Mirror Flying Pot 1": [],
+    "Spirit Temple Big Mirror Flying Pot 2": [],
+    "Spirit Temple Big Mirror Flying Pot 3": [],
+    "Spirit Temple Big Mirror Flying Pot 4": [],
+    "Spirit Temple Big Mirror Flying Pot 5": [],
+    "Spirit Temple Big Mirror Flying Pot 6": [],
+    "Spirit Temple Boss Key Chest": [],
+    "Spirit Temple Central Chamber Flying Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Flying Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 3": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 4": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 5": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Central Chamber Pot 6": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Anubis Pot": [],
+    "Spirit Temple Child Anubis Pot 1": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Anubis Pot 2": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Anubis Pot 3": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Anubis Pot 4": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Bridge Chest": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Bridge Flying Pot": [],
+    "Spirit Temple Child Bridge Flying Pot 1": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Bridge Flying Pot 2": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Climb East Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     }
+    ],
+    "Spirit Temple Child Climb North Chest": [
+     {
+      "Boomerang": 1,
+      "Bow": 1
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     }
+    ],
+    "Spirit Temple Child Climb Pot": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Chest": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Bottom Left": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Bottom Right": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Near Torch": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Top Left": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Child Early Torches Silver Rupee Top Right": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Compass Chest": [],
+    "Spirit Temple Early Adult Right Chest": [],
+    "Spirit Temple First Mirror Left Chest": [],
+    "Spirit Temple First Mirror Right Chest": [],
+    "Spirit Temple GS Boulder Room": [],
+    "Spirit Temple GS Hall After Sun Block Room": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     }
+    ],
+    "Spirit Temple GS Lobby": [],
+    "Spirit Temple GS Metal Fence": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple GS Sun on Floor Room": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Hall After Sun Block Room Pot 1": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Hall After Sun Block Room Pot 2": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Hallway Left Invisible Chest": [],
+    "Spirit Temple Hallway Right Invisible Chest": [],
+    "Spirit Temple Lobby Flying Pot 1": [
+     {}
+    ],
+    "Spirit Temple Lobby Flying Pot 2": [
+     {}
+    ],
+    "Spirit Temple Lobby Pot 1": [
+     {}
+    ],
+    "Spirit Temple Lobby Pot 2": [
+     {}
+    ],
+    "Spirit Temple Map Chest": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     }
+    ],
+    "Spirit Temple Mirror Shield Chest": [],
+    "Spirit Temple Near Four Armos Chest": [],
+    "Spirit Temple Shifting Wall Recovery Heart 1": [],
+    "Spirit Temple Shifting Wall Recovery Heart 2": [],
+    "Spirit Temple Silver Gauntlets Chest": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2
+     }
+    ],
+    "Spirit Temple Statue Room Hand Chest": [],
+    "Spirit Temple Statue Room Northeast Chest": [],
+    "Spirit Temple Sun Block Room Chest": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Center Back": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Center Front": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Left": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Right Back": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Sun Block Room Silver Rupee Right Front": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1
+     }
+    ],
+    "Spirit Temple Topmost Chest": [],
+    "Spirit Temple Twinrova Heart": []
+   }
+  }
+ },
  "by_actor": {
   "10012167258643363548": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "item",
    "folder": "DesertColossus",
    "kind": "chest",
@@ -59,6 +2565,41 @@
    ]
   },
   "10127391959410674946": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": []
+   },
    "conf": "pool",
    "folder": "SpiritTemple",
    "kind": "gs",
@@ -220,6 +2761,19 @@
    ]
   },
   "10530233152473742636": {
+   "age_ways": {
+    "adult": [],
+    "both": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "child": [
+     {
+      "Boomerang": 1
+     }
+    ]
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "gs",
@@ -716,6 +3270,57 @@
    ]
   },
   "12042193296697281461": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -902,6 +3507,42 @@
    ]
   },
   "12909857529499414969": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -941,6 +3582,41 @@
    ]
   },
   "12959656942046734931": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": []
+   },
    "conf": "pool",
    "folder": "SpiritTemple",
    "kind": "gs",
@@ -1096,6 +3772,67 @@
    ]
   },
   "13828480906010430010": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -1141,6 +3878,68 @@
    ]
   },
   "13852283723126411131": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     }
+    ]
+   },
    "conf": "item",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -1195,6 +3994,58 @@
    ]
   },
   "14040210993541550542": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -1408,6 +4259,43 @@
    ]
   },
   "1501288453962537671": {
+   "age_ways": {
+    "adult": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Bow": 1
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": [
+     {
+      "Boomerang": 1,
+      "Bow": 1
+     },
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1
+     }
+    ]
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -1545,6 +4433,25 @@
    ]
   },
   "15633505270333176438": {
+   "age_ways": {
+    "adult": [
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "item",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -1676,6 +4583,77 @@
    ]
   },
   "16272168033146555902": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "item",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -2029,6 +5007,68 @@
    ]
   },
   "17407066694905911064": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     }
+    ]
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -2509,6 +5549,52 @@
    ]
   },
   "2203243501006528435": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -2571,6 +5657,111 @@
    ]
   },
   "2490063409521505179": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 2
+     }
+    ]
+   },
    "conf": "item",
    "folder": "DesertColossus",
    "kind": "chest",
@@ -2957,6 +6148,29 @@
    ]
   },
   "4277978357934400600": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Bow": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -3149,6 +6363,67 @@
    ]
   },
   "4720088048159616469": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Mirror Shield": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "item",
    "folder": "SpiritTemple",
    "kind": "bossheart",
@@ -3208,6 +6483,41 @@
    ]
   },
   "5086449036385341804": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "both": [
+     {
+      "Boomerang": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2
+     }
+    ],
+    "child": []
+   },
    "conf": "pool",
    "folder": "SpiritTemple",
    "kind": "gs",
@@ -3249,6 +6559,19 @@
    ]
   },
   "5309180490719879013": {
+   "age_ways": {
+    "adult": [],
+    "both": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "child": [
+     {
+      "Boomerang": 1
+     }
+    ]
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -3376,6 +6699,19 @@
    ]
   },
   "5703423643219134246": {
+   "age_ways": {
+    "adult": [],
+    "both": [
+     {
+      "Boomerang": 1
+     }
+    ],
+    "child": [
+     {
+      "Boomerang": 1
+     }
+    ]
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",
@@ -3799,6 +7135,37 @@
    ]
   },
   "8120267919866495114": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bow": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     },
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     }
+    ],
+    "both": [
+     {
+      "Bow": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     },
+     {
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Song of Time": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "gs",
@@ -4221,6 +7588,58 @@
    ]
   },
   "9143177002861777924": {
+   "age_ways": {
+    "adult": [
+     {
+      "Bomb Bag": 1,
+      "Bow": 1,
+      "Fire Arrows": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "both": [
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Progressive Strength Upgrade": 2
+     },
+     {
+      "Bomb Bag": 1,
+      "Dins Fire": 1,
+      "Lens of Truth": 1,
+      "Magic Meter": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Zeldas Lullaby": 1
+     }
+    ],
+    "child": []
+   },
    "conf": "forced",
    "folder": "SpiritTemple",
    "kind": "chest",

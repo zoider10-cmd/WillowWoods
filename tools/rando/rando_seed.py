@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 21  # 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 22  # 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -5726,6 +5726,21 @@ DUNGEON_ENTRY = {"InsideTheDekuTree": frozenset((S,)), "DodongoCavern": CHILD | 
 #  temples (MEDALS3) and the desert is the way)
 DUNGEON_ENTRY_SONGS = {"ShadowTemple": ADULT}
 DUNGEON_REQUIEM = "SpiritTemple"
+DUNGEON_AGES_FROM = 22
+# The Spirit Temple by age (dungeon_logic.py AGE_SPLIT: its checks worked out for the child alone, the adult alone and
+# both, its door from the Colossus closed in that logic). Each way of an age asks for that age's way in: the child's the
+# Requiem (with the songs shuffled; else the adult learns it at the Colossus first: the desert crossed), out of the
+# forest; the adult's the desert crossed or the Requiem as an adult; a way of both, both.
+
+
+def dungeon_age_entry(requiem, open_door=False):
+    """{"child"/"adult"/"both": [the ways in]} for the Spirit Temple (requiem: the Requiem of Spirit is a gating item;
+    open_door: with Open Door of Time being an adult asks for nothing (and for the Master Sword when it's shuffled), as
+    door_need takes it off an adult's own places)"""
+    grown = (frozenset((MASTER,)) if MASTER_SHUFFLED else NONE) if open_door else ADULT
+    child = [CHILD | {"Item_Melody_SpiritRequiem"}] if requiem else [DESERT]
+    adult = [grown | (DESERT - ADULT)] + ([grown | {"Item_Melody_SpiritRequiem"}] if requiem else [])
+    return {"child": child, "adult": adult, "both": [c | d for c in child for d in adult]}
 _DUNGEON_TABLE = []
 
 
@@ -5735,25 +5750,30 @@ def dungeon_table():
         try:
             with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), DUNGEON_RULES_FILE), encoding="utf-8") as f:
                 table = json.load(f)["by_actor"]
-            _DUNGEON_TABLE.append({int(h): e["ways"] for h, e in table.items()})
+            _DUNGEON_TABLE.append({int(h): (e["ways"], e.get("age_ways")) for h, e in table.items()})
         except (OSError, ValueError, KeyError):
             _DUNGEON_TABLE.append({})
     return _DUNGEON_TABLE[0]
 
 
-def dungeon_rule(h, area, progression, pool=frozenset()):
+def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=True):
     """a dungeon check's own rule (see above), or None where the table doesn't know it: its dungeon's way in and any of
     its ways, in our items (progression: the seed's gating items; pool: what the seed shuffles. The others are held)"""
-    ways = dungeon_table().get(h)
-    if not ways or area not in DUNGEON_ENTRY:
+    found = dungeon_table().get(h)
+    if not found or area not in DUNGEON_ENTRY:
         return None
+    ways, age_ways = found
     songs = "Item_Melody_ShadowNocturne" in progression
     entries = [frozenset(progression) if DUNGEON_ENTRY[area] is None else DUNGEON_ENTRY_SONGS.get(area, DUNGEON_ENTRY[area]) if songs
                else DUNGEON_ENTRY[area]]
     if area == DUNGEON_REQUIEM and "Item_Melody_SpiritRequiem" in progression:
         entries.append(ADULT | {"Item_Melody_SpiritRequiem"})
+    tagged = [(way, entries) for way in ways]
+    if age_ways and area == DUNGEON_REQUIEM and ages:   # (each age's ways with its own way in: DUNGEON_AGE_ENTRY)
+        by_age = dungeon_age_entry("Item_Melody_SpiritRequiem" in progression, open_door)
+        tagged = [(way, by_age[mode]) for mode in ("child", "adult", "both") for way in age_ways.get(mode) or ()]
     plain, other = [], []
-    for way in ways:
+    for way, entries in tagged:
         mine = frozenset(DUNGEON_AP_ITEMS[(name, level)] for name, level in way.items()
                          if DUNGEON_AP_ITEMS.get((name, level)) in progression or DUNGEON_AP_ITEMS.get((name, level)) in DUNGEON_SHUFFLED_ONLY & pool)
         (other if mine & DUNGEON_SHUFFLED_ONLY - progression else plain).extend(base | mine for base in entries)
@@ -6546,7 +6566,8 @@ def main():
 
     def own_rule(h, area, otherwise):
         """a dungeon check's own rule (dungeon_rule), or what the rules asked before"""
-        made = dungeon_rule(h, area, PROGRESSION, pool) if dungeon_on else None
+        made = dungeon_rule(h, area, PROGRESSION, pool, a.open_door or (a.door_song and _TIME in PROGRESSION),
+                            placement >= DUNGEON_AGES_FROM) if dungeon_on else None
         return otherwise() if made is None else made
     needs = {h: own_rule(h, s[0], lambda s=s: rule(s[0], s[6])) for h, s in spots.items()}
     deep = a.quests and placement >= TUNIC_WATER_FROM   # (the tunics by hot rooms and deep water, TUNIC_WATER_FROM)
