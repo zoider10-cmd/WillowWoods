@@ -3849,10 +3849,11 @@ def ingo_races_skip(data):
 # "does Link own a horse?" sends "no", where riding is allowed, to a step that starts an event of our own (EPONA_OWN,
 # as the ocarina event starts Pierre's: EventSystemActor.EventTransition) and then on to the song's own "yes" (it calls
 # the horse). The event makes an Epona (EventMemberCreateMethod 1: no flow of the game makes a horse, NPCs and props
-# are made this way), registers her as the escape does, takes her off stage, and, once Malon's lesson has played
-# (HavePlayedEvent.Dm_MelodyGet_Epona), moves the Epona quest to Complete and sets the escape's
-# Skullchild_JustAfterGetEpona, as the escape does: before the lesson the quest is left as it is, so the lesson (a
-# check of the shuffle, made only at the quest's step ReadyForGetEponaSong) is not taken away. The event is listed in
+# are made this way), registers her as the escape does, takes her off stage, moves the Epona quest to Complete and sets
+# the escape's Skullchild_JustAfterGetEpona, as the escape does: Ingo then talks as after the escape, and Talon leaves
+# Kakariko (the adult trade's Pocket Cucco waits on him). Always, the lesson had or not: Malon's lesson (a check) still
+# plays for young Link with the quest Complete (the owner's test, bugs.md 52); holding the quest back until the lesson
+# left Ingo and Talon as before the races (the owner's run, 2026-11-21). The event is listed in
 # the event tables (EVENT_TABLES) from Pierre's rows, and among the ocarina event's child events as his is.
 # The idea is REALAZK's OOTRR (randomizer/core/src/open_world/skips.rs, GPL-3.0-or-later, untested there); the steps
 # and their settings are the game's own (Get_Epona's escape, Dm_SY_Ocarina's Pierre). Flow files are written with
@@ -3862,7 +3863,6 @@ EPONA_OWN = "WillowEponaOwn"
 EPONA_OWN_FLOW = "Event/EventFlow/%s.bfevfl.zs" % EPONA_OWN
 EVENT_TABLES = ("RSDB/EventSetting.Product.111.rstbl.byml.zs", "RSDB/GameAnalyzedEventInfo.Product.111.rstbl.byml.zs")
 EPONA_TEMPLATE = "AppearPierre_ByScarecrowSong"   # (the rows copied: a flowchart event the ocarina event starts)
-EPONA_LESSON = "HavePlayedEvent.Dm_MelodyGet_Epona"
 
 
 def evfl_module():
@@ -3939,8 +3939,24 @@ def epona_song_flows(song_raw):
                    container(EventName=EPONA_OWN, IsWaitEnd=True, SpecialEventActionType=1, FadeInTypeEventEnd=0), owned)
     ride = switch("WillowEpona0", owned.data.actor.v, "EventQueryIsCurrentSceneEnableRide", copy.deepcopy(owned.data.params),
                   {0: start, 1: unowned})
-    fc.events += [ride, start]
+    # (and each time she is called: the quest to Complete, a quest done already left as it is. A save that had her by
+    #  the song before this event finished the quest (the lesson first, 2026-11-21) is put right by the next call)
+    gd = [a for a in fc.actors if a.identifier.name == "GameDataActor" and not a.identifier.sub_name]
+    if not gd:
+        raise ValueError("the song's flow has no GameDataActor to copy")
+    quest = evfl.Actor()
+    quest.identifier = evfl.ActorIdentifier("ChallengeSystemActor")
+    quest.params = copy.deepcopy(gd[0].params)
+    quest.params.data["EventMemberCreateMethod"] = 0
+    quest.concurrent_clips = gd[0].concurrent_clips
+    fc.actors.append(quest)
+    finish = action("WillowEpona2", quest, "EventExecuteProgressChallengeStep",
+                    container(ChallengeName="Get_Epona", IsWaitEnd=True, IsIgnoreCompletedChallenge=True, StepName="Complete",
+                              IsIgnoreChallengeProgressUI=True), owned)
+    fc.events += [ride, start, finish]
     ask.data.cases[1].v = ride
+    ask.data.cases[0].v = finish
+    start.data.nxt.v = finish
     out = io.BytesIO()
     song.write(out)
     song_new = out.getvalue()
@@ -3977,13 +3993,10 @@ def epona_song_flows(song_raw):
     done = action("WillowEponaOwn3", quest, "EventExecuteProgressChallengeStep",
                   container(ChallengeName="Get_Epona", IsWaitEnd=True, IsIgnoreCompletedChallenge=False, StepName="Complete",
                             IsIgnoreChallengeProgressUI=False), flag)
-    lesson = switch("WillowEponaOwn2", data, "EventQueryIsGameDataBool", container(GameDataName=EPONA_LESSON, Index=-1),
-                    {0: done, 1: None})
     off = action("WillowEponaOwn1", epona, "EventGoOffstageForUser",
-                 container(IsWaitEnd=True, IsSleepXLink=True, ExecuteSetSpeedZeroEveryFrame=False, IsRidingTargetGoOffstage=False), lesson)
+                 container(IsWaitEnd=True, IsSleepXLink=True, ExecuteSetSpeedZeroEveryFrame=False, IsRidingTargetGoOffstage=False), done)
     reg = action("WillowEponaOwn0", epona, "EventCopyAndRegisterOwnedHorse", container(IsWaitEnd=True), off)
-    f.events = [reg, off, lesson, done, flag]
-    lesson.data.cases.pop(1)   # (not played: the event ends there, the quest as it was)
+    f.events = [reg, off, done, flag]
     entry = evfl.EntryPoint(EPONA_OWN)
     entry.main_event.v = reg
     f.entry_points = [entry]

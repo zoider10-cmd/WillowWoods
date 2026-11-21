@@ -35,6 +35,11 @@ def main():
     check('stamp = stamp[:-1] + " epona by song\\n"' in seed, "the setting is not on the stamp's line of settings that move no item")
     check("gift_new.add(EPONA_OWN_FLOW[:-3])" in seed and "pack_new | gift_new" in seed,
           "the new event's flow file gets no size table entry")
+    # (the quest is finished whatever the lesson, and at every call: a save that had her before the lesson (the owner's
+    #  run, 2026-11-21) kept Ingo and Talon as before the races)
+    check("EPONA_LESSON" not in seed, "the new event still waits on Malon's lesson to finish the quest")
+    check('"WillowEpona2", quest, "EventExecuteProgressChallengeStep"' in seed and "IsIgnoreCompletedChallenge=True" in seed
+          and "ask.data.cases[0].v = finish" in seed, "calling an owned Epona does not finish the quest")
     check('X(EPONA_SONG, "Epona by Epona\'s Song", "rando_epona_song",' in read("gpu", "vk", "oot_rando.h"), "the settings table has no row for it")
     launcher = read("launcher", "Launcher.cs")
     check('"rando_skip_races", "rando_epona_song" };' in launcher and 'new object[] { "rando_epona_song",' in launcher,
