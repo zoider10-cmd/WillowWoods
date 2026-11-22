@@ -4177,16 +4177,23 @@ def potion_errand_skip(data):
 ERA_FLOW = SCENE_FLOWS + "/ReplaceEquipmentForEraChange.bfevfl.zs"
 
 
-def era_sword_fix(data):
+# The same flow on the way to an adult sets an empty adult's slot to the Master Sword (the owner's test of Shuffle the
+# Master Sword, 2026-11-21: adult Link held the sword with none in the Equipment screen, and young Link too with Swords
+# for either age). With the sword shuffled (master) that step is passed over too: the adult has no sword until he finds it.
+def era_sword_fix(data, master=False):
     """ReplaceEquipmentForEraChange with the step that gives an empty child's slot the Kokiri Sword passed over
-    (lead_past): the new bytes, of the same size. ValueError: not the flow this was written for (no such step, or more
-    than one)."""
+    (lead_past), and with master the one that gives an empty adult's slot the Master Sword: the new bytes, of the same
+    size. ValueError: not the flow this was written for (no such step, or more than one)."""
     steps, firsts, _ = scene_steps(data)
     kokiri = [i for i, s in enumerate(steps) if s["kind"] == 0 and s["what"] == "EventTriggerSetGameDataString64" and
               s.get("name") == "PlayerStatus.AnotherEraEquipWeapon" and s.get("value") == "Weapon_Sword_Kokiri"]
     if len(kokiri) != 1:
         raise ValueError("the swap of the ages' gear does not set the child's slot to the Kokiri Sword once (%d)" % len(kokiri))
-    return lead_past(data, steps, firsts, set(kokiri), {})
+    sword = [i for i, s in enumerate(steps) if s["kind"] == 0 and s["what"] == "EventTriggerSetGameDataString64" and
+             s.get("name") == "PlayerStatus.AnotherEraEquipWeapon" and s.get("value") == "Weapon_Sword_Master"]
+    if master and len(sword) != 1:
+        raise ValueError("the swap of the ages' gear does not set the adult's slot to the Master Sword once (%d)" % len(sword))
+    return lead_past(data, steps, firsts, set(kokiri) | (set(sword) if master else set()), {})
 
 
 # Bug 64 (the owner, 2026-11-17): an adult's first visit to Goron City had no rolling Goron; he came at the next visit.
@@ -6847,7 +6854,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 1" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -7619,7 +7626,7 @@ def main():
     # (bug 68: back to a child, no Kokiri Sword put in an empty slot: era_sword_fix)
     try:
         was = gift_files[ERA_FLOW] if ERA_FLOW in gift_files else unpack(open(os.path.join(romfs, *ERA_FLOW.split("/")), "rb").read(), zs, dicts)
-        gift_files[ERA_FLOW] = era_sword_fix(was)
+        gift_files[ERA_FLOW] = era_sword_fix(was, a.master_sword)
         gift_sizes[ERA_FLOW[:-3]] = len(gift_files[ERA_FLOW])
     except (OSError, ValueError, struct.error) as e:
         sys.exit("%s: %s. Nothing written." % (ERA_FLOW, e))
