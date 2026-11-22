@@ -2560,6 +2560,149 @@ static void oot_stats_event(const char *name) {
     oot_stats_save();
 }
 
+/* (the randomizer's fork, asked 2026-11-21) Free Scarecrow's Song: a save with no Scarecrow's Song of its own is given one,
+   L R L R L, as if young Link had taught it to Bonooru and the adult had played it back: the song (the game data Binary
+   0x3339df55, 0x178 bytes of (note, time) records: 0x02808003 L, 0x02808005 R, 0x01808001 the silence between; the
+   owner's own L R L R L, read from their save, 2026-11-21), the scarecrow's quest at Complete (the Enum 0x9472302b) and the
+   song learned (IsGet.Item_Melody_ScarecrowSong and its get scene's flag: the song list shows it). Pierre then answers it at his spots. The seed
+   asks for it by <game folder>/mods/rando-seed/scarecrow_free.txt (rando_seed.py FREE_SCARECROW_FILE). A save that has a
+   song of its own keeps it. The manager keeps a Binary in a table of entries (mgr+OOT_BIN_ENTRIES, 0x48 bytes each: two
+   buffers, each a capacity, a pointer and a size, at +0x18) found by a hash index (mgr+OOT_BIN_INDEX, mgr+OOT_BIN_INDEX_N
+   pairs of hash and entry): seen in the manager's memory with the owner's save loaded (HOS_OOT_FIND64, 2026-11-21). */
+#define OOT_BIN_ENTRIES 0x6d8
+#define OOT_BIN_INDEX 0x6e0
+#define OOT_BIN_INDEX_N 0x6ec
+#define OOT_SCARECROW_SONG 0x3339df55u
+#define OOT_SCARECROW_QUEST 0x9472302bu
+#define OOT_QUEST_COMPLETE 1275749364u   /* (murmur3 "Complete") */
+#define OOT_SCARECROW_GOT 0x5e86fb4du        /* (IsGet.Item_Melody_ScarecrowSong: the song list shows it) */
+#define OOT_SCARECROW_GOT_SCENE 0x23e7e426u  /* (HavePlayedGetEvent.Item_Melody_ScarecrowSong) */
+/* (and what else the adult's playback sets, by the owner's two saves around it (Scarecrow 4 adult before / 5 after,
+   2026-11-21): three truth values, two numbers and a step, unnamed in the game's files. The song list showed no notes
+   and Pierre did not come with the song, its length and the quest alone) */
+static const uint32_t oot_scarecrow_bools[] = {0x82cce1c8u, 0xaf77d894u, 0xb43290f9u};
+#define OOT_SCARECROW_INT_A 0x37c3f735u   /* (20 before, -1 after) */
+#define OOT_SCARECROW_INT_B 0x8566048eu   /* (0 before, 12 after) */
+#define OOT_SCARECROW_STEP 0x5b3d04c1u    /* (3069107721 before, 3661746881 after) */
+#define OOT_SCARECROW_STEP_AFTER 3661746881u
+static uint64_t oot_binary_entry(Ctx *c, uint32_t hash) {
+    const uint64_t mgr = oot_singleton(c, OOT_GAMEDATA_SLOT);
+    if (!mgr) return 0;
+    const uint64_t index = recomp_load64(c, mgr + OOT_BIN_INDEX), entries = recomp_load64(c, mgr + OOT_BIN_ENTRIES);
+    const uint32_t n = recomp_load32(c, mgr + OOT_BIN_INDEX_N);
+    if (!index || !entries || !n || n > 4096) return 0;
+    for (uint32_t i = 0; i < n; i++)
+        if (recomp_load32(c, index + 8ULL * i) == hash) return entries + 0x48ULL * recomp_load32(c, index + 8ULL * i + 4);
+    return 0;
+}
+/* (2026-11-21, the second try) The song is kept twice: the recording above, and its notes alone, up to eight, in the
+   game data's Int array 0xcc535536 (4 = L, 7 = R; the owner's L R L R L: 4 7 4 7 4 0 0 0). Bonooru's recorder
+   (OneShotSetScarecrowMelodyGameData, 0x8295d000) writes both (0x832b8d00 the notes, 0x80d7e730 the recording, and only
+   when the first note is not 0), and the ocarina's code reads both back (0x811544e0); the song list and Pierre's check
+   read the notes. The first try wrote the recording alone: a learned song with an empty staff that Pierre did not
+   answer. The Int arrays are kept as the Binaries are, from GameDataMgr+0x7e8: +0x7f0 how many, +0x7f8 the entries of
+   0x40 bytes (+0x20 how many numbers, +0x28 the numbers), +0x800 the (hash, entry) table and +0x80c its size, as the
+   game's reader 0x8377b980 walks them. */
+#define OOT_SCARECROW_NOTES 0xcc535536u
+static uint64_t oot_int_array_entry(Ctx *c, uint32_t hash) {
+    const uint64_t mgr = oot_singleton(c, OOT_GAMEDATA_SLOT);
+    if (!mgr) return 0;
+    const uint64_t table = recomp_load64(c, mgr + 0x800), entries = recomp_load64(c, mgr + 0x7f8);
+    const uint32_t size = recomp_load32(c, mgr + 0x80c), count = recomp_load32(c, mgr + 0x7f0);
+    if (!table || !entries || !size || size > 65536) return 0;
+    for (uint32_t probe = 0, slot = hash % size; probe < size; probe++, slot = (slot + 1) % size) {
+        const uint32_t key = recomp_load32(c, table + slot * 8ULL);
+        if (!key) return 0;
+        if (key != hash) continue;
+        const uint32_t index = recomp_load32(c, table + slot * 8ULL + 4);
+        return index < count ? entries + 0x40ULL * index : 0;
+    }
+    return 0;
+}
+static void oot_scarecrow_free(Ctx *c) {
+    static const uint32_t notes[8] = {4, 7, 4, 7, 4, 0, 0, 0};
+    static const uint32_t song[20] = {0x02808003, 16, 0x01808001, 18, 0x02808005, 18, 0x01808001, 20, 0x02808003, 14,
+                                      0x01808001, 24, 0x02808005, 16, 0x01808001, 22, 0x02808003, 14, 0x01808001, 0};
+    static int want = -1;
+    static char seed_of[sizeof oot_checks_seed];
+    if (want < 0 || strcmp(seed_of, oot_checks_seed)) {
+        char path[MAX_PATH + 48];
+        snprintf(seed_of, sizeof seed_of, "%s", oot_checks_seed);
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/scarecrow_free.txt") ? fopen(path, "r") : NULL;
+        want = f != NULL;
+        if (f) fclose(f);
+    }
+    if (!want) return;
+    const uint64_t entry = oot_binary_entry(c, OOT_SCARECROW_SONG);
+    static int told;
+    if (!told++) {   /* (once a run: what it found, for a log read after a test) */
+        const uint64_t mgr = oot_singleton(c, OOT_GAMEDATA_SLOT);
+        hos_log("rando: Free Scarecrow's Song: manager %#llx, index %#llx (%u), entries %#llx, the song's entry %#llx, its first words %08x %08x",
+                (unsigned long long)mgr, (unsigned long long)(mgr ? recomp_load64(c, mgr + OOT_BIN_INDEX) : 0), mgr ? recomp_load32(c, mgr + OOT_BIN_INDEX_N) : 0,
+                (unsigned long long)(mgr ? recomp_load64(c, mgr + OOT_BIN_ENTRIES) : 0), (unsigned long long)entry,
+                entry && recomp_load64(c, entry + 0x20) ? recomp_load32(c, recomp_load64(c, entry + 0x20)) : 0,
+                entry && recomp_load64(c, entry + 0x20) ? recomp_load32(c, recomp_load64(c, entry + 0x20) + 4) : 0);
+    }
+    const uint64_t notes_entry = oot_int_array_entry(c, OOT_SCARECROW_NOTES);
+    const uint64_t notes_at = notes_entry && recomp_load32(c, notes_entry + 0x20) >= 8 ? recomp_load64(c, notes_entry + 0x28) : 0;
+    if (told == 1) {
+        told++;
+        hos_log("rando: Free Scarecrow's Song: the notes' entry %#llx: %016llx %016llx %016llx %016llx %016llx %016llx %016llx %016llx, the first note %u",
+                (unsigned long long)notes_entry, (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry) : 0),
+                (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry + 8) : 0), (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry + 0x10) : 0),
+                (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry + 0x18) : 0), (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry + 0x20) : 0),
+                (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry + 0x28) : 0), (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry + 0x30) : 0),
+                (unsigned long long)(notes_entry ? recomp_load64(c, notes_entry + 0x38) : 0), notes_at ? recomp_load32(c, notes_at) : 0);
+    }
+    if (!entry || !notes_at) return;
+    /* (the song: written where the save has none; a song of the save's own (taught to Bonooru) is kept, and only the
+       quest and the pouch are seen to, so Pierre answers it) */
+    /* (no song: the length 0 (a new game's: the room is there, 0x178 bytes, the length not), or nothing in it. A song
+       written without its length is an empty song to the game: seen in play 2026-11-21, the list showed no notes) */
+    int wrote = 0;
+    const uint64_t first = recomp_load64(c, entry + 0x20);
+    /* (or no notes: the game's own sign of no song (0x80d7e730), and what a save of the first try has, the recording
+       without them: it gets both again) */
+    if (first && (recomp_load64(c, entry + 0x28) == 0 || recomp_load32(c, first) == 0 || recomp_load32(c, notes_at) == 0)) {
+        for (int b = 0; b < 2; b++) {   /* (both lists of 8, as the recording's two: +0x20/+0x28 and +0x30/+0x38, seen in a run) */
+            const uint64_t list = recomp_load32(c, notes_entry + 0x20 + 0x10 * b) >= 8 ? recomp_load64(c, notes_entry + 0x28 + 0x10 * b) : 0;
+            for (unsigned k = 0; list && k < 8; k++) recomp_store32(c, list + 4 * k, notes[k]);
+        }
+        for (int b = 0; b < 2; b++) {   /* (both buffers: the song as the save has it and the one kept beside it) */
+            const uint64_t cap = recomp_load64(c, entry + 0x18 + 0x18 * b), data = recomp_load64(c, entry + 0x20 + 0x18 * b);
+            if (!data || cap < 0x178) continue;
+            for (unsigned k = 0; k < 0x178 / 4; k++) recomp_store32(c, data + 4 * k, k < sizeof song / 4 ? song[k] : 0);
+            recomp_store64(c, entry + 0x28 + 0x18 * b, 0x178);   /* (its length: the whole room, as a taught song's) */
+            wrote++;
+        }
+    }
+    uint32_t quest = 0;
+    const int quest_done = oot_gamedata_enum(c, OOT_SCARECROW_QUEST, &quest, 0) && quest == OOT_QUEST_COMPLETE;
+    int in_pouch = 0, played = 0;   /* (the song learned: its flags, as the other songs', oot_song_flag) */
+    oot_gamedata_bool(c, OOT_SCARECROW_GOT, &in_pouch);
+    oot_gamedata_bool(c, OOT_SCARECROW_GOT_SCENE, &played);
+    int32_t count_b = 0;
+    oot_gamedata_int(c, OOT_SCARECROW_INT_B, &count_b, 0);
+    if (!wrote && quest_done && in_pouch && played && count_b == 12) return;
+    for (unsigned k = 0; k < sizeof oot_scarecrow_bools / sizeof oot_scarecrow_bools[0]; k++) oot_gamedata_set_bool(c, oot_scarecrow_bools[k], 1);
+    int32_t a = -1, b = 12, a_now = 0;
+    const int set_a = oot_gamedata_int(c, OOT_SCARECROW_INT_A, &a, 1), set_b = oot_gamedata_int(c, OOT_SCARECROW_INT_B, &b, 1);
+    uint32_t step = OOT_SCARECROW_STEP_AFTER, step_now = 0;
+    const int set_step = oot_gamedata_enum(c, OOT_SCARECROW_STEP, &step, 1);
+    oot_gamedata_int(c, OOT_SCARECROW_INT_A, &a_now, 0);
+    oot_gamedata_enum(c, OOT_SCARECROW_STEP, &step_now, 0);
+    hos_log("rando: Free Scarecrow's Song: set %08x %d (now %d), %08x %d, %08x %d (now %u)", OOT_SCARECROW_INT_A, set_a, a_now,
+            OOT_SCARECROW_INT_B, set_b, OOT_SCARECROW_STEP, set_step, step_now);
+    if (!quest_done) {
+        uint32_t done = OOT_QUEST_COMPLETE;
+        oot_gamedata_enum(c, OOT_SCARECROW_QUEST, &done, 1);
+    }
+    if (!in_pouch) oot_gamedata_set_bool(c, OOT_SCARECROW_GOT, 1);
+    if (!played) oot_gamedata_set_bool(c, OOT_SCARECROW_GOT_SCENE, 1);
+    hos_log("rando: Free Scarecrow's Song: %s, the scarecrow's quest %s, the song %s", wrote ? "L R L R L given" : "the save's own song kept",
+            quest_done ? "was done" : "done now", in_pouch ? "was learned" : "learned now");
+}
+
 static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     void rx_option_set(int id, int value);
     static int64_t next, next_stamp;
@@ -2574,6 +2717,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     }
     oot_stone_heard(c);   /* (a Gossip Stone talked to: its hint is the Tracker's) */
     oot_stats_second();   /* (the run's time played: oot_stats) */
+    if (oot_check_count > 0) oot_scarecrow_free(c);   /* (Free Scarecrow's Song: a save without one given L R L R L) */
     if (oot_check_count > 0) oot_start_items(c, oot_checks_seed);   /* (the seed's starting items, each one Link lacks; once the
         seed's checks are read: before, the seed's stamp is not yet known, and a list read again dropped an item's ammo) */
     {   /* (a test's: HOS_OOT_SETFLAG="<hash in hex>=<0 or 1>,..." sets those truth values of the game's list once, some

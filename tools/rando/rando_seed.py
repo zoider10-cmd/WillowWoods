@@ -4706,7 +4706,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6262,6 +6262,17 @@ def castle_guards_pass(data):
     return out.getvalue()
 
 
+# ---- Free Scarecrow's Song (rando_free_scarecrow, asked 2026-11-21) ----
+# The Scarecrow's Song is the player's own: young Link plays notes to Bonooru at Lake Hylia, the adult plays them back,
+# and Pierre answers them at his spots. Its notes are kept in the save (a Binary, empty in a new game: the list of flags
+# gives only its size, so a new game can't start with one; bugs.md 105). With the setting the game's side gives a save
+# that has no song of its own L R L R L, the scarecrow's quest done and the song in the pouch (host/hos_main.c
+# oot_scarecrow_free), when the seed leaves FREE_SCARECROW_FILE beside it. Tried first and dropped: Pierre called by
+# whatever is played at a spot (the game knows a spot only after its own song: seen in play, he never came).
+# Moves no item.
+FREE_SCARECROW_FILE = "scarecrow_free.txt"
+
+
 def stick_need(need, letter, bolero=False):
     """one way of a rule with Deku Sticks for the Kokiri Sword (see above): the way as it was, or without the sword and
     with a child's way to Goron City's pots (letter: Zelda's Letter is shuffled; bolero: as letter_need's)"""
@@ -6643,6 +6654,7 @@ def main():
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
     p.add_argument("--start", default=None, help="as rando_start_items=KS,SL,...: a new game starts with them (START_ITEMS)")
+    p.add_argument("--free-scarecrow", action="store_true", help="as rando_free_scarecrow=1: a save without a Scarecrow's Song is given L R L R L (FREE_SCARECROW_FILE); moves no item")
     p.add_argument("--castle-guards", action="store_true", help="as rando_castle_guards=1: a castle guard who spots young Link lets him pass (castle_guards_pass); moves no item")
     p.add_argument("--ocarinas", action="store_true", help="as rando_ocarinas=1: both ocarinas are items of the shuffle (OCARINA_GIFT, OCARINA_TIME_GIFT); with Songs on")
     p.add_argument("--epona-song", action="store_true", help="as rando_epona_song=1: the first time an adult plays Epona's Song where Link can ride, Epona is his (epona_song_flows); moves no item")
@@ -6701,6 +6713,7 @@ def main():
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
+    a.free_scarecrow = a.free_scarecrow or ini["rando_free_scarecrow"] != 0
     a.start = start_codes(a.start if a.start is not None else start_option(game))   # (Starting items: START_ITEMS)
     a.gate_open = ini["rando_letter"] == 2   # (Kakariko gate Open: the overworld's rules by it, placement 23, OVERWORLD_RULES)
     a.letter = a.letter or ini["rando_letter"] == 1   # (Kakariko gate: 1 the letter shuffled, 2 open: the game's side's,
@@ -6832,6 +6845,8 @@ def main():
         stamp = stamp[:-1] + " epona by song\n"
     if a.castle_guards:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " guards pass\n"
+    if a.free_scarecrow:   # (moves no item either: the same line)
+        stamp = stamp[:-1] + " scarecrow free\n"
     if a.ageless:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " ageless %d\n" % a.ageless
     print("randomizer %s, seed %d, chests %s, dungeon keys %s, major items %s" % (
@@ -8366,8 +8381,12 @@ def main():
         print("Progressive items: %d map file%s of shops with shelves of a family, written for each tier" % (len(tier_maps), "" if len(tier_maps) == 1 else "s"))
     if hints:
         spoiler += ["", "the Gossip Stones' hints (the stone's name -> what it says)"] + ["  %-34s %s" % h for h in sorted(hints)]
-    if os.path.exists(os.path.join(mod, "scarecrow_free.txt")):   # (Free Scarecrow's Song, parked 2026-11-21: its file from before)
-        os.remove(os.path.join(mod, "scarecrow_free.txt"))
+    scarecrow = os.path.join(mod, FREE_SCARECROW_FILE)   # (Free Scarecrow's Song: the game's side gives the song)
+    if a.free_scarecrow:
+        with open(scarecrow, "w", encoding="utf-8", newline="\n") as f:
+            f.write("L R L R L: a save without a Scarecrow's Song of its own is given this one (host/hos_main.c oot_scarecrow_free)\n")
+    elif os.path.exists(scarecrow):
+        os.remove(scarecrow)
     with open(os.path.join(mod, START_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side gives them: oot_start_items)
         f.write("# the starting items, given to a save that does not hold them: <name> [<its ammo> <count>]\n" + "".join(l + "\n" for l in start_lines(a.start)))
     with open(os.path.join(mod, HINTS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the Tracker's: each stone, its place and its hint)
