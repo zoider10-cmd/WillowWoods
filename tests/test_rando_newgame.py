@@ -194,7 +194,7 @@ def sources():
     check(seed.OPEN_DOOR == {"Market_Child_TimeTempleDoor_Opened": True, "HavePlayedEvent.Dm_TimeTemple_0065": True} and
           "#define OOT_LEFT_TEMPLE_FLAG 0x%08xu" % seed.murmur3(b"HavePlayedEvent.Dm_TimeTemple_0065") in host and '"rando_open_door": 0' in script and
           'a.open_door = a.open_door or ini["rando_open_door"] == 1' in script and
-          "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **WATER_GATE, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
+          "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
           'X(OPEN_DOOR, "Open Door of Time", "rando_open_door",' in header,
           "the Door of Time's flag does not start set with the setting, or the setting is not read")
     # (the rules: only what it takes to be an adult is taken off, only from a place that is an adult's alone)
@@ -267,7 +267,7 @@ def main():
     #  Found with a save made before the owl: with HyruleField_ArriveEntrance set, a night asked for stayed)
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
-    check(seed.FIELD_CLOCK == {"HyruleField_ArriveEntrance": True} and "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **WATER_GATE, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
+    check(seed.FIELD_CLOCK == {"HyruleField_ArriveEntrance": True} and "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
           "if True:   # (every seed: Hyrule Field's clock, FIELD_CLOCK" in script,
           "a seed's new game does not start with the flag that ends Hyrule Field's held day, or only with other settings on")
     check(seed.FIXES_VERSION >= 5 and "field_clock(" not in script, "a seed made before the field's clock ran is not made again, or the step tried first is still passed over")

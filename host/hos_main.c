@@ -2982,16 +2982,19 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     {   /* (Willow Woods, 2026-11-20) The Water Temple's gate by Lake Hylia open: its switch's cutscene marked played
            (HavePlayedEvent.Dm_WaterTemple_0000, 392b86fb) and the gate's pillars risen (WaterTemple_EmitGatePillar,
            ab74fd3c), the state the game leaves once the switch is hit, which it would not be before the Ice Cavern
-           (seen in play). A seed's new game starts so (tools/rando/rando_seed.py WATER_GATE); a save made before has
-           them put out, so they are set here, once a second while they are not. */
+           (seen in play). They are set here, once a second while they are not: a new game's within its first second,
+           long before the lake is loaded (until 2026-11-22 a seed's new game also started with them, rando_seed.py
+           WATER_GATE). Not with the Water Temple gate setting at Shut (rando_water_gate): the gate is then as the
+           save has it, and its switch opens it. */
         static const uint32_t gate[2] = {0x392b86fbu, 0xab74fd3cu};
         static int skip = -1;   /* (a test's: HOS_OOT_NO_WATER_GATE=1 leaves the gate as the save has it, to try its switch;
                                    =clear also puts the two out once, in the first area the save is in that is not Hyrule
                                    Field (the lake's gate reads them when the field loads, so they go before it):
                                    the gate shut and its cutscene not played) */
         static int cleared;
-        if (skip < 0) skip = getenv("HOS_OOT_NO_WATER_GATE") != NULL;
-        if (skip && !cleared && !strcmp(getenv("HOS_OOT_NO_WATER_GATE"), "clear")) {
+        int hos_rando_water_gate_shut(void);   /* host/oot_rando.c: the Water Temple gate setting at Shut: left to its switch */
+        if (skip < 0) skip = getenv("HOS_OOT_NO_WATER_GATE") != NULL || hos_rando_water_gate_shut();
+        if (skip && !cleared && getenv("HOS_OOT_NO_WATER_GATE") && !strcmp(getenv("HOS_OOT_NO_WATER_GATE"), "clear")) {
             char map[80];
             if (oot_gamedata_string(c, 0x1d6189dau, map, sizeof map) && map[0] && strncmp(map, "HyruleField", 11)) {   /* Sequence_CurrentBanc */
                 cleared = 1;

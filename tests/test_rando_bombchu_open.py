@@ -138,13 +138,27 @@ def main():
           "the bowling's question does not go on to its answer 0 (true: the quest done) either way")
     check(seed.WATER_WALL == ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp") and "changed[rel] = water_wall_out(data)" in script,
           "the Water Temple's gate wall is not taken out of the adult's Hyrule Field")
-    check(seed.WATER_GATE == {"HavePlayedEvent.Dm_WaterTemple_0000": True, "WaterTemple_EmitGatePillar": True} and "**WATER_GATE," in script,
-          "a new game does not start with the Water Temple's gate open (its cutscene played, its pillars risen)")
+    # (the gate a setting since 2026-11-22, Water Temple gate (rando_water_gate: Open, Shut), the game's side's alone: a new
+    #  game no longer starts with the two flags, the game sets them while they are out at Open and leaves them at Shut)
+    check(seed.WATER_GATE == {"HavePlayedEvent.Dm_WaterTemple_0000": True, "WaterTemple_EmitGatePillar": True} and "**WATER_GATE" not in script,
+          "a new game still starts with the Water Temple's gate flags: the setting at Shut could not leave the gate shut")
     host = open(os.path.join(HERE, "..", "host", "hos_main.c"), encoding="utf-8").read()
     check("static const uint32_t gate[2] = {0x392b86fbu, 0xab74fd3cu};" in host and
           [seed.murmur3(n.encode()) for n in seed.WATER_GATE] == [0x392b86fb, 0xab74fd3c],
-          "the game's side does not open the Water Temple's gate on a save made before, or by other flags")
-    check(seed.FIXES_VERSION >= 62, "FIXES_VERSION not raised: seeds made before would keep the shut doors")
+          "the game's side does not open the Water Temple's gate from the start, or by other flags")
+    block = host[host.index("static const uint32_t gate[2] = {0x392b86fbu, 0xab74fd3cu};"):]
+    block = block[:block.index("The minimap, the same way")]
+    check('skip = getenv("HOS_OOT_NO_WATER_GATE") != NULL || hos_rando_water_gate_shut();' in block and
+          "for (int g = 0; g < 2 && !skip; g++) {" in block and "oot_gamedata_set_bool(c, gate[g], 1)" in block,
+          "the game's side opens the gate with the setting at Shut too, or no longer opens it at Open")
+    read = lambda *parts: open(os.path.join(HERE, "..", *parts), encoding="utf-8").read()
+    launcher = read("launcher", "Launcher.cs")
+    check("int hos_rando_water_gate_shut(void) { return rando_active && rando.v[OOT_RANDO_WATER_GATE] != 0; }" in read("host", "oot_rando.c") and
+          'X(WATER_GATE, "Water Temple gate", "rando_water_gate",' in read("gpu", "vk", "oot_rando.h") and
+          'new object[] { "rando_water_gate", "Water Temple gate", new[] { "Open", "Shut" }, new[] { 0, 1 },' in launcher and
+          '"+bridge", "rando_water_gate" } },' in launcher and '"rando_hints", "rando_water_gate", "rando_ageless",' in launcher,
+          "the Water Temple gate setting is not read by the game, offered by the launcher among the settings that move no item, or Open first")
+    check(seed.FIXES_VERSION >= 67, "FIXES_VERSION not raised: seeds made before would keep the shut doors, or a new game's gate flags")
     print("FAIL" if failed else "PASS: Bombchu Bowling, the Bombchu Shop and the Water Temple's gate open")
     return 1 if failed else 0
 
