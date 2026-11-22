@@ -4756,7 +4756,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -5787,12 +5787,14 @@ AGELESS_BIGGORON = ("Weapon_Sword_Biggoron", "Weapon_Sword_Giant", "Weapon_Sword
 # model's boots (the d-pad's change did nothing: the game's own player code, f_805dbde0 and around, not his files))
 AGELESS_BOOTS = ("Armor_Adult_HoverBoot", "Armor_Adult_HeavyBoot")
 # (the tunics for the child, asked 2026-11-20: the game's side lets their kind (8, EquipArmor) through the same four IsChild
-# stops as the boots', host/oot_rando.c hos_oot_boots_child; their effect is the tunic slot's actor, f_80c225d0, no age asked)
+# stops as the boots', host/oot_rando.c hos_oot_boots_child; their effect is the tunic slot's actor, f_80c225d0, no age asked.
+# A setting of their own since 2026-11-21, rando_ageless_tunics (the owner: a child may want them without the other
+# age's items): a.ageless's bit 4, not among AGELESS_ITEMS)
 AGELESS_TUNICS = ("Armor_Adult_Goron", "Armor_Adult_Zora")
 AGELESS_ITEMS = AGELESS_SWORDS + (
     "Weapon_Shield_Mirror", "Weapon_Shield_Deku", "Item_DekuStick", "Weapon_Range_SlingShot", "Item_Boomerang", "Item_Hammer",
     "Item_Longshot", "Item_Hookshot", "Item_Arrow_Normal", "Weapon_Range_Bow", "Item_Arrow_Fire", "Pouch_Range_BowAndArrow_Fire",
-    "Item_Arrow_Ice", "Pouch_Range_BowAndArrow_Ice", "Item_Arrow_Light", "Pouch_Range_BowAndArrow_Light") + AGELESS_BOOTS + AGELESS_TUNICS + \
+    "Item_Arrow_Ice", "Pouch_Range_BowAndArrow_Ice", "Item_Arrow_Light", "Pouch_Range_BowAndArrow_Light") + AGELESS_BOOTS + \
     AGELESS_BIGGORON
 # (the child's arrows: his EquipmentUserParam names Shootable_DekuSeed as ArrowActorName, what every shot of his is,
 # whichever weapon; the adult's names none, and each weapon's BowParam names its own: the Bow's NormalArrow, the
@@ -5918,8 +5920,10 @@ def ageless_anims(pack, param, lent):
 
 
 def ageless_actors(which):
-    """the actors made usable by both ages: which's bit 1 the swords, bit 2 the age-only items (AGELESS_ITEMS but the swords)"""
-    return (AGELESS_SWORDS if which & 1 else ()) + (tuple(x for x in AGELESS_ITEMS if x not in AGELESS_SWORDS) if which & 2 else ())
+    """the actors made usable by both ages: which's bit 1 the swords, bit 2 the age-only items (AGELESS_ITEMS but the swords),
+    bit 4 the tunics (AGELESS_TUNICS)"""
+    return ((AGELESS_SWORDS if which & 1 else ()) + (tuple(x for x in AGELESS_ITEMS if x not in AGELESS_SWORDS) if which & 2 else ()) +
+            (AGELESS_TUNICS if which & 4 else ()))
 AGELESS_TRUE = (208, b"\x01\x00\x00\x00")
 
 
@@ -6702,7 +6706,7 @@ def main():
     p.add_argument("--shop-shelves", type=int, choices=(0, 1), help="in place of rando_shop_shelves: with Shops, 0 four shelves of each shop, 1 every shelf (shop_slots)")
     p.add_argument("--sword-shield", type=int, choices=(0, 1), help="in place of rando_sword_shield: 0 the Kokiri Sword stays in its chest and the Deku Shield on "
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
-    p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
+    p.add_argument("--ageless", type=int, choices=range(8), help="a sum: 1 the swords for both ages, 2 the age-only items, 4 the tunics (as rando_ageless, rando_ageless_items and rando_ageless_tunics)")
     p.add_argument("--start", default=None, help="as rando_start_items=KS,SL,...: a new game starts with them (START_ITEMS)")
     p.add_argument("--free-scarecrow", action="store_true", help="as rando_free_scarecrow=1: a save without a Scarecrow's Song is given L R L R L (FREE_SCARECROW_FILE); moves no item")
     p.add_argument("--castle-guards", action="store_true", help="as rando_castle_guards=1: a castle guard who spots young Link lets him pass (castle_guards_pass); moves no item")
@@ -6771,7 +6775,8 @@ def main():
     # (two settings since 2026-11-19: rando_ageless the swords, rando_ageless_items the age-only items; an older seed's
     #  rando_ageless=2 was both. a.ageless: 1 the swords, 2 the items, 3 both)
     if a.ageless is None:
-        a.ageless = (1 if ini["rando_ageless"] in (1, 2) else 0) | (2 if ini["rando_ageless"] == 2 or ini["rando_ageless_items"] == 1 else 0)
+        a.ageless = ((1 if ini["rando_ageless"] in (1, 2) else 0) | (2 if ini["rando_ageless"] == 2 or ini["rando_ageless_items"] == 1 else 0) |
+                     (4 if ini["rando_ageless_tunics"] == 1 else 0))
     # (the songs gate the game: with them shuffled the logic places them, whatever Major items says)
     logic_now = (a.event_chests or bool(a.songs)) and not a.no_logic
     # (the options file's rando_open_deku and rando_open_forest too, so that the launcher's run at Play keeps them)
@@ -7982,7 +7987,8 @@ def main():
             shop_parts.add(AGELESS_TABLE)   # (its entry raised by PART_GROWTH: the game's is about 3.25 times the file, and 756 bytes more fell without)
         except (OSError, ValueError, KeyError, struct.error, IndexError) as e:
             sys.exit("either age's items: %s. Nothing written." % e)
-        print("Either age's items: %s usable by both ages (%d marks set)" % (("", "the swords", "the age-only items", "the swords and the age-only items")[a.ageless], count))
+        print("Either age's items: %s usable by both ages (%d marks set)" % (
+            " and ".join(n for bit, n in ((1, "the swords"), (2, "the age-only items"), (4, "the tunics")) if a.ageless & bit), count))
     try:   # (Zelda's Letter in the amiibo slot, every seed: the egg and the chicken stay choosable, LETTER_SLOT)
         was = gift_files[AGELESS_TABLE] if AGELESS_TABLE in gift_files else open(os.path.join(romfs, *AGELESS_TABLE.split("/")), "rb").read()
         gift_files[AGELESS_TABLE] = pouch_letter_slot(was)

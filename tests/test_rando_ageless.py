@@ -90,6 +90,15 @@ def main():
     check(S.ageless_actors(1) == S.AGELESS_SWORDS and not set(S.ageless_actors(2)) & set(S.AGELESS_SWORDS) and
           set(S.ageless_actors(3)) == set(S.AGELESS_ITEMS) and S.ageless_actors(0) == (),
           "the swords and the age-only items are not chosen apart")
+    # (the tunics a setting of their own, 2026-11-21: bit 4, not among the age-only items; the game's side by its own row)
+    host = (ROOT / "host" / "oot_rando.c").read_text(encoding="utf-8")
+    check(S.ageless_actors(4) == S.AGELESS_TUNICS and not set(S.AGELESS_TUNICS) & set(S.ageless_actors(3)) and
+          set(S.ageless_actors(7)) == set(S.AGELESS_ITEMS) | set(S.AGELESS_TUNICS) and
+          '(4 if ini["rando_ageless_tunics"] == 1 else 0)' in script and '"rando_ageless_tunics": 0' in script and
+          'X(AGELESS_TUNICS, "Either age\'s tunics", "rando_ageless_tunics",' in header and
+          'new object[] { "rando_ageless_tunics", "Either age\'s tunics", new[] { "Off", "On" }' in launcher and
+          "(k == 8 && hos_rando_ageless_tunics()) || (k == 9 && hos_rando_ageless_items())" in host,
+          "the tunics are not a setting of their own (the seed tool's bit 4, the game's and the launcher's rows, the game's side)")
     check('(1 if ini["rando_ageless"] in (1, 2) else 0) | (2 if ini["rando_ageless"] == 2 or ini["rando_ageless_items"] == 1 else 0)' in script,
           "an older seed's swords and items is not read as both, or the two settings are not read apart")
     print("PASS: either age's items")

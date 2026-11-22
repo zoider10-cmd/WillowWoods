@@ -42,9 +42,11 @@ int hos_rando_magic(void) { return rando_active && rando.v[OOT_RANDO_MAGIC] != 0
    3 three. hos_main.c oot_ganon_bridge) */
 int hos_rando_bridge_medallions(void) { return 6 - (rando_active ? rando.v[OOT_RANDO_BRIDGE_MEDALLIONS] & 3 : 0); }
 int hos_rando_ageless_items(void) { return rando_active && rando.v[OOT_RANDO_AGELESS_ITEMS] != 0; }
+/* (the tunics' kind, 8, by Either age's tunics since 2026-11-21: a setting of their own; the boots' (9) by the items) */
+int hos_rando_ageless_tunics(void) { return rando_active && rando.v[OOT_RANDO_AGELESS_TUNICS] != 0; }
 unsigned long long hos_oot_boots_child(unsigned long long is_child, unsigned long long kind) {
     const unsigned k = (unsigned)(kind & 0xffffffffULL);
-    return (k == 8 || k == 9) && hos_rando_ageless_items() ? 0 : is_child;
+    return (k == 8 && hos_rando_ageless_tunics()) || (k == 9 && hos_rando_ageless_items()) ? 0 : is_child;
 }
 /* Open Door of Time: on with the randomizer (hos_main.c oot_time_door) */
 /* (a test's: HOS_OOT_OPEN_DOOR=1 is the setting on, whatever the options say) */

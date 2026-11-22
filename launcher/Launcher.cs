@@ -202,7 +202,7 @@ public static class SaveSlots {
     // (the randomizer's settings that move no item: changed on a save being played, its seed is written again as it was,
     // tools/rando/rando_seed.py QOL_STAMP and the stamp's second line; the others are the game's side's alone)
     static readonly HashSet<string> NoItemKeys = new HashSet<string> { "rando_skip_intro", "rando_skip_cutscenes", "rando_start_rupees",
-        "rando_skulltulas_day", "rando_hints", "rando_ageless", "rando_ageless_items", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow" };
+        "rando_skulltulas_day", "rando_hints", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow" };
     static bool MovesNoItem(string line) { int eq = line.IndexOf('='); return eq > 0 && NoItemKeys.Contains(line.Substring(0, eq).Trim()); }
 
     // (the seed there is now is not the one that save was last played on: settings that move no item aside. A line one
@@ -2078,7 +2078,7 @@ static class RandoLayout {
     public static readonly Color Tested = Color.FromArgb(124, 210, 104), ShouldWork = Color.FromArgb(232, 190, 96),
                                  Experimental = Color.FromArgb(240, 112, 86), SectionColor = Color.FromArgb(172, 214, 98);
     // (how far each is tested: Tested unless named here)
-    static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items",
+    static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_ageless_tunics",
         "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas" };
     public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards" };
     public static Color Status(string key) {
@@ -2121,7 +2121,7 @@ static class RandoLayout {
         new RandoSection { Title = "OPEN WORLD", Sub = "what's open from a new game's start", Accent = SectionColor,
             Rows = new[] { "+forest", "rando_open_door", "rando_letter", "+bridge" } },
         new RandoSection { Title = "ITEMS", Sub = "how items work", Accent = SectionColor,
-            Rows = new[] { "rando_progressive", "+ageless" } },
+            Rows = new[] { "rando_progressive", "+ageless", "rando_ageless_tunics" } },
         new RandoSection { Title = "QUALITY OF LIFE", Sub = "moves no item: can be changed for a seed being played", Accent = SectionColor,
             Rows = new[] { "+skips", "+rupees", "rando_ammo_pickups", "rando_infinite_ammo", "rando_hints", "rando_chest_size", "rando_epona_song",
                            "rando_castle_guards", "rando_free_scarecrow" } },
@@ -2912,6 +2912,8 @@ class LauncherForm : Form {
             "The Great Fairies of the improved spin attack, doubled magic and halved damage join the shuffle (as the spell fairies do with Quest rewards), and magic becomes two items of the shuffle: the first gives the magic meter, the second doubles it. The Lens of Truth, the spells and the magic arrows no longer give magic by themselves. Needs Quest rewards." },
         new object[] { "rando_ageless_items", "Either age's items", new[] { "Off", "On" }, new[] { 0, 1 },
             "Each age can use the other's items: young Link the Bow with its arrows, fire, ice and light arrows too (held like the Slingshot), the Hammer, the Hookshots and the Iron and Hover Boots; adult Link the Slingshot, the Boomerang and Deku Sticks; both the Kokiri and Mirror Shields. Tested in play: young Link's Bow, fire arrows, Hammer, Longshot and boots, adult Link's Deku Sticks, Slingshot and Boomerang. Known quirks: adult Link's Boomerang stops in front of him on its way back (equip another item and back to throw again); the shot's prompt may name the other age's ammo; young Link's boots don't show on the d-pad. Young Link can't use the Biggoron's Sword: it stays adult Link's. Harmless: Link's model may look stretched or wrong in some cutscenes and for a moment while he uses the other age's item, as it does whenever a cutscene plays at the age it was not made for. The logic does not count on it. Moves no item." },
+        new object[] { "rando_ageless_tunics", "Either age's tunics", new[] { "Off", "On" }, new[] { 0, 1 },
+            "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. The logic does not count on it. Moves no item." },
         new object[] { "rando_chest_size", "Chest size matches contents", new[] { "Off", "On" }, new[] { 0, 1 },
             "A chest holding a major item (one the seed's logic needs, a song or magic) is a big chest; any other is a small chest, so a chest's size tells you whether it is worth opening. Moves no item: it can be turned on for a seed being played. Big chests keep their long opening." },
         new object[] { "rando_bridge_medallions", "Bridge medallions", new[] { "6", "5", "4", "3" }, new[] { 0, 1, 2, 3 },

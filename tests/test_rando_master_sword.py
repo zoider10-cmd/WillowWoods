@@ -65,7 +65,7 @@ def main():
     # ---- the seed's steps ----
     script = read("tools", "rando", "rando_seed.py")
     check('a.master_sword = a.master_sword or ini["rando_master_sword"] == 1' in script and
-          "if a.master_sword and not (a.open_door or a.door_song):" in script and '(" master sword 1" if a.master_sword else "")' in script,
+          "if a.master_sword and not (a.open_door or a.door_song):" in script and '(" master sword 2" if a.master_sword else "")' in script,
           "the setting is not read, not left off without Open Door of Time, or not in the seed's stamp")
     check("spots[gift_hash(MASTER_GIFT.key)] = [MASTER_GIFT.area, MASTER_GIFT.item, None, None, \"gift\", MASTER_GIFT.name, \"\"]" in script and
           "PROGRESSION = PROGRESSION | {MASTER}" in script and
@@ -78,7 +78,8 @@ def main():
     # ---- the game's side ----
     host = read("host", "hos_main.c")
     check("static int oot_pedestal_give(Ctx *c) {" in host and
-          "if (child && oot_pedestal_give(c) == 0 && oot_pouch_count(c, \"Weapon_Sword_Master\") == 0)" in host and
+          "const int shuffled = child ? oot_pedestal_give(c) : 0;" in host and
+          "if (child && shuffled == 0 && oot_pouch_count(c, \"Weapon_Sword_Master\") == 0)" in host and
           "const int status = oot_pouch_change(c, item, 1);" in host and "oot_gamedata_keyed_set_bool(c, key, 1);" in host and
           "if (given) return 1;" in host,
           "the first trip through time does not give the pedestal's item once, or still gives the sword with the setting")
