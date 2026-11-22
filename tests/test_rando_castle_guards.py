@@ -31,7 +31,7 @@ def main():
           "the launcher has no row for it, or does not keep a seed when it changes")
     # (Free Scarecrow's Song, rando_free_scarecrow, asked 2026-11-21: whatever is played at a Pierre spot calls him)
     check('a.free_scarecrow = a.free_scarecrow or ini["rando_free_scarecrow"] != 0' in seed and 'stamp = stamp[:-1] + " scarecrow free\\n"' in seed
-          and "gift_files[PIERRE_FLOW] = pierre_free(was)" in seed and """X(FREE_SCARECROW, "Free Scarecrow's Song", "rando_free_scarecrow",""" in read("gpu", "vk", "oot_rando.h")
+          and "FREE_SCARECROW_FILE = \"scarecrow_free.txt\"" in seed and "if (oot_check_count > 0) oot_scarecrow_free(c);" in read("host", "hos_main.c") and """X(FREE_SCARECROW, "Free Scarecrow's Song", "rando_free_scarecrow",""" in read("gpu", "vk", "oot_rando.h")
           and """new object[] { "rando_free_scarecrow", "Free Scarecrow's Song",""" in launcher, "Free Scarecrow's Song is not read, stamped, written, or offered")
     print("FAIL" if failed else "PASS: castle guards let Link pass")
     return 1 if failed else 0

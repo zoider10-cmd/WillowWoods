@@ -6263,65 +6263,14 @@ def castle_guards_pass(data):
 
 
 # ---- Free Scarecrow's Song (rando_free_scarecrow, asked 2026-11-21) ----
-# Pierre comes where the Scarecrow's Song is played at one of his spots (AreaCanCallPierre areas, each there until he has
-# come): Dm_SY_Ocarina's entry AppearPierreEventTransition asks which spot Link stands in
-# (EventQueryCheckContactAreaCanCallPierre) and starts that spot's AppearPierre_<spot> event. The song itself is the
-# player's own, kept in the save (a Binary the game fills when Bonooru is taught; bugs.md 105). With the setting whatever is
-# played (the free play's end, the entry PlayOcarinaFree's fork joined) first asks that same question: at a spot, Pierre's
-# way as the song has it, elsewhere the ocarina as it was. Asked as the ocarina is taken out, the spot was never found
-# (seen without a window 2026-11-21: the game knows it only once the ocarina has played). Moves no item. NOT SEEN IN PLAY.
-PIERRE_FLOW = "Event/EventFlow/Dm_SY_Ocarina.bfevfl.zs"
-PIERRE_ASK, PIERRE_ENTRY, PIERRE_FREE = "EventQueryCheckContactAreaCanCallPierre", "AppearPierreEventTransition", "PlayOcarinaFree"
-
-
-def pierre_free(data):
-    """Dm_SY_Ocarina's flow with whatever is played at a Pierre spot calling him (see above). The new bytes; ValueError:
-    not the flow known."""
-    import copy
-    import io
-    evfl = evfl_module()
-    flow = evfl.EventFlow()
-    flow.read(data)
-    fc = flow.flowchart
-    entries = {e.name: e for e in fc.entry_points}
-    if PIERRE_FREE not in entries or any(e.name == "WillowPierreFree" for e in fc.events):
-        raise ValueError("no entry %s, or changed already" % PIERRE_FREE)
-    # (the song's own way to Pierre: after a melody, "which spot?" (PIERRE_ASK), each spot to a wait, then the entry
-    #  PIERRE_ENTRY; no spot to the rest. That wait is where a spot goes here too)
-    asks = [e for e in fc.events if isinstance(e.data, evfl.SwitchEvent) and e.data.actor_query.v.v == PIERRE_ASK and 0 in e.data.cases]
-    spots = {c.v for e in asks for k, c in e.data.cases.items() if k}
-    if len(asks) != 1 or len(spots) != 1:
-        raise ValueError("not one question of the Pierre spot after a melody, leading to one step")
-    ask, to_pierre = asks[0], spots.pop()
-    # (the free play's end: the join of its fork, whose next asks which melody was played)
-    seen, todo, join = set(), [entries[PIERRE_FREE].main_event.v], None
-    while todo and join is None:
-        e = todo.pop(0)
-        if e is None or id(e) in seen:
-            continue
-        seen.add(id(e))
-        d = e.data
-        if isinstance(d, evfl.ForkEvent):
-            join = d.join.v
-            break
-        for nxt in [getattr(d, "nxt", None)] + list(getattr(d, "cases", {}).values()):
-            if nxt is not None:
-                todo.append(nxt.v)
-    if join is None or not isinstance(join.data, evfl.JoinEvent) or join.data.nxt.v is None:
-        raise ValueError("%s has no fork whose join goes on" % PIERRE_FREE)
-    e = evfl.Event()
-    e.name = "WillowPierreFree"
-    e.data = evfl.SwitchEvent()
-    e.data.actor.v, e.data.actor_query.v = ask.data.actor.v, ask.data.actor_query.v
-    e.data.params = copy.deepcopy(ask.data.params)
-    for value in ask.data.cases:
-        e.data.cases[value] = evfl.util.RequiredIndex()
-        e.data.cases[value].v = to_pierre if value else join.data.nxt.v
-    join.data.nxt.v = e
-    fc.events.append(e)
-    out = io.BytesIO()
-    flow.write(out)
-    return out.getvalue()
+# The Scarecrow's Song is the player's own: young Link plays notes to Bonooru at Lake Hylia, the adult plays them back,
+# and Pierre answers them at his spots. Its notes are kept in the save (a Binary, empty in a new game: the list of flags
+# gives only its size, so a new game can't start with one; bugs.md 105). With the setting the game's side gives a save
+# that has no song of its own L R L R L, the scarecrow's quest done and the song in the pouch (host/hos_main.c
+# oot_scarecrow_free), when the seed leaves FREE_SCARECROW_FILE beside it. Tried first and dropped: Pierre called by
+# whatever is played at a spot (the game knows a spot only after its own song: seen in play, he never came).
+# Moves no item.
+FREE_SCARECROW_FILE = "scarecrow_free.txt"
 
 
 def stick_need(need, letter, bolero=False):
@@ -6705,7 +6654,7 @@ def main():
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
     p.add_argument("--start", default=None, help="as rando_start_items=KS,SL,...: a new game starts with them (START_ITEMS)")
-    p.add_argument("--free-scarecrow", action="store_true", help="as rando_free_scarecrow=1: the ocarina taken out at a Pierre spot calls him (pierre_free); moves no item")
+    p.add_argument("--free-scarecrow", action="store_true", help="as rando_free_scarecrow=1: a save without a Scarecrow's Song is given L R L R L (FREE_SCARECROW_FILE); moves no item")
     p.add_argument("--castle-guards", action="store_true", help="as rando_castle_guards=1: a castle guard who spots young Link lets him pass (castle_guards_pass); moves no item")
     p.add_argument("--ocarinas", action="store_true", help="as rando_ocarinas=1: both ocarinas are items of the shuffle (OCARINA_GIFT, OCARINA_TIME_GIFT); with Songs on")
     p.add_argument("--epona-song", action="store_true", help="as rando_epona_song=1: the first time an adult plays Epona's Song where Link can ride, Epona is his (epona_song_flows); moves no item")
@@ -7654,14 +7603,6 @@ def main():
     except (OSError, ValueError, struct.error) as e:
         sys.exit("%s: %s. Nothing written." % (FOUNTAIN_FLOW, e))
     print("the Great Fairies' fountains: every one answers Zelda's Lullaby from the start")
-    if a.free_scarecrow:   # (Free Scarecrow's Song: pierre_free)
-        try:
-            was = gift_files[PIERRE_FLOW] if PIERRE_FLOW in gift_files else unpack(open(os.path.join(romfs, *PIERRE_FLOW.split("/")), "rb").read(), zs, dicts)
-            gift_files[PIERRE_FLOW] = pierre_free(was)
-            gift_sizes[PIERRE_FLOW[:-3]] = len(gift_files[PIERRE_FLOW])
-        except (OSError, ValueError, struct.error, ImportError) as e:
-            sys.exit("Free Scarecrow's Song: %s. Nothing written." % e)
-        print("Pierre: the ocarina taken out at one of his spots calls him")
     if a.castle_guards:   # (Castle guards let Link pass: castle_guards_pass)
         try:
             was = gift_files[GUARDS_FLOW] if GUARDS_FLOW in gift_files else unpack(open(os.path.join(romfs, *GUARDS_FLOW.split("/")), "rb").read(), zs, dicts)
@@ -8440,6 +8381,12 @@ def main():
         print("Progressive items: %d map file%s of shops with shelves of a family, written for each tier" % (len(tier_maps), "" if len(tier_maps) == 1 else "s"))
     if hints:
         spoiler += ["", "the Gossip Stones' hints (the stone's name -> what it says)"] + ["  %-34s %s" % h for h in sorted(hints)]
+    scarecrow = os.path.join(mod, FREE_SCARECROW_FILE)   # (Free Scarecrow's Song: the game's side gives the song)
+    if a.free_scarecrow:
+        with open(scarecrow, "w", encoding="utf-8", newline="\n") as f:
+            f.write("L R L R L: a save without a Scarecrow's Song of its own is given this one (host/hos_main.c oot_scarecrow_free)\n")
+    elif os.path.exists(scarecrow):
+        os.remove(scarecrow)
     with open(os.path.join(mod, START_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side gives them: oot_start_items)
         f.write("# the starting items, given to a save that does not hold them: <name> [<its ammo> <count>]\n" + "".join(l + "\n" for l in start_lines(a.start)))
     with open(os.path.join(mod, HINTS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the Tracker's: each stone, its place and its hint)

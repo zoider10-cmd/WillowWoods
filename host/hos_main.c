@@ -2560,6 +2560,84 @@ static void oot_stats_event(const char *name) {
     oot_stats_save();
 }
 
+/* (the randomizer's fork, asked 2026-11-21) Free Scarecrow's Song: a save with no Scarecrow's Song of its own is given one,
+   L R L R L, as if young Link had taught it to Bonooru and the adult had played it back: the song (the game data Binary
+   0x3339df55, 0x178 bytes of (note, time) records: 0x02808003 L, 0x02808005 R, 0x01808001 the silence between; the
+   owner's own L R L R L, read from their save, 2026-11-21), the scarecrow's quest at Complete (the Enum 0x9472302b) and the
+   song learned (IsGet.Item_Melody_ScarecrowSong and its get scene's flag: the song list shows it). Pierre then answers it at his spots. The seed
+   asks for it by <game folder>/mods/rando-seed/scarecrow_free.txt (rando_seed.py FREE_SCARECROW_FILE). A save that has a
+   song of its own keeps it. The manager keeps a Binary in a table of entries (mgr+OOT_BIN_ENTRIES, 0x48 bytes each: two
+   buffers, each a capacity, a pointer and a size, at +0x18) found by a hash index (mgr+OOT_BIN_INDEX, mgr+OOT_BIN_INDEX_N
+   pairs of hash and entry): seen in the manager's memory with the owner's save loaded (HOS_OOT_FIND64, 2026-11-21). */
+#define OOT_BIN_ENTRIES 0x6d8
+#define OOT_BIN_INDEX 0x6e0
+#define OOT_BIN_INDEX_N 0x6ec
+#define OOT_SCARECROW_SONG 0x3339df55u
+#define OOT_SCARECROW_QUEST 0x9472302bu
+#define OOT_QUEST_COMPLETE 1275749364u   /* (murmur3 "Complete") */
+#define OOT_SCARECROW_GOT 0x5e86fb4du        /* (IsGet.Item_Melody_ScarecrowSong: the song list shows it) */
+#define OOT_SCARECROW_GOT_SCENE 0x23e7e426u  /* (HavePlayedGetEvent.Item_Melody_ScarecrowSong) */
+static uint64_t oot_binary_entry(Ctx *c, uint32_t hash) {
+    const uint64_t mgr = oot_singleton(c, OOT_GAMEDATA_SLOT);
+    if (!mgr) return 0;
+    const uint64_t index = recomp_load64(c, mgr + OOT_BIN_INDEX), entries = recomp_load64(c, mgr + OOT_BIN_ENTRIES);
+    const uint32_t n = recomp_load32(c, mgr + OOT_BIN_INDEX_N);
+    if (!index || !entries || !n || n > 4096) return 0;
+    for (uint32_t i = 0; i < n; i++)
+        if (recomp_load32(c, index + 8ULL * i) == hash) return entries + 0x48ULL * recomp_load32(c, index + 8ULL * i + 4);
+    return 0;
+}
+static void oot_scarecrow_free(Ctx *c) {
+    static const uint32_t song[20] = {0x02808003, 16, 0x01808001, 18, 0x02808005, 18, 0x01808001, 20, 0x02808003, 14,
+                                      0x01808001, 24, 0x02808005, 16, 0x01808001, 22, 0x02808003, 14, 0x01808001, 0};
+    static int want = -1;
+    static char seed_of[sizeof oot_checks_seed];
+    if (want < 0 || strcmp(seed_of, oot_checks_seed)) {
+        char path[MAX_PATH + 48];
+        snprintf(seed_of, sizeof seed_of, "%s", oot_checks_seed);
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/scarecrow_free.txt") ? fopen(path, "r") : NULL;
+        want = f != NULL;
+        if (f) fclose(f);
+    }
+    if (!want) return;
+    const uint64_t entry = oot_binary_entry(c, OOT_SCARECROW_SONG);
+    static int told;
+    if (!told++) {   /* (once a run: what it found, for a log read after a test) */
+        const uint64_t mgr = oot_singleton(c, OOT_GAMEDATA_SLOT);
+        hos_log("rando: Free Scarecrow's Song: manager %#llx, index %#llx (%u), entries %#llx, the song's entry %#llx, its first words %08x %08x",
+                (unsigned long long)mgr, (unsigned long long)(mgr ? recomp_load64(c, mgr + OOT_BIN_INDEX) : 0), mgr ? recomp_load32(c, mgr + OOT_BIN_INDEX_N) : 0,
+                (unsigned long long)(mgr ? recomp_load64(c, mgr + OOT_BIN_ENTRIES) : 0), (unsigned long long)entry,
+                entry && recomp_load64(c, entry + 0x20) ? recomp_load32(c, recomp_load64(c, entry + 0x20)) : 0,
+                entry && recomp_load64(c, entry + 0x20) ? recomp_load32(c, recomp_load64(c, entry + 0x20) + 4) : 0);
+    }
+    if (!entry) return;
+    /* (the song: written where the save has none; a song of the save's own (taught to Bonooru) is kept, and only the
+       quest and the pouch are seen to, so Pierre answers it) */
+    int wrote = 0;
+    const uint64_t first = recomp_load64(c, entry + 0x20);
+    if (first && recomp_load32(c, first) == 0)
+        for (int b = 0; b < 2; b++) {   /* (both buffers: the song as the save has it and the one kept beside it) */
+            const uint64_t cap = recomp_load64(c, entry + 0x18 + 0x18 * b), data = recomp_load64(c, entry + 0x20 + 0x18 * b);
+            if (!data || cap < sizeof song) continue;
+            for (unsigned k = 0; k < sizeof song / 4; k++) recomp_store32(c, data + 4 * k, song[k]);
+            wrote++;
+        }
+    uint32_t quest = 0;
+    const int quest_done = oot_gamedata_enum(c, OOT_SCARECROW_QUEST, &quest, 0) && quest == OOT_QUEST_COMPLETE;
+    int in_pouch = 0, played = 0;   /* (the song learned: its flags, as the other songs', oot_song_flag) */
+    oot_gamedata_bool(c, OOT_SCARECROW_GOT, &in_pouch);
+    oot_gamedata_bool(c, OOT_SCARECROW_GOT_SCENE, &played);
+    if (!wrote && quest_done && in_pouch && played) return;
+    if (!quest_done) {
+        uint32_t done = OOT_QUEST_COMPLETE;
+        oot_gamedata_enum(c, OOT_SCARECROW_QUEST, &done, 1);
+    }
+    if (!in_pouch) oot_gamedata_set_bool(c, OOT_SCARECROW_GOT, 1);
+    if (!played) oot_gamedata_set_bool(c, OOT_SCARECROW_GOT_SCENE, 1);
+    hos_log("rando: Free Scarecrow's Song: %s, the scarecrow's quest %s, the song %s", wrote ? "L R L R L given" : "the save's own song kept",
+            quest_done ? "was done" : "done now", in_pouch ? "was learned" : "learned now");
+}
+
 static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     void rx_option_set(int id, int value);
     static int64_t next, next_stamp;
@@ -2574,6 +2652,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     }
     oot_stone_heard(c);   /* (a Gossip Stone talked to: its hint is the Tracker's) */
     oot_stats_second();   /* (the run's time played: oot_stats) */
+    if (oot_check_count > 0) oot_scarecrow_free(c);   /* (Free Scarecrow's Song: a save without one given L R L R L) */
     if (oot_check_count > 0) oot_start_items(c, oot_checks_seed);   /* (the seed's starting items, each one Link lacks; once the
         seed's checks are read: before, the seed's stamp is not yet known, and a list read again dropped an item's ammo) */
     {   /* (a test's: HOS_OOT_SETFLAG="<hash in hex>=<0 or 1>,..." sets those truth values of the game's list once, some

@@ -152,7 +152,7 @@
       "When a castle guard spots young Link on the way to Zelda, he goes back to his post and Link carries on: no talk, no being sent back to the start. The castle, Malon, Talon and everything else there are as the game has them. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On") \
     X(FREE_SCARECROW, "Free Scarecrow's Song", "rando_free_scarecrow", \
-      "Taking out the ocarina where Pierre can be called (his spots for the Scarecrow's Song) calls him at once: no song to teach Bonooru, nothing to play. Elsewhere the ocarina is as usual. Moves no item: it can be turned on for a seed being played.", \
+      "The Scarecrow's Song is known from the start, as L R L R L: play it at Pierre's spots to call him, with no visits to Bonooru. A save that already has a Scarecrow's Song of its own keeps it. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On") \
     X(OCARINAS, "Shuffle the ocarinas", "rando_ocarinas", \
       "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing.", \
