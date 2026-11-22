@@ -930,7 +930,7 @@ class RandoSeedForm : Form {
     bool presetting;
 
     // (the sections the settings are shown in, by key; a key not named here goes to the last, "Other")
-    // (Willow Woods: the Randomizer page's sections, by how far each setting is tested, merged rows opened up)
+    // (Willow Woods: the Randomizer page's sections, by kind, pairs named "+id" (RandoLayout.Duo))
     internal static readonly string[][] Sections = RandoLayout.KeySections();
     // (the presets: each a setting's choice by its place in the row's choices, clamped to the choices available. A key
     // not named keeps its first choice, Off)
@@ -995,55 +995,96 @@ class RandoSeedForm : Form {
             top.Text = "The settings from the Randomizer page. Change any here, then press Create seed.";
             preset.Items[0] = "The Randomizer page's";
         }
-        // (the rows by section, in the sections' order, then any other)
+        // (the rows by section, in the sections' order (RandoLayout: by kind), then any other. Each row a card: its tested
+        //  dot, its name, its picker, its words; a pair (RandoDuo) two pickers side by side, each with its caption)
         var byKey = new Dictionary<string, object[]>();
         for (int i = 1; i < LauncherForm.RandoRows.Length; i++) byKey[(string)LauncherForm.RandoRows[i][0]] = LauncherForm.RandoRows[i];
-        var order = new List<KeyValuePair<string, List<object[]>>>();
         var placed = new HashSet<string>();
+        var order = new List<KeyValuePair<string, List<string>>>();
         foreach (string[] s in Sections) {
-            var list = new List<object[]>();
-            for (int k = 1; k < s.Length; k++) if (byKey.ContainsKey(s[k])) { list.Add(byKey[s[k]]); placed.Add(s[k]); }
-            order.Add(new KeyValuePair<string, List<object[]>>(s[0], list));
-        }
-        var rest = new List<object[]>();
-        for (int i = 1; i < LauncherForm.RandoRows.Length; i++) if (!placed.Contains((string)LauncherForm.RandoRows[i][0])) rest.Add(LauncherForm.RandoRows[i]);
-        order.Add(new KeyValuePair<string, List<object[]>>("Other", rest));
-        int y = 8, textW = 520;
-        foreach (var section in order) {
-            var shownRows = section.Value.FindAll(r => !LauncherForm.RandoHidden.Contains((string)r[0]));
-            if (shownRows.Count == 0) continue;
-            var head = new Label { Text = section.Key, AutoSize = true, Location = new Point(8, y), ForeColor = Theme.Cyan,
-                                   Font = new Font("Segoe UI", 11f, FontStyle.Bold) };
-            panel.Controls.Add(head);
-            y += 30;
-            foreach (object[] row in shownRows) {
-                string key = (string)row[0];
-                var values = (int[])row[3];
-                var label = new Label { Text = (string)row[1], AutoSize = false, Location = new Point(14, y + 3), Size = new Size(240, 24) };
-                var box = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Location = new Point(262, y), Size = new Size(270, 26),
-                                         BackColor = Color.FromArgb(40, 60, 32), ForeColor = Theme.Text };
-                // (the choices not available yet are left out; with only Off left the row says so and cannot be changed)
-                var names = (string[])row[2];
-                int choices = LauncherForm.RandoChoices(key, names.Length);
-                if (choices <= 1) { box.Items.Add(Selector.NotYet); box.Enabled = false; label.ForeColor = Theme.Faint; }
-                else for (int k = 0; k < choices; k++) box.Items.Add(names[k]);
-                int at = has.ContainsKey(key) ? Array.IndexOf(values, has[key]) : 0;
-                box.SelectedIndex = Math.Max(0, Math.Min(box.Items.Count - 1, at));
-                box.SelectedIndexChanged += (o, e) => { if (!presetting) preset.SelectedIndex = 0; };
-                panel.Controls.Add(label); panel.Controls.Add(box);
-                y += 30;
-                // (a short line under each setting: what it does, not only a tooltip)
-                if (row.Length > 4 && row[4] is string) {
-                    string words = (string)row[4];
-                    Size need = TextRenderer.MeasureText(words, small, new Size(textW, 0), TextFormatFlags.WordBreak);
-                    var about = new Label { Text = words, AutoSize = false, Location = new Point(14, y), Size = new Size(textW, need.Height + 2),
-                                            ForeColor = Theme.Dim, Font = small };
-                    panel.Controls.Add(about);
-                    y += need.Height + 10;
-                }
-                boxes.Add(box); rows.Add(row);
+            var list = new List<string>();
+            for (int k = 1; k < s.Length; k++) {
+                var duo = RandoLayout.Duo(s[k]);
+                if (duo != null) { list.Add(s[k]); placed.Add(duo.A.Key); placed.Add(duo.B.Key); }
+                else if (byKey.ContainsKey(s[k])) { list.Add(s[k]); placed.Add(s[k]); }
             }
-            y += 6;
+            order.Add(new KeyValuePair<string, List<string>>(s[0], list));
+        }
+        var rest = new List<string>();
+        for (int i = 1; i < LauncherForm.RandoRows.Length; i++) {
+            string k = (string)LauncherForm.RandoRows[i][0];
+            if (!placed.Contains(k) && !LauncherForm.RandoHidden.Contains(k)) rest.Add(k);
+        }
+        order.Add(new KeyValuePair<string, List<string>>("Other", rest));
+        Color cardBg = Color.FromArgb(42, 61, 34), boxBg = Color.FromArgb(30, 45, 24);
+        Func<string, ComboBox> makeBox = key => {
+            var row = byKey[key];
+            var values = (int[])row[3];
+            var box = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = boxBg, ForeColor = Theme.Text };
+            // (the choices not available yet are left out; with only Off left the row says so and cannot be changed)
+            var names = (string[])row[2];
+            int choices = LauncherForm.RandoChoices(key, names.Length);
+            if (choices <= 1) { box.Items.Add(Selector.NotYet); box.Enabled = false; }
+            else for (int k = 0; k < choices; k++) box.Items.Add(names[k]);
+            int at = has.ContainsKey(key) ? Array.IndexOf(values, has[key]) : 0;
+            box.SelectedIndex = Math.Max(0, Math.Min(box.Items.Count - 1, at));
+            box.SelectedIndexChanged += (o, e) => { if (!presetting) preset.SelectedIndex = 0; };
+            boxes.Add(box); rows.Add(row);
+            return box;
+        };
+        var caps = new Font("Segoe UI", 9f, FontStyle.Bold);
+        int y = 10, cardW = 532, textW = cardW - 28;
+        foreach (var section in order) {
+            if (section.Value.Count == 0) continue;
+            var head = new Label { Text = section.Key.ToUpperInvariant(), AutoSize = true, Location = new Point(10, y), ForeColor = Theme.Cyan,
+                                   Font = new Font("Segoe UI", 10.5f, FontStyle.Bold) };
+            var rule = new Panel { Location = new Point(10, y + 24), Size = new Size(cardW, 1), BackColor = Color.FromArgb(80, 120, 62) };
+            panel.Controls.Add(head); panel.Controls.Add(rule);
+            y += 34;
+            foreach (string entry in section.Value) {
+                var duo = RandoLayout.Duo(entry);
+                var card = new Panel { Location = new Point(10, y), BackColor = cardBg };
+                string name, words; Color dot;
+                if (duo != null) {
+                    name = duo.Label; words = duo.Help;
+                    Color sa = RandoLayout.Status(duo.A.Key), sb = RandoLayout.Status(duo.B.Key);
+                    dot = sa == RandoLayout.Experimental || sb == RandoLayout.Experimental ? RandoLayout.Experimental :
+                          sa == RandoLayout.ShouldWork || sb == RandoLayout.ShouldWork ? RandoLayout.ShouldWork : RandoLayout.Tested;
+                } else {
+                    var row = byKey[entry];
+                    name = (string)row[1]; words = row.Length > 4 ? row[4] as string : null; dot = RandoLayout.Status(entry);
+                }
+                card.Controls.Add(new Label { Text = "\u25CF", AutoSize = true, Location = new Point(8, 9), ForeColor = dot, Font = new Font("Segoe UI", 9f) });
+                card.Controls.Add(new Label { Text = name, AutoSize = false, Location = new Point(24, 8), Size = new Size(200, 22), ForeColor = Theme.Text,
+                                              Font = new Font("Segoe UI", 10f, FontStyle.Bold) });
+                int ch = 8;
+                if (duo != null) {   // (two pickers, each under its caption)
+                    var a = makeBox(duo.A.Key); var b = makeBox(duo.B.Key);
+                    card.Controls.Add(new Label { Text = duo.A.Caption, AutoSize = true, Location = new Point(232, 2), ForeColor = Theme.Dim, Font = caps });
+                    card.Controls.Add(new Label { Text = duo.B.Caption, AutoSize = true, Location = new Point(384, 2), ForeColor = Theme.Dim, Font = caps });
+                    a.SetBounds(232, 20, 144, 26); b.SetBounds(384, 20, 144, 26);
+                    Action dim = () => { b.Enabled = b.Items.Count > 1 && duo.BOn(((int[])byKey[duo.A.Key][3])[Math.Max(0, a.SelectedIndex)]); };
+                    a.SelectedIndexChanged += (o, e) => dim();
+                    dim();
+                    card.Controls.Add(a); card.Controls.Add(b);
+                    ch = 52;
+                } else {
+                    var box = makeBox(entry);
+                    box.SetBounds(232, 6, 296, 26);
+                    card.Controls.Add(box);
+                    ch = 38;
+                }
+                if (!string.IsNullOrEmpty(words)) {   // (a short line under each setting: what it does, not only a tooltip)
+                    Size need = TextRenderer.MeasureText(words, small, new Size(textW, 0), TextFormatFlags.WordBreak);
+                    card.Controls.Add(new Label { Text = words, AutoSize = false, Location = new Point(14, ch), Size = new Size(textW, need.Height + 2),
+                                                  ForeColor = Theme.Dim, Font = small });
+                    ch += need.Height + 8;
+                }
+                card.Size = new Size(cardW, ch + 2);
+                panel.Controls.Add(card);
+                y += ch + 10;
+            }
+            y += 8;
         }
         preset.SelectedIndex = 0;
         preset.SelectedIndexChanged += (o, e) => ApplyPreset(preset.SelectedIndex);
@@ -2021,64 +2062,146 @@ static class Fork {
     public static string Shown(string v) { var m = Regex.Match(v ?? "", @"\d+(\.\d+)*"); return m.Success ? "v" + m.Value : v; }
 }
 
-// (Willow Woods) the Randomizer page's layout: sections by how far each setting has been tested, and related settings
-// merged into one row (RandoCombo). The settings themselves, their order and values stay RandoRows' (a seed's ID); a merged
-// row only sets several at once. As a setting is tested in play it moves up a section here.
-class RandoCombo {
-    public string Id, Label, Help; public string[] Keys, Items; public int[][] Values;
+// (Willow Woods) the Randomizer page's layout (asked 2026-11-21): sections by what a setting does, each row with a dot for
+// how far it has been tested (green tested in play, yellow should work, red not made yet), and related settings side by
+// side in one row (RandoDuo: two settings, each its own picker). The settings themselves, their order and values stay
+// RandoRows' (a seed's ID). As a setting is tested in play it moves to Tested here.
+class RandoHalf { public string Key, Caption; }
+class RandoDuo {
+    public string Id, Label, Help; public RandoHalf A, B;
+    public int[] BWhen;   // (the first's values that make the second mean something; null: any but 0)
+    public bool BOn(int a) { return BWhen == null ? a != 0 : Array.IndexOf(BWhen, a) >= 0; }
 }
 class RandoSection { public string Title, Sub; public Color Accent; public string[] Rows; }
 static class RandoLayout {
     public static readonly Color Tested = Color.FromArgb(124, 210, 104), ShouldWork = Color.FromArgb(232, 190, 96),
-                                 Experimental = Color.FromArgb(240, 112, 86);
-    public static readonly RandoCombo[] Combos = {
-        new RandoCombo { Id = "quests", Label = "Quest rewards", Keys = new[] { "rando_quests", "rando_light_arrows" },
-            Items = new[] { "Off", "On", "On, Light Arrows too" }, Values = new[] { new[] { 0, 0 }, new[] { 1, 0 }, new[] { 1, 1 } },
+                                 Experimental = Color.FromArgb(240, 112, 86), SectionColor = Color.FromArgb(172, 214, 98);
+    // (how far each is tested: Tested unless named here)
+    static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items",
+        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas" };
+    public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards" };
+    public static Color Status(string key) {
+        if (Array.IndexOf(NotYetKeys, key) >= 0) return Experimental;
+        return Array.IndexOf(ShouldWorkKeys, key) >= 0 ? ShouldWork : Tested;
+    }
+    public static readonly RandoDuo[] Duos = {
+        new RandoDuo { Id = "skulltulas", Label = "Gold Skulltulas", A = new RandoHalf { Key = "rando_skulltulas", Caption = "Shuffled" },
+            B = new RandoHalf { Key = "rando_skulltulas_day", Caption = "Out by day too" }, BWhen = new[] { 0, 1, 2, 3 },
+            Help = "Shuffled: which Gold Skulltulas take part as chests do (their token can be anywhere; the Skulltula house's rewards ask for their tokens). Out by day too: the 30 that only come out at night are there by day as well (moves no item). Needs Chests." },
+        new RandoDuo { Id = "quests", Label = "Quest rewards", A = new RandoHalf { Key = "rando_quests", Caption = "Shuffled" },
+            B = new RandoHalf { Key = "rando_light_arrows", Caption = "Light Arrows too" },
             Help = "What some characters give takes part with the chests: Darunia, mini-games (the frogs of Zora's River among them), side quests, the Gold Skulltula family and the three Great Fairies of the spells. Light Arrows too: the Light Arrows Zelda gives can be anywhere as well. Needs Chests." },
-        new RandoCombo { Id = "shops", Label = "Shops", Keys = new[] { "rando_shops", "rando_shop_shelves" },
-            Items = new[] { "Off", "Low prices", "Low prices, every shelf", "Any price", "Any price, every shelf", "10 rupees each", "10 rupees each, every shelf" },
-            Values = new[] { new[] { 0, 0 }, new[] { 1, 0 }, new[] { 1, 1 }, new[] { 2, 0 }, new[] { 2, 1 }, new[] { 3, 0 }, new[] { 3, 1 } },
-            Help = "Shop shelves sell shuffled items, once each. Low prices: gentler rolled prices. Any price: rolled from 10 to 750 rupees. 10 rupees each: every one costs 10. The wallets are shuffled too: a price asks for a wallet that holds it. Every shelf: all the shelves of the six shops take part, and supplies (bombs, arrows, nuts, potions, shields, tunics) then come from grass, pots and enemies; without it, four shelves of each shop do and the supplies stay for sale. Needs Chests." },
-        new RandoCombo { Id = "forest", Label = "Kokiri Forest", Keys = new[] { "rando_open_deku", "rando_open_forest" },
-            Items = new[] { "As the game has it", "Deku Tree open", "Forest exit open", "Deku Tree and exit open" },
-            Values = new[] { new[] { 0, 0 }, new[] { 1, 0 }, new[] { 0, 1 }, new[] { 1, 1 } },
-            Help = "From a new game's start. Deku Tree open: Mido lets Link by without a sword and a shield. Forest exit open: Link can leave the forest before the Deku Tree is done." },
-        new RandoCombo { Id = "skips", Label = "Skip scenes", Keys = new[] { "rando_skip_intro", "rando_skip_cutscenes" },
-            Items = new[] { "Off", "The opening", "Cutscenes", "Opening and cutscenes" },
-            Values = new[] { new[] { 0, 0 }, new[] { 1, 0 }, new[] { 0, 1 }, new[] { 1, 1 } },
+        new RandoDuo { Id = "songs", Label = "Songs", A = new RandoHalf { Key = "rando_songs", Caption = "Shuffled" },
+            B = new RandoHalf { Key = "rando_ocarinas", Caption = "Ocarinas too" },
+            Help = "Song spots: the twelve songs among the twelve lessons. Anywhere: the songs are items like any other (some stay in lessons, which hold few other items). Ocarinas too: Saria's Fairy Ocarina and Zelda's Ocarina of Time are in the shuffle; every check that needs a song then needs the Fairy Ocarina." },
+        new RandoDuo { Id = "shops", Label = "Shops", A = new RandoHalf { Key = "rando_shops", Caption = "Prices" },
+            B = new RandoHalf { Key = "rando_shop_shelves", Caption = "Every shelf" },
+            Help = "Shop shelves sell shuffled items, once each. Prices: Low prices are gentler, Any price is rolled from 10 to 750 rupees, Affordable keeps every price within the wallet you can have by then; a price asks for a wallet that holds it. Every shelf: all the shelves of the six shops take part (supplies then come from grass, pots and enemies); without it four shelves of each shop do. Needs Chests." },
+        new RandoDuo { Id = "forest", Label = "Kokiri Forest", A = new RandoHalf { Key = "rando_open_deku", Caption = "Deku Tree open" },
+            B = new RandoHalf { Key = "rando_open_forest", Caption = "Exit open" }, BWhen = new[] { 0, 1 },
+            Help = "From a new game's start. Deku Tree open: Mido lets Link by without a sword and a shield. Exit open: Link can leave the forest before the Deku Tree is done." },
+        new RandoDuo { Id = "bridge", Label = "Ganon's Castle bridge", A = new RandoHalf { Key = "rando_ganon_bridge", Caption = "Bridge" },
+            B = new RandoHalf { Key = "rando_bridge_medallions", Caption = "Medallions" }, BWhen = new[] { 2 },
+            Help = "Bridge: Open is there from the start; Medallions asks for medallions (how many: Medallions, 6 to 3). Moves no item; the logic still asks for every progression item for the castle." },
+        new RandoDuo { Id = "ageless", Label = "Either age's", A = new RandoHalf { Key = "rando_ageless", Caption = "Swords" },
+            B = new RandoHalf { Key = "rando_ageless_items", Caption = "Items" }, BWhen = new[] { 0, 1 },
+            Help = "Swords: young Link can hold the adult's swords and the adult the Kokiri Sword. Items: young Link can use the Bow, Hammer, Hookshot, Longshot and boots, the adult the Slingshot, Boomerang and Deku Sticks (some cutscenes look stretched)." },
+        new RandoDuo { Id = "skips", Label = "Skip scenes", A = new RandoHalf { Key = "rando_skip_intro", Caption = "The opening" },
+            B = new RandoHalf { Key = "rando_skip_cutscenes", Caption = "Cutscenes" }, BWhen = new[] { 0, 1 },
             Help = "The opening: a new game starts in Link's house, without the narration and Navi's flight. Cutscenes: passed over as they start; scenes made of talk keep only what they do, and song lessons go straight to the song. Chests, item scenes, the Great Fairies and the Royal Family's Tomb still play. Moves no item." },
-        new RandoCombo { Id = "rupees", Label = "Rupees", Keys = new[] { "rando_start_rupees", "rando_rupee_fill" },
-            Items = new[] { "As the game has it", "Start with 200", "Pick-ups fill the wallet", "200, and pick-ups fill it" },
-            Values = new[] { new[] { 0, 0 }, new[] { 1, 0 }, new[] { 0, 1 }, new[] { 1, 1 } },
+        new RandoDuo { Id = "rupees", Label = "Rupees", A = new RandoHalf { Key = "rando_start_rupees", Caption = "Start with" },
+            B = new RandoHalf { Key = "rando_rupee_fill", Caption = "Pick-ups fill the wallet" }, BWhen = new[] { 0, 1 },
             Help = "Start with 200: a new game starts with 200 rupees. Pick-ups fill the wallet: a rupee lying in the world or dropped by grass, pots and enemies fills the wallet to what it holds (not chests, shops or prizes). Moves no item." },
     };
     public static readonly RandoSection[] Sections = {
-        new RandoSection { Title = "TESTED IN PLAY", Sub = "played and confirmed", Accent = Tested,
-            Rows = new[] { "rando_on", "rando_chests", "rando_skulltulas", "rando_skulltulas_day", "+quests", "rando_songs", "rando_heart_pieces",
-                           "+shops", "rando_scrubs", "rando_major", "rando_progressive", "rando_sword_shield", "+forest", "rando_open_door", "rando_ageless", "rando_letter",
-                           "+skips", "+rupees", "rando_ammo_pickups" } },
-        new RandoSection { Title = "SHOULD WORK", Sub = "made and checked, not yet played through", Accent = ShouldWork,
-            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_castle_guards", "rando_free_scarecrow" } },
-        new RandoSection { Title = "DOES NOT WORK YET", Sub = "not made yet: leave these off, they can break a seed", Accent = Experimental,
-            Rows = new[] { "rando_keys", "rando_dungeon_rewards" } },
+        new RandoSection { Title = "WHAT'S SHUFFLED", Sub = "where items can be", Accent = SectionColor,
+            Rows = new[] { "rando_on", "rando_chests", "+skulltulas", "+quests", "+songs", "+shops", "rando_heart_pieces", "rando_scrubs",
+                           "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_dungeon_rewards" } },
+        new RandoSection { Title = "OPEN WORLD", Sub = "what's open from a new game's start", Accent = SectionColor,
+            Rows = new[] { "+forest", "rando_open_door", "rando_letter", "+bridge" } },
+        new RandoSection { Title = "ITEMS", Sub = "how items work", Accent = SectionColor,
+            Rows = new[] { "rando_progressive", "+ageless" } },
+        new RandoSection { Title = "QUALITY OF LIFE", Sub = "moves no item: can be changed for a seed being played", Accent = SectionColor,
+            Rows = new[] { "+skips", "+rupees", "rando_ammo_pickups", "rando_infinite_ammo", "rando_hints", "rando_chest_size", "rando_epona_song",
+                           "rando_castle_guards", "rando_free_scarecrow" } },
     };
-    public static RandoCombo Combo(string entry) {
+    public static RandoDuo Duo(string entry) {
         if (!entry.StartsWith("+")) return null;
-        foreach (var c in Combos) if (c.Id == entry.Substring(1)) return c;
-        throw new ArgumentException("no merged row " + entry);
+        foreach (var d in Duos) if (d.Id == entry.Substring(1)) return d;
+        throw new ArgumentException("no paired row " + entry);
     }
-    // (the sections with their settings' keys, merged rows opened up, for the New seed window: { title, key, key, ... })
+    // (the sections for the New seed window: { title, entry, entry, ... }, an entry a setting's key or "+" and a pair's id)
     public static string[][] KeySections() {
         var all = new List<string[]>();
         foreach (var s in Sections) {
             var keys = new List<string> { s.Title.Substring(0, 1) + s.Title.Substring(1).ToLowerInvariant() };
-            foreach (string e in s.Rows) {
-                var c = Combo(e);
-                if (c != null) keys.AddRange(c.Keys); else if (e != "rando_on") keys.Add(e);
-            }
+            foreach (string e in s.Rows) if (e != "rando_on") keys.Add(e);
             all.Add(keys.ToArray());
         }
         return all.ToArray();
+    }
+}
+
+// (Willow Woods) a row of two settings side by side (RandoDuo): each half its own picker, its arrows and its list. The
+// settings' own selectors stay hidden and do the work; the second half is dimmed while the first makes it mean nothing.
+class DuoSelector : Selector {
+    public Selector SA, SB; public RandoDuo D;
+    const float LabelW = 200;
+    RectangleF HalfR(int k) {
+        float w = (R.Width - LabelW - 16) / 2;
+        return new RectangleF(R.X + LabelW + k * (w + 8), R.Y + 6, w, R.Height - 12);
+    }
+    static RectangleF ArrowL(RectangleF h) { return new RectangleF(h.Right - 60, h.Y + 6, 26, h.Height - 12); }
+    static RectangleF ArrowR(RectangleF h) { return new RectangleF(h.Right - 30, h.Y + 6, 26, h.Height - 12); }
+    bool BOn { get { return D.BOn(SA.Value); } }
+    public override void Down(PointF p, LauncherForm ui) {
+        for (int k = 0; k < 2; k++) {
+            var h = HalfR(k); var s = k == 0 ? SA : SB;
+            if (!h.Contains(p)) continue;
+            if (k == 1 && !BOn) return;
+            if (s.Last == 0) return;
+            if (ArrowL(h).Contains(p)) { s.Set(s.Index - 1, true); return; }
+            if (ArrowR(h).Contains(p)) { s.Set(s.Index + 1, true); return; }
+            s.R = h;   // (the list opens under this half)
+            ui.ShowList(s);
+            return;
+        }
+    }
+    public override string Help { get { return HelpText; } }
+    public override void Paint(Graphics g, LauncherForm ui) {
+        float hov = Hover;
+        using (var path = Theme.Round(R, 12)) {
+            using (var br = new SolidBrush(Theme.Mix(Theme.Card, Theme.CardHi, hov))) g.FillPath(br, path);
+            using (var pen = new Pen(Theme.Mix(Theme.Line, Theme.A(Theme.Blue, 200), hov), 1f)) g.DrawPath(pen, path);
+        }
+        if (Status != Color.Empty) using (var b = new SolidBrush(Status)) g.FillEllipse(b, R.X + 14, R.Y + R.Height / 2 - 4, 8, 8);
+        Theme.Text_(g, Label.ToUpperInvariant(), Theme.Label, Theme.Text, new RectangleF(R.X + 30, R.Y, LabelW - 34, R.Height),
+                    StringAlignment.Near, StringAlignment.Center);
+        for (int k = 0; k < 2; k++) {
+            var h = HalfR(k); var s = k == 0 ? SA : SB; var half = k == 0 ? D.A : D.B;
+            bool on = k == 0 || BOn;
+            bool over = ui.MouseIn(h) && on;
+            using (var path = Theme.Round(h, 9)) {
+                using (var br = new SolidBrush(Theme.A(over ? Theme.CardHi : Theme.Bg1, on ? 255 : 120))) g.FillPath(br, path);
+                using (var pen = new Pen(Theme.A(over ? Theme.Blue : Theme.Line, on ? 255 : 90), 1f)) g.DrawPath(pen, path);
+            }
+            Theme.Text_(g, half.Caption, Theme.Small, on ? Theme.Dim : Theme.Faint, new RectangleF(h.X + 10, h.Y + 3, h.Width - 70, 16),
+                        StringAlignment.Near, StringAlignment.Near);
+            string v = s.Last == 0 ? NotYet : s.Index >= 0 ? s.Items[s.Index] : "";
+            Theme.Text_(g, v, Theme.Value, on && s.Last > 0 ? Theme.Text : Theme.Faint, new RectangleF(h.X + 10, h.Y + 17, h.Width - 70, 22),
+                        StringAlignment.Near, StringAlignment.Near);
+            if (on && s.Last > 0) {
+                Arrow2(g, ArrowL(h), true, s.Index > 0, ui.MouseIn(ArrowL(h)));
+                Arrow2(g, ArrowR(h), false, s.Index < s.Last, ui.MouseIn(ArrowR(h)));
+            }
+        }
+    }
+    static void Arrow2(Graphics g, RectangleF r, bool left, bool on, bool over) {
+        if (over && on) using (var p = Theme.Round(r, 7)) using (var b = new SolidBrush(Theme.A(Theme.Blue, 60))) g.FillPath(b, p);
+        float cx = r.X + r.Width / 2, cy = r.Y + r.Height / 2, s = 4f;
+        using (var pen = new Pen(on ? (over ? Color.White : Theme.Dim) : Theme.A(Theme.Faint, 120), 2f) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+            if (left) g.DrawLines(pen, new[] { new PointF(cx + s * 0.5f, cy - s), new PointF(cx - s * 0.5f, cy), new PointF(cx + s * 0.5f, cy + s) });
+            else g.DrawLines(pen, new[] { new PointF(cx - s * 0.5f, cy - s), new PointF(cx + s * 0.5f, cy), new PointF(cx - s * 0.5f, cy + s) });
     }
 }
 
@@ -2360,6 +2483,7 @@ class Selector : Widget {
     // (how many of its choices can be picked, from the first; 0: all of them. The randomizer's settings that are not
     // made yet, LauncherForm.RandoNotYet: with one choice left the row says so and does nothing)
     public int Limit;
+    public Color Status = Color.Empty;   // (Willow Woods: the randomizer's rows, how far tested: RandoLayout.Status)
     public int Last { get { return (Limit > 0 ? Math.Min(Limit, Items.Length) : Items.Length) - 1; } }
     public const string NotYet = "Not available yet";
     float flash;
@@ -2390,7 +2514,9 @@ class Selector : Widget {
         // (a thin accent on the left edge, lit on hover)
         using (var b = new SolidBrush(Theme.A(Theme.Cyan, (int)(40 + 180 * Math.Max(h, flash)))))
             using (var p = Theme.Round(new RectangleF(R.X + 1, R.Y + 14, 3, R.Height - 28), 1.5f)) g.FillPath(b, p);
-        Theme.Text_(g, Label.ToUpperInvariant(), Theme.Label, Theme.Dim, new RectangleF(R.X + 16, R.Y + 9, R.Width - 90, 18), StringAlignment.Near, StringAlignment.Near);
+        float lx = R.X + 16;
+        if (Status != Color.Empty) { using (var b = new SolidBrush(Status)) g.FillEllipse(b, lx, R.Y + 13, 8, 8); lx += 13; }
+        Theme.Text_(g, Label.ToUpperInvariant(), Theme.Label, Theme.Dim, new RectangleF(lx, R.Y + 9, R.Width - 90 - (lx - R.X - 16), 18), StringAlignment.Near, StringAlignment.Near);
         Theme.Text_(g, Last == 0 ? NotYet : Index >= 0 ? Items[Index] : "", Theme.Value, Last == 0 ? Theme.Faint : Theme.Mix(Theme.Text, Color.White, flash),
                     new RectangleF(R.X + 16, R.Y + 27, R.Width - 92, 24), StringAlignment.Near, StringAlignment.Near);
         if (Swatches != null && Index >= 0 && Index < Swatches.Length && Swatches[Index] != Color.Empty) {
@@ -3204,8 +3330,7 @@ class LauncherForm : Form {
 
     // (Willow Woods) the Randomizer page. Every setting's own selector is made, as before (settings[key]: what is saved and
     // what a seed's ID holds), but the page shows RandoLayout's sections: a heading, then rows, a row being a setting's own
-    // selector or a merged one (RandoCombo) that sets several settings at once.
-    readonly Dictionary<Selector, RandoCombo> combos = new Dictionary<Selector, RandoCombo>();
+    // selector or a pair of them side by side (RandoDuo, DuoSelector).
     // (the page's sections as made: each heading and its rows, in order; LayoutRando places the ones the search leaves)
     readonly List<KeyValuePair<Heading, List<Selector>>> randoSections = new List<KeyValuePair<Heading, List<Selector>>>();
     float randoX0, randoColW;
@@ -3224,13 +3349,17 @@ class LauncherForm : Form {
             var rows = new List<Selector>();
             foreach (string entry in section.Rows) {
                 Selector s;
-                var combo = RandoLayout.Combo(entry);
-                if (combo != null) {
-                    var vals = new int[combo.Items.Length];
-                    for (int i = 0; i < vals.Length; i++) vals[i] = i;
-                    s = new Selector { Key = "combo_" + combo.Id, Label = combo.Label, Items = combo.Items, Values = vals, HelpText = combo.Help };
-                    s.Changed = OnCombo; combos[s] = combo; widgets.Add(s);
-                } else s = settings[entry];
+                var duo = RandoLayout.Duo(entry);
+                if (duo != null) {
+                    Selector a = settings[duo.A.Key], b = settings[duo.B.Key];
+                    var items = new List<string>(a.Items); items.AddRange(b.Items);
+                    Color sa = RandoLayout.Status(duo.A.Key), sb = RandoLayout.Status(duo.B.Key);
+                    s = new DuoSelector { Key = "duo_" + duo.Id, Label = duo.Label, Items = items.ToArray(), Values = new[] { 0 }, HelpText = duo.Help,
+                                          SA = a, SB = b, D = duo,
+                                          Status = sa == RandoLayout.Experimental || sb == RandoLayout.Experimental ? RandoLayout.Experimental :
+                                                   sa == RandoLayout.ShouldWork || sb == RandoLayout.ShouldWork ? RandoLayout.ShouldWork : RandoLayout.Tested };
+                    widgets.Add(s);
+                } else { s = settings[entry]; s.Status = RandoLayout.Status(entry); }
                 s.Scrolls = true;
                 rows.Add(s);
             }
@@ -3280,14 +3409,17 @@ class LauncherForm : Form {
             if (shown.Count == 0) continue;
             head.R = new RectangleF(randoX0, y, randoColW * 2 + 14, 28); head.HomeY = y;
             y += 34;
-            for (int place = 0; place < shown.Count; place++) {
-                var s = shown[place];
-                float ry = y + place / 2 * 47;
-                s.Page = RandoPage; s.HomeY = ry;
-                s.R = new RectangleF(randoX0 + place % 2 * (randoColW + 14), ry, randoColW, 45);
+            int col = 0;   // (a single row takes a column; a pair (DuoSelector) the whole width, on a line of its own)
+            foreach (var s in shown) {
+                bool wide = s is DuoSelector;
+                if (wide && col == 1) { y += 47; col = 0; }
+                s.Page = RandoPage; s.HomeY = y;
+                s.R = new RectangleF(randoX0 + col * (randoColW + 14), y, wide ? randoColW * 2 + 14 : randoColW, 45);
+                if (wide || col == 1) { y += 47; col = 0; } else col = 1;
             }
+            if (col == 1) y += 47;
             randoShown += shown.Count;
-            y += (shown.Count + 1) / 2 * 47 + 12;
+            y += 12;
         }
         randoHeight = y - 14 - RandoTop;
         randoScroll = 0;
@@ -3301,7 +3433,7 @@ class LauncherForm : Form {
         if (MessageBox.Show(this, "Set every randomizer setting to the " + names[p] + " preset?\n\nYour current choices on this page are replaced; " +
                             "the settings that do not work yet are left off. You can change any of them after.", Fork.Name,
                             MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
-        var experimental = new HashSet<string>(RandoLayout.Sections[RandoLayout.Sections.Length - 1].Rows);
+        var experimental = new HashSet<string>(RandoLayout.NotYetKeys);
         loading = true;
         foreach (var row in RandoRows) {
             string key = (string)row[0];
@@ -3312,38 +3444,11 @@ class LauncherForm : Form {
         }
         settings["rando_on"].Set(1, false);
         loading = false;
-        SyncCombos();
         OnSetting(settings["rando_on"]);
         Invalidate();
     }
 
     // (a merged row chosen: each setting under it set, then saved as a row of its own would be)
-    void OnCombo(Selector c) {
-        if (loading) return;
-        var combo = combos[c];
-        loading = true;
-        for (int k = 0; k < combo.Keys.Length; k++) {
-            var s = settings[combo.Keys[k]];
-            s.Set(Math.Max(0, Array.IndexOf(s.Values, combo.Values[c.Index][k])), false);
-        }
-        loading = false;
-        foreach (string key in combo.Keys) OnSetting(settings[key]);
-    }
-    // (each merged row shows the choice its settings make; when none does (settings from elsewhere), the nearest, the
-    // first setting's own value counted first)
-    void SyncCombos() {
-        foreach (var kv in combos) {
-            var combo = kv.Value; int best = 0, bestScore = -1;
-            for (int i = 0; i < combo.Items.Length; i++) {
-                int score = 0;
-                for (int k = 0; k < combo.Keys.Length; k++)
-                    if (settings[combo.Keys[k]].Value == combo.Values[i][k]) score += k == 0 ? 10 : 1;
-                if (score > bestScore) { bestScore = score; best = i; }
-            }
-            kv.Key.Index = best;
-        }
-    }
-
     // (Willow Woods) the Cosmetics page: colours, shields' looks, and the characters' looks, which mostly do not work yet,
     // behind a switch of their own. Off sets them all back to their own looks; the switch is the launcher's only (on at
     // start when any of them is set).
@@ -3909,7 +4014,6 @@ class LauncherForm : Form {
             settings["frame_generation"].Index = settings["frame_generation"].Items.Length - 1;
         string lang = ReadLanguage();
         for (int i = 0; i < Languages.Length; i++) if (string.Equals(Languages[i][0], lang, StringComparison.OrdinalIgnoreCase)) langSel.Index = i;
-        SyncCombos();
         if (modelsSwitch != null) { modelsSwitch.Index = modelRows.Exists(m => m.Index > 0) ? 1 : 0; ShowModels(); }
         loading = false;
     }

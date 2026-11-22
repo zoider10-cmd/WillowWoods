@@ -77,34 +77,33 @@ def sources(rows):
           "off (SONGS_ANYWHERE), or held off while the script makes it (%r)" % limits)
     # (the frogs are no longer a choice: the row is kept for a seed's ID and shown nowhere, and Quest rewards says so)
     check('RandoHidden = new HashSet<string> { "rando_frogs" };' in launcher and "Page = hidden ? NoPage : page" in launcher and
-          "if (!hidden) place++;" in launcher and "section.Value.FindAll(r => !LauncherForm.RandoHidden.Contains((string)r[0]))" in launcher and
+          "if (!hidden) place++;" in launcher and "if (!placed.Contains(k) && !LauncherForm.RandoHidden.Contains(k)) rest.Add(k);" in launcher and
           "the frogs of Zora's River among them" in launcher,
           "the Frogs row is still shown on the page or in the New seed window, or Quest rewards does not name the frogs")
-    # (Willow Woods: the Randomizer page and the New seed window show RandoLayout's sections, a merged row (a combo, "+id")
-    #  standing for its settings. The page shows nothing else: every row but the hidden frogs is named once, and only rows)
-    layout = launcher[launcher.index("static class RandoLayout {"):launcher.index("public static RandoCombo Combo(string entry)")]
-    combos = dict((cid, re.findall(r'"(rando_\w+)"', keys)) for cid, keys in
-                  re.findall(r'Id = "(\w+)", Label = "[^"]*", Keys = new\[\] \{ ([^}]*) \}', layout))
+    # (Willow Woods: the Randomizer page and the New seed window show RandoLayout's sections, by kind; a paired row
+    #  ("+id", a RandoDuo) stands for its two settings. Every row but the hidden frogs is named once, and only rows)
+    layout = launcher[launcher.index("static class RandoLayout {"):launcher.index("public static RandoDuo Duo(string entry)")]
+    duos = dict((did, [a, b]) for did, a, b in
+                re.findall(r'Id = "(\w+)", Label = "[^"]*", A = new RandoHalf \{ Key = "(rando_\w+)", Caption = "[^"]*" \},\s*'
+                           r'B = new RandoHalf \{ Key = "(rando_\w+)"', layout))
     named = []
     for rows_ in re.findall(r"Rows = new\[\] \{ (.*?) \} \}", layout, re.S):
         for entry in re.findall(r'"([+\w]+)"', rows_):
-            named += combos.get(entry[1:], ["?" + entry]) if entry.startswith("+") else [entry]
-    check(len(named) == len(set(named)) and set(named) == {f[0] for f in found} - {"rando_frogs"} and
+            named += duos.get(entry[1:], ["?" + entry]) if entry.startswith("+") else [entry]
+    check(len(duos) >= 9 and len(named) == len(set(named)) and set(named) == {f[0] for f in found} - {"rando_frogs"} and
           "internal static readonly string[][] Sections = RandoLayout.KeySections();" in launcher and
-          'order.Add(new KeyValuePair<string, List<object[]>>("Other", rest));' in launcher,
-          "the Randomizer page's sections name a setting twice, one that is not a row, or leave a setting off the page")
-    # (a merged row's choices each give every setting under it one of that setting's own values, and no two the same)
+          'order.Add(new KeyValuePair<string, List<string>>("Other", rest));' in launcher and
+          [t for t in re.findall(r'Title = "([^"]+)"', layout)] == ["WHAT'S SHUFFLED", "OPEN WORLD", "ITEMS", "QUALITY OF LIFE"],
+          "the Randomizer page's sections name a setting twice, one that is not a row, or leave a setting off the page, "
+          "or are not the four by kind")
+    # (a pair's second half is dimmed only for values its first setting has)
     rows_by_key = {g[0]: g for g in got}
-    for cid, keys in combos.items():
-        block = layout[layout.index('Id = "%s"' % cid):]
+    for did, (a, b) in duos.items():
+        block = layout[layout.index('Id = "%s"' % did):]
         block = block[:block.index("Help =")]
-        items = re.search(r"Items = new\[\] \{ ([^}]*) \}", block)
-        vals = block[block.index("Values = "):] if "Values = " in block else ""
-        choices = [[int(v) for v in c.split(",")] for c in re.findall(r"new\[\] \{ ([\d, ]+) \}", vals)]
-        check(items and len(choices) == len(re.findall(r'"([^"]*)"', items.group(1))) and
-              all(len(c) == len(keys) and all(v in rows_by_key[k][3] for v, k in zip(c, keys)) for c in choices) and
-              len({tuple(c) for c in choices}) == len(choices),
-              "the merged row %s has a choice that is not its settings' values, or two choices that are the same" % cid)
+        when = re.search(r"BWhen = new\[\] \{ ([\d, ]+) \}", block)
+        check(not when or all(int(v) in rows_by_key[a][3] for v in when.group(1).split(",")),
+              "the pair %s turns its second half on for a value its first setting does not have" % did)
     check("Most of the logic (what each place asks for) is taken from the original game's" in launcher,
           "the Randomizer switch no longer says where the logic is from")
     check(all(key in {f[0] for f in found} for key in limits), "a setting listed as not available yet is not a row of the page")
