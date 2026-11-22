@@ -4138,6 +4138,87 @@ int hos_oot_wheel_fewest(void) {
     return keep || !hos_rando_on() ? 1 : 0;
 }
 
+/* (Willow Woods, bug 91) The Water Temple's gate switch by Lake Hylia. The ring above the door turns on for a hit of
+   the Hookshot's damage type only (its AI: QueryDamageCalculatorIsOnDamageTypeAny, then ...IsOnDamageType with type 16,
+   both read the damage calculator's mask of this frame's damage types). In this build the tip reaches the ring and no hit
+   is recorded: the mask stays 0, the tip bounces off, the gate's cutscene never plays (traced 2026-11-22 without a
+   window, the gate shut on a copy of the owner's save; why the tip's attack sensor never meets the ring's hit sensor is
+   not found). What does arrive is the tip's area sensor (layer 25) in the ring's hit sensor's contacts, from the shot on;
+   so the tip counts as there when that sensor's body is within 0.9 of the hit sensor's (the tip stops 0.6 from the
+   ring's middle; on its way it is metres off).
+
+   oot_hook_tip_at: whether a Hookshot's or Longshot's tip (the actor Shootable_Hook, Shootable_HookLong) is at the hit
+   sensor of this SensorHit component. The way there, as the game's own sifting walks it (f_800c6940): the component's
+   actor (+0x18), its parts (+0x270), the physics part (+0x50, its +0x20), the hit sensor's contact collection (the
+   component's +0x99 says which of +0x38 at +0x40), its bodies (+0x10 at +0x18, 0x18 apart, the body at +8), a body's
+   contacts (+0x158: +8 how many, +0x28 the entries, 0x10 apart, a contact's two bodies at +0x60 and +0x68). The other
+   body's layer is the low 6 bits of its +0x150's +8, its place the floats at +0x8c, +0x9c, +0xac, and its actor behind
+   its +0x108's handle (+0x20 the slot, whose +0x48 must be the handle's own number at +0x28 and whose +0x40 is the
+   actor; the actor's name at its +0x260). */
+static int oot_hook_tip_at(Ctx *c, uint64_t sensor) {
+    const uint64_t owner = recomp_load64(c, sensor + 0x18), parts = owner ? recomp_load64(c, owner + 0x270) : 0;
+    const uint64_t p50 = parts ? recomp_load64(c, parts + 0x50) : 0, ph = p50 ? recomp_load64(c, p50 + 0x20) : 0;
+    const int which = (int8_t)recomp_load8(c, sensor + 0x99);
+    if (!ph || which < 0 || which >= (int)recomp_load32(c, ph + 0x38)) return 0;
+    const uint64_t entry = recomp_load64(c, recomp_load64(c, ph + 0x40) + 8ULL * (unsigned)which), cc = entry ? recomp_load64(c, entry + 8) : 0;
+    const uint32_t bodies = cc ? recomp_load32(c, cc + 0x10) : 0;
+    for (uint32_t j = 0; j < bodies && j < 4; j++) {
+        const uint64_t rb = recomp_load64(c, recomp_load64(c, cc + 0x18) + 0x18ULL * j + 8), holder = rb ? recomp_load64(c, rb + 0x158) : 0;
+        const uint32_t count = holder ? recomp_load32(c, holder + 8) : 0;
+        const uint64_t entries = holder ? recomp_load64(c, holder + 0x28) : 0;
+        for (uint32_t k = 0; entries && k < count && k < 16; k++) {
+            const uint64_t contact = recomp_load64(c, entries + 0x10ULL * k);
+            if (!contact) continue;
+            const uint64_t b0 = recomp_load64(c, contact + 0x60), b1 = recomp_load64(c, contact + 0x68);
+            if ((b0 == rb) == (b1 == rb)) continue;   /* (not this sensor's and another's: an entry left from before) */
+            const uint64_t other = b0 == rb ? b1 : b0, layer = other ? recomp_load64(c, other + 0x150) : 0;
+            if (!layer || (recomp_load32(c, layer + 8) & 0x3f) != 25) continue;
+            const float dx = oot_load_float(c, other + 0x8c) - oot_load_float(c, rb + 0x8c), dy = oot_load_float(c, other + 0x9c) - oot_load_float(c, rb + 0x9c),
+                        dz = oot_load_float(c, other + 0xac) - oot_load_float(c, rb + 0xac);
+            if (!(dx * dx + dy * dy + dz * dz <= 0.9f * 0.9f)) continue;
+            const uint64_t user = recomp_load64(c, other + 0x108), slot = user ? recomp_load64(c, user + 0x20) : 0;
+            if (!slot || recomp_load32(c, slot + 0x48) != recomp_load32(c, user + 0x28)) continue;
+            const uint64_t shooter = recomp_load64(c, slot + 0x40), name = shooter ? recomp_load64(c, shooter + 0x260) : 0;
+            char text[16] = {0};
+            for (int i = 0; name && i < 14; i++) text[i] = (char)recomp_load8(c, name + (unsigned)i);
+            if (!strcmp(text, "Shootable_Hook")) return 1;   /* (the name's first 14 letters: Shootable_HookLong too) */
+        }
+    }
+    return 0;
+}
+
+/* The two queries' first step (nx2/oot_patches.py patch_hook_switch; any: 1 from ...IsOnDamageTypeAny, 0 from
+   ...IsOnDamageType). x0 is the query's node: its actor's parts at node +8, +8, +0x1f0, +0x270, as the queries read
+   them; the parts' +0x2b8 the damage calculator (its +0x2c0 the mask), +0x3b8 the SensorHit component; the type asked for
+   at the node's +0x20 (a pointer with flags in its low 2 bits). A switch that asks for type 16 with the tip at its sensor
+   has the Hookshot's bit set, and is held so for a fifth of a second: the AI asks "any" before the type, so the frame the
+   tip arrives the "any" has already said no, and the tip is gone from the sensor two frames on. HOS_OOT_NO_HOOK_HIT=1
+   leaves the mask to the game (a test's). */
+void hos_oot_hook_switch(Ctx *c, int any) {
+    static int off = -1;
+    static uint64_t held;           /* (the damage calculator given the hit) */
+    static long long held_until;
+    if (off < 0) off = getenv("HOS_OOT_NO_HOOK_HIT") != NULL;
+    if (off) return;
+    const uint64_t node = c->x[0], actor = recomp_load64(c, recomp_load64(c, node + 8) + 8);
+    const uint64_t parts = recomp_load64(c, recomp_load64(c, actor + 0x1f0) + 0x270);
+    const uint64_t dc = parts ? recomp_load64(c, parts + 0x2b8) : 0;
+    if (!dc) return;
+    const long long now = hos_now_ns();
+    if (!any && recomp_load32(c, recomp_load64(c, node + 0x20) & ~3ULL) == 16) {
+        const uint64_t sensor = recomp_load64(c, parts + 0x3b8);
+        if (sensor && oot_hook_tip_at(c, sensor)) {
+            static int said;
+            if ((__atomic_load_n(&held, __ATOMIC_RELAXED) != dc || now >= __atomic_load_n(&held_until, __ATOMIC_RELAXED)) && said++ < 8)
+                hos_log("rando: the Hookshot's tip is at a switch that asks for its hit: the hit given");
+            __atomic_store_n(&held, dc, __ATOMIC_RELAXED);
+            __atomic_store_n(&held_until, now + 200000000LL, __ATOMIC_RELAXED);
+        }
+    }
+    if (__atomic_load_n(&held, __ATOMIC_RELAXED) == dc && now < __atomic_load_n(&held_until, __ATOMIC_RELAXED))
+        recomp_store32(c, dc + 0x2c0, recomp_load32(c, dc + 0x2c0) | (1u << 16));
+}
+
 void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {
 #if defined(_WIN32) || defined(__linux__)
     static int on = -1;

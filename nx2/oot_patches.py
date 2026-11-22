@@ -1669,6 +1669,36 @@ def patch_boots_child(source):
     return source, hooked
 
 
+# (Willow Woods, bug 91) The Water Temple's gate switch by Lake Hylia, the ring above its door (Obj_LakeHrl_SwitchHit_A_01):
+# its AI turns it on for a hit of the Hookshot's damage type only, asked of its damage calculator's mask of this frame's
+# damage types by QueryDamageCalculatorIsOnDamageTypeAny (f_82a01a30) and then QueryDamageCalculatorIsOnDamageType with
+# type 16 (f_808559c0). In this build the tip reaches the ring and no hit is recorded (traced 2026-11-22 without a window on
+# a copy of the owner's save with the gate shut: the tip's area sensor touches the ring's hit sensor, the tip stops at the
+# ring's body and bounces off, the ring's hit list and mask stay empty, no cutscene; why the tip's attack sensor never
+# meets the ring's is not found). Both queries ask the host first (host/hos_main.c hos_oot_hook_switch), which sets the
+# Hookshot's bit in the mask while the tip is at a switch that asks for it. Each: (the function's head, which query).
+HOOK_SWITCH_HEADS = (("void f_808559c0(Ctx *__restrict A64_NOESC c) {\n", 0), ("void f_82a01a30(Ctx *__restrict A64_NOESC c) {\n", 1))
+HOOK_SWITCH_HOOK = "    hos_oot_hook_switch(c, %d);   /* (nx2/oot_patches.py patch_hook_switch) */\n"
+HOOK_SWITCH_EXTERN = "extern void hos_oot_hook_switch(Ctx *c, int any);\n"
+
+
+def patch_hook_switch(source):
+    """the two damage queries above ask the host first; (the source, how many of them this file has), or None with neither"""
+    hooked = 0
+    for head, any_query in HOOK_SWITCH_HEADS:
+        hook = HOOK_SWITCH_HOOK % any_query
+        if head + hook in source:   # (made by an earlier run over this file)
+            hooked += 1
+        elif source.count(head) == 1:
+            source = source.replace(head, head + hook)
+            hooked += 1
+    if not hooked:
+        return None
+    if HOOK_SWITCH_EXTERN not in source:
+        source = source.replace('#include "a64.h"\n', '#include "a64.h"\n' + HOOK_SWITCH_EXTERN, 1)
+    return source, hooked
+
+
 def patch_file(s, name, protect_hearts=False):
     """One lifted file's patches (apply(), and nx2/chunks.py edit_c, a process per file): (its text, the places counted in it, the
     lines to print). The counts add up over the files; report() decides from the sums"""
@@ -1801,6 +1831,12 @@ def patch_file(s, name, protect_hearts=False):
             lines.append("oot_patches: young Link's boots (%d IsChild answers) in %s" % (boots[1], name))
         out = boots[0]
         counts["boots child answers"] += boots[1]
+    hook = patch_hook_switch(out)   # (bug 91: a switch that asks for a Hookshot hit, the Water Temple's gate switch)
+    if hook is not None:
+        if hook[0] != out:
+            lines.append("oot_patches: the Hookshot's hit on a switch that asks for it (%d queries) in %s" % (hook[1], name))
+        out = hook[0]
+        counts["hook switch queries"] += hook[1]
     traced = patch_trace(out)   # (a test's: HOOKSHOT_TRACE_FNS)
     if traced is not None:
         out = traced[0]
@@ -2018,6 +2054,9 @@ def report(paths, counts, protect_hearts=False):
     if protect_hearts and total["boots child answers"] != len(BOOTS_CHILD_CALLS):   # (Either age's items: young Link's boots)
         print("oot_patches: WARNING: the boots' IsChild answers were hooked %d times, not %d: young Link's boots do nothing"
               % (total["boots child answers"], len(BOOTS_CHILD_CALLS)))
+    if total["hook switch queries"] != len(HOOK_SWITCH_HEADS):   # (bug 91: the Water Temple's gate switch)
+        print("oot_patches: WARNING: the damage queries were hooked %d times, not %d: the Water Temple's gate switch does not "
+              "take the Hookshot's hit" % (total["hook switch queries"], len(HOOK_SWITCH_HEADS)))
     if total["sound jobs"] != 1:   # (without it, above 60 fps sounds and then the music can stop after a few loading zones)
         print("oot_patches: WARNING: the sound job was found %d times, not once" % total["sound jobs"])
     if total["music manager time"] != 1:   # (without it, above 60 fps the music manager's timers run at 60 / fps of real time)
