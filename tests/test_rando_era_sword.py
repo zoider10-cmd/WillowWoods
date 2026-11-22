@@ -34,6 +34,16 @@ def main():
     if not ok:
         print("FAIL: with Shuffle the Master Sword, an empty adult's slot is still given the Master Sword on the way to an adult")
         sys.exit(1)
+    # (bug 106, the owner's second look: the slot was empty, but the way's scene (Dm_TimeTemple_0080) still left the
+    #  sword in the adult's hand until a load. The game's side drops it: in the pouch and out again after the scene)
+    host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
+    ok = ('if (child && shuffled == 1) drop_stage = 1' in host and
+          'oot_pouch_change(c, "Weapon_Sword_Master", 1));\n                drop_stage = 100' in host and
+          'oot_pouch_change(c, "Weapon_Sword_Master", -1));\n            drop_stage = 0;' in host and
+          'if (oot_pouch_count(c, "Weapon_Sword_Master") > 0) drop_stage = 0;' in host)
+    if not ok:
+        print("FAIL: with the Master Sword shuffled, the sword the scene puts in the adult's hand is not dropped after it")
+        sys.exit(1)
     print("PASS: back to a child, an empty sword slot stays empty; with the Master Sword shuffled, an adult's too")
 
 

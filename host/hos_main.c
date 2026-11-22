@@ -1514,6 +1514,30 @@ static void oot_time_door(Ctx *c, int64_t now, uint64_t actor) {
         if (oot_gamedata_bool(c, OOT_LEFT_TEMPLE_FLAG, &open) && !open && oot_gamedata_set_bool(c, OOT_LEFT_TEMPLE_FLAG, 1))
             hos_log("rando: the adult's Market had no location in this save: its flag is set (Open Door of Time)");
     }
+    /* (Shuffle the Master Sword, bug 106: the scene of the way to an adult, Dm_TimeTemple_0080, puts the Master Sword in
+       Link's hand to sheathe it whatever his slot says, and he keeps it until a save is loaded, though the Equipment
+       screen has none (the owner's test, 2026-11-21: the slot was empty after the flow's fix, the hand was not). When
+       the scene is over and Link, an adult, holds no Master Sword in the pouch, it is put in the pouch and taken out
+       again: the pouch's removal of an item drops it from his hand, as a burnt Deku Shield's does. Each trip to an adult) */
+    static int drop_stage;
+    static int64_t drop_at;
+    if (drop_stage && now >= drop_at) {
+        int loading_now = 0, child_now = 1;
+        if (oot_event_playing(c) || (oot_gamedata_bool(c, 0xef2b60c2u, &loading_now) && loading_now) ||
+            !oot_gamedata_bool(c, 0xcea220d3u, &child_now) || child_now) {
+            drop_at = now + 500000000LL;   /* (the scene, the map's load, or not an adult yet: later) */
+            if (child_now && !oot_event_playing(c) && !loading_now && ++drop_stage > 40) drop_stage = 0;   /* (a child for 20 s: no trip after all) */
+        } else if (drop_stage < 100) {
+            if (oot_pouch_count(c, "Weapon_Sword_Master") > 0) drop_stage = 0;   /* (he found it: his own) */
+            else {
+                hos_log("rando: Shuffle the Master Sword: the scene's sword is put in the pouch (%d) to be taken out", oot_pouch_change(c, "Weapon_Sword_Master", 1));
+                drop_stage = 100, drop_at = now + 700000000LL;
+            }
+        } else {
+            hos_log("rando: Shuffle the Master Sword: the scene's sword is taken out of the pouch and Link's hand (%d)", oot_pouch_change(c, "Weapon_Sword_Master", -1));
+            drop_stage = 0;
+        }
+    }
     const int a = hos_pad_a_held(), pressed = a && !held;
     held = a;
     const float dx = oot_link_place[0] - OOT_SWORD_X, dz = oot_link_place[2] - OOT_SWORD_Z;
@@ -1533,8 +1557,10 @@ static void oot_time_door(Ctx *c, int64_t now, uint64_t actor) {
     const char *event = child ? "Market_Child_Field_ChildToAdult" : "Market_Adult_Field_AdultToChild";
     /* (the plain way through time does not give the sword: the story's drawing does, Dm_TimeTemple_0030. Seen
        without a window: an adult made so had none. So Link is given it here the first time) */
-    if (child && oot_pedestal_give(c) == 0 && oot_pouch_count(c, "Weapon_Sword_Master") == 0)   /* (Shuffle the Master Sword: the pedestal's own item) */
+    const int shuffled = child ? oot_pedestal_give(c) : 0;   /* (Shuffle the Master Sword: the pedestal's own item) */
+    if (child && shuffled == 0 && oot_pouch_count(c, "Weapon_Sword_Master") == 0)
         hos_log("rando: Open Door of Time: the Master Sword is given (event status %d)", oot_pouch_change(c, "Weapon_Sword_Master", 1));
+    if (child && shuffled == 1) drop_stage = 1, drop_at = now + 2000000000LL;   /* (the scene's sword dropped after it, bug 106) */
     hos_log("rando: Open Door of Time: %s asked for at the Master Sword (%s)", event, oot_event_request(c, actor, event) ? "sent" : "NOT SENT");
 }
 
