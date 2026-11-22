@@ -4706,7 +4706,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6211,6 +6211,57 @@ def overworld_rule(ways, progression, lessons=None, child_skulltula=False):
     return either(out) if out else None
 
 
+# ---- Castle guards let Link pass (rando_castle_guards, asked 2026-11-21) ----
+# Young Link's way to Zelda is a sneak past the castle's guards; one who sees him starts HyruleCastle_FoundBySecurity
+# (FoundBySecurity on the grounds, FoundBySecurity_Courtyard in the courtyard): the others turn, he talks, the screen goes
+# dark and Link is put back at the start (EventPlayerWarpToStarterLinkAnchor). With the setting each entry only sends the
+# guard back to his post (EventWarpToHomeMatrix) and lifts the alert (EventAIScheduleNPCForceSecurityLifted), as the
+# game's own end of it does, and the event ends there: Link stays where he is. The owner's word (2026-11-21): the castle
+# itself can't be skipped (Malon and her egg, Talon, a Gold Skulltula) and the remake has no load between the gate and
+# Zelda. Moves no item. NOT SEEN IN PLAY.
+GUARDS_FLOW = "Event/EventFlow/HyruleCastle_FoundBySecurity.bfevfl.zs"
+GUARDS_ENTRIES = ("FoundBySecurity", "FoundBySecurity_Courtyard")
+
+
+def castle_guards_pass(data):
+    """HyruleCastle_FoundBySecurity's flow with each of GUARDS_ENTRIES the guard's way home and the lifted alert alone (see
+    above). The new bytes; ValueError: not the flow known."""
+    import io
+    evfl = evfl_module()
+    flow = evfl.EventFlow()
+    flow.read(data)
+    fc = flow.flowchart
+    entries = {e.name: e for e in fc.entry_points}
+    if any(n not in entries for n in GUARDS_ENTRIES):
+        raise ValueError("not the castle guards' flow")
+    for name in GUARDS_ENTRIES:
+        seen, todo, home, lift = set(), [entries[name].main_event.v], None, None
+        while todo:   # (the steps the entry reaches, through its sub-flows of this file)
+            e = todo.pop()
+            if e is None or id(e) in seen:
+                continue
+            seen.add(id(e))
+            d = e.data
+            if isinstance(d, evfl.ActionEvent):
+                act = d.actor_action.v.v
+                if act == "EventWarpToHomeMatrix" and home is None:
+                    home = e
+                if act == "EventAIScheduleNPCForceSecurityLifted":
+                    lift = e
+            if isinstance(d, evfl.SubFlowEvent) and not d.res_flowchart_name and d.entry_point_name in entries:
+                todo.append(entries[d.entry_point_name].main_event.v)
+            for nxt in [getattr(d, "nxt", None)] + list(getattr(d, "cases", {}).values()) + list(getattr(d, "forks", [])) + [getattr(d, "join", None)]:
+                if nxt is not None:
+                    todo.append(nxt.v)
+        if home is None or lift is None or home.data.nxt.v is not lift:
+            raise ValueError("%s: no guard's way home followed by the lifted alert" % name)
+        lift.data.nxt.v = None
+        entries[name].main_event.v = home
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
+
+
 def stick_need(need, letter, bolero=False):
     """one way of a rule with Deku Sticks for the Kokiri Sword (see above): the way as it was, or without the sword and
     with a child's way to Goron City's pots (letter: Zelda's Letter is shuffled; bolero: as letter_need's)"""
@@ -6592,6 +6643,7 @@ def main():
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
     p.add_argument("--start", default=None, help="as rando_start_items=KS,SL,...: a new game starts with them (START_ITEMS)")
+    p.add_argument("--castle-guards", action="store_true", help="as rando_castle_guards=1: a castle guard who spots young Link lets him pass (castle_guards_pass); moves no item")
     p.add_argument("--ocarinas", action="store_true", help="as rando_ocarinas=1: both ocarinas are items of the shuffle (OCARINA_GIFT, OCARINA_TIME_GIFT); with Songs on")
     p.add_argument("--epona-song", action="store_true", help="as rando_epona_song=1: the first time an adult plays Epona's Song where Link can ride, Epona is his (epona_song_flows); moves no item")
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
@@ -6648,6 +6700,7 @@ def main():
     a.hints = a.hints or ini["rando_hints"] != 0
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
+    a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
     a.start = start_codes(a.start if a.start is not None else start_option(game))   # (Starting items: START_ITEMS)
     a.gate_open = ini["rando_letter"] == 2   # (Kakariko gate Open: the overworld's rules by it, placement 23, OVERWORLD_RULES)
     a.letter = a.letter or ini["rando_letter"] == 1   # (Kakariko gate: 1 the letter shuffled, 2 open: the game's side's,
@@ -6777,6 +6830,8 @@ def main():
         stamp = stamp[:-1] + " chests sized\n"
     if a.epona_song:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " epona by song\n"
+    if a.castle_guards:   # (moves no item either: the same line)
+        stamp = stamp[:-1] + " guards pass\n"
     if a.ageless:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " ageless %d\n" % a.ageless
     print("randomizer %s, seed %d, chests %s, dungeon keys %s, major items %s" % (
@@ -7533,6 +7588,14 @@ def main():
     except (OSError, ValueError, struct.error) as e:
         sys.exit("%s: %s. Nothing written." % (FOUNTAIN_FLOW, e))
     print("the Great Fairies' fountains: every one answers Zelda's Lullaby from the start")
+    if a.castle_guards:   # (Castle guards let Link pass: castle_guards_pass)
+        try:
+            was = gift_files[GUARDS_FLOW] if GUARDS_FLOW in gift_files else unpack(open(os.path.join(romfs, *GUARDS_FLOW.split("/")), "rb").read(), zs, dicts)
+            gift_files[GUARDS_FLOW] = castle_guards_pass(was)
+            gift_sizes[GUARDS_FLOW[:-3]] = len(gift_files[GUARDS_FLOW])
+        except (OSError, ValueError, struct.error, ImportError) as e:
+            sys.exit("Castle guards let Link pass: %s. Nothing written." % e)
+        print("the castle guards: one who spots young Link goes back to his post, and Link carries on")
     if a.epona_song:   # (Epona by Epona's Song: epona_song_flows, epona_event_rows)
         try:
             was = gift_files[EPONA_SONG_FLOW] if EPONA_SONG_FLOW in gift_files else unpack(open(os.path.join(romfs, *EPONA_SONG_FLOW.split("/")), "rb").read(), zs, dicts)

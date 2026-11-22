@@ -202,7 +202,7 @@ public static class SaveSlots {
     // (the randomizer's settings that move no item: changed on a save being played, its seed is written again as it was,
     // tools/rando/rando_seed.py QOL_STAMP and the stamp's second line; the others are the game's side's alone)
     static readonly HashSet<string> NoItemKeys = new HashSet<string> { "rando_skip_intro", "rando_skip_cutscenes", "rando_start_rupees",
-        "rando_skulltulas_day", "rando_hints", "rando_ageless", "rando_ageless_items", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song" };
+        "rando_skulltulas_day", "rando_hints", "rando_ageless", "rando_ageless_items", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards" };
     static bool MovesNoItem(string line) { int eq = line.IndexOf('='); return eq > 0 && NoItemKeys.Contains(line.Substring(0, eq).Trim()); }
 
     // (the seed there is now is not the one that save was last played on: settings that move no item aside. A line one
@@ -2058,7 +2058,7 @@ static class RandoLayout {
                            "+shops", "rando_scrubs", "rando_major", "rando_progressive", "rando_sword_shield", "+forest", "rando_open_door", "rando_ageless", "rando_letter",
                            "+skips", "+rupees", "rando_ammo_pickups" } },
         new RandoSection { Title = "SHOULD WORK", Sub = "made and checked, not yet played through", Accent = ShouldWork,
-            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas" } },
+            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_castle_guards" } },
         new RandoSection { Title = "DOES NOT WORK YET", Sub = "not made yet: leave these off, they can break a seed", Accent = Experimental,
             Rows = new[] { "rando_keys", "rando_dungeon_rewards" } },
     };
@@ -2795,6 +2795,8 @@ class LauncherForm : Form {
             "Deku Sticks, Deku Nuts, bombs, Bombchus, arrows and Deku Seeds are not used up: a moment after one is used, Link has as many as before (the bag filled again). Only what Link already carries: it gives nothing he has none of. Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_epona_song", "Epona by Epona's Song", new[] { "Off", "On" }, new[] { 0, 1 },
             "The first time adult Link plays Epona's Song where he can ride, Epona becomes his horse and comes: no ranch, no races. The Epona quest is done as well, as after Ingo's races (Ingo and Talon move on, the trade goes on, the horseback archery opens); Malon still teaches her song to young Link. Moves no item: it can be turned on for a seed being played." },
+        new object[] { "rando_castle_guards", "Castle guards let Link pass", new[] { "Off", "On" }, new[] { 0, 1 },
+            "When a castle guard spots young Link on the way to Zelda, he goes back to his post and Link carries on: no talk, no being sent back to the start. The castle, Malon, Talon and everything else there are as the game has them. Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_ocarinas", "Shuffle the ocarinas", new[] { "Off", "On" }, new[] { 0, 1 },
             "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing." }
 

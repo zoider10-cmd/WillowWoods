@@ -148,6 +148,9 @@
     X(EPONA_SONG, "Epona by Epona's Song", "rando_epona_song", \
       "The first time adult Link plays Epona's Song where he can ride, Epona becomes his horse and comes: no ranch, no races. The Epona quest is done as well, as after Ingo's races (Ingo and Talon move on, the trade goes on, the horseback archery opens); Malon still teaches her song to young Link. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On") \
+    X(CASTLE_GUARDS, "Castle guards let Link pass", "rando_castle_guards", \
+      "When a castle guard spots young Link on the way to Zelda, he goes back to his post and Link carries on: no talk, no being sent back to the start. The castle, Malon, Talon and everything else there are as the game has them. Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
     X(OCARINAS, "Shuffle the ocarinas", "rando_ocarinas", \
       "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing.", \
       "Off", "On")
