@@ -861,8 +861,69 @@ class SeedDiffForm : Form {
 
 // (the window of the New seed button: the randomizer's settings chosen for one save, and a new seed made of them. The
 // seed's files are made when the save is played, as every seed's are)
+// (Willow Woods, asked 2026-11-21) Starting items: what a new game starts with, chosen in New seed's window and kept as
+// the options file's line rando_start_items=<codes> (tools/rando/rando_seed.py START_ITEMS: the same codes; the game's
+// side gives them, host/hos_main.c oot_start_items)
+class StartItemsForm : Form {
+    internal static readonly string[][] Items = {
+        new[] { "KS", "Kokiri Sword" }, new[] { "DS", "Deku Shield" }, new[] { "HY", "Hylian Shield" }, new[] { "SL", "Fairy Slingshot" },
+        new[] { "BM", "Boomerang" }, new[] { "BB", "Bomb Bag" }, new[] { "BW", "Fairy Bow" }, new[] { "HS", "Hookshot" },
+        new[] { "LS", "Longshot" }, new[] { "HM", "Megaton Hammer" }, new[] { "LT", "Lens of Truth" }, new[] { "IB", "Iron Boots" },
+        new[] { "HB", "Hover Boots" }, new[] { "GB", "Goron's Bracelet" }, new[] { "SS", "Silver Scale" }, new[] { "FO", "Fairy Ocarina" },
+        new[] { "AW", "Adult's Wallet" }, new[] { "DF", "Din's Fire" },
+        new[] { "ZL", "Zelda's Lullaby" }, new[] { "EP", "Epona's Song" }, new[] { "SR", "Saria's Song" }, new[] { "SU", "Sun's Song" },
+        new[] { "ST", "Song of Time" }, new[] { "SO", "Song of Storms" }, new[] { "MI", "Minuet of Forest" }, new[] { "BF", "Bolero of Fire" },
+        new[] { "SE", "Serenade of Water" }, new[] { "NC", "Nocturne of Shadow" }, new[] { "RQ", "Requiem of Spirit" }, new[] { "PR", "Prelude of Light" } };
+    public string Codes;
+    readonly CheckedListBox list = new CheckedListBox();
+    // (the words a value says on New seed's button: "none", or the items' names)
+    internal static string Words(string codes) {
+        var names = new List<string>();
+        foreach (string c in (codes ?? "").Split(','))
+            foreach (var it in Items) if (it[0] == c.Trim()) names.Add(it[1]);
+        return names.Count == 0 ? "none" : string.Join(", ", names);
+    }
+    public StartItemsForm(string codes) {
+        Text = "Starting items";
+        FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; MinimizeBox = false; ShowInTaskbar = false;
+        StartPosition = FormStartPosition.CenterParent; ClientSize = new Size(420, 560);
+        BackColor = Color.FromArgb(28, 43, 22); ForeColor = Theme.Text; Font = new Font("Segoe UI", 10f);
+        var about = new Label { Text = "A new game starts with the items ticked. They are taken out of the shuffle (a song stays in it), and the seed's logic counts them as held.",
+                                AutoSize = false, Location = new Point(14, 10), Size = new Size(392, 44) };
+        list.SetBounds(14, 58, 392, 446); list.CheckOnClick = true; list.BackColor = Color.FromArgb(40, 60, 32); list.ForeColor = Theme.Text;
+        list.BorderStyle = BorderStyle.None;
+        var want = new HashSet<string>((codes ?? "").Split(','));
+        foreach (var it in Items) list.Items.Add(it[1], want.Contains(it[0]));
+        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK };
+        var none = new Button { Text = "None" };
+        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel };
+        foreach (var b in new[] { ok, none, cancel }) {
+            b.FlatStyle = FlatStyle.Flat; b.BackColor = Color.FromArgb(52, 78, 41); b.ForeColor = Color.White;
+            b.FlatAppearance.BorderColor = Color.FromArgb(101, 150, 80);
+        }
+        none.SetBounds(14, 516, 90, 30); ok.SetBounds(206, 516, 96, 30); cancel.SetBounds(310, 516, 96, 30); ok.BackColor = Theme.Blue;
+        none.Click += (o, e) => { for (int i = 0; i < list.Items.Count; i++) list.SetItemChecked(i, false); };
+        ok.Click += (o, e) => {
+            var picked = new List<string>();
+            for (int i = 0; i < Items.Length; i++) if (list.GetItemChecked(i)) picked.Add(Items[i][0]);
+            Codes = string.Join(",", picked);
+        };
+        Controls.AddRange(new Control[] { about, list, none, ok, cancel });
+        AcceptButton = ok; CancelButton = cancel;
+    }
+    // (the options file's line, "" none)
+    internal static string FromOptions(string dir) {
+        try {
+            foreach (string l in File.ReadAllLines(Path.Combine(dir, "hookshot_options.ini")))
+                if (l.StartsWith("rando_start_items=")) return l.Substring(18).Trim();
+        } catch { }
+        return "";
+    }
+}
+
 class RandoSeedForm : Form {
     readonly string dir, save;
+    string startItems = "";   // (Starting items: StartItemsForm's codes)
     readonly List<ComboBox> boxes = new List<ComboBox>();
     readonly List<object[]> rows = new List<object[]>();
     readonly ComboBox preset = new ComboBox();
@@ -917,7 +978,18 @@ class RandoSeedForm : Form {
         foreach (string line in start) {
             int eq = line.IndexOf('='), v;
             if (eq > 0 && int.TryParse(line.Substring(eq + 1).Trim(), out v)) has[line.Substring(0, eq).Trim()] = v;
+            if (line.StartsWith("rando_start_items=")) startItems = line.Substring(18).Trim();
         }
+        if (initial != null) startItems = StartItemsForm.FromOptions(dir);   // (the page's: the options file's)
+        var startBtn = new Button { Text = "Starting items: " + StartItemsForm.Words(startItems), FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft,
+                                    BackColor = Color.FromArgb(52, 78, 41), ForeColor = Color.White, AutoEllipsis = true };
+        startBtn.FlatAppearance.BorderColor = Color.FromArgb(101, 150, 80);
+        startBtn.SetBounds(332, 40, 252, 30);
+        startBtn.Click += (o, e) => {
+            using (var f = new StartItemsForm(startItems))
+                if (f.ShowDialog(this) == DialogResult.OK) { startItems = f.Codes; startBtn.Text = "Starting items: " + StartItemsForm.Words(startItems); }
+        };
+        Controls.Add(startBtn);
         if (initial != null) {   // (Willow Woods: from the Randomizer page's New seed: the page's settings, to confirm)
             has = new Dictionary<string, int>(initial);
             top.Text = "The settings from the Randomizer page. Change any here, then press Create seed.";
@@ -989,6 +1061,7 @@ class RandoSeedForm : Form {
         ok.Click += (o, e) => {
             var lines = new List<string>();
             for (int i = 0; i < rows.Count; i++) lines.Add((string)rows[i][0] + "=" + ((int[])rows[i][3])[boxes[i].SelectedIndex]);
+            if (startItems.Length > 0) lines.Add("rando_start_items=" + startItems);   // (Starting items: the seed's too)
             try { File.WriteAllLines(LastFile(dir), lines.ToArray()); } catch { }   // (before the seed's number: settings only)
             lines.Add("rando_seed=" + LauncherForm.NewSeed());
             string error = SaveSlots.SeedSet(dir, save, lines);

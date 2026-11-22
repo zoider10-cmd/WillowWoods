@@ -4627,6 +4627,78 @@ def dictionaries(romfs, zs):
         return []
 
 
+# ---- Starting items (rando_start_items, asked 2026-11-21) ----
+# A new game starts with the items chosen in the launcher's New seed window: the options file's line
+# "rando_start_items=KS,SL,ZL" (START_ITEMS' codes; a line of its own, which the game's menu keeps as it keeps every line
+# it does not know). The game has no list of a new game's pouch to change, so the game's side gives them: each one Link
+# does not hold yet, with its first ammo when it is given (host/hos_main.c oot_start_items, from START_FILE beside the
+# seed). The rules take them as held from the start (start_need: each way without them), and one of each that is not a
+# song leaves the pool (its place gives START_JUNK); a song stays (a lesson can hold few other items), found again it
+# is the same song. On the stamp's first line: another choice is another seed. NOT SEEN IN PLAY.
+START_FILE = "start_items.txt"
+START_JUNK = "TBox_Rupee_Blue"
+# code: (the seed's item, the game's names to give it by (host: oot_item_names), the ammo it comes with (name, count))
+START_ITEMS = {
+    "KS": (S, ("Weapon_Sword_Kokiri",), None), "DS": (DS, ("Weapon_Shield_Deku",), None),
+    "HY": ("TBox_Shield_Hylian", ("Weapon_Shield_Hylian",), None),
+    "SL": (SL, ("Weapon_Range_SlingShot", "Item_BulletBag_Small"), ("Item_DekuSeed", 30)),
+    "BM": (BM, ("Item_Boomerang",), None), "BB": (BB, ("Item_BombBag_Small",), ("Item_Bomb", 20)),
+    "BW": (BOW, ("Weapon_Range_Bow", "Item_Quiver_Small"), ("Item_Arrow_Normal", 30)),
+    "HS": ("Item_Hookshot", ("Item_Hookshot",), None), "LS": (LONG, ("Item_Hookshot", "Item_Longshot"), None),
+    "HM": (HAM, ("Item_Hammer",), None), "LT": (LENS, ("Item_GlassTruth",), None),
+    "IB": (IRON, ("Armor_Adult_HeavyBoot",), None), "HB": (HOVER, ("Armor_Adult_HoverBoot",), None),
+    "GB": ("Item_Gauntlet_Goron", ("Item_Gauntlet_Goron",), None), "SS": ("Item_Scale_Silver", ("Item_Scale_Silver",), None),
+    "FO": ("Item_Ocarina_Fairy", ("Item_Ocarina_Fairy",), None), "AW": ("Item_Wallet_Medium", ("Item_Wallet_Medium",), None),
+    "DF": ("Item_DinFire", ("Item_DinFire",), None),
+    "ZL": ("Item_Melody_ZeldaLullaby", ("Item_Melody_ZeldaLullaby",), None), "EP": ("Item_Melody_EponaSong", ("Item_Melody_EponaSong",), None),
+    "SR": ("Item_Melody_SariaSong", ("Item_Melody_SariaSong",), None), "SU": ("Item_Melody_SunSong", ("Item_Melody_SunSong",), None),
+    "ST": ("Item_Melody_TimeSong", ("Item_Melody_TimeSong",), None), "SO": ("Item_Melody_StormSong", ("Item_Melody_StormSong",), None),
+    "MI": ("Item_Melody_ForestMinuet", ("Item_Melody_ForestMinuet",), None), "BF": ("Item_Melody_FireBolero", ("Item_Melody_FireBolero",), None),
+    "SE": ("Item_Melody_WaterSerenade", ("Item_Melody_WaterSerenade",), None), "NC": ("Item_Melody_ShadowNocturne", ("Item_Melody_ShadowNocturne",), None),
+    "RQ": ("Item_Melody_SpiritRequiem", ("Item_Melody_SpiritRequiem",), None), "PR": ("Item_Melody_LightPrelude", ("Item_Melody_LightPrelude",), None),
+}
+START_ALSO = {"LS": ("Item_Hookshot",)}   # (the Longshot held: the Hookshot too, as the rules count the family)
+
+
+def start_codes(text):
+    """the starting items' codes of an options line's value ("KS,SL"), known ones only, in START_ITEMS' order"""
+    want = {c.strip().upper() for c in (text or "").split(",")}
+    return [c for c in START_ITEMS if c in want]
+
+
+def start_option(game):
+    """the options file's rando_start_items value ("" none)"""
+    try:
+        with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
+            for line in f:
+                key, eq, value = line.partition("=")
+                if eq and key.strip() == "rando_start_items":
+                    return value.strip()
+    except OSError:
+        pass
+    return ""
+
+
+def start_held(codes):
+    """the seed's items the starting items make held (the Longshot's Hookshot too)"""
+    return frozenset(START_ITEMS[c][0] for c in codes) | frozenset(i for c in codes for i in START_ALSO.get(c, ()))
+
+
+def start_need(need, held):
+    """a rule with the starting items held: each way without them (a way left with nothing: the check asks for nothing)"""
+    return each(lambda way: frozenset(way) - held, need) if held else need
+
+
+def start_lines(codes):
+    """START_FILE's lines: "<a name the game gives it by> [<its ammo> <count>]", each a line, the ammo on its item's first"""
+    out = []
+    for c in codes:
+        names, ammo = START_ITEMS[c][1], START_ITEMS[c][2]
+        for k, name in enumerate(names):
+            out.append(name + (" %s %d" % ammo if ammo and k == 0 else ""))
+    return out
+
+
 def settings(game):
     """the randomizer's lines of the options file (0 where it does not say)"""
     got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
@@ -6519,6 +6591,7 @@ def main():
     p.add_argument("--sword-shield", type=int, choices=(0, 1), help="in place of rando_sword_shield: 0 the Kokiri Sword stays in its chest and the Deku Shield on "
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
+    p.add_argument("--start", default=None, help="as rando_start_items=KS,SL,...: a new game starts with them (START_ITEMS)")
     p.add_argument("--ocarinas", action="store_true", help="as rando_ocarinas=1: both ocarinas are items of the shuffle (OCARINA_GIFT, OCARINA_TIME_GIFT); with Songs on")
     p.add_argument("--epona-song", action="store_true", help="as rando_epona_song=1: the first time an adult plays Epona's Song where Link can ride, Epona is his (epona_song_flows); moves no item")
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
@@ -6575,6 +6648,7 @@ def main():
     a.hints = a.hints or ini["rando_hints"] != 0
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
+    a.start = start_codes(a.start if a.start is not None else start_option(game))   # (Starting items: START_ITEMS)
     a.gate_open = ini["rando_letter"] == 2   # (Kakariko gate Open: the overworld's rules by it, placement 23, OVERWORLD_RULES)
     a.letter = a.letter or ini["rando_letter"] == 1   # (Kakariko gate: 1 the letter shuffled, 2 open: the game's side's,
     #  host/hos_main.c oot_open_death_mountain, and the letter stays Zelda's)
@@ -6668,7 +6742,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" master sword 1" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 1" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -7063,6 +7137,10 @@ def main():
             made = over_rule(h, pieces[h][0]) if h not in bosses else None
             return heart_old(h) if made is None else over_done(made)
         skull_asks, heart_asks = skull_over, heart_over
+    if a.start:   # (Starting items held: start_need, on what every step above made)
+        skull_held, heart_held = skull_asks, heart_asks
+        skull_asks = lambda h, at=None: start_need(skull_held(h, at), start_held(a.start))
+        heart_asks = lambda h: start_need(heart_held(h), start_held(a.start))
     # (Songs: Anywhere: what the lessons asked about by name may hold, by this seed's items and the game's flags; the
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
     lesson_safe, lesson_only = frozenset(), {}
@@ -7127,6 +7205,16 @@ def main():
         needs = {h: each(stick_need, n, a.letter, bolero) for h, n in needs.items()}
     if dungeon_on:   # (no more ways than the tracker reads: fit_rule)
         needs = {h: fit_rule(n) for h, n in needs.items()}
+    if a.start:   # (Starting items: held from the start, start_need; one of each but the songs out of the pool, START_JUNK)
+        needs = {h: start_need(n, start_held(a.start)) for h, n in needs.items()}
+        for c in a.start:
+            item = START_ITEMS[c][0]
+            if item in SONG_ITEMS:
+                continue
+            for h in sorted(spots):
+                if spots[h][1] == item:
+                    spots[h][1] = START_JUNK
+                    break
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,
@@ -8215,6 +8303,8 @@ def main():
         print("Progressive items: %d map file%s of shops with shelves of a family, written for each tier" % (len(tier_maps), "" if len(tier_maps) == 1 else "s"))
     if hints:
         spoiler += ["", "the Gossip Stones' hints (the stone's name -> what it says)"] + ["  %-34s %s" % h for h in sorted(hints)]
+    with open(os.path.join(mod, START_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side gives them: oot_start_items)
+        f.write("# the starting items, given to a save that does not hold them: <name> [<its ammo> <count>]\n" + "".join(l + "\n" for l in start_lines(a.start)))
     with open(os.path.join(mod, HINTS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the Tracker's: each stone, its place and its hint)
         f.write("# <the stone's name>|<its map folder>|<x y z>|<what it says>: the Tracker's Gossip Stones row lists the ones heard\n")
         f.write("".join("%s|%s|%.1f %.1f %.1f|%s\n" % (label, folder, pos[0], pos[1], pos[2], words)

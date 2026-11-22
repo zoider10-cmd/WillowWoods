@@ -1105,6 +1105,66 @@ static void oot_add_all_tick(Ctx *c) {
     }
 }
 
+/* (the randomizer's fork, asked 2026-11-21) Starting items: the seed's <game folder>/mods/rando-seed/start_items.txt
+   (tools/rando/rando_seed.py START_ITEMS), a line "<name> [<its ammo> <count>]" each. An item of it that Link does not
+   hold is given (the Inventory page's unlock), and its ammo with it; one change a call (once a second, from
+   oot_tracker_refresh), so a new game gets them over its first seconds. Held: the item, or a bigger one of its family
+   (a bag's _Medium or _Large, the Longshot for the Hookshot, the Ocarina of Time for the Fairy Ocarina). An item lost
+   (a Deku Shield burnt) comes back the same way. */
+#define OOT_START_MAX 48
+static int oot_game_file(char *out, size_t size, const char *tail);
+static int oot_start_held(Ctx *c, const char *name) {
+    if (oot_item_count(c, name) > 0) return 1;
+    if (!strcmp(name, "Item_Hookshot")) return oot_item_count(c, "Item_Longshot") > 0;
+    if (!strcmp(name, "Item_Ocarina_Fairy")) return oot_item_count(c, "Item_Ocarina_Time") > 0;
+    const size_t n = strlen(name);
+    if (n > 6 && !strcmp(name + n - 6, "_Small")) {
+        char other[64];
+        snprintf(other, sizeof other, "%.*s_Medium", (int)(n - 6), name);
+        if (oot_item_count(c, other) > 0) return 1;
+        snprintf(other, sizeof other, "%.*s_Large", (int)(n - 6), name);
+        if (oot_item_count(c, other) > 0) return 1;
+    }
+    return 0;
+}
+static void oot_start_items(Ctx *c, const char *seed) {
+    static char names[OOT_START_MAX][48], ammo[OOT_START_MAX][32], seed_of[1024];
+    static int counts[OOT_START_MAX], count = -1, fill = -1, fill_left;   /* (fill: the item whose ammo is being given) */
+    if (count < 0 || strcmp(seed_of, seed)) {   /* (this seed's list, read again when the seed is another) */
+        count = 0, fill = -1;
+        snprintf(seed_of, sizeof seed_of, "%s", seed);
+        char path[MAX_PATH + 48], line[160];
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/start_items.txt") ? fopen(path, "r") : NULL;
+        while (f && count < OOT_START_MAX && fgets(line, sizeof line, f)) {
+            if (line[0] == '#') continue;
+            ammo[count][0] = 0, counts[count] = 0;
+            if (sscanf(line, "%47s %31s %d", names[count], ammo[count], &counts[count]) >= 1) count++;
+        }
+        if (f) fclose(f);
+        if (count) hos_log("rando: %d starting items in this seed", count);
+    }
+    if (fill >= 0) {   /* (the ammo of an item just given: up to 63 a change) */
+        int i = -1;
+        for (unsigned k = 0; k < OOT_ITEM_COUNT; k++) if (!strcmp(oot_item_names[k], ammo[fill])) i = (int)k;
+        const int step = fill_left > 63 ? 63 : fill_left;
+        if (i >= 0 && step > 0) oot_inventory_edit(c, OOT_CHEAT_ITEM_ACTION + i * 256 + 64 + step);
+        fill_left -= step;
+        if (i < 0 || fill_left <= 0) fill = -1;
+        return;
+    }
+    for (int s = 0; s < count; s++) {
+        if (oot_start_held(c, names[s])) continue;
+        int i = -1;
+        for (unsigned k = 0; k < OOT_ITEM_COUNT; k++) if (!strcmp(oot_item_names[k], names[s])) i = (int)k;
+        if (i < 0) { hos_log("rando: starting item %s is not one the game side can give", names[s]); names[s][0] = 0; continue; }
+        if (oot_item_count(c, names[s]) < 0) return;   /* (the pouch not readable yet: next time) */
+        hos_log("rando: starting item %s given", names[s]);
+        oot_inventory_edit(c, OOT_CHEAT_ITEM_ACTION + i * 256 + 200);   /* (unlock: Link holds none) */
+        if (ammo[s][0] && counts[s] > 0) fill = s, fill_left = counts[s];
+        return;
+    }
+}
+
 static void oot_set_time(Ctx *c, unsigned hour) {
     // ExecuteWmSetTime passes seconds since midnight to the world manager.
     const uint64_t singleton = recomp_load64(c, 0x84c9e898ULL);
@@ -2466,6 +2526,8 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
         if (changed) hos_log("rando: tracker: %d shop shelves put out, or marked as the save says", changed);
     }
     oot_stone_heard(c);   /* (a Gossip Stone talked to: its hint is the Tracker's) */
+    if (oot_check_count > 0) oot_start_items(c, oot_checks_seed);   /* (the seed's starting items, each one Link lacks; once the
+        seed's checks are read: before, the seed's stamp is not yet known, and a list read again dropped an item's ammo) */
     {   /* (a test's: HOS_OOT_SETFLAG="<hash in hex>=<0 or 1>,..." sets those truth values of the game's list once, some
            seconds into the game, and says what each was: to try a scene's steps one at a time) */
         static int turn;
