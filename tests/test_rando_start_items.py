@@ -40,6 +40,11 @@ def main():
     seed = read("tools", "rando", "rando_seed.py")
     check('(" start " + ",".join(a.start) if a.start else "")' in seed and "needs = {h: start_need(n, start_held(a.start)) for h, n in needs.items()}" in seed
           and "spots[h][1] = START_JUNK" in seed, "the starting items are not on the stamp, held by the rules, or out of the pool")
+    # (Deku Sticks and Nuts, 2026-11-21: supplies, none out of the pool; with Skip cutscenes their first box is marked seen)
+    check(S.START_SUPPLIES == {"DK", "DN"} and "if item in SONG_ITEMS or c in START_SUPPLIES:" in seed and
+          S.START_PICKUPS == {"DK": "HavePlayedGetEvent.Item_DekuStick", "DN": "HavePlayedGetEvent.Item_DekuNut"} and
+          "**({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})" in seed,
+          "starting sticks or nuts take an item out of the pool, or their first pick-up's box is still shown")
     host = read("host", "hos_main.c")
     check("if (oot_check_count > 0) oot_start_items(c, oot_checks_seed);" in host and '"mods/rando-seed/start_items.txt"' in host
           and "if (oot_start_held(c, names[s])) continue;" in host, "the game's side does not give the starting items Link lacks")
