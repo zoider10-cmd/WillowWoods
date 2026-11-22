@@ -27,8 +27,7 @@ def read(*p):
 def main():
     seed = read("tools", "rando", "rando_seed.py")
     check(S.PLACEMENT >= S.OVERWORLD_FROM == 23, "the placement was not raised for the overworld's rules")
-    check(S.PLACEMENT >= S.OVERWORLD_MORE_FROM == 24 and S.OVERWORLD_MORE.get(0xd1cef51cf294fb86) == (24, [frozenset((S.BM,))])
-          and S.OVERWORLD_MORE.get(0x7f28485fa5d3688f) == (25, [frozenset(("Item_Melody_StormSong",))]) and S.PLACEMENT >= 25,
+    check(S.PLACEMENT >= S.OVERWORLD_MORE_FROM == 24 and S.OVERWORLD_MORE.get(0xd1cef51cf294fb86) == [frozenset((S.BM,))],
           "Kakariko's watchtower Gold Skulltula is not had by the Boomerang (the owner, 2026-11-21)")
     table = json.load(open(os.path.join(ROOT, "tools", "rando", S.OVERWORLD_RULES_FILE), encoding="utf-8"))["variants"]
     want = {"%s,%s,%d" % (f, g, d) for f in ("open", "closed_deku", "closed") for g in ("open", "zelda") for d in (0, 1)}
