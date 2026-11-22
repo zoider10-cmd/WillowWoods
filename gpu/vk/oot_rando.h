@@ -137,8 +137,8 @@
       "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. The logic does not count on it. Moves no item.", \
       "Off", "On") \
     X(WATER_GATE, "Water Temple gate", "rando_water_gate", \
-      "The gate in front of the Water Temple, at the bottom of Lake Hylia. Open: it is open from the start. Shut: it is closed as the game has it; with the Iron Boots on, fire the Hookshot or Longshot at the ring above the door to open it (the Ice Cavern is not needed). The logic asks for the Iron Boots, the Longshot and the Bow to enter either way. A save whose gate is already open keeps it open. Moves no item.", \
-      "Open", "Shut") \
+      "The gate in front of the Water Temple, at the bottom of Lake Hylia. Shut (the default): it is closed as the game has it; with the Iron Boots on, fire the Hookshot or Longshot at the ring above the door to open it (the Ice Cavern is not needed). Open: it is open from the start. The logic asks for the Iron Boots, the Longshot and the Bow to enter either way. A save whose gate is already open keeps it open. Moves no item.", \
+      "Shut", "Open") \
     X(CHEST_SIZE, "Chest size matches contents", "rando_chest_size", \
       "A chest holding a major item (one the seed's logic needs, a song or magic) is a big chest; any other is a small chest, so a chest's size tells you whether it is worth opening. Moves no item: it can be turned on for a seed being played. Big chests keep their long opening.", \
       "Off", "On") \

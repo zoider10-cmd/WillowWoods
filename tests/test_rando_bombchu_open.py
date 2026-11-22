@@ -153,11 +153,13 @@ def main():
           "the game's side opens the gate with the setting at Shut too, or no longer opens it at Open")
     read = lambda *parts: open(os.path.join(HERE, "..", *parts), encoding="utf-8").read()
     launcher = read("launcher", "Launcher.cs")
-    check("int hos_rando_water_gate_shut(void) { return rando_active && rando.v[OOT_RANDO_WATER_GATE] != 0; }" in read("host", "oot_rando.c") and
+    # (Shut the default since 2026-11-22: the value 0, what a seed's settings without the line read as)
+    check("int hos_rando_water_gate_shut(void) { return rando_active && rando.v[OOT_RANDO_WATER_GATE] == 0; }" in read("host", "oot_rando.c") and
           'X(WATER_GATE, "Water Temple gate", "rando_water_gate",' in read("gpu", "vk", "oot_rando.h") and
-          'new object[] { "rando_water_gate", "Water Temple gate", new[] { "Open", "Shut" }, new[] { 0, 1 },' in launcher and
+          'new object[] { "rando_water_gate", "Water Temple gate", new[] { "Shut", "Open" }, new[] { 0, 1 },' in launcher and
+          '"Shut", "Open") \\' in read("gpu", "vk", "oot_rando.h") and
           '"+bridge", "rando_water_gate" } },' in launcher and '"rando_hints", "rando_water_gate", "rando_ageless",' in launcher,
-          "the Water Temple gate setting is not read by the game, offered by the launcher among the settings that move no item, or Open first")
+          "the Water Temple gate setting is not read by the game, offered by the launcher among the settings that move no item, or Shut not first (the default)")
     check(seed.FIXES_VERSION >= 67, "FIXES_VERSION not raised: seeds made before would keep the shut doors, or a new game's gate flags")
     print("FAIL" if failed else "PASS: Bombchu Bowling, the Bombchu Shop and the Water Temple's gate open")
     return 1 if failed else 0
