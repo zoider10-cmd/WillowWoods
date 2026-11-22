@@ -4634,7 +4634,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6519,6 +6519,7 @@ def main():
     p.add_argument("--sword-shield", type=int, choices=(0, 1), help="in place of rando_sword_shield: 0 the Kokiri Sword stays in its chest and the Deku Shield on "
                                                                      "its shelf, 1 both take part (the chest with Major items, the shelf with Shops)")
     p.add_argument("--ageless", type=int, choices=(0, 1, 2, 3), help="1 the swords for both ages, 2 the age-only items, 3 both (as rando_ageless and rando_ageless_items)")
+    p.add_argument("--ocarinas", action="store_true", help="as rando_ocarinas=1: both ocarinas are items of the shuffle (OCARINA_GIFT, OCARINA_TIME_GIFT); with Songs on")
     p.add_argument("--epona-song", action="store_true", help="as rando_epona_song=1: the first time an adult plays Epona's Song where Link can ride, Epona is his (epona_song_flows); moves no item")
     p.add_argument("--chest-size", action="store_true", help="as rando_chest_size=1: a chest holding a major item is a big chest, any other a small one (CHEST_SIZES); moves no item")
     p.add_argument("--letter", action="store_true", help="as rando_letter=1, Kakariko gate: Letter shuffled (letter_need)")
@@ -6561,7 +6562,10 @@ def main():
         print("this seed was made with the big items shuffled: Major items is now On in the options, to keep it as it is")
     a.event_chests = a.event_chests or ini["rando_major"] != 0
     a.songs = a.songs if a.songs is not None else ini["rando_songs"]
-    a.ocarina = a.songs == 3 and SONGS_ANYWHERE   # (Anywhere, ocarina too: Anywhere with the Fairy Ocarina shuffled, OCARINA_GIFT)
+    # (the ocarinas shuffled: Songs' old fourth choice, "Anywhere, ocarina too", or rando_ocarinas with Songs on (the asked
+    #  for songs name the ocarina, ocarina_need: without them shuffled nothing would), asked 2026-11-21. The stamp's word
+    #  is the same, " ocarina 1" on the songs': a seed made with the fourth choice is the same seed)
+    a.ocarina = SONGS_ANYWHERE and (a.songs == 3 or (bool(a.ocarinas or ini["rando_ocarinas"] == 1) and a.songs in (1, 2)))
     a.songs = 2 if a.songs == 3 else a.songs
     a.songs = (a.songs if SONGS_ANYWHERE else 1) if a.songs in (1, 2) else 0
     a.dungeon_rewards = a.dungeon_rewards if a.dungeon_rewards is not None else ini["rando_dungeon_rewards"]

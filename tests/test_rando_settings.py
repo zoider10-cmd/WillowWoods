@@ -71,7 +71,8 @@ def sources(rows):
     songs_made = "\nSONGS_ANYWHERE = True\n" in rando_seed
     check(songs_made or "\nSONGS_ANYWHERE = False\n" in rando_seed, "the script no longer says whether Songs' Anywhere is offered")
     check(limits.get("rando_dungeon_rewards") in (1, 2) and limits.get("rando_keys") == 2 and
-          set(limits) == {"rando_dungeon_rewards", "rando_keys"} | (set() if songs_made else {"rando_songs"}) and limits.get("rando_songs", 2) == 2,
+          # (Songs' fourth choice, "Anywhere, ocarina too", is no longer offered since rando_ocarinas, 2026-11-21: 3 when Anywhere is made)
+          set(limits) == {"rando_dungeon_rewards", "rando_keys", "rando_songs"} and limits.get("rando_songs") == (3 if songs_made else 2),
           "the launcher's list of settings not available yet is not the ones known, or Songs' Anywhere is offered while the script holds it "
           "off (SONGS_ANYWHERE), or held off while the script makes it (%r)" % limits)
     # (the frogs are no longer a choice: the row is kept for a seed's ID and shown nowhere, and Quest rewards says so)

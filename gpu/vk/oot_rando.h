@@ -51,7 +51,7 @@
       "What some characters give takes part with the chests: Darunia, mini-games (the frogs of Zora's River among them), side quests, the Gold Skulltula family and the three Great Fairies of the spells (a fairy may then give only an item there is one of). Needs Chests.", \
       "Off", "On") \
     X(SONGS, "Songs", "rando_songs", \
-      "Song spots: the twelve songs are shuffled among the twelve lessons. The teacher still plays the old song's notes; the song you get is named after. Anywhere: the songs are items like any other, in chests, shops and gifts (a song looks like a green rupee), and a lesson gives whatever the seed put there. Some lessons can only hold a song or a few one-of-a-kind items, so some songs stay in lessons. Anywhere, ocarina too: also the two ocarinas, Saria's on the bridge and Zelda's at the moat; every check that needs a song then needs the Fairy Ocarina.", \
+      "Song spots: the twelve songs are shuffled among the twelve lessons. The teacher still plays the old song's notes; the song you get is named after. Anywhere: the songs are items like any other, in chests, shops and gifts (a song looks like a green rupee), and a lesson gives whatever the seed put there. Some lessons can only hold a song or a few one-of-a-kind items, so some songs stay in lessons. The two ocarinas: Shuffle the ocarinas.", \
       "Off", "Song spots", "Anywhere", "Anywhere, ocarina too") \
     X(HEART_PIECES, "Heart Pieces", "rando_heart_pieces", \
       "The 14 Pieces of Heart lying in the world and the 8 Heart Containers the bosses leave take part as chests do: each can give any item of the shuffle but keys and songs. It still looks like a Piece of Heart or a Heart Container and its scene says so, but the item is what Link gets, and the heart is somewhere else. Pieces given by a character or held by a chest are not these.", \
@@ -147,6 +147,9 @@
       "Off", "On") \
     X(EPONA_SONG, "Epona by Epona's Song", "rando_epona_song", \
       "The first time adult Link plays Epona's Song where he can ride, Epona becomes his horse and comes: no ranch, no races. The Epona quest is done as well, as after Ingo's races (Ingo and Talon move on, the trade goes on, the horseback archery opens); Malon still teaches her song to young Link. Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
+    X(OCARINAS, "Shuffle the ocarinas", "rando_ocarinas", \
+      "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing.", \
       "Off", "On")
 
 enum {

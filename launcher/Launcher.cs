@@ -1985,7 +1985,7 @@ static class RandoLayout {
                            "+shops", "rando_scrubs", "rando_major", "rando_progressive", "rando_sword_shield", "+forest", "rando_open_door", "rando_ageless", "rando_letter",
                            "+skips", "+rupees", "rando_ammo_pickups" } },
         new RandoSection { Title = "SHOULD WORK", Sub = "made and checked, not yet played through", Accent = ShouldWork,
-            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song" } },
+            Rows = new[] { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_magic", "rando_ageless_items", "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas" } },
         new RandoSection { Title = "DOES NOT WORK YET", Sub = "not made yet: leave these off, they can break a seed", Accent = Experimental,
             Rows = new[] { "rando_keys", "rando_dungeon_rewards" } },
     };
@@ -2638,8 +2638,10 @@ class LauncherForm : Form {
     // choices before it, and with only Off left says "Not available yet". Dungeon rewards' Anywhere and
     // Dungeon keys' Anywhere are made as the choice before. tools/rando/rando_seed.py is what places a seed. Songs'
     // Anywhere is made: its line is here again, { "rando_songs", 2 }, while the script's SONGS_ANYWHERE is False)
+    // (Songs' fourth choice, "Anywhere, ocarina too", is no longer offered: the ocarinas are a setting of their own since
+    //  2026-11-21, rando_ocarinas. A file or a seed's ID that has it still makes the same seed: the seed tool reads it so)
     internal static readonly Dictionary<string, int> RandoNotYet = new Dictionary<string, int> {
-        { "rando_dungeon_rewards", 2 }, { "rando_keys", 2 } };
+        { "rando_dungeon_rewards", 2 }, { "rando_keys", 2 }, { "rando_songs", 3 } };
     // (rows that are no longer a choice and are not shown: the frogs of Zora's River take part whenever Quest rewards is
     // on. The row stays in RandoRows, its place being its place in a seed's ID, gpu/vk/oot_rando.h)
     internal static readonly HashSet<string> RandoHidden = new HashSet<string> { "rando_frogs" };
@@ -2657,7 +2659,7 @@ class LauncherForm : Form {
         new object[] { "rando_quests", "Quest rewards", new[] { "Off", "On" }, new[] { 0, 1 },
             "What some characters give takes part with the chests: Darunia, mini-games (the frogs of Zora's River among them), side quests, the Gold Skulltula family and the three Great Fairies of the spells (a fairy may then give only an item there is one of). Needs Chests." },
         new object[] { "rando_songs", "Songs", new[] { "Off", "Song spots", "Anywhere", "Anywhere, ocarina too" }, new[] { 0, 1, 2, 3 },
-            "Song spots: the twelve songs are shuffled among the twelve lessons. The teacher still plays the old song's notes; the song you get is named after. Anywhere: the songs are items like any other, in chests, shops and gifts (a song looks like a green rupee), and a lesson gives whatever the seed put there. Some lessons can only hold a song or a few one-of-a-kind items, so some songs stay in lessons. Anywhere, ocarina too: also the two ocarinas, Saria's on the bridge and Zelda's at the moat; every check that needs a song then needs the Fairy Ocarina." },
+            "Song spots: the twelve songs are shuffled among the twelve lessons. The teacher still plays the old song's notes; the song you get is named after. Anywhere: the songs are items like any other, in chests, shops and gifts (a song looks like a green rupee), and a lesson gives whatever the seed put there. Some lessons can only hold a song or a few one-of-a-kind items, so some songs stay in lessons. The two ocarinas: Shuffle the ocarinas." },
         new object[] { "rando_heart_pieces", "Heart Pieces", new[] { "Off", "On" }, new[] { 0, 1 },
             "The 14 Pieces of Heart lying in the world and the 8 Heart Containers the bosses leave take part as chests do: each can give any item of the shuffle but keys and songs. It still looks like a Piece of Heart or a Heart Container and its scene says so, but the item is what Link gets, and the heart is somewhere else. Pieces given by a character or held by a chest are not these." },
         new object[] { "rando_shops", "Shops", new[] { "Off", "Low prices", "Any price", "Affordable" }, new[] { 0, 1, 2, 3 },
@@ -2719,7 +2721,9 @@ class LauncherForm : Form {
         new object[] { "rando_infinite_ammo", "Infinite ammo", new[] { "Off", "On" }, new[] { 0, 1 },
             "Deku Sticks, Deku Nuts, bombs, Bombchus, arrows and Deku Seeds are not used up: a moment after one is used, Link has as many as before (the bag filled again). Only what Link already carries: it gives nothing he has none of. Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_epona_song", "Epona by Epona's Song", new[] { "Off", "On" }, new[] { 0, 1 },
-            "The first time adult Link plays Epona's Song where he can ride, Epona becomes his horse and comes: no ranch, no races. The Epona quest is done as well, as after Ingo's races (Ingo and Talon move on, the trade goes on, the horseback archery opens); Malon still teaches her song to young Link. Moves no item: it can be turned on for a seed being played." }
+            "The first time adult Link plays Epona's Song where he can ride, Epona becomes his horse and comes: no ranch, no races. The Epona quest is done as well, as after Ingo's races (Ingo and Talon move on, the trade goes on, the horseback archery opens); Malon still teaches her song to young Link. Moves no item: it can be turned on for a seed being played." },
+        new object[] { "rando_ocarinas", "Shuffle the ocarinas", new[] { "Off", "On" }, new[] { 0, 1 },
+            "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing." }
 
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file

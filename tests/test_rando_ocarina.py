@@ -43,7 +43,9 @@ def main():
           z.key in S.GIFT_PLACES and S.OCARINA_TIME in S.SKULLTULA_NEVER and S.OCARINA_TIME not in S.CHECK_CODES,
           "the Ocarina of Time is not Zelda's gift at the moat, or is a gating item")
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
-    check("a.ocarina = a.songs == 3 and SONGS_ANYWHERE" in script and "a.songs = 2 if a.songs == 3 else a.songs" in script and
+    # (a setting of its own since 2026-11-21, rando_ocarinas, with Songs on; Songs' old fourth choice still makes it)
+    check("a.ocarina = SONGS_ANYWHERE and (a.songs == 3 or (bool(a.ocarinas or ini[\"rando_ocarinas\"] == 1) and a.songs in (1, 2)))".replace('\\"', '"') in script
+          and "a.songs = 2 if a.songs == 3 else a.songs" in script and
           '" ocarina 1" if a.ocarina else ""' in script and "kinds=OCARINA_KINDS.get(flow, (4,)))" in script and
           "needs = {h: ocarina_need(n, True) if h in lessons else n for h, n in needs.items()}" in script,
           "the setting is not read, not on the stamp, or the flow and the lessons are not changed")
