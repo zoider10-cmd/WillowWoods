@@ -4659,6 +4659,40 @@ START_ITEMS = {
     "SE": ("Item_Melody_WaterSerenade", ("Item_Melody_WaterSerenade",), None), "NC": ("Item_Melody_ShadowNocturne", ("Item_Melody_ShadowNocturne",), None),
     "RQ": ("Item_Melody_SpiritRequiem", ("Item_Melody_SpiritRequiem",), None), "PR": ("Item_Melody_LightPrelude", ("Item_Melody_LightPrelude",), None),
 }
+# ---- Test pins (asked 2026-11-21, for testing only) ----
+# While PIN_FILE lies beside this script, every seed made puts the items it names in the spots it names (place's
+# `bound`: that item there, that spot nothing else), the rest shuffled as ever. A line "<area>|<the spot's position as
+# the spoiler says it, or its start>|<item>"; # starts a note. The file's text is on the stamp: another file, another seed.
+PIN_FILE = "test_pins.txt"
+
+
+def read_pins():
+    """[(area, where, item)] from PIN_FILE beside this script ([] when it is not there)"""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), PIN_FILE), encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return []
+    pins = []
+    for line in text.splitlines():
+        parts = [x.strip() for x in line.split("|")]
+        if line.strip() and not line.lstrip().startswith("#") and len(parts) == 3:
+            pins.append(tuple(parts))
+    return pins
+
+
+def pin_groups(spots, pins):
+    """place's bound groups for the pins: ({item}, {the spot's hash}); a pin whose spot is not found stops the seed"""
+    groups = []
+    for area, where, item in pins:
+        found = [h for h in sorted(spots) if spots[h][0] == area and str(spots[h][5]).startswith(where)]
+        if len(found) != 1:
+            sys.exit("test pin %s | %s: %d spots match (one is needed)" % (area, where, len(found)))
+        groups.append((frozenset({item}), frozenset(found)))
+        print("test pin: %s at %s %s" % (item, area, spots[found[0]][5]))
+    return groups
+
+
 START_ALSO = {"LS": ("Item_Hookshot",)}   # (the Longshot held: the Hookshot too, as the rules count the family)
 # (Deku Sticks and Deku Nuts, asked 2026-11-21: the bag with 10 sticks or 20 nuts. Supplies, not one of a kind: none
 #  leaves the pool, and the rules ask for neither)
@@ -6854,6 +6888,8 @@ def main():
         stamp = stamp[:-1] + " scarecrow free\n"
     if a.ageless:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " ageless %d\n" % a.ageless
+    if read_pins():   # (test pins: another file, another seed)
+        stamp = stamp[:-1] + " pins %r\n" % (read_pins(),)
     print("randomizer %s, seed %d, chests %s, dungeon keys %s, major items %s" % (
         "on" if on else "off", seed, ("off", "overworld", "dungeons", "all")[which],
         ("off", "own dungeon", "anywhere (as own dungeon for now)")[keys_mode], "on" if a.event_chests else "off"))
@@ -7294,7 +7330,8 @@ def main():
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,
                                       [group for group in ((frozenset(SONG_ITEMS), frozenset(lessons)) if a.songs == 1 else None,
-                                                           (frozenset(REWARD_ITEMS), frozenset(endings)) if a.dungeon_rewards else None) if group] or None,
+                                                           (frozenset(REWARD_ITEMS), frozenset(endings)) if a.dungeon_rewards else None) if group]
+                                      + pin_groups(spots, read_pins()) or None,
                                       only=lesson_only, apart=frozenset(lessons) if a.songs == 2 else (),
                                       holds=holds or None, counted=counted, fixed_more=kept_tokens)
     except ValueError as e:
