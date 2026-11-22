@@ -2613,13 +2613,16 @@ static void oot_scarecrow_free(Ctx *c) {
     if (!entry) return;
     /* (the song: written where the save has none; a song of the save's own (taught to Bonooru) is kept, and only the
        quest and the pouch are seen to, so Pierre answers it) */
+    /* (no song: the length 0 (a new game's: the room is there, 0x178 bytes, the length not), or nothing in it. A song
+       written without its length is an empty song to the game: seen in play 2026-11-21, the list showed no notes) */
     int wrote = 0;
     const uint64_t first = recomp_load64(c, entry + 0x20);
-    if (first && recomp_load32(c, first) == 0)
+    if (first && (recomp_load64(c, entry + 0x28) == 0 || recomp_load32(c, first) == 0))
         for (int b = 0; b < 2; b++) {   /* (both buffers: the song as the save has it and the one kept beside it) */
             const uint64_t cap = recomp_load64(c, entry + 0x18 + 0x18 * b), data = recomp_load64(c, entry + 0x20 + 0x18 * b);
-            if (!data || cap < sizeof song) continue;
-            for (unsigned k = 0; k < sizeof song / 4; k++) recomp_store32(c, data + 4 * k, song[k]);
+            if (!data || cap < 0x178) continue;
+            for (unsigned k = 0; k < 0x178 / 4; k++) recomp_store32(c, data + 4 * k, k < sizeof song / 4 ? song[k] : 0);
+            recomp_store64(c, entry + 0x28 + 0x18 * b, 0x178);   /* (its length: the whole room, as a taught song's) */
             wrote++;
         }
     uint32_t quest = 0;
