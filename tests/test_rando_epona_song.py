@@ -43,7 +43,8 @@ def main():
           and "ask.data.cases[0].v = finish" in seed, "calling an owned Epona does not finish the quest")
     check('X(EPONA_SONG, "Epona by Epona\'s Song", "rando_epona_song",' in read("gpu", "vk", "oot_rando.h"), "the settings table has no row for it")
     launcher = read("launcher", "Launcher.cs")
-    check('"rando_infinite_ammo", "rando_epona_song" };' in launcher and 'new object[] { "rando_epona_song",' in launcher,
+    no_item = launcher[launcher.index('"rando_skulltulas_day", "rando_hints"'):]
+    check('"rando_epona_song"' in no_item[:no_item.index("};")] and 'new object[] { "rando_epona_song",' in launcher,
           "the launcher has no row for it, or does not keep a seed when it changes")
     # (Skip Ingo's races, which this replaced, is gone; and every launcher settings row ends its own array: the Infinite
     #  ammo row was once written inside the Master Sword's)
