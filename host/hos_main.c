@@ -2513,6 +2513,53 @@ static void oot_stone_heard(Ctx *c) {
     hos_log("rando: Gossip Stone %s heard", names[best]);
 }
 
+/* (the randomizer's fork, asked 2026-11-21) The run's stats, for the Tracker's first row (vk_menu.cpp tracker_stats_load):
+   the seconds played (counted once a second while Link is in the world, oot_tracker_refresh: not on the title or in the
+   menu), the deaths (the game over's event, DmF_SY_GameOver) and the second Ganon fell (Defeat_Ganon, the first time).
+   Kept for the seed: <game folder>/rando/run_stats.txt, "seed <the seed's stamp>" then "seconds N", "deaths N",
+   "finished N" (0: not yet); another seed's are started over. Written every OOT_STATS_SAVE seconds and at each event. */
+#define OOT_STATS_SAVE 15
+static struct { char seed[sizeof oot_checks_seed]; long seconds, deaths, finished; int loaded, dirty; } oot_stats;
+static void oot_stats_load(void) {
+    if (oot_stats.loaded && !strcmp(oot_stats.seed, oot_checks_seed)) return;
+    memset(&oot_stats, 0, sizeof oot_stats);
+    snprintf(oot_stats.seed, sizeof oot_stats.seed, "%s", oot_checks_seed);
+    oot_stats.loaded = 1;
+    char path[MAX_PATH + 48], line[1100];
+    FILE *f = oot_game_file(path, sizeof path, "rando/run_stats.txt") ? fopen(path, "r") : NULL;
+    int ours = 0;
+    while (f && fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\r\n")] = 0;
+        if (!strncmp(line, "seed ", 5)) ours = !strcmp(line + 5, oot_checks_seed);
+        else if (ours) sscanf(line, "seconds %ld", &oot_stats.seconds), sscanf(line, "deaths %ld", &oot_stats.deaths),
+                       sscanf(line, "finished %ld", &oot_stats.finished);
+    }
+    if (f) fclose(f);
+}
+static void oot_stats_save(void) {
+    char path[MAX_PATH + 48];
+    FILE *f = oot_game_file(path, sizeof path, "rando/run_stats.txt") ? fopen(path, "w") : NULL;
+    if (!f) return;
+    fprintf(f, "seed %s\nseconds %ld\ndeaths %ld\nfinished %ld\n", oot_stats.seed, oot_stats.seconds, oot_stats.deaths, oot_stats.finished);
+    fclose(f);
+    oot_stats.dirty = 0;
+}
+static void oot_stats_second(void) {
+    if (oot_check_count <= 0) return;   /* (the seed's stamp known: the checks read) */
+    oot_stats_load();
+    oot_stats.seconds++, oot_stats.dirty = 1;
+    if (oot_stats.seconds % OOT_STATS_SAVE == 0) oot_stats_save();
+}
+static void oot_stats_event(const char *name) {
+    const int death = !strcmp(name, "DmF_SY_GameOver"), ganon = !strcmp(name, "Defeat_Ganon");
+    if ((!death && !ganon) || oot_check_count <= 0) return;
+    oot_stats_load();
+    if (death) oot_stats.deaths++;
+    if (ganon && !oot_stats.finished) oot_stats.finished = oot_stats.seconds ? oot_stats.seconds : 1;
+    hos_log("rando: stats: %s (%ld s played, %ld deaths)", death ? "a death" : "Ganon defeated", oot_stats.seconds, oot_stats.deaths);
+    oot_stats_save();
+}
+
 static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     void rx_option_set(int id, int value);
     static int64_t next, next_stamp;
@@ -2526,6 +2573,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
         if (changed) hos_log("rando: tracker: %d shop shelves put out, or marked as the save says", changed);
     }
     oot_stone_heard(c);   /* (a Gossip Stone talked to: its hint is the Tracker's) */
+    oot_stats_second();   /* (the run's time played: oot_stats) */
     if (oot_check_count > 0) oot_start_items(c, oot_checks_seed);   /* (the seed's starting items, each one Link lacks; once the
         seed's checks are read: before, the seed's stamp is not yet known, and a list read again dropped an item's ammo) */
     {   /* (a test's: HOS_OOT_SETFLAG="<hash in hex>=<0 or 1>,..." sets those truth values of the game's list once, some
@@ -3102,12 +3150,15 @@ static void oot_skip_cutscene(Ctx *c) {
     oot_skip_cutscene_locked(c);
     ReleaseSRWLockExclusive(&lock);
 }
+static void oot_stats_event(const char *name);
 static void oot_skip_cutscene_locked(Ctx *c) {
     static uint64_t was_event, was_player;
     static int64_t asked_at;
     static int env = -1;
     if (env < 0) env = getenv("HOS_OOT_SKIP_EVENTS") ? atoi(getenv("HOS_OOT_SKIP_EVENTS")) : 0;
-    if (!env && !hos_rando_skip_cutscenes()) return;
+    /* (the run's stats, oot_stats_event, read the events' names with Skip cutscenes off too: the randomizer on is enough) */
+    const int skipping = env || hos_rando_skip_cutscenes();
+    if (!skipping && !hos_rando_on()) return;
     const uint64_t events = oot_singleton(c, OOT_EVENTMGR_SLOT);
     const uint64_t event = events ? recomp_load64(c, events + 104) : 0;
     if (!event) {
@@ -3139,6 +3190,8 @@ static void oot_skip_cutscene_locked(Ctx *c) {
                      (unsigned long long)recomp_load64(c, player));
     }
     was_event = event, was_player = player;
+    if (is_new && hos_rando_on()) oot_stats_event(name);
+    if (!skipping) return;
     /* (Willow Woods, asked 2026-11-18: the big chest's long opening. Link's heave of the lid is his own sequence for a big
        chest (Dm_SY_Treasurebox; a small chest's is Dm_SY_TreasureboxSmall), not the chest's, and no step of its flowchart
        chooses it (tried 2026-11-19: the chest's AI, AS and animations pointed at the small chest's changed nothing of its

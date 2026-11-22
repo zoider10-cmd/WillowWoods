@@ -175,6 +175,28 @@ int tracker_stone_total = 0;                    // (how many hints the seed has:
 const char kTrackerStoneHelp[] =
     "Talk to a Gossip Stone and what it says is kept here. Left and Right scroll the list.";
 std::string tracker_stone_help;
+// (the areas the hints heard name, asked 2026-11-21: {the area's name in lower case, without "the ": 1 foolish to look in,
+//  2 hinted (on the way of the hero, or an item found there)}. An area's row says so first: tracker_says)
+std::vector<std::pair<std::string, int>> tracker_area_hints;
+// (the run's stats, asked 2026-11-21: the game's side counts them, host/hos_main.c oot_stats, into <game folder>/rando/
+//  run_stats.txt; the whole game's row shows them above its words, read with the tracker's file)
+long tracker_stat_seconds = -1, tracker_stat_deaths = 0, tracker_stat_finished = 0;   // (-1: none for this seed)
+std::string tracker_clock(long s) {
+    char t[32];
+    snprintf(t, sizeof t, "%ld:%02ld:%02ld", s / 3600, s / 60 % 60, s % 60);
+    return t;
+}
+std::string tracker_area_key(std::string name) {
+    for (char& ch : name) ch = (char)tolower((unsigned char)ch);
+    if (name.compare(0, 4, "the ") == 0) name = name.substr(4);
+    return name;
+}
+int tracker_area_hint(const char* area) {
+    const std::string key = tracker_area_key(area);
+    int mark = 0;
+    for (const auto& h : tracker_area_hints) if (h.first == key) mark = std::max(mark, h.second);
+    return mark;
+}
 ULONGLONG tracker_home_asked = 0;         // (when the row was confirmed once; within kTrackerForgetMs the next one goes)
 // The checks one by one: tools/rando/rando_seed.py writes <game folder>\mods\rando-seed\checks.txt beside the tracker's
 // file, a line "<area>|<kind>|<folder>|<ages>|<x> <y> <z>" for each chest and Gold Skulltula of the seed (tracker_load
@@ -389,6 +411,8 @@ std::string tracker_says(int row) {
         else if (all && known) words += ", " + std::to_string(in) + " in logic";
         if (all && junk) words += ", " + std::to_string(junk) + " junk";
         const char* here = row >= kTrackerFirstArea ? tracker_here_area() : nullptr;
+        const int hinted = row >= kTrackerFirstArea ? tracker_area_hint(tracker_name[row]) : 0;   // (a hint heard names it)
+        if (hinted) words = (hinted == 1 ? "Foolish: " : "Hinted: ") + words;
         if (here && !strcmp(here, tracker_name[row])) words = "Here: " + words;   // (the area Link is in: the first of them)
         return words;
     }
@@ -2770,6 +2794,20 @@ void tracker_stones_load(const std::string& folder, bool on) {
         fclose(f);
     }
     tracker_stone_lines = heard;
+    tracker_area_hints.clear();   // (the areas they name: rando_seed.py choose_hints' three kinds of words)
+    for (const std::string& h : heard) {
+        static const char* const kinds[][2] = {{"They say that it is foolish to look in ", "1"}, {" is on the way of the hero.", "2"}, {" can be found in ", "2"}};
+        for (const auto& k : kinds) {
+            const size_t at = h.find(k[0]);
+            if (at == std::string::npos) continue;
+            const size_t lead = strlen("They say that ");   // (the way of the hero: "They say that <area> is on ...")
+            std::string area = !strcmp(k[0], " is on the way of the hero.") ? (at > lead ? h.substr(lead, at - lead) : std::string())
+                                                                             : h.substr(at + strlen(k[0]));
+            if (!area.empty() && area.back() == '.') area.pop_back();
+            tracker_area_hints.push_back({tracker_area_key(area), k[1][0] - '0'});
+            break;
+        }
+    }
     std::string help;
     const int first = std::clamp(tracker_pick[kTrackerStoneRow], 0, std::max(0, (int)heard.size() - 1));
     if (heard.empty()) help = tracker_stone_total ? "No Gossip Stone has been talked to yet." : "This seed has no hints.";
@@ -2778,6 +2816,41 @@ void tracker_stones_load(const std::string& folder, bool on) {
         for (size_t i = first; i < heard.size(); i++) help += "\n- " + heard[i];
     }
     tracker_stone_help = help + "\n\n" + kTrackerStoneHelp;
+}
+/// The run's stats (tracker_stat_seconds): this seed's lines of rando/run_stats.txt; folder: the seed's (its stamp)
+void tracker_stats_load(const std::string& folder, bool on) {
+    tracker_stat_seconds = -1, tracker_stat_deaths = 0, tracker_stat_finished = 0;
+    std::string stamp;
+    if (FILE* g = on ? fopen((folder + "rando_stamp.txt").c_str(), "r") : nullptr) {
+        char line[1024] = {};
+        if (fgets(line, sizeof line, g)) stamp = std::string(line, strcspn(line, "\r\n"));
+        fclose(g);
+    }
+    FILE* f = stamp.empty() ? nullptr : fopen((game_folder_path() + "rando/run_stats.txt").c_str(), "r");
+    if (!f) return;
+    char line[1100];
+    bool ours = false;
+    while (fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\r\n")] = 0;
+        if (!strncmp(line, "seed ", 5)) { ours = stamp == line + 5; continue; }
+        if (!ours) continue;
+        long v;
+        if (sscanf(line, "seconds %ld", &v) == 1) tracker_stat_seconds = v;
+        if (sscanf(line, "deaths %ld", &v) == 1) tracker_stat_deaths = v;
+        if (sscanf(line, "finished %ld", &v) == 1) tracker_stat_finished = v;
+    }
+    fclose(f);
+}
+/// The whole game's row's panel: the run's stats, then the tab's help
+std::string tracker_stats_help() {
+    if (tracker_stat_seconds < 0) return kTrackerHelp;
+    int got = 0;
+    for (int i = 0; i < tracker_check_count; i++) got += tracker_done[i].load(std::memory_order_relaxed) == 1;
+    std::string out = "This seed so far:\nTime played: " + tracker_clock(tracker_stat_seconds) + "\nDeaths: " + std::to_string(tracker_stat_deaths) +
+                      "\nChecks collected: " + std::to_string(got);
+    if (tracker_stat_seconds >= 600) out += " (" + std::to_string((long)(got * 3600.0 / tracker_stat_seconds + 0.5)) + " an hour)";
+    if (tracker_stat_finished > 0) out += "\nGanon defeated at " + tracker_clock(tracker_stat_finished) + "!";
+    return out + "\n\n" + kTrackerHelp;
 }
 void tracker_load() {
     static ULONGLONG last = 0, called = 0;
@@ -2827,6 +2900,7 @@ void tracker_load() {
     }
     tracker_count = n;
     tracker_stones_load(path.substr(0, path.find_last_of("\\/") + 1), on);
+    tracker_stats_load(path.substr(0, path.find_last_of("\\/") + 1), on);
     int checks = 0;
     path = path.substr(0, path.find_last_of("\\/") + 1) + "checks.txt";
     if (FILE* f = on ? fopen(path.c_str(), "r") : nullptr) {
@@ -4757,9 +4831,11 @@ void draw_options(ui::Ctx& c) {
     const bool after = restart_changed(selr);
     // (the Tracker tab: an area's row shows its checks where the help is; the tab's second row has words of its own)
     const bool area_panel = selr.tracker >= kTrackerFirstArea && tracker_check_count > 0 && tracker_row_checks(selr.tracker, true) > 0;
+    const std::string stats_help = selr.tracker == 0 && tracker_check_count ? tracker_stats_help() : std::string();   // (the run's stats)
     const char* row_help = selr.tracker == kTrackerShowRow && tracker_check_count ? kTrackerShowHelp :
                            selr.tracker == kTrackerHomeRow && tracker_check_count ? kTrackerHomeHelp :
-                           selr.tracker == kTrackerStoneRow && tracker_check_count ? tracker_stone_help.c_str() : selr.help;
+                           selr.tracker == kTrackerStoneRow && tracker_check_count ? tracker_stone_help.c_str() :
+                           selr.tracker == 0 && tracker_check_count ? stats_help.c_str() : selr.help;
     if (narrow) {   // (help over the column's foot: normally half the room, up to 65% for the mic meter and its explanation)
         const float help_h = std::min(22 * s + 32 * s + help_tall + (after ? 30 * s : 0) + (pending_line.empty() ? 0 : 52 * s) + 22 * s,
                                       (bottom - hh) * (mic_help ? 0.65f : 0.5f));

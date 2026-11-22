@@ -114,7 +114,7 @@ def main():
     check('X(HINTS, "Gossip Stone hints", "rando_hints",' in header and 'new object[] { "rando_hints", "Gossip Stone hints",' in launcher,
           "the setting is not a row of the game's table or the launcher's")
     menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
-    check('(folder + "rando_hints.txt")' in menu and "selr.tracker == kTrackerStoneRow && tracker_check_count ? tracker_stone_help.c_str() : selr.help;" in menu,
+    check('(folder + "rando_hints.txt")' in menu and "selr.tracker == kTrackerStoneRow && tracker_check_count ? tracker_stone_help.c_str() :" in menu,
           "the Tracker's Gossip Stones row does not show the hints heard")
     print("PASS: the Gossip Stones' hints")
 
