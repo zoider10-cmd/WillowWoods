@@ -866,7 +866,8 @@ class SeedDiffForm : Form {
 // side gives them, host/hos_main.c oot_start_items)
 class StartItemsForm : Form {
     internal static readonly string[][] Items = {
-        new[] { "KS", "Kokiri Sword" }, new[] { "DS", "Deku Shield" }, new[] { "HY", "Hylian Shield" }, new[] { "SL", "Fairy Slingshot" },
+        new[] { "KS", "Kokiri Sword" }, new[] { "DS", "Deku Shield" }, new[] { "DK", "Deku Sticks" }, new[] { "DN", "Deku Nuts" },
+        new[] { "HY", "Hylian Shield" }, new[] { "SL", "Fairy Slingshot" },
         new[] { "BM", "Boomerang" }, new[] { "BB", "Bomb Bag" }, new[] { "BW", "Fairy Bow" }, new[] { "HS", "Hookshot" },
         new[] { "LS", "Longshot" }, new[] { "HM", "Megaton Hammer" }, new[] { "LT", "Lens of Truth" }, new[] { "IB", "Iron Boots" },
         new[] { "HB", "Hover Boots" }, new[] { "GB", "Goron's Bracelet" }, new[] { "SS", "Silver Scale" }, new[] { "FO", "Fairy Ocarina" },

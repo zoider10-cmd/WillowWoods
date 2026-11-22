@@ -4640,6 +4640,8 @@ START_JUNK = "TBox_Rupee_Blue"
 # code: (the seed's item, the game's names to give it by (host: oot_item_names), the ammo it comes with (name, count))
 START_ITEMS = {
     "KS": (S, ("Weapon_Sword_Kokiri",), None), "DS": (DS, ("Weapon_Shield_Deku",), None),
+    "DK": ("Item_DekuStickBundle_Small", ("Item_StickBag_Small",), ("Item_DekuStick", 10)),
+    "DN": ("TBox_DekuNutBundle", ("Item_NutBag_Small",), ("Item_DekuNut", 20)),
     "HY": ("TBox_Shield_Hylian", ("Weapon_Shield_Hylian",), None),
     "SL": (SL, ("Weapon_Range_SlingShot", "Item_BulletBag_Small"), ("Item_DekuSeed", 30)),
     "BM": (BM, ("Item_Boomerang",), None), "BB": (BB, ("Item_BombBag_Small",), ("Item_Bomb", 20)),
@@ -4658,6 +4660,9 @@ START_ITEMS = {
     "RQ": ("Item_Melody_SpiritRequiem", ("Item_Melody_SpiritRequiem",), None), "PR": ("Item_Melody_LightPrelude", ("Item_Melody_LightPrelude",), None),
 }
 START_ALSO = {"LS": ("Item_Hookshot",)}   # (the Longshot held: the Hookshot too, as the rules count the family)
+# (Deku Sticks and Deku Nuts, asked 2026-11-21: the bag with 10 sticks or 20 nuts. Supplies, not one of a kind: none
+#  leaves the pool, and the rules ask for neither)
+START_SUPPLIES = frozenset({"DK", "DN"})
 
 
 def start_codes(text):
@@ -7279,7 +7284,7 @@ def main():
         needs = {h: start_need(n, start_held(a.start)) for h, n in needs.items()}
         for c in a.start:
             item = START_ITEMS[c][0]
-            if item in SONG_ITEMS:
+            if item in SONG_ITEMS or c in START_SUPPLIES:
                 continue
             for h in sorted(spots):
                 if spots[h][1] == item:
