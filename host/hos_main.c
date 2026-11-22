@@ -2577,6 +2577,14 @@ static void oot_stats_event(const char *name) {
 #define OOT_QUEST_COMPLETE 1275749364u   /* (murmur3 "Complete") */
 #define OOT_SCARECROW_GOT 0x5e86fb4du        /* (IsGet.Item_Melody_ScarecrowSong: the song list shows it) */
 #define OOT_SCARECROW_GOT_SCENE 0x23e7e426u  /* (HavePlayedGetEvent.Item_Melody_ScarecrowSong) */
+/* (and what else the adult's playback sets, by the owner's two saves around it (Scarecrow 4 adult before / 5 after,
+   2026-11-21): three truth values, two numbers and a step, unnamed in the game's files. The song list showed no notes
+   and Pierre did not come with the song, its length and the quest alone) */
+static const uint32_t oot_scarecrow_bools[] = {0x82cce1c8u, 0xaf77d894u, 0xb43290f9u};
+#define OOT_SCARECROW_INT_A 0x37c3f735u   /* (20 before, -1 after) */
+#define OOT_SCARECROW_INT_B 0x8566048eu   /* (0 before, 12 after) */
+#define OOT_SCARECROW_STEP 0x5b3d04c1u    /* (3069107721 before, 3661746881 after) */
+#define OOT_SCARECROW_STEP_AFTER 3661746881u
 static uint64_t oot_binary_entry(Ctx *c, uint32_t hash) {
     const uint64_t mgr = oot_singleton(c, OOT_GAMEDATA_SLOT);
     if (!mgr) return 0;
@@ -2630,7 +2638,18 @@ static void oot_scarecrow_free(Ctx *c) {
     int in_pouch = 0, played = 0;   /* (the song learned: its flags, as the other songs', oot_song_flag) */
     oot_gamedata_bool(c, OOT_SCARECROW_GOT, &in_pouch);
     oot_gamedata_bool(c, OOT_SCARECROW_GOT_SCENE, &played);
-    if (!wrote && quest_done && in_pouch && played) return;
+    int32_t count_b = 0;
+    oot_gamedata_int(c, OOT_SCARECROW_INT_B, &count_b, 0);
+    if (!wrote && quest_done && in_pouch && played && count_b == 12) return;
+    for (unsigned k = 0; k < sizeof oot_scarecrow_bools / sizeof oot_scarecrow_bools[0]; k++) oot_gamedata_set_bool(c, oot_scarecrow_bools[k], 1);
+    int32_t a = -1, b = 12, a_now = 0;
+    const int set_a = oot_gamedata_int(c, OOT_SCARECROW_INT_A, &a, 1), set_b = oot_gamedata_int(c, OOT_SCARECROW_INT_B, &b, 1);
+    uint32_t step = OOT_SCARECROW_STEP_AFTER, step_now = 0;
+    const int set_step = oot_gamedata_enum(c, OOT_SCARECROW_STEP, &step, 1);
+    oot_gamedata_int(c, OOT_SCARECROW_INT_A, &a_now, 0);
+    oot_gamedata_enum(c, OOT_SCARECROW_STEP, &step_now, 0);
+    hos_log("rando: Free Scarecrow's Song: set %08x %d (now %d), %08x %d, %08x %d (now %u)", OOT_SCARECROW_INT_A, set_a, a_now,
+            OOT_SCARECROW_INT_B, set_b, OOT_SCARECROW_STEP, set_step, step_now);
     if (!quest_done) {
         uint32_t done = OOT_QUEST_COMPLETE;
         oot_gamedata_enum(c, OOT_SCARECROW_QUEST, &done, 1);
