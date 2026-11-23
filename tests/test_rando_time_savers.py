@@ -32,7 +32,7 @@ def main():
         check('(a.%s, "%s")' % (attr, word) in src, "%s is not on the stamp's second line (moves no item)" % key)
         check('(a.%s, %s, "%s")' % (attr, flow, which) in src, "%s's flow is not changed with it on" % key)
         check(which in src[src.index("def qol_flow(raw, which):"):src.index("def tower_anchor(data):")], "qol_flow has no %s" % which)
-    check("for on, rel, saver in" in src and src.index("for on, rel, saver in") < src.index("    # ---- the size table ----"),
+    check("for saver_on, rel, saver in" in src and src.index("for saver_on, rel, saver in") < src.index("    # ---- the size table ----"),
           "the time savers are not written before the size table")
     check("changed[TOWER_ANCHOR_FILE] = tower_anchor(data)" in src and "sizes[TOWER_ANCHOR_FILE[:-3]]" in src,
           "the tower's preloading anchor is not changed with the escape skipped, or its size is not given to the table")
@@ -43,6 +43,16 @@ def main():
     check(all('new object[] { "%s",' % k in launcher for k in ("rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower")) and
           '"rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" } },' in launcher,
           "the launcher has no rows for them in Quality of life")
+    # (v0.1.4's bug, 2026-11-23: the time savers' stamp loop was `for on, word in ...`, which overwrote main's `on`, the
+    #  randomizer's own: with Skip the tower escape off, every seed was "randomizer off". No loop in main may take one of
+    #  main's own names. An earlier one took `which`, the chests' setting)
+    main_src = src[src.index("\ndef main():"):]
+    kept = {"on", "which", "seed", "keys_mode", "placement", "a", "game", "mod", "romfs", "logic", "gives", "spots", "needs",
+            "stamp", "rest", "changed", "sizes", "gift_files", "gift_sizes"}
+    taken = set()
+    for m in re.finditer(r"^\s*for ([\w, ()]+?) in ", main_src, re.M):
+        taken |= {n.strip("() ") for n in m.group(1).split(",")} & kept
+    check(not taken, "a loop in main takes main's own name(s) %s: the value after the loop is the loop's last" % sorted(taken))
     print("FAIL" if failed else "PASS: Any fish wins, Faster Skull Kid game and Skip the tower escape")
     return 1 if failed else 0
 

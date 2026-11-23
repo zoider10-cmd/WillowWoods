@@ -7274,8 +7274,8 @@ def main():
         stamp = stamp[:-1] + " epona by song\n"
     if a.castle_guards:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " guards pass\n"
-    for on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped")):
-        if on:   # (the time savers: move no item either, the same line)
+    for saver_on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped")):
+        if saver_on:   # (the time savers: move no item either, the same line. Not `on`: that is the randomizer's own, below)
             stamp = stamp[:-1] + word + "\n"
     if a.free_scarecrow:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " scarecrow free\n"
@@ -8672,9 +8672,9 @@ def main():
                 sys.exit("quest order, %s: %s. Nothing written." % (rel, e))
         print("Quest rewards: the rolling Goron's and King Zora's gifts kept when their quest is moved on first; the Fire quest "
               "never moved back")
-    for on, rel, saver in ((a.any_fish, FISH_FLOW, "fish"), (a.skull_kid_fast, SKULL_KID_FLOW, "skull kid"),
+    for saver_on, rel, saver in ((a.any_fish, FISH_FLOW, "fish"), (a.skull_kid_fast, SKULL_KID_FLOW, "skull kid"),
                            (a.skip_tower, GANON_FLOW, "tower")):   # (the time savers: qol_flow, on what the gifts made)
-        if not on:
+        if not saver_on:
             continue
         try:
             was = gift_files[rel] if rel in gift_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
