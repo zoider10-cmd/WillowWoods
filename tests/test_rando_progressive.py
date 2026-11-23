@@ -87,6 +87,12 @@ def main():
     check("void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {" in host and "static const char *oot_progressive_give(Ctx *c, const char *name) {" in host and
           "(family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)" in host,
           "the host does not name a chest's content by the family's next, or the tracker does not take the family's other names")
+    # (bug 114: a Gold Skulltula's drop keeps the seed's item, the family's next given by the pouch's add)
+    drop = host[host.index("void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {"):]
+    drop = drop[:drop.index("\n}\n")]
+    check('if (!strncmp(who, "Enemy_Skulltula", 15)) return;' in drop and "recomp_load64(c, owner + 0x260)" in drop and
+          drop.index('"Enemy_Skulltula", 15)) return;') < drop.index('static const char key[] = "Drop__DropActor";'),
+          "a Gold Skulltula's drop is still renamed to the family's next (a name no pick-up has)")
 
     # ---- the game's side ----
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")

@@ -4302,8 +4302,27 @@ void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {
     if (on < 0) { const char *e = getenv("HOS_OOT_DROP_NAME"); on = !(e && *e == '0'); }
     int hos_rando_magic(void);   /* host/oot_rando.c (rando_magic: its tiers whatever Progressive items says) */
     if (!on || !self || !made || !hos_rando_on() || (!hos_rando_progressive() && !hos_rando_magic())) return;
+    /* (bug 114, the owner's run 2026-11-23: a Gold Skulltula's drop is the named actor made in the world, and the family's
+       next was no pick-up there (Armor_Adult_Gauntlet_Silver, a pouch's name) or none the seed made: the Golden Gauntlets
+       and a Slingshot could not be taken. A Skulltula's drop keeps the seed's item; the pouch's add of it gives the
+       family's next (hos_oot_pouch_add), as any check's does. The dropping actor's name is at its +0x260, as
+       oot_hook_tip_at reads a shooter's. HOS_OOT_DROP_SKULLTULA=1 renames those too, as before) */
+    static int skull_too = -1;
+    if (skull_too < 0) { const char *e = getenv("HOS_OOT_DROP_SKULLTULA"); skull_too = e && *e == '1'; }
+    const uint64_t owner = recomp_load64(c, made + 0x40);
+    if (owner && !skull_too) {
+        const uint64_t at = recomp_load64(c, owner + 0x260);
+        char who[24] = {0};
+        for (int i = 0; at && i < (int)sizeof who - 1; i++) {
+            who[i] = (char)recomp_load8(c, at + (unsigned)i);
+            if (!who[i]) break;
+        }
+        static int said;
+        if (said < 12) said++, hos_log("rando: progressive: a drop's actor is %s", who[0] ? who : "(no name read)");
+        if (!strncmp(who, "Enemy_Skulltula", 15)) return;   /* (Enemy_Skulltula_Gold and its kin: the seed's item stays) */
+    }
     /* (the list, as f_80bf1c00 finds it) */
-    uint64_t list = recomp_load64(c, made + 0x40);
+    uint64_t list = owner;
     if (list) list = recomp_load64(c, list + 0x270);
     if (list) list = recomp_load64(c, list);
     if (list) list = recomp_load64(c, list + 0x10);
