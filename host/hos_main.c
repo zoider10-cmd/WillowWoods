@@ -1987,6 +1987,7 @@ static struct {
     uint32_t shelf;   /* (a shop's shelf: the hash of the flag it waits for, "still for sale"; 0: another kind of check) */
     signed char sold; /* (a shelf bought, or a check with a key collected, just now: its flag is to be set, oot_shelf_flags) */
     int price;        /* (a shop's shelf: its price, from its name's ", <n> rupees"; -1: none) */
+    char ages[4];     /* (C, A or CA: which Link has it in the game's maps) */
     uint64_t key;     /* (an actor of a map: its hash, by which the save keeps a truth value; 0: none) */
     uint32_t opened;  /* (a chest: the hash of the game's own flag IsTreasureBoxOpen.<key in decimal>, set when it is opened, bug 70; 0: none) */
 } oot_checks[OOT_TRACKER_MAX];
@@ -2001,7 +2002,11 @@ static char oot_link_map[80];
 static char oot_left_map[80];
 static float oot_left_place[3];
 static int64_t oot_left_at;
-static float oot_link_place_was[3];   /* (Link's place at the last second's look: his last in a map he then leaves) */
+static float oot_link_place_was[3];
+/* (bug 125, the owner's run 2026-11-23: Gerudo Valley's invisible grotto chest, an adult's, marked the child's copy at the
+   same place, both giving a red rupee. Of the checks of an add's item, the ones Link's age has come first:
+   oot_tracker_item. 1 child, 0 adult, -1 not known; oot_tracker_refresh reads it each second) */
+static int oot_link_child = -1;   /* (Link's place at the last second's look: his last in a map he then leaves) */
 #define OOT_LEFT_MAP_NS 30000000000LL
 static SRWLOCK oot_checks_lock = SRWLOCK_INIT;
 
@@ -2079,6 +2084,7 @@ static void oot_tracker_load(const char *stamp) {
                                &oot_checks[oot_check_count].place[1], &oot_checks[oot_check_count].place[2], needs, hash, item);
         if (got < 7) continue;
         snprintf(oot_checks[oot_check_count].item, sizeof oot_checks[0].item, "%s", got >= 10 ? item : "");
+        snprintf(oot_checks[oot_check_count].ages, sizeof oot_checks[0].ages, "%s", ages);
         /* (tools/rando/rando_seed.py names such a check "Piece of Heart", and no other kind begins so) */
         oot_checks[oot_check_count].piece = got >= 9 && !strncmp(kind, "Piece of Heart", 14) ? strtoull(hash, NULL, 16) : 0;
         oot_checks[oot_check_count].boss = !strncmp(kind, "Heart Container, ", 17);   /* (the seed's name for a boss's) */
@@ -2246,6 +2252,7 @@ static void oot_tracker_item(const char *name, int shop, int price) {
         const char *map = pass ? oot_left_map : oot_link_map;
         const float *at = pass ? oot_left_place : oot_link_place;
         nearest = 1e30f, others = 0, elsewhere = -1;
+        float ranked = 1e30f;
         for (int i = 0; i < oot_check_count; i++) {
             if (oot_checks[i].done == 1) continue;
             if (oot_tracker_shop_on && (!oot_checks[i].shelf) != !shop) continue;   /* (a sale is a shelf's; anything else is not) */
@@ -2257,7 +2264,10 @@ static void oot_tracker_item(const char *name, int shop, int price) {
             }
             const float dx = oot_checks[i].place[0] - at[0], dy = oot_checks[i].place[1] - at[1], dz = oot_checks[i].place[2] - at[2];
             const float away = sqrtf(dx * dx + dy * dy + dz * dz);
-            if (away < nearest) nearest = away, best = i;
+            /* (another age's check counts as farther, so one of Link's age at the same place comes first: bug 125) */
+            const int other_age = oot_link_child >= 0 && oot_checks[i].ages[0] && !strchr(oot_checks[i].ages, oot_link_child ? 'C' : 'A');
+            const float rank = away + (other_age ? OOT_CHECK_NEAR : 0.0f);
+            if (rank < ranked) ranked = rank, nearest = away, best = i;
         }
         if (best >= 0 && nearest > OOT_CHECK_NEAR) best = -1;
         if (best >= 0 && pass) hos_log("rando: tracker: %s: the check is in the map Link just left (%s)", name, map);
@@ -2773,6 +2783,10 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     static int64_t next, next_stamp;
     for (unsigned i = 0; i < 3; i++) oot_link_place[i] = oot_load_float(c, actor + 796 + i * 4);
     if (now < next) return;
+    {   /* (Link's age, for the checks of an add's item: bug 125) */
+        int child = 0;
+        oot_link_child = oot_gamedata_bool(c, 0xcea220d3u, &child) ? (child != 0) : -1;   /* Sequence_IsChildhood */
+    }
     next = now + 1000000000LL;
     if (!hos_rando_on()) return;
     rx_option_set(OOT_TRACKER_ON, 1);   /* (the Tracker tab reads the seed only then: vk_menu.cpp tracker_load) */

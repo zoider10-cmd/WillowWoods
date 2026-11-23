@@ -140,6 +140,9 @@ def main():
           # (bug 124: the map Link just left counts too, for OOT_LEFT_MAP_NS)
           "const char *map = pass ? oot_left_map : oot_link_map;" in host_text and "#define OOT_LEFT_MAP_NS 30000000000LL" in host_text and
           "memcpy(oot_left_place, oot_link_place_was, sizeof oot_left_place);" in host_text and
+          # (bug 125: of the checks of the item, Link's age's first)
+          "const float rank = away + (other_age ? OOT_CHECK_NEAR : 0.0f);" in host_text and
+          "oot_link_child = oot_gamedata_bool(c, 0xcea220d3u, &child) ? (child != 0) : -1;" in host_text and
           "c->x[30] != 0x8112d4b8ULL && c->x[30] != 0x8112f998ULL && c->x[30] != 0x8112e19cULL &&" in host_text and
           # (but for a test's switch)
           "((uint32_t)c->x[4] != 9 || debug_counts)) {" in host_text and 'getenv("HOS_OOT_TRACK_DEBUG")' in host_text,
