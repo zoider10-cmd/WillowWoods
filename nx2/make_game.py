@@ -3259,6 +3259,13 @@ def main(a=None):
             for data in ("atlas_ways.json", "ATLAS_NOTICE.txt", "dungeon_rules.json", "dungeon_rules_25.json", "overworld_rules.json"):
                 if os.path.isfile(os.path.join(ROOT, "tools", "rando", data)):
                     shutil.copy2(os.path.join(ROOT, "tools", "rando", data), os.path.join(out, "rando", data))
+            # (Willow Woods, 2026-11-22: and the evfl library the seed tool edits flows with, its LICENSE with it (rando_seed.py
+            # evfl_module: Gossip Stone hints, Epona by Epona's Song, the quests' order). Left out before, those settings
+            # stopped a player's seed with an error)
+            evfl = os.path.join(ROOT, "tools", "rando", "evfl")
+            if os.path.isdir(evfl):
+                shutil.copytree(evfl, os.path.join(out, "rando", "evfl"), dirs_exist_ok=True,
+                                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
         except OSError as e:
             print("the randomizer's script was not copied (%s): run tools/rando/rando_seed.py by hand" % e, flush=True)
     # (cosmetics: the launcher runs <game folder>/rando/rando_cosmetics.py at Play too; it reads the game's files with

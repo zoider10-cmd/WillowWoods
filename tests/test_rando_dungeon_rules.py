@@ -84,6 +84,8 @@ def main():
     make = open(os.path.join(ROOT, "nx2", "make_game.py"), encoding="utf-8").read()
     check('"dungeon_rules.json", "dungeon_rules_25.json", "overworld_rules.json"' in make,
           "a built game folder gets no logic tables: its seeds ask as before placement 21")
+    check('shutil.copytree(evfl, os.path.join(out, "rando", "evfl")' in make,
+          "a built game folder gets no evfl library: hints, Epona by her song and the quests' order stop the seed")
     print("FAIL" if failed else "PASS: each dungeon check by its own rule")
     return 1 if failed else 0
 
