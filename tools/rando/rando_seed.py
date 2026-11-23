@@ -3886,6 +3886,10 @@ MAGIC_WORDS = {"_Name": "Magic Power", "_Caption": "Proof of a Great Fairy's ble
 MAGIC_DOUBLE, MAGIC_SPIN, MAGIC_DEFENSE = "Item_FairyBless_MPDouble", "Item_FairyBless_MP", "Item_FairyBless_DefenseDouble"
 MAGIC_KEEP = ("Item_FairyBless_MPDouble", "Pouch_FairyBless_MPDouble")
 MAGIC_JUNK = "TBox_Rupee_Blue"   # (the chest item the second magic takes the place of)
+# (the owner's run 2026-11-23: the Great Fairy outside Ganon's Castle asked for everything, the Zora Tunic among it; her
+#  fountain is behind a pillar the Golden Gauntlets lift, an adult's.) From COURAGE_FROM she asks for that alone.
+COURAGE_FROM = 26
+COURAGE_NEED = ADULT | {GG}
 MAGIC_GIFTS = (
     Gift("fairy_power", "Dm_FairyFountain_Power", (MAGIC_SPIN,), MAGIC_SPIN, "HyruleCastle",
          "the Great Fairy of Hyrule Castle", CHILD | {BB}, "magic"),
@@ -7672,6 +7676,8 @@ def main():
     if a.magic:   # (Magic and the fairies' gifts: the other three fountains, and magic twice in the pool)
         PROGRESSION = PROGRESSION | {MAGIC_DOUBLE}
         for g in MAGIC_GIFTS:
+            if g.key == "fairy_courage" and placement >= COURAGE_FROM:   # (an adult and the Golden Gauntlets: COURAGE_NEED)
+                g = g._replace(need=COURAGE_NEED)
             gifts[gift_hash(g.key)] = g
             spots[gift_hash(g.key)] = [g.area, g.item, None, None, "gift", g.name, ""]
         junk = next((h for h in sorted(spots) if spots[h][1] == MAGIC_JUNK and spots[h][3] is None and h not in gifts), None)
@@ -7907,7 +7913,7 @@ def main():
     # (Songs: Anywhere: what the lessons asked about by name may hold, by this seed's items and the game's flags; the
     #  Great Fairies of the spells the same, FAIRY_GIFTS)
     lesson_safe, lesson_only = frozenset(), {}
-    fairies = [h for h, g in gifts.items() if g.key in FAIRY_GIFTS or g in MAGIC_GIFTS]
+    fairies = [h for h, g in gifts.items() if g.key in FAIRY_GIFTS or g.key in {m.key for m in MAGIC_GIFTS}]
     if a.songs == 2 or fairies or a.dampe_hookshot:
         try:
             folder = os.path.join(romfs, FLAG_LIST)
