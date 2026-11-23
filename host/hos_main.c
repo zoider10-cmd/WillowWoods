@@ -810,7 +810,9 @@ static int oot_damage_screen(Ctx *c, const float p[3]) {
 static struct { uint64_t actor; int64_t at_ns; uint32_t hit, old, next; char name[48]; } oot_hits[OOT_HITS];
 static volatile uint32_t oot_hit_count;   /* (how many were ever kept: the newest is at (count - 1) % OOT_HITS) */
 
-void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit) {
+static void oot_health_hit(Ctx *c, uint64_t actor, uint64_t life, uint32_t old, uint32_t next, const char *name);
+
+void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit, uint64_t life) {
     if (!actor || hos_oot_is_player(c, actor)) return;
     /* (the name: the actor's resource record's, at its +88, as hos_oot_is_player reads "Player"; +0x260 named no Deku Baba) */
     const uint64_t resource = recomp_load64(c, actor + 16);
@@ -834,6 +836,7 @@ void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t h
     place[1] += OOT_DAMAGE_ABOVE;
     const int at = body ? oot_damage_screen(c, place) : -1;
     if (log) hos_log("damage: at %.2f %.2f %.2f, the screen's %d", place[0], place[1], place[2], at);
+    oot_health_hit(c, actor, life, old, next, text);   /* (the Health bars row's) */
     void rx_option_set(int id, int value);
     rx_option_set(OOT_DAMAGE_AT, at);   /* (the renderer's Damage numbers row: where, then the hit) */
     rx_option_set(OOT_DAMAGE_HIT, (int)(hit > 0xffff ? 0xffff : hit) | (next == 0) << 16);
@@ -5186,6 +5189,71 @@ static void oot_build_free_view(Ctx *c, uint64_t view, uint64_t out) {
 }
 #endif
 
+/* The Health bars row (asked 2026-11-23): the enemies hit lately, OOT_HEALTH_SLOTS of them (oot_health_hit, from hos_oot_hit),
+   each with its life's address (the life component's, as the hit's write had it), the most life seen (the life before its
+   first hit: its whole life, as a boss is first hit at full), its boss's place in OOT_BOSSES, and when it was last hit. Each
+   gameplay frame (oot_health_tick, from hos_oot_free_view) a slot sends where its bar goes, its life and its kind; it is
+   let go when the life is 0, the actor is no longer the same (its vtable and resource record changed: gone from the map),
+   or OOT_HEALTH_KEEP_NS passed since its last hit (a boss's is kept while it lives). */
+#define OOT_HEALTH_KEEP_NS 8000000000LL
+#define OOT_HEALTH_ABOVE 1.0f
+static const char *const oot_boss_actors[] = {
+#define OOT_BOSS_ACTOR(actor, name) actor,
+    OOT_BOSSES(OOT_BOSS_ACTOR)
+#undef OOT_BOSS_ACTOR
+};
+static struct { uint64_t actor, vtable, resource, life; uint32_t max; int boss; int64_t hit_ns; } oot_health[OOT_HEALTH_SLOTS];
+static int oot_health_sent[OOT_HEALTH_SLOTS];   /* (a slot the renderer was told is in use) */
+
+static void oot_health_hit(Ctx *c, uint64_t actor, uint64_t life, uint32_t old, uint32_t next, const char *name) {
+    if (!life) return;
+    int k = 0;
+    for (; k < OOT_HEALTH_SLOTS && oot_health[k].actor != actor; k++) {}
+    if (k == OOT_HEALTH_SLOTS) {   /* (a new one: a free slot, else the one hit longest ago) */
+        k = 0;
+        for (int i = 0; i < OOT_HEALTH_SLOTS; i++) {
+            if (!oot_health[i].actor) { k = i; break; }
+            if (oot_health[i].hit_ns < oot_health[k].hit_ns) k = i;
+        }
+        oot_health[k].actor = actor, oot_health[k].vtable = recomp_load64(c, actor), oot_health[k].resource = recomp_load64(c, actor + 16);
+        oot_health[k].max = 0, oot_health[k].boss = 0;
+        for (int b = 0; b < (int)(sizeof oot_boss_actors / sizeof oot_boss_actors[0]); b++)
+            if (!strcmp(name, oot_boss_actors[b])) oot_health[k].boss = b + 1;
+    }
+    oot_health[k].life = life;
+    if (old > oot_health[k].max) oot_health[k].max = old;
+    oot_health[k].hit_ns = hos_now_ns();
+    (void)next;
+}
+
+static void oot_health_tick(Ctx *c) {
+    void rx_option_set(int id, int value);
+    const int64_t now = hos_now_ns();
+    for (int k = 0; k < OOT_HEALTH_SLOTS; k++) {
+        const uint64_t actor = oot_health[k].actor;
+        uint32_t life = 0;
+        if (actor && recomp_load64(c, actor) == oot_health[k].vtable && recomp_load64(c, actor + 16) == oot_health[k].resource)
+            life = recomp_load32(c, oot_health[k].life);
+        if (actor && (!life || life > 0xffff || (!oot_health[k].boss && now - oot_health[k].hit_ns > OOT_HEALTH_KEEP_NS))) {
+            memset(&oot_health[k], 0, sizeof oot_health[k]);
+            life = 0;
+        }
+        if (!oot_health[k].actor) {
+            if (oot_health_sent[k]) rx_option_set(OOT_HEALTH_LIFE + k, 0), oot_health_sent[k] = 0;
+            continue;
+        }
+        if (life > oot_health[k].max) oot_health[k].max = life;   /* (healed past what was seen: the most is the most) */
+        float place[3];
+        const uint64_t body = recomp_load64(c, actor + 0x18);
+        for (int i = 0; i < 3; i++) place[i] = body ? oot_load_float(c, body + 0x31c + 4 * i) : 0;
+        place[1] += OOT_HEALTH_ABOVE;
+        rx_option_set(OOT_HEALTH_AT + k, body ? oot_damage_screen(c, place) : -1);
+        rx_option_set(OOT_HEALTH_KIND + k, oot_health[k].boss);
+        rx_option_set(OOT_HEALTH_LIFE + k, (int)(life | (oot_health[k].max > 0x7fff ? 0x7fff : oot_health[k].max) << 16));
+        oot_health_sent[k] = 1;
+    }
+}
+
 void hos_oot_free_view(Ctx *c, uint64_t view) {
 #if defined(_WIN32) || defined(__linux__)   /* (the debug tools: host/posix has what they call) */
     int rx_option(int id, int otherwise);
@@ -5194,6 +5262,7 @@ void hos_oot_free_view(Ctx *c, uint64_t view) {
     // Camera zero supplies the gameplay view. The same matrix routine also serves other cameras.
     if (oot_gameplay_view(c) != view) return;
     oot_skip_cutscene(c);   /* (the randomizer's fork: Skip cutscenes, also while Link isn't updated) */
+    oot_health_tick(c);   /* (the Health bars row: the enemies hit lately, each frame) */
 
     static SRWLOCK lock = SRWLOCK_INIT;
     AcquireSRWLockExclusive(&lock);

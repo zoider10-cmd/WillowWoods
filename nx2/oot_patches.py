@@ -112,9 +112,14 @@ def patch_life(source):
 # Damage numbers (asked 2026-11-23, share/damage-values.md): every life loss at the life component's write tells the host
 # (host/hos_main.c hos_oot_hit: the actor x19, the old life x11, the new x12, the whole hit x9 before it was clamped), Link's
 # included, before patch_life's own guard may change x12. A line of its own in front of the damage write (the first
-# LIFE_CAS), so a file patch_life made already is given it too.
+# LIFE_CAS), so a file patch_life made already is given it too. x13, the life's own address, for the health bars (which read it
+# each frame); a file made with the first form (LIFE_HIT_FIRST, without it) is brought up to this one.
 LIFE_HIT = ("    if ((uint32_t)c->x[12] < (uint32_t)c->x[11]) hos_oot_hit(c, c->x[19], (uint32_t)c->x[11], (uint32_t)c->x[12], "
-            "(uint32_t)c->x[9]);   /* (nx2/oot_patches.py: damage numbers) */\n")
+            "(uint32_t)c->x[9], c->x[13]);   /* (nx2/oot_patches.py: damage numbers) */\n")
+LIFE_HIT_FIRST = ("    if ((uint32_t)c->x[12] < (uint32_t)c->x[11]) hos_oot_hit(c, c->x[19], (uint32_t)c->x[11], (uint32_t)c->x[12], "
+                  "(uint32_t)c->x[9]);   /* (nx2/oot_patches.py: damage numbers) */\n")
+LIFE_HIT_DECL = "extern void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit, uint64_t life);\n"
+LIFE_HIT_DECL_FIRST = "extern void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit);\n"
 
 
 def patch_life_hits(source):
@@ -124,6 +129,8 @@ def patch_life_hits(source):
     end = source.find("\n}", start)
     if end < 0 or source[start:end].count(LIFE_CAS) != 2:
         return None
+    if LIFE_HIT_FIRST in source[start:end]:   # (the first form: brought up to this one)
+        return source.replace(LIFE_HIT_FIRST, LIFE_HIT, 1).replace(LIFE_HIT_DECL_FIRST, LIFE_HIT_DECL, 1)
     if "hos_oot_hit(" in source[start:end]:
         return source
     body = source[start:end]
@@ -132,7 +139,7 @@ def patch_life_hits(source):
     at = guard if guard >= 0 and "hos_oot_damage(" in body[guard:at] else at
     body = body[:at] + LIFE_HIT + body[at:]
     return (source[:start] + body + source[end:]).replace(
-        '#include "a64.h"\n', '#include "a64.h"\nextern void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit);\n', 1)
+        '#include "a64.h"\n', '#include "a64.h"\n' + LIFE_HIT_DECL, 1)
 
 
 def patch_movement(source):

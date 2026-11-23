@@ -2011,8 +2011,10 @@ Row rows[] = {
      "The game's time of day at the top of the screen, as hours and minutes (18:30), for what comes with the day: pots and grass "
      "back after a day, the night's Gold Skulltulas, the shops' hours.", nullptr, false, true},
     {TAB_GAMEPLAY, "Damage numbers", &opts.show_damage, 0, 1, 1, tx_onoff,
-     "The damage each hit does to an enemy, as a number that rises and fades in the middle of the screen. Gold when the hit "
-     "defeats it.", nullptr, false, true},
+     "The damage each hit does to an enemy, as a number that rises and fades over it. Gold when the hit defeats it.", nullptr, false, true},
+    {TAB_GAMEPLAY, "Health bars", &opts.show_health, 0, 1, 1, tx_onoff,
+     "A health bar over each enemy you hit, for a few seconds after the last hit. A boss's is a wide bar with its name at the "
+     "bottom of the screen, for the whole fight.", nullptr, false, true},
     {TAB_GAMEPLAY, "FPS counter size", &opts.fps_size, 0, 3, 1, tx_fps_size,
      "How large the FPS counter is drawn. Auto grows with the window, as the menu does; Small, Medium and Large keep one size "
      "whatever the window, the size Auto has in a 720p, 1080p and 1440p window.", nullptr, false, true},
@@ -6570,8 +6572,31 @@ void damage_hit(int value) {
     damage_at[n % kDamageHits].store(prof_now(), std::memory_order_relaxed);
     damage_count.store(n + 1, std::memory_order_release);
 }
+/// (Willow Woods) the Health bars row's slots (OOT_HEALTH_AT, _LIFE, _KIND): each the game side's last word on an enemy hit
+/// lately, and when it came (a slot not heard of for kHealthStale, as while a map loads, is not drawn)
+std::atomic<int> health_at[OOT_HEALTH_SLOTS], health_life[OOT_HEALTH_SLOTS], health_kind[OOT_HEALTH_SLOTS];
+std::atomic<int64_t> health_seen[OOT_HEALTH_SLOTS];
+constexpr int64_t kHealthStale = 300000000;
+constexpr const char* kBossNames[] = {
+#define OOT_BOSS_NAME(actor, name) name,
+    OOT_BOSSES(OOT_BOSS_NAME)
+#undef OOT_BOSS_NAME
+};
 std::atomic<int> game_clock{-1};   // (the game side's time of day in seconds, OOT_CLOCK_ID: -1 no save loaded)
 void menu_option_set(int id, int value) {
+    if (id >= OOT_HEALTH_AT && id < OOT_HEALTH_AT + OOT_HEALTH_SLOTS) {   // (the Health bars row: a slot's place, life and kind)
+        health_at[id - OOT_HEALTH_AT].store(value, std::memory_order_relaxed);
+        return;
+    }
+    if (id >= OOT_HEALTH_KIND && id < OOT_HEALTH_KIND + OOT_HEALTH_SLOTS) {
+        health_kind[id - OOT_HEALTH_KIND].store(value, std::memory_order_relaxed);
+        return;
+    }
+    if (id >= OOT_HEALTH_LIFE && id < OOT_HEALTH_LIFE + OOT_HEALTH_SLOTS) {
+        health_life[id - OOT_HEALTH_LIFE].store(value, std::memory_order_relaxed);
+        health_seen[id - OOT_HEALTH_LIFE].store(prof_now(), std::memory_order_relaxed);
+        return;
+    }
     if (id == OOT_DAMAGE_AT) {   // (the Damage numbers row: where the next hit shows)
         damage_next_at.store(value, std::memory_order_relaxed);
         return;
@@ -7703,13 +7728,64 @@ void draw_damage(ui::Ctx& c) {
     }
 }
 
+/// (Willow Woods) The Health bars row: each enemy hit lately (health_life) as a slim bar over it, where the game's camera
+/// sees it (health_at, as the damage numbers' places), its life in green, turning yellow then red as it falls, on a dark
+/// plate with a thin outline; a boss's (health_kind) as a wide bar at the foot of the screen with its name over it, in red.
+/// Not while the menu is open.
+bool health_shows() {
+    if (!opts.show_health) return false;
+    const int64_t now = prof_now();
+    for (int k = 0; k < OOT_HEALTH_SLOTS; k++)
+        if (health_life[k].load(std::memory_order_relaxed) > 0 && now - health_seen[k].load(std::memory_order_relaxed) < kHealthStale) return true;
+    return false;
+}
+void draw_health(ui::Ctx& c) {
+    const int64_t now = prof_now();
+    const float s = fps_scale(c);
+    const float pw = std::min((float)c.w, c.h * 16.0f / 9.0f), ph = std::min((float)c.h, c.w * 9.0f / 16.0f);
+    int bosses = 0;
+    for (int k = 0; k < OOT_HEALTH_SLOTS; k++) {
+        const int value = health_life[k].load(std::memory_order_relaxed);
+        if (value <= 0 || now - health_seen[k].load(std::memory_order_relaxed) >= kHealthStale) continue;
+        const int life = value & 0xffff, most = value >> 16;
+        if (most <= 0) continue;
+        const float frac = std::clamp((float)life / most, 0.0f, 1.0f);
+        const int kind = health_kind[k].load(std::memory_order_relaxed);
+        if (kind > 0 && kind <= (int)(sizeof kBossNames / sizeof kBossNames[0])) {   // (a boss: the foot of the screen)
+            const float bw = std::min(pw * 0.5f, 760 * s), bh = 14 * s, x = (c.w - bw) * 0.5f;
+            const float y = c.h - c.safe - 40 * s - bosses * 56 * s;
+            const char* name = kBossNames[kind - 1];
+            const float nsize = 22 * s, o = std::max(1.0f, s);
+            const ImVec2 at(x, y - nsize - 4 * s);
+            for (int dy = -1; dy <= 1; dy++)
+                for (int dx = -1; dx <= 1; dx++)
+                    if (dx || dy) c.d->AddText(c.f.strong, nsize, ImVec2(at.x + dx * o, at.y + dy * o), ui::rgba(0, 0, 0, 220), name);
+            c.d->AddText(c.f.strong, nsize, at, ui::rgba(255, 255, 255), name);
+            c.d->AddRectFilled(ImVec2(x - 2 * s, y - 2 * s), ImVec2(x + bw + 2 * s, y + bh + 2 * s), ui::rgba(0, 0, 0, 200), 3 * s);
+            c.d->AddRectFilled(ImVec2(x, y), ImVec2(x + bw, y + bh), ui::rgba(60, 20, 20, 220), 2 * s);
+            if (frac > 0) c.d->AddRectFilled(ImVec2(x, y), ImVec2(x + bw * frac, y + bh), ui::rgba(210, 40, 40), 2 * s);
+            bosses++;
+            continue;
+        }
+        const int place = health_at[k].load(std::memory_order_relaxed);
+        if (place < 0) continue;
+        const float px = (c.w - pw) * 0.5f + (place & 32767) / 32767.0f * pw, py = (c.h - ph) * 0.5f + (place >> 15) / 32767.0f * ph;
+        const float bw = 64 * s, bh = 7 * s, x = px - bw * 0.5f, y = py - bh * 0.5f;
+        const ImU32 fill = frac > 0.5f ? ui::rgba(70, 210, 80) : frac > 0.25f ? ui::rgba(235, 200, 50) : ui::rgba(225, 55, 45);
+        c.d->AddRectFilled(ImVec2(x - 1.5f * s, y - 1.5f * s), ImVec2(x + bw + 1.5f * s, y + bh + 1.5f * s), ui::rgba(0, 0, 0, 190), 2 * s);
+        c.d->AddRectFilled(ImVec2(x, y), ImVec2(x + bw, y + bh), ui::rgba(40, 40, 40, 200), 1.5f * s);
+        if (frac > 0) c.d->AddRectFilled(ImVec2(x, y), ImVec2(x + bw * frac, y + bh), fill, 1.5f * s);
+    }
+}
+
 void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool start = startup_on.load(std::memory_order_acquire);
     const bool fps = (opts.show_fps || opts.resource_monitor) && !start;   // (no game frames yet: not "0 FPS" over the start-up screen)
     const bool open = open_now.load(std::memory_order_relaxed);
     const bool clock = clock_shows() && !start && !open;   // (the In-game clock row)
     const bool damage = damage_shows() && !start && !open;   // (the Damage numbers row)
-    if (!start && !fps && !open && !clock && !damage) {   // (nothing shows: no ImGui frame, no render pass)
+    const bool health = health_shows() && !start && !open;   // (the Health bars row)
+    if (!start && !fps && !open && !clock && !damage && !health) {   // (nothing shows: no ImGui frame, no render pass)
         // (but a new window size or Menu size since the last bake: one frame with nothing drawn that bakes the menu's glyphs
         // and measures its page for the new size, so the next open has no hitch whatever was resized while nothing showed)
         if (prebake_needed(w, h) && ui::begin(w, h)) {
@@ -7736,6 +7812,7 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
+    if (health) draw_health(c);   // (under the numbers)
     if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record(cmd, index, w, h);
@@ -7746,12 +7823,14 @@ void menu_record_image(VkCommandBuffer cmd, VkImage image, VkImageView view, uin
     const bool fps = opts.show_fps && !startup_on.load(std::memory_order_acquire);
     const bool clock = clock_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the In-game clock row)
     const bool damage = damage_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Damage numbers row)
-    if (!open && !fps && !clock && !damage) return;
+    const bool health = health_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Health bars row)
+    if (!open && !fps && !clock && !damage && !health) return;
     if (!ui::begin(w, h)) return;
     ui::Ctx c = ui_ctx(w, h);
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
+    if (health) draw_health(c);   // (under the numbers)
     if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record_to(cmd, image, view, w, h);

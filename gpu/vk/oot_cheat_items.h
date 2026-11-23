@@ -133,6 +133,27 @@
 /* (and just before it, where: rx_option_set(OOT_DAMAGE_AT, (y << 15) | x), each from 0 to 32767 across the game's picture, over
    the enemy as the camera sees it; -1 not on the picture: the hit's number shows in the middle of the screen) */
 #define OOT_DAMAGE_AT 4087
+/* (Willow Woods, asked 2026-11-23) the Health bars row: the enemies hit lately, OOT_HEALTH_SLOTS of them, each frame from the game
+   side (host/hos_main.c oot_health_tick): rx_option_set(OOT_HEALTH_AT + k, where over it on the game's picture, as OOT_DAMAGE_AT,
+   or -1 not on it), then rx_option_set(OOT_HEALTH_LIFE + k, life | max << 16, or 0 the slot is free) and rx_option_set(
+   OOT_HEALTH_KIND + k, 0 an enemy, or 1 + a boss's place in OOT_BOSS_NAMES: its bar at the foot of the screen, named) */
+#define OOT_HEALTH_SLOTS 8
+#define OOT_HEALTH_AT 4048
+#define OOT_HEALTH_LIFE 4056
+#define OOT_HEALTH_KIND 4064
+/* (the bosses and mini-bosses by their actors, and the names their bars show; the boss parts that keep a life of their own,
+   Morpha's tentacle, Barinade's jellyfish, Meg's copies, Flare Dancer's fire body, have none and show as enemies) */
+#define OOT_BOSSES(B) \
+    B("Enemy_DungeonBoss_Gohma", "Queen Gohma") B("Enemy_DungeonBoss_Dodongo", "King Dodongo") \
+    B("Enemy_DungeonBoss_Barinade", "Barinade") B("Enemy_DungeonBoss_PhantomGanon", "Phantom Ganon") \
+    B("Enemy_DungeonBoss_Volvagia", "Volvagia") B("Enemy_DungeonBoss_Morpha", "Morpha") \
+    B("Enemy_DungeonBoss_BongoBongo", "Bongo Bongo") B("Enemy_DungeonBoss_Twinrova", "Twinrova") \
+    B("Enemy_DungeonBoss_Kotake", "Kotake") B("Enemy_DungeonBoss_Koume", "Koume") \
+    B("Enemy_DungeonBoss_Ganondorf", "Ganondorf") B("Enemy_DungeonBoss_Ganon", "Ganon") \
+    B("Enemy_DungeonBoss_Ganon_SecondHalfBattle", "Ganon") B("Enemy_MiddleBoss_BigOcto", "Big Octo") \
+    B("Enemy_MiddleBoss_DarkLink", "Dark Link") B("Enemy_MiddleBoss_FlareDancer", "Flare Dancer") \
+    B("Enemy_MiddleBoss_IronKnuckle_Nabooru", "Iron Knuckle") B("Enemy_MiddleBoss_Lizalfos", "Lizalfos") \
+    B("Enemy_MiddleBoss_Poe_Meg", "Meg")
 /* (Willow Woods, asked 2026-11-20) the Inventory page's Add all: every item Link lacks given and every amount filled, but
    the masks, the Biggoron's Sword, the Giant's Knife and the Gold Skulltula tokens (host/hos_main.c oot_add_all_tick) */
 #define OOT_CHEAT_ADD_ALL 8
