@@ -801,6 +801,8 @@ void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t h
     static int log = -1;
     if (log < 0) log = env_on("HOS_OOT_DAMAGE_LOG");
     if (log) hos_log("damage: %s took %u (%u -> %u)", text[0] ? text : "?", hit, old, next);
+    void rx_option_set(int id, int value);
+    rx_option_set(OOT_DAMAGE_HIT, (int)(hit > 0xffff ? 0xffff : hit) | (next == 0) << 16);   /* (the renderer's Damage numbers row) */
 }
 
 /* Movement speed (the Debug tab's row): Link's character controller and the row's percent, as oot_player_speed saw them on

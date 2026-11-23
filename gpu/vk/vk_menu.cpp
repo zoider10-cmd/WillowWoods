@@ -2010,6 +2010,9 @@ Row rows[] = {
     {TAB_GAMEPLAY, "In-game clock", &opts.show_clock, 0, 1, 1, tx_onoff,
      "The game's time of day at the top of the screen, as hours and minutes (18:30), for what comes with the day: pots and grass "
      "back after a day, the night's Gold Skulltulas, the shops' hours.", nullptr, false, true},
+    {TAB_GAMEPLAY, "Damage numbers", &opts.show_damage, 0, 1, 1, tx_onoff,
+     "The damage each hit does to an enemy, as a number that rises and fades in the middle of the screen. Gold when the hit "
+     "defeats it.", nullptr, false, true},
     {TAB_GAMEPLAY, "FPS counter size", &opts.fps_size, 0, 3, 1, tx_fps_size,
      "How large the FPS counter is drawn. Auto grows with the window, as the menu does; Small, Medium and Large keep one size "
      "whatever the window, the size Auto has in a 720p, 1080p and 1440p window.", nullptr, false, true},
@@ -6551,8 +6554,25 @@ bool fps_take(int64_t now, int64_t shown, int64_t game, int64_t* next, int64_t* 
 // (the game's) and the control bridge's menu_setting and menu_setting_set (its own thread). Recursive: a setter reached from
 // inside menu_tick's frame on the same thread does not lock itself out
 std::recursive_mutex menu_mu;
+/// (Willow Woods) the Damage numbers row's hits (OOT_DAMAGE_HIT), the newest kDamageHits: each its value and when it came,
+/// written on the game's thread and read on the present's (a hit read as it is replaced is drawn once wrong, no harm)
+constexpr int kDamageHits = 16;
+constexpr int64_t kDamageShown = 1100000000;   // (how long a number shows, in ns)
+std::atomic<int64_t> damage_at[kDamageHits];
+std::atomic<int> damage_value[kDamageHits];
+std::atomic<unsigned> damage_count{0};
+void damage_hit(int value) {
+    const unsigned n = damage_count.load(std::memory_order_relaxed);
+    damage_value[n % kDamageHits].store(value, std::memory_order_relaxed);
+    damage_at[n % kDamageHits].store(prof_now(), std::memory_order_relaxed);
+    damage_count.store(n + 1, std::memory_order_release);
+}
 std::atomic<int> game_clock{-1};   // (the game side's time of day in seconds, OOT_CLOCK_ID: -1 no save loaded)
 void menu_option_set(int id, int value) {
+    if (id == OOT_DAMAGE_HIT) {   // (the Damage numbers row: a hit, kept with when it came)
+        damage_hit(value);
+        return;
+    }
     if (id == OOT_CLOCK_ID) {   // (the In-game clock row's time)
         game_clock.store(value, std::memory_order_relaxed);
         return;
@@ -7635,12 +7655,46 @@ void draw_clock(ui::Ctx& c) {
     c.d->AddText(c.f.strong, size, ImVec2(x, y), ui::rgba(255, 255, 255), text);
 }
 
+/// (Willow Woods) The Damage numbers row: each hit of the last kDamageShown (damage_hit) as its number in the middle of the
+/// screen, a little above Link, rising and fading; the newer ones beside the older, so a quick combo reads as a row. White with
+/// a dark outline, as the clock's; gold when the hit defeated the enemy. Not while the menu is open.
+bool damage_shows() {
+    if (!opts.show_damage) return false;
+    const unsigned n = damage_count.load(std::memory_order_acquire);
+    return n && prof_now() - damage_at[(n - 1) % kDamageHits].load(std::memory_order_relaxed) < kDamageShown;
+}
+void draw_damage(ui::Ctx& c) {
+    const int64_t now = prof_now();
+    const unsigned n = damage_count.load(std::memory_order_acquire);
+    const float s = fps_scale(c), size = 34 * s, o = std::max(1.0f, s * 1.5f);
+    int shown = 0;
+    for (unsigned k = 0; k < (unsigned)kDamageHits && k < n; k++) {
+        const unsigned i = (n - 1 - k) % kDamageHits;
+        const int64_t age = now - damage_at[i].load(std::memory_order_relaxed);
+        if (age < 0 || age >= kDamageShown) continue;
+        const int value = damage_value[i].load(std::memory_order_relaxed);
+        const float t = (float)age / kDamageShown;   // (0 new .. 1 gone)
+        char text[16];
+        snprintf(text, sizeof text, "%d", value & 0xffff);
+        const ImVec2 ext = ui::size_of(c.f.strong, size, text);
+        const float spread = (float)((shown % 5) - 2) * size * 0.9f;   // (side by side, five across)
+        const float x = c.w * 0.5f + spread - ext.x * 0.5f, y = c.h * 0.36f - t * size * 1.6f;
+        const int alpha = (int)(255 * std::min(1.0f, (1.0f - t) * 3.0f));
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++)
+                if (dx || dy) c.d->AddText(c.f.strong, size, ImVec2(x + dx * o, y + dy * o), ui::rgba(0, 0, 0, alpha * 9 / 10), text);
+        c.d->AddText(c.f.strong, size, ImVec2(x, y), value >> 16 ? ui::rgba(255, 205, 60, alpha) : ui::rgba(255, 255, 255, alpha), text);
+        shown++;
+    }
+}
+
 void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool start = startup_on.load(std::memory_order_acquire);
     const bool fps = (opts.show_fps || opts.resource_monitor) && !start;   // (no game frames yet: not "0 FPS" over the start-up screen)
     const bool open = open_now.load(std::memory_order_relaxed);
     const bool clock = clock_shows() && !start && !open;   // (the In-game clock row)
-    if (!start && !fps && !open && !clock) {   // (nothing shows: no ImGui frame, no render pass)
+    const bool damage = damage_shows() && !start && !open;   // (the Damage numbers row)
+    if (!start && !fps && !open && !clock && !damage) {   // (nothing shows: no ImGui frame, no render pass)
         // (but a new window size or Menu size since the last bake: one frame with nothing drawn that bakes the menu's glyphs
         // and measures its page for the new size, so the next open has no hitch whatever was resized while nothing showed)
         if (prebake_needed(w, h) && ui::begin(w, h)) {
@@ -7667,6 +7721,7 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
+    if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record(cmd, index, w, h);
 }
@@ -7675,12 +7730,14 @@ void menu_record_image(VkCommandBuffer cmd, VkImage image, VkImageView view, uin
     const bool open = open_now.load(std::memory_order_relaxed);
     const bool fps = opts.show_fps && !startup_on.load(std::memory_order_acquire);
     const bool clock = clock_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the In-game clock row)
-    if (!open && !fps && !clock) return;
+    const bool damage = damage_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Damage numbers row)
+    if (!open && !fps && !clock && !damage) return;
     if (!ui::begin(w, h)) return;
     ui::Ctx c = ui_ctx(w, h);
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
+    if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
     ui::record_to(cmd, image, view, w, h);
 }

@@ -127,6 +127,9 @@
 /* (Willow Woods, asked 2026-11-21) the game's time of day for the In-game clock row: rx_option_set(OOT_CLOCK_ID, seconds since
    midnight) from the game side, twice a second; -1 no save loaded */
 #define OOT_CLOCK_ID 4089
+/* (Willow Woods, asked 2026-11-23) the Damage numbers row: rx_option_set(OOT_DAMAGE_HIT, hit | (1 << 16) when it killed) from the
+   game side at each life an actor other than Link loses (host/hos_main.c hos_oot_hit), the hit before it was clamped at 0 */
+#define OOT_DAMAGE_HIT 4088
 /* (Willow Woods, asked 2026-11-20) the Inventory page's Add all: every item Link lacks given and every amount filled, but
    the masks, the Biggoron's Sword, the Giant's Knife and the Gold Skulltula tokens (host/hos_main.c oot_add_all_tick) */
 #define OOT_CHEAT_ADD_ALL 8
