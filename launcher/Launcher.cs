@@ -485,8 +485,9 @@ public static class SaveSlots {
         }
     }
 
-    // (Willow Woods) A save emptied for a new seed, its name kept: what it held is kept first as a copy (SaveCopies, named
-    // "<name> before a new seed <date>"), with its record of the checks collected; its seed goes (the new one is set after).
+    // (Willow Woods) A save emptied for a new seed, its name kept, with its record of the checks collected; its seed goes (the
+    // new one is set after). (Until 2026-11-23 what it held was kept first as a copy, "<name> before a new seed <date>"; the
+    // owner asked for no copy: Save copies' "Keep a copy" is there for one wanted)
     // (keepSeed: the save's own seed is left, for a seed just made for it: New seed's "Use this save")
     public static string StartOver(string dir, string saveFolder, string name, bool keepSeed = false) {
         string current;
@@ -495,16 +496,9 @@ public static class SaveSlots {
         if (at < 0) return "That save is not there any more.";
         bool played = Same(current, names[at]);
         string from = played ? Path.Combine(dir, "user", saveFolder) : Path.Combine(Root(dir, saveFolder), names[at]);
-        string copy = SaveCopies.Clean(names[at] + " before a new seed " + DateTime.Now.ToString("yyyy-MM-dd HH.mm"));
-        string to = Path.Combine(SaveCopies.Root(dir, saveFolder), copy);
         try {
-            if (HasFiles(from)) {
-                if (Directory.Exists(to)) return "A copy named \"" + copy + "\" is there already: try again in a minute.";
-                SaveCopies.CopyTree(from, to + ".part");
-                Directory.Move(to + ".part", to);
-            }
             string record = played ? (saveFolder == Rando ? Path.Combine(dir, "rando", "collected.txt") : null) : from + ".collected.txt";
-            if (record != null && File.Exists(record)) { File.Copy(record, to + ".collected.txt", true); File.Delete(record); }
+            if (record != null && File.Exists(record)) File.Delete(record);
             if (played) { foreach (string f in Directory.GetFiles(from)) File.Delete(f); foreach (string d in Directory.GetDirectories(from)) Directory.Delete(d, true); }
             else if (Directory.Exists(from)) Directory.Delete(from, true);
             if (saveFolder == Rando && !keepSeed) {
@@ -514,7 +508,6 @@ public static class SaveSlots {
             }
             return null;
         } catch (Exception ex) {
-            try { if (Directory.Exists(to + ".part")) Directory.Delete(to + ".part", true); } catch { }
             return ex.Message;
         }
     }
@@ -1171,7 +1164,7 @@ class PlayChoiceForm : Form {
             top.Text = "Which save gets the new seed?";
             top.Font = new Font("Segoe UI", 11f, FontStyle.Bold);
             foreach (var m in modes) m.Visible = false;
-            var how = new Label { Text = "Pick an empty slot, or a save to start over (its progress is kept as a copy first),\nor make a new save below. Then the seed's settings are shown to confirm.",
+            var how = new Label { Text = "Pick an empty slot, or a save to start over (its progress is lost: Save copies keeps one if you want),\nor make a new save below. Then the seed's settings are shown to confirm.",
                                   AutoSize = false, Size = new Size(490, 44), Location = new Point(16, 40), ForeColor = Theme.Dim };
             Controls.Add(how);
             mid.Text = "The randomizer's saves:";
@@ -1287,7 +1280,7 @@ class PlayChoiceForm : Form {
             int answer;
             using (var ask = new AskForm("New seed", "\"" + n + "\" has progress. On a new seed its chests will not be the ones it was played with.\n\n" +
                                          "Make the new seed for a new save, and leave this one as it is? \"Use this save\" starts it over on the new seed " +
-                                         "(its progress is kept as a copy first: More > Files and help > Save copies brings it back).", "Create a new save", "Use this save")) {
+                                         "(its progress is lost; More > Files and help > Save copies can keep a copy first).", "Create a new save", "Use this save")) {
                 ask.ShowDialog(this);
                 answer = ask.Answer;
             }
@@ -1350,8 +1343,8 @@ class PlayChoiceForm : Form {
         }
         if (!empty.Contains(n)) {
             int answer;
-            using (var ask = new AskForm("New seed", "\"" + n + "\" has progress.\n\nStart it over on the new seed? Its progress is kept as a copy first " +
-                                         "(More > Files and help > Save copies brings it back).", "Pick another save", "Start it over")) {
+            using (var ask = new AskForm("New seed", "\"" + n + "\" has progress.\n\nStart it over on the new seed? Its progress is lost " +
+                                         "(More > Files and help > Save copies can keep a copy first).", "Pick another save", "Start it over")) {
                 ask.ShowDialog(this);
                 answer = ask.Answer;
             }
