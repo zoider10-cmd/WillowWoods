@@ -28,9 +28,9 @@
    "area": "Desert Colossus",
    "name": "Chest (purple rupee)",
    "region": "Colossus Grotto",
-   "rule": "has_explosives",
-   "sure": false,
-   "why": "map: a grotto chest that appears (DesertColossus_SecretHole_AppearTreasureBox) on a Beamos' spot, 5 Skullwalltulas; ootrr pin 'Colossus Grotto Beamos Chest' (ol:likely); a Beamos takes explosives"
+   "rule": "can_use(Silver_Gauntlets) and has_explosives and (has_adult_sword or can_use(Hookshot) or can_use(Megaton_Hammer) or can_use(Boomerang))",
+   "sure": true,
+   "why": "the owner, 2026-11-23 (after their run): the Silver Gauntlets, and a way to kill the Beamos (explosives) and the Skullwalltulas on the wall"
   },
   "187c597584cfdb4a": {
    "area": "Sacred Forest Meadow",
@@ -92,9 +92,9 @@
    "area": "Hyrule Field",
    "name": "Chest (purple rupee)",
    "region": "Kak Redead Grotto",
-   "rule": "has_adult_sword or can_use(Sticks) or can_use(Kokiri_Sword) or can_use(Dins_Fire)",
-   "sure": false,
-   "why": "map: 2 ReDeads + KakarikoVillage_TreasureBoxAppear = the N64 Kak Redead Grotto (ootrr left 'Kak Redead Grotto Chest' unmatched and pinned this as 'HF Redead Grotto Chest'); rule copied"
+   "rule": "can_play(Song_of_Storms) and (has_adult_sword or can_use(Sticks) or can_use(Kokiri_Sword) or can_use(Dins_Fire))",
+   "sure": true,
+   "why": "the owner, 2026-11-23 (after their run): the Song of Storms too, and a way to kill the two ReDeads (the N64 Kak Redead Grotto's)"
   },
   "58c75badf059ca54": {
    "area": "Death Mountain Crater",
@@ -140,9 +140,9 @@
    "area": "Death Mountain Crater",
    "name": "Chest (purple rupee)",
    "region": "DMC Hammer Grotto",
-   "rule": "has_adult_sword or can_use(Megaton_Hammer)",
-   "sure": false,
-   "why": "map: a grotto chest that appears (DeathMountainCrater_SecretHole_AppearTreasureBox) beside 2 Dinolfos; ootrr pin 'DMC Hammer Grotto Chest' (ol:likely; the remake has no DMC scrub grotto); kill the Dinolfos"
+   "rule": "can_use(Megaton_Hammer)",
+   "sure": true,
+   "why": "the owner, 2026-11-23 (after their run): only the Megaton Hammer is needed (the grotto beside the Dinolfos)"
   },
   "7f1dd488b05f0bf6": {
    "area": "Goron City",
@@ -292,9 +292,9 @@
    "area": "Zora's Fountain",
    "name": "Chest (purple rupee)",
    "region": "Zoras Fountain",
-   "rule": "is_adult and Iron_Boots",
-   "sure": false,
-   "why": "review: the scarecrow's marker, 'adult and the Iron Boots (as today): keep'; ootrr pin 'ZF Scarecrow Ledge Chest' (the Scarecrow's Song may be the real way)"
+   "rule": "is_adult and can_use(Scarecrow)",
+   "sure": true,
+   "why": "the owner, 2026-11-23 (after their run): the Scarecrow's Song and the Hookshot only (no Iron Boots)"
   },
   "d0f7e5ffa76ba288": {
    "area": "Desert Colossus",
@@ -347,18 +347,18 @@
   "f2948997ede7b25f": {
    "area": "Lost Woods",
    "name": "Chest (purple rupee)",
-   "region": "LW Near Shortcuts Grotto",
-   "rule": "True",
-   "sure": false,
-   "why": "review 'a grotto room, blast or smash (the grotto by the shortcuts)' (fair) = N64 LW Near Shortcuts Grotto (way in here(can_blast_or_smash)); OotrR moved that name's rule to the KF stump chest"
+   "region": "Lost Woods",
+   "rule": "is_adult and here(can_plant_bean)",
+   "sure": true,
+   "why": "the owner, 2026-11-23 (after their run): the chest on the stump in the Lost Woods (not a grotto's): an adult on the platform of a bean planted as a child"
   },
   "f6571bb2b874c05d": {
    "area": "Gerudo Valley",
    "name": "Chest (green rupee)",
    "region": "GV Storms Grotto",
    "rule": "True",
-   "sure": false,
-   "why": "ootrr pin 'GV Storms Grotto Chest' (ol:likely), a plain chest beside the Lens chest; region: adult and the Song of Storms"
+   "sure": true,
+   "why": "the owner, 2026-11-23 (after their run): the Song of Storms and the far side of the bridge (Epona or the Longshot): the region's own way (GV Storms Grotto from GV Fortress Side)"
   },
   "f6fa6ef0ca152948": {
    "area": "Lost Woods",
@@ -381,8 +381,8 @@
    "name": "Chest (red rupee) #1",
    "region": "GV Storms Grotto",
    "rule": "can_use(Lens_of_Truth)",
-   "sure": false,
-   "why": "map: Obj_TBox_GlassTruth (invisible chest); ootrr pin 'GV Storms Grotto Lens Chest'; review: the Lens of Truth"
+   "sure": true,
+   "why": "the owner, 2026-11-23 (after their run): as the plain chest beside it, and the Lens of Truth. The child's invisible copy (red rupee #2, 561cbe4b374f3739) can't be reached: junk only, rando_seed.py JUNK_ONLY"
   }
  },
  "skipped": {

@@ -7816,9 +7816,9 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Slingshot": 1,
       "Song of Time": 1,
       "Zeldas Lullaby": 1
@@ -7985,7 +7985,22 @@
     ],
     "17479747339356189279": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Slingshot": 1,
+      "Song of Time": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Slingshot": 1,
+      "Song of Time": 1,
+      "Zeldas Lullaby": 1
      }
     ],
     "1764383515296652106": [
@@ -8224,7 +8239,9 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -16151,13 +16168,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -16303,20 +16320,17 @@
     "17479747339356189279": [
      {
       "Boomerang": 1,
-      "Kokiri Sword": 1,
-      "Megaton Hammer": 1
+      "Kokiri Sword": 1
      },
      {
       "Bomb Bag": 1
      },
      {
-      "Megaton Hammer": 1,
       "Progressive Scale": 1
      },
      {
       "Dins Fire": 1,
-      "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Magic Meter": 1
      }
     ],
     "1764383515296652106": [
@@ -16583,19 +16597,27 @@
      {
       "Boomerang": 1,
       "Kokiri Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Megaton Hammer": 1,
-      "Progressive Scale": 1
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Song of Storms": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -24465,6 +24487,20 @@
     "1186167733408299582": [
      {
       "Bomb Bag": 1,
+      "Master Sword": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
       "Gerudo Membership Card": 1,
       "Lens of Truth": 1,
       "Magic Meter": 1,
@@ -24472,6 +24508,7 @@
       "Progressive Strength Upgrade": 2
      },
      {
+      "Biggoron Sword": 1,
       "Bomb Bag": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -24610,13 +24647,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -24762,20 +24799,17 @@
     "17479747339356189279": [
      {
       "Boomerang": 1,
-      "Kokiri Sword": 1,
-      "Megaton Hammer": 1
+      "Kokiri Sword": 1
      },
      {
       "Bomb Bag": 1
      },
      {
-      "Megaton Hammer": 1,
       "Progressive Scale": 1
      },
      {
       "Dins Fire": 1,
-      "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Magic Meter": 1
      }
     ],
     "1764383515296652106": [
@@ -25043,15 +25077,21 @@
       "Boomerang": 1,
       "Kokiri Sword": 1,
       "Master Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -32770,9 +32810,9 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Slingshot": 1,
       "Song of Time": 1,
       "Zeldas Lullaby": 1
@@ -32930,7 +32970,22 @@
     ],
     "17479747339356189279": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Slingshot": 1,
+      "Song of Time": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Slingshot": 1,
+      "Song of Time": 1,
+      "Zeldas Lullaby": 1
      }
     ],
     "1764383515296652106": [
@@ -33156,7 +33211,9 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -40548,13 +40605,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -40669,14 +40726,12 @@
     "17479747339356189279": [
      {
       "Boomerang": 1,
-      "Kokiri Sword": 1,
-      "Megaton Hammer": 1
+      "Kokiri Sword": 1
      },
      {
       "Bomb Bag": 1
      },
      {
-      "Megaton Hammer": 1,
       "Progressive Scale": 1
      }
     ],
@@ -40901,14 +40956,20 @@
      {
       "Boomerang": 1,
       "Kokiri Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Megaton Hammer": 1,
-      "Progressive Scale": 1
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -48242,6 +48303,20 @@
     "1186167733408299582": [
      {
       "Bomb Bag": 1,
+      "Master Sword": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
       "Gerudo Membership Card": 1,
       "Lens of Truth": 1,
       "Magic Meter": 1,
@@ -48249,6 +48324,7 @@
       "Progressive Strength Upgrade": 2
      },
      {
+      "Biggoron Sword": 1,
       "Bomb Bag": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -48361,13 +48437,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -48482,14 +48558,12 @@
     "17479747339356189279": [
      {
       "Boomerang": 1,
-      "Kokiri Sword": 1,
-      "Megaton Hammer": 1
+      "Kokiri Sword": 1
      },
      {
       "Bomb Bag": 1
      },
      {
-      "Megaton Hammer": 1,
       "Progressive Scale": 1
      }
     ],
@@ -48716,21 +48790,29 @@
       "Boomerang": 1,
       "Kokiri Sword": 1,
       "Master Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
       "Megaton Hammer": 1,
-      "Progressive Scale": 1
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Song of Storms": 1
      },
      {
       "Biggoron Sword": 1,
       "Megaton Hammer": 1,
-      "Progressive Scale": 1
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -55629,9 +55711,9 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Slingshot": 1,
       "Song of Time": 1,
       "Zeldas Lullaby": 1
@@ -55771,7 +55853,22 @@
     ],
     "17479747339356189279": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Slingshot": 1,
+      "Song of Time": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Slingshot": 1,
+      "Song of Time": 1,
+      "Zeldas Lullaby": 1
      }
     ],
     "1764383515296652106": [
@@ -55955,7 +56052,9 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -61287,13 +61386,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -61337,12 +61436,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -61436,10 +61530,14 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -66773,6 +66871,20 @@
     "1186167733408299582": [
      {
       "Bomb Bag": 1,
+      "Master Sword": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
       "Gerudo Membership Card": 1,
       "Lens of Truth": 1,
       "Magic Meter": 1,
@@ -66780,6 +66892,7 @@
       "Progressive Strength Upgrade": 2
      },
      {
+      "Biggoron Sword": 1,
       "Bomb Bag": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -66833,13 +66946,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -66883,12 +66996,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -66984,19 +67092,27 @@
     "5755485285664292988": [
      {
       "Master Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Biggoron Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -74170,9 +74286,9 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Slingshot": 1,
       "Song of Time": 1,
       "Zeldas Lullaby": 1
@@ -74334,7 +74450,22 @@
     ],
     "17479747339356189279": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Slingshot": 1,
+      "Song of Time": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Slingshot": 1,
+      "Song of Time": 1,
+      "Zeldas Lullaby": 1
      }
     ],
     "1764383515296652106": [
@@ -74584,7 +74715,9 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -80074,13 +80207,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -80124,12 +80257,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -80223,10 +80351,14 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -85896,6 +86028,20 @@
     "1186167733408299582": [
      {
       "Bomb Bag": 1,
+      "Master Sword": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
       "Gerudo Membership Card": 1,
       "Lens of Truth": 1,
       "Magic Meter": 1,
@@ -85903,6 +86049,7 @@
       "Progressive Strength Upgrade": 2
      },
      {
+      "Biggoron Sword": 1,
       "Bomb Bag": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -85980,13 +86127,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -86054,12 +86201,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -86227,19 +86369,27 @@
     "5755485285664292988": [
      {
       "Master Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Biggoron Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -93186,9 +93336,9 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Slingshot": 1,
       "Song of Time": 1,
       "Zeldas Lullaby": 1
@@ -93328,7 +93478,22 @@
     ],
     "17479747339356189279": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Slingshot": 1,
+      "Song of Time": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Slingshot": 1,
+      "Song of Time": 1,
+      "Zeldas Lullaby": 1
      }
     ],
     "1764383515296652106": [
@@ -93512,7 +93677,9 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -98844,13 +99011,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -98894,12 +99061,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -98993,10 +99155,14 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -104330,6 +104496,20 @@
     "1186167733408299582": [
      {
       "Bomb Bag": 1,
+      "Master Sword": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
       "Gerudo Membership Card": 1,
       "Lens of Truth": 1,
       "Magic Meter": 1,
@@ -104337,6 +104517,7 @@
       "Progressive Strength Upgrade": 2
      },
      {
+      "Biggoron Sword": 1,
       "Bomb Bag": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -104390,13 +104571,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -104440,12 +104621,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -104541,19 +104717,27 @@
     "5755485285664292988": [
      {
       "Master Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Biggoron Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -111727,9 +111911,9 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Slingshot": 1,
       "Song of Time": 1,
       "Zeldas Lullaby": 1
@@ -111891,7 +112075,22 @@
     ],
     "17479747339356189279": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Progressive Scale": 1,
+      "Slingshot": 1,
+      "Song of Time": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Ocarina": 1,
+      "Slingshot": 1,
+      "Song of Time": 1,
+      "Zeldas Lullaby": 1
      }
     ],
     "1764383515296652106": [
@@ -112141,7 +112340,9 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -117631,13 +117832,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -117681,12 +117882,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -117780,10 +117976,14 @@
     ],
     "5755485285664292988": [
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [
@@ -123453,6 +123653,20 @@
     "1186167733408299582": [
      {
       "Bomb Bag": 1,
+      "Master Sword": 1,
+      "Ocarina": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Progressive Hookshot": 1,
+      "Progressive Strength Upgrade": 2,
+      "Requiem of Spirit": 1
+     },
+     {
+      "Bomb Bag": 1,
       "Gerudo Membership Card": 1,
       "Lens of Truth": 1,
       "Magic Meter": 1,
@@ -123460,6 +123674,7 @@
       "Progressive Strength Upgrade": 2
      },
      {
+      "Biggoron Sword": 1,
       "Bomb Bag": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -123537,13 +123752,13 @@
     "15055117029957340138": [
      {
       "Bomb Bag": 1,
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Zeldas Lullaby": 1
      },
      {
-      "Iron Boots": 1,
       "Ocarina": 1,
+      "Progressive Hookshot": 1,
       "Progressive Scale": 1,
       "Zeldas Lullaby": 1
      }
@@ -123611,12 +123826,7 @@
      }
     ],
     "17479747339356189279": [
-     {
-      "Bomb Bag": 1
-     },
-     {
-      "Megaton Hammer": 1
-     }
+     {}
     ],
     "1764383515296652106": [
      {
@@ -123784,19 +123994,27 @@
     "5755485285664292988": [
      {
       "Master Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
-      "Bomb Bag": 1
+      "Bomb Bag": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      },
      {
       "Biggoron Sword": 1,
-      "Megaton Hammer": 1
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Song of Storms": 1
      }
     ],
     "6397182598322965076": [

@@ -24,12 +24,14 @@ def main():
     check(S.PLACEMENT >= S.RAINY_FROM == 27, "the placement was not raised for the rainy village's check")
     check(0xb588e3f93990af69 in S.RAINY_ONLY, "the rainy windmill chest (#1) is not a check there only for a while")
     check(0xa58e4896b72a2f2a not in S.RAINY_ONLY, "the normal village's windmill chest (#2) was made junk-only too")
+    check(set(S.RAINY_ONLY) < set(S.JUNK_ONLY) and 0x561cbe4b374f3739 in S.JUNK_ONLY and 0xff8a367dbd828c94 not in S.JUNK_ONLY,
+          "Gerudo Valley grotto's child chest (never reachable) is not junk only, or the adult's is")
     for item in ("TBox_Rupee_Red", "TBox_Rupee_Blue", "TBox_ArrowBundle_Medium", "Item_BombBundle_Small", "TBox_DekuNutBundle"):
         check(S.junk_holds(item), "%s is not junk" % item)
     for item in sorted(S.PROGRESSION) + [S.TOKEN, "Obj_Heart_Piece", "Obj_Heart_Container", "Item_Melody_ShadowNocturne", "Item_Bottle",
                                          "Item_FairyBless_MPDouble", "Item_Wallet_Large"]:
         check(not S.junk_holds(item), "%s counts as junk" % item)
-    check("holds.update((h, junk) for h in RAINY_ONLY if h in spots)" in seed and "if placement >= RAINY_FROM:" in seed,
+    check("holds.update((h, junk) for h in JUNK_ONLY if h in spots)" in seed and "if placement >= RAINY_FROM:" in seed,
           "the seed does not give the rainy check its junk-only holds")
 
     # (place(): over many seeds, with the logic, the rainy chest gets only junk)

@@ -3995,6 +3995,10 @@ COURAGE_FROM = 26
 # junk_holds); the normal village's copy (#2) takes part as any chest.
 RAINY_FROM = 27
 RAINY_ONLY = (0xb588e3f93990af69,)
+# (and a check that can't be reached at all, junk only the same way: Gerudo Valley's Song of Storms grotto has a child's
+#  copy of its invisible chest (red rupee #2), and a child can't come there, the owner's word 2026-11-23: a slip of the
+#  remake's makers)
+JUNK_ONLY = RAINY_ONLY + (0x561cbe4b374f3739,)
 
 
 def junk_holds(item):
@@ -8181,7 +8185,7 @@ def main():
                 holds[h] = holds[h] - {MASTER}
     if placement >= RAINY_FROM:   # (a check there only for a while: junk only, RAINY_ONLY)
         junk = frozenset(i for i in {s[1] for s in spots.values()} if junk_holds(i))
-        holds.update((h, junk) for h in RAINY_ONLY if h in spots)
+        holds.update((h, junk) for h in JUNK_ONLY if h in spots)
     # (the tokens are placed by the logic when a rule counts them: the Skulltula house's rewards. The Skulltulas that
     #  keep their token, of another setting or whose file cannot take a drop, are counted where they are)
     counted = placement >= HOUSE_FROM and logic and any(token_count(word) for n in needs.values() for way in (n if isinstance(n, Either) else (n,)) for word in way)
