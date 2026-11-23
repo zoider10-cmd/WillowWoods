@@ -262,9 +262,9 @@ def main():
     #      whole game's row a summary, and what a collected check gave ----
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     items = (ROOT / "gpu" / "vk" / "oot_cheat_items.h").read_text(encoding="utf-8")
-    check("void tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {" in menu and
+    check("float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {" in menu and
           "if (area_panel) tracker_panel(c, hx0, hx1, bottom + 8 * s, bar_top - 10 * s, selr.tracker, hint);" in menu and
-          "tracker_panel(c, hx0, hx1, hh + 18 * s, bar_top - 12 * s, selr.tracker, hint);" in menu and
+          "tracker_panel(c, hx0, hx1, top, top + std::max(room * 0.55f, room - 420 * s), selr.tracker, hint);" in menu and
           "const int first = n > fit ? std::clamp(pick - 1 - fit / 2, 0, n - fit) : 0;" in menu and
           "if (strcmp(tracker_checks[i].area, tracker_name[row]) || !tracker_check_shown(i)) continue;" in menu,
           "an area's row does not show its checks in the help's place, or not the ones the tab lists, or not the one stepped to")
