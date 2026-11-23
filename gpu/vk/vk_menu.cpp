@@ -7777,13 +7777,14 @@ void draw_health(ui::Ctx& c) {
         const int kind = health_kind[k].load(std::memory_order_relaxed);
         if (kind > 0 && kind <= (int)(sizeof kBossNames / sizeof kBossNames[0])) {   // (a boss: the foot of the screen)
             const float bw = std::min(pw * 0.5f, 760 * s), bh = 14 * s, x = (c.w - bw) * 0.5f;
-            const float y = c.h - c.safe - 40 * s - bosses * 56 * s;
+            const float foot = c.h - std::max(c.safe + 40 * s, c.h * 0.15f);   // (over the game's button prompts at the foot of the screen, "Shoot Seed": the owner's screenshot 2026-11-23)
+            const float y = foot - bosses * 56 * s;
             const char* name = kBossNames[kind - 1];
             const float nsize = 22 * s, o = std::max(1.0f, s);
             if (opts.boss_hearts) {   // (the Boss health row's Hearts: a heart each 4 points, ten a row, the last row nearest the foot)
                 const int hearts = (most + 3) / 4, rows = (hearts + 9) / 10;
                 const float r = 11 * s, step = r * 2.25f, hx = c.w * 0.5f - (std::min(hearts, 10) - 1) * step * 0.5f;
-                const float top = c.h - c.safe - 30 * s - bosses * 56 * s - (rows - 1) * step;
+                const float top = foot + 10 * s - bosses * 56 * s - (rows - 1) * step;
                 const ImVec2 nat(hx - r, top - r - nsize - 6 * s);
                 for (int dy = -1; dy <= 1; dy++)
                     for (int dx = -1; dx <= 1; dx++)
