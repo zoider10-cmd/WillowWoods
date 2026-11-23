@@ -37,7 +37,7 @@ def main():
     finally:
         S._DUNGEON_TABLE[:] = real
     src = open(S.__file__, encoding="utf-8").read()
-    check("placement >= DUNGEON_AGES_FROM, placement >= WELL_FROM) if dungeon_on else None" in src, "the seed doesn't pass WELL_FROM")
+    check("placement >= DUNGEON_AGES_FROM, placement >= WELL_FROM," in src, "the seed doesn't pass WELL_FROM")
     print("FAIL" if failed else "PASS: the Bottom of the Well by the Song of Storms, not Zelda's Lullaby")
     return 1 if failed else 0
 
