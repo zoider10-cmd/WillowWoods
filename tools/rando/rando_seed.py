@@ -6657,6 +6657,13 @@ DUNGEON_ENTRY = {"InsideTheDekuTree": frozenset((S,)), "DodongoCavern": CHILD | 
 #  don't tell the child's side from the adult's: too much, never too little). Without, the lessons wait on the three
 #  temples (MEDALS3) and the desert is the way)
 DUNGEON_ENTRY_SONGS = {"ShadowTemple": ADULT}
+# (bug 121, the owner's run 2026-11-23: every Bottom of the Well check asked for Zelda's Lullaby.) Its way in was ADULT
+# (too much: before the songs were shuffled, the Song of Storms came from the windmill man, an adult's lesson). The well is
+# a young Link's, drained by the Song of Storms at the windmill. From placement WELL_FROM, with the songs shuffled, its way
+# in is a young Link out of the forest (CHILD), the Song of Storms and the ocarina where they are shuffled; each check's
+# own ways (the table's) ask for the rest, Zelda's Lullaby only where it is needed.
+WELL_FROM = 26
+WELL = "BottomOfTheWell"
 DUNGEON_REQUIEM = "SpiritTemple"
 DUNGEON_AGES_FROM = 22
 # The Spirit Temple by age (dungeon_logic.py AGE_SPLIT: its checks worked out for the child alone, the adult alone and
@@ -6688,7 +6695,7 @@ def dungeon_table():
     return _DUNGEON_TABLE[0]
 
 
-def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=True):
+def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=True, well_child=False):
     """a dungeon check's own rule (see above), or None where the table doesn't know it: its dungeon's way in and any of
     its ways, in our items (progression: the seed's gating items; pool: what the seed shuffles. The others are held)"""
     found = dungeon_table().get(h)
@@ -6698,6 +6705,8 @@ def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=T
     songs = "Item_Melody_ShadowNocturne" in progression
     entries = [frozenset(progression) if DUNGEON_ENTRY[area] is None else DUNGEON_ENTRY_SONGS.get(area, DUNGEON_ENTRY[area]) if songs
                else DUNGEON_ENTRY[area]]
+    if area == WELL and songs and well_child:   # (a young Link's, by the Song of Storms: WELL_FROM)
+        entries = [CHILD | (frozenset((STORMS, OCARINA)) & frozenset(progression))]
     if area == DUNGEON_REQUIEM and "Item_Melody_SpiritRequiem" in progression:
         entries.append(ADULT | {"Item_Melody_SpiritRequiem"})
     tagged = [(way, entries) for way in ways]
@@ -6740,6 +6749,11 @@ _OVERWORLD_TABLE = {}
 # added to its table ways. Kakariko's watchtower Gold Skulltula (child, night): the Slingshot, bombchus (the Bomb Bag,
 # which stands for them: no bombchu item of its own), or the Boomerang (the owner, 2026-11-21).
 OVERWORLD_MORE_FROM = 24
+# (bug 118, the owner's run 2026-11-23: Hyrule Field's tree Gold Skulltulas and the remake's own chests out of logic
+# when they were easy.) The remake's checks the other logic doesn't have took a pool's hardest rule, or the old
+# whole-area one. From placement OWN_FROM each has a rule of its own (tools/rando/overworld_own.json, worked out from a
+# new game's start by overworld_logic.py into each variant's "own"), in place of its table ways.
+OWN_FROM = 26
 OVERWORLD_MORE = {0xd1cef51cf294fb86: [frozenset((BM,))]}
 
 
@@ -6768,14 +6782,16 @@ OVERWORLD_SHOPS = {"kokiri": "KF Shop Item 1", "general": "Market Bazaar Item 1"
 
 
 def overworld_table(variant):
-    """({an actor's hash: [way, ...]}, {a check's name: [way, ...]}) of OVERWORLD_RULES_FILE's variant; ({}, {}) without it"""
+    """({an actor's hash: [way, ...]}, {a check's name: [way, ...]}, {an actor's hash: [way, ...]} of our own rules,
+    OWN_FROM) of OVERWORLD_RULES_FILE's variant; ({}, {}, {}) without it"""
     if variant not in _OVERWORLD_TABLE:
         try:
             with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), OVERWORLD_RULES_FILE), encoding="utf-8") as f:
                 table = json.load(f)["variants"][variant]
-            _OVERWORLD_TABLE[variant] = ({int(h): e["ways"] for h, e in table["by_actor"].items()}, table.get("named", {}))
+            _OVERWORLD_TABLE[variant] = ({int(h): e["ways"] for h, e in table["by_actor"].items()}, table.get("named", {}),
+                                         {int(h): ways for h, ways in table.get("own", {}).items()})
         except (OSError, ValueError, KeyError):
-            _OVERWORLD_TABLE[variant] = ({}, {})
+            _OVERWORLD_TABLE[variant] = ({}, {}, {})
     return _OVERWORLD_TABLE[variant]
 
 
@@ -7679,7 +7695,7 @@ def main():
     def own_rule(h, area, otherwise):
         """a dungeon check's own rule (dungeon_rule), or what the rules asked before"""
         made = dungeon_rule(h, area, PROGRESSION, pool, a.open_door or (a.door_song and _TIME in PROGRESSION),
-                            placement >= DUNGEON_AGES_FROM) if dungeon_on else None
+                            placement >= DUNGEON_AGES_FROM, placement >= WELL_FROM) if dungeon_on else None
         return otherwise() if made is None else made
     needs = {h: own_rule(h, s[0], lambda s=s: rule(s[0], s[6])) for h, s in spots.items()}
     deep = a.quests and placement >= TUNIC_WATER_FROM   # (the tunics by hot rooms and deep water, TUNIC_WATER_FROM)
@@ -7728,14 +7744,14 @@ def main():
     if a.ocarina:   # (a lesson: its notes are played back on an ocarina)
         needs = {h: ocarina_need(n, True) if h in lessons else n for h, n in needs.items()}
     # (each overworld check by its own rule, placement 23: its table ways, through the items' own steps alone)
-    over, over_named = overworld_table(overworld_variant(a.open_deku, a.open_forest, a.gate_open, a.open_door)) if placement >= OVERWORLD_FROM else ({}, {})
+    over, over_named, over_own = overworld_table(overworld_variant(a.open_deku, a.open_forest, a.gate_open, a.open_door)) if placement >= OVERWORLD_FROM else ({}, {}, {})
     if placement >= OVERWORLD_FROM and not over:
         print("each overworld check's own rule: %s is not beside the script, so the overworld asks as before" % OVERWORLD_RULES_FILE)
     song_lessons = {g.item: g.need for g in SONGS if g.item not in PROGRESSION}
 
     def over_rule(h, area, child_skulltula=False, name=None):
         """an overworld check's own rule (by its actor, or by name), its items' steps done; None where the table doesn't know it"""
-        ways = over_named.get(name) if name else over.get(h) if area not in DUNGEON_ENTRY else None
+        ways = over_named.get(name) if name else (over_own.get(h) if placement >= OWN_FROM and h in over_own else over.get(h)) if area not in DUNGEON_ENTRY else None
         made = overworld_rule(ways, PROGRESSION, song_lessons, child_skulltula) if ways else None
         if made is None:
             return None
@@ -7760,6 +7776,8 @@ def main():
             made = None if made is None else each(lambda w: w | wallet_need(shelf_prices[h]), made)
         elif h in gifts:
             made = over_rule(h, s[0], name=OVERWORLD_GIFTS.get(gifts[h].key)) if over and gifts[h].key in OVERWORLD_GIFTS else None
+            if made is None and placement >= OWN_FROM and h in over_own:   # (a gift with a rule of our own: the secret scrubs' hearts)
+                made = over_rule(h, s[0])
             if gifts[h].key in MASK_GIFTS and placement >= MASKS_FROM:   # (the Forest Stage: a mask from the Happy Mask Shop, MASK_EXPS)
                 made = mask_need(made)
         else:
