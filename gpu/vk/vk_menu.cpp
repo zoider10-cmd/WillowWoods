@@ -533,6 +533,8 @@ constexpr const char* kWorldEdges[][2] = {
     {"Hyrule Field", "Lost Woods"}, {"Lost Woods", "Kokiri Forest"}, {"Lost Woods", "Sacred Forest Meadow"}, {"Hyrule Field", "Gerudo Valley"},
     {"Gerudo Valley", "Gerudo's Fortress"}, {"Gerudo's Fortress", "Haunted Wasteland"}, {"Haunted Wasteland", "Desert Colossus"},
 };
+/// Where Link is (OOT_LINK_X, _Z: hundredths; _YAW: thousandths of a radian), from the game side ten times a second
+std::atomic<int> link_place[3] = {INT_MIN, INT_MIN, 0};
 /// An area's checks for the map: how many there are, left (not collected, not junk), and in logic among those left
 struct AreaCount { int all = 0, left = 0, in = 0; };
 AreaCount tracker_area_count(const char* area) {
@@ -629,6 +631,13 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
         for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], p[k]), hi[k] = std::max(hi[k], p[k]);
         n++;
     }
+    // (Link, when he is in this area: the map takes him in too, so he is on it wherever he stands)
+    const char* here = tracker_here_area();
+    const int lx = link_place[0].load(std::memory_order_relaxed), lz = link_place[1].load(std::memory_order_relaxed);
+    const bool link = here && !strcmp(here, tracker_name[row]) && lx != INT_MIN && lz != INT_MIN;
+    const float link_at[2] = {lx / 100.0f, lz / 100.0f};
+    if (link && n)
+        for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], link_at[k]), hi[k] = std::max(hi[k], link_at[k]);
     if (!n || mx1 - mx0 < 20 * s || my1 - my0 < 20 * s) return;
     const float span = std::max({hi[0] - lo[0], hi[1] - lo[1], 1.0f});
     const float scale = std::min((mx1 - mx0) / std::max(hi[0] - lo[0], span * 0.05f), (my1 - my0) / std::max(hi[1] - lo[1], span * 0.05f));
@@ -649,6 +658,16 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
             else c.d->AddCircle(at, 4.5f * s, kOut, 0, 1.6f * s);
             if (&k == picked) c.d->AddCircle(at, 10 * s, ui::kAccent, 0, 2.2f * s);
         }
+    if (link) {   // (Link: a gold arrow the way he faces, over the dots)
+        const float yaw = link_place[2].load(std::memory_order_relaxed) / 1000.0f, fx = sinf(yaw), fz = cosf(yaw);
+        const ImVec2 at(ox + link_at[0] * scale, oy + link_at[1] * scale), f(fx, fz), side(-fz, fx);
+        const float r = 9 * s;
+        const ImVec2 tip(at.x + f.x * r, at.y + f.y * r), l(at.x - f.x * r * 0.7f + side.x * r * 0.7f, at.y - f.y * r * 0.7f + side.y * r * 0.7f),
+            rr(at.x - f.x * r * 0.7f - side.x * r * 0.7f, at.y - f.y * r * 0.7f - side.y * r * 0.7f);
+        c.d->AddTriangleFilled(tip, l, rr, ui::rgba(255, 205, 60));
+        c.d->AddTriangle(tip, l, rr, ui::rgba(20, 20, 20, 220), 1.5f * s);
+        ui::text_mid(c, c.f.body, 13 * s, at.x + r + 3 * s, at.y, ui::rgba(255, 205, 60), "Link");
+    }
 }
 /// The help's last line for a row stepped to a check: in logic, or what Link still needs for it
 std::string tracker_hint(int row) {
@@ -5006,7 +5025,9 @@ void draw_options(ui::Ctx& c) {
         else help_box(c, hx0, hx1, bottom + 8 * s, selr.name, row_help, hint, pending_line.empty() ? nullptr : pending_line.c_str(), help_tall,
                       after, bottom + 8 * s, bar_top - 10 * s, mic_help);
     } else if (area_panel) {   // (an area's row of the Tracker tab: its checks, from under the banner down, and its map under them)
-        const float end = tracker_panel(c, hx0, hx1, hh + 18 * s, bar_top - 12 * s, selr.tracker, hint);
+        // (the list at most 55% of the room, scrolling to the check stepped to as it does, so the map always has the rest)
+        const float top = hh + 18 * s, room = bar_top - 12 * s - top;
+        const float end = tracker_panel(c, hx0, hx1, top, top + std::max(room * 0.55f, room - 420 * s), selr.tracker, hint);
         if (bar_top - 12 * s - end >= 150 * s) tracker_area_map(c, hx0, hx1, end + 10 * s, bar_top - 12 * s, selr.tracker);
     } else if (selr.tracker == 0 && tracker_check_count && cur_tab == TAB_TRACKER) {   // (the whole game's row: the map of Hyrule, its stats under it)
         const float top = hh + 18 * s, room = bar_top - 12 * s - top, map_h = std::min(room * 0.68f, (hx1 - hx0) * 0.78f);
@@ -6756,6 +6777,10 @@ void menu_option_set(int id, int value) {
     if (id >= OOT_HEALTH_LIFE && id < OOT_HEALTH_LIFE + OOT_HEALTH_SLOTS) {
         health_life[id - OOT_HEALTH_LIFE].store(value, std::memory_order_relaxed);
         health_seen[id - OOT_HEALTH_LIFE].store(prof_now(), std::memory_order_relaxed);
+        return;
+    }
+    if (id == OOT_LINK_X || id == OOT_LINK_Z || id == OOT_LINK_YAW) {   // (the Tracker's map: where Link is)
+        link_place[id - OOT_LINK_X].store(value, std::memory_order_relaxed);
         return;
     }
     if (id == OOT_DAMAGE_AT) {   // (the Damage numbers row: where the next hit shows)

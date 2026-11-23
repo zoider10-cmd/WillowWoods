@@ -138,6 +138,12 @@
    or -1 not on it), then rx_option_set(OOT_HEALTH_LIFE + k, life | max << 16, or 0 the slot is free) and rx_option_set(
    OOT_HEALTH_KIND + k, 0 an enemy, or 1 + a boss's place in OOT_BOSS_NAMES: its bar at the foot of the screen, named) */
 #define OOT_HEALTH_SLOTS 8
+/* (Willow Woods, asked 2026-11-23) the Tracker's map: where Link is, ten times a second from the game side (host/hos_main.c
+   oot_tracker_refresh), in the map files' coordinates as the checks' places: rx_option_set(OOT_LINK_X, x * 100),
+   OOT_LINK_Z the same of z, then OOT_LINK_YAW, the way he faces in thousandths of a radian (atan2 of x over z) */
+#define OOT_LINK_X 4044
+#define OOT_LINK_Z 4045
+#define OOT_LINK_YAW 4046
 #define OOT_HEALTH_AT 4048
 #define OOT_HEALTH_LIFE 4056
 #define OOT_HEALTH_KIND 4064

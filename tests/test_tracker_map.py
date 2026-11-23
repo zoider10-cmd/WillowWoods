@@ -41,9 +41,12 @@ def main():
           "the whole game's row does not show the map")
     check("if (bar_top - 12 * s - end >= 150 * s) tracker_area_map(c, hx0, hx1, end + 10 * s, bar_top - 12 * s, selr.tracker);" in menu,
           "an area's row does not show its checks' map under its list")
+    check("top + std::max(room * 0.55f, room - 420 * s)" in menu, "the list can take the whole panel, leaving the map no room")
     body = menu[menu.index("void tracker_area_map(ui::Ctx& c,"):]
     body = body[:body.index("\n}\n")]
     check("ox + k.pos[0] * scale, oy + k.pos[2] * scale" in body and "&k == picked" in body, "the dots are not x across and z down, or the stepped check not ringed")
+    check("rx_option_set(OOT_LINK_X, (int)lrintf(oot_link_place[0] * 100));" in open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
+          and "if (link) {" in body and "here && !strcmp(here, tracker_name[row])" in body, "Link is not on the map of the area he is in")
     print("FAIL" if failed else "PASS: the Tracker's map")
     return 1 if failed else 0
 

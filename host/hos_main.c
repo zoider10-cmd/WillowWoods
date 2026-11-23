@@ -2849,6 +2849,18 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     void rx_option_set(int id, int value);
     static int64_t next, next_stamp;
     for (unsigned i = 0; i < 3; i++) oot_link_place[i] = oot_load_float(c, actor + 796 + i * 4);
+    {   /* (the Tracker's map: where Link is and the way he faces, ten times a second) */
+        static int64_t next_place;
+        if (now >= next_place) {
+            next_place = now + 100000000LL;
+            const float yaw = atan2f(oot_load_float(c, actor + 816), oot_load_float(c, actor + 840));
+            if (fabsf(oot_link_place[0]) < 2e6f && fabsf(oot_link_place[2]) < 2e6f && yaw == yaw) {
+                rx_option_set(OOT_LINK_X, (int)lrintf(oot_link_place[0] * 100));
+                rx_option_set(OOT_LINK_Z, (int)lrintf(oot_link_place[2] * 100));
+                rx_option_set(OOT_LINK_YAW, (int)lrintf(yaw * 1000));
+            }
+        }
+    }
     if (now < next) return;
     {   /* (Link's age, for the checks of an add's item: bug 125) */
         int child = 0;
