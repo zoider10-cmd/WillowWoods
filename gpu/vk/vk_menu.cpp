@@ -429,7 +429,7 @@ std::string tracker_says(int row) {
 /// The help's panel for an area's row: every check of the area that the tab lists, one a line, each with its mark (collected,
 /// and then what it gave; in logic; not in logic), the one the row is stepped to lit and kept in view; under them what the
 /// marks mean, and the stepped check's own line (hint). From y0 down, no lower than y_max.
-void tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {
+float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {
     const float s = c.s, px = 17 * s, pitch = 26 * s, w = x1 - x0 - 48 * s;
     constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(138, 156, 184), kGot = ui::rgba(110, 126, 152);
     constexpr ImU32 kJunk = ui::rgba(92, 102, 120);   // (a junk check: dimmer than one collected, its words struck through)
@@ -498,6 +498,157 @@ void tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int ro
         ui::para(c, c.f.body, 16 * s, ImVec2(x0 + 40 * s, hy), ui::kSoft, hint, w - 18 * s);
     }
     c.d->PopClipRect();
+    return y1;   // (where it ended: the area's map goes under it, tracker_area_map)
+}
+/// (Willow Woods, asked 2026-11-23) The Tracker's map. The whole game's row: an overview of Hyrule, each area a box where it
+/// lies, joined to the ones it leads to, its dungeons small chips beside it (kWorldMap, laid out by a sketch: no two boxes
+/// meet); an area's row: its checks as dots where they are (x to the right, z down: north up, as Lake Hylia lies south and
+/// west of the field), the one stepped to ringed. A box or a dot is marked as the list's checks are: green with something in
+/// logic left, slate with checks left and none in logic, dim when all are collected; the area Link is in is lit.
+struct WorldArea { const char *area, *label; float x, y; int dungeon; const char* parent; };
+constexpr WorldArea kWorldMap[] = {
+    {"Desert Colossus", "Desert Colossus", 0.10f, 0.08f, 0, nullptr}, {"Haunted Wasteland", "Wasteland", 0.10f, 0.25f, 0, nullptr},
+    {"Gerudo's Fortress", "Gerudo's Fortress", 0.12f, 0.42f, 0, nullptr}, {"Gerudo Valley", "Gerudo Valley", 0.20f, 0.60f, 0, nullptr},
+    {"Ganon's Castle (outside)", "Ganon's Castle", 0.31f, 0.08f, 0, nullptr}, {"Hyrule Castle", "Hyrule Castle", 0.48f, 0.08f, 0, nullptr},
+    {"Market", "Market", 0.44f, 0.27f, 0, nullptr}, {"Hyrule Field", "Hyrule Field", 0.44f, 0.56f, 0, nullptr},
+    {"Kakariko Village", "Kakariko", 0.64f, 0.38f, 0, nullptr}, {"Graveyard", "Graveyard", 0.76f, 0.29f, 0, nullptr},
+    {"Death Mountain Trail", "DM Trail", 0.64f, 0.21f, 0, nullptr}, {"Death Mountain Crater", "DM Crater", 0.64f, 0.05f, 0, nullptr},
+    {"Goron City", "Goron City", 0.80f, 0.13f, 0, nullptr}, {"Zora's River", "Zora's River", 0.82f, 0.50f, 0, nullptr},
+    {"Zora's Domain", "Zora's Domain", 0.92f, 0.38f, 0, nullptr}, {"Zora's Fountain", "Zora's Fountain", 0.92f, 0.24f, 0, nullptr},
+    {"Lost Woods", "Lost Woods", 0.70f, 0.66f, 0, nullptr}, {"Sacred Forest Meadow", "Forest Meadow", 0.56f, 0.78f, 0, nullptr},
+    {"Kokiri Forest", "Kokiri Forest", 0.84f, 0.80f, 0, nullptr},
+    {"Inside the Deku Tree", "Deku Tree", 0.84f, 0.93f, 1, "Kokiri Forest"}, {"Forest Temple", "Forest Temple", 0.56f, 0.91f, 1, "Sacred Forest Meadow"},
+    {"Dodongo's Cavern", "Dodongo's Cavern", 0.52f, 0.155f, 1, "Death Mountain Trail"}, {"Fire Temple", "Fire Temple", 0.77f, 0.02f, 1, "Death Mountain Crater"},
+    {"Inside Jabu-Jabu's Belly", "Jabu-Jabu", 0.96f, 0.13f, 1, "Zora's Fountain"}, {"Ice Cavern", "Ice Cavern", 0.92f, 0.04f, 1, "Zora's Fountain"},
+    {"Water Temple", "Water Temple", 0.32f, 0.72f, 1, "Hyrule Field"}, {"Bottom of the Well", "the Well", 0.66f, 0.50f, 1, "Kakariko Village"},
+    {"Shadow Temple", "Shadow Temple", 0.77f, 0.405f, 1, "Graveyard"}, {"Spirit Temple", "Spirit Temple", 0.12f, 0.165f, 1, "Desert Colossus"},
+    {"Gerudo Training Ground", "Training Ground", 0.22f, 0.30f, 1, "Gerudo's Fortress"},
+    {"Inside Ganon's Castle", "Ganon's Tower", 0.29f, 0.17f, 1, "Ganon's Castle (outside)"},
+};
+constexpr const char* kWorldEdges[][2] = {
+    {"Hyrule Field", "Market"}, {"Market", "Hyrule Castle"}, {"Market", "Ganon's Castle (outside)"}, {"Hyrule Field", "Kakariko Village"},
+    {"Kakariko Village", "Graveyard"}, {"Kakariko Village", "Death Mountain Trail"}, {"Death Mountain Trail", "Goron City"},
+    {"Death Mountain Trail", "Death Mountain Crater"}, {"Goron City", "Death Mountain Crater"}, {"Goron City", "Lost Woods"},
+    {"Hyrule Field", "Zora's River"}, {"Zora's River", "Zora's Domain"}, {"Zora's Domain", "Zora's Fountain"}, {"Zora's River", "Lost Woods"},
+    {"Hyrule Field", "Lost Woods"}, {"Lost Woods", "Kokiri Forest"}, {"Lost Woods", "Sacred Forest Meadow"}, {"Hyrule Field", "Gerudo Valley"},
+    {"Gerudo Valley", "Gerudo's Fortress"}, {"Gerudo's Fortress", "Haunted Wasteland"}, {"Haunted Wasteland", "Desert Colossus"},
+};
+/// An area's checks for the map: how many there are, left (not collected, not junk), and in logic among those left
+struct AreaCount { int all = 0, left = 0, in = 0; };
+AreaCount tracker_area_count(const char* area) {
+    AreaCount n;
+    for (int i = 0; i < tracker_check_count; i++) {
+        if (strcmp(tracker_checks[i].area, area)) continue;
+        n.all++;
+        if (tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]) continue;
+        n.left++;
+        n.in += tracker_in_logic(tracker_checks[i]) > 0;
+    }
+    return n;
+}
+/// The overview of Hyrule (the whole game's row) in a box from y0 to y1: what it drew down to
+float tracker_world_map(ui::Ctx& c, float x0, float x1, float y0, float y1) {
+    const float s = c.s, pad = 18 * s;
+    constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(138, 156, 184), kGot = ui::rgba(92, 104, 126);
+    constexpr ImU32 kLine = ui::rgba(70, 84, 110);
+    ui::box(c, ImVec2(x0, y0), ImVec2(x1, y1));
+    ui::text(c, c.f.heading, 21 * s, ImVec2(x0 + 24 * s, y0 + 18 * s), ui::kInk, "Map");
+    const float mx0 = x0 + pad, mx1 = x1 - pad, my0 = y0 + 52 * s, my1 = y1 - pad;
+    const char* here = tracker_here_area();
+    struct Placed { ImVec2 a, b, mid; AreaCount n; };
+    Placed at[sizeof kWorldMap / sizeof kWorldMap[0]];
+    const int count = (int)(sizeof kWorldMap / sizeof kWorldMap[0]);
+    // (sized to the panel, as the sketch that laid it out: 13 and 11 points in 724 across, no two boxes meeting)
+    const float k = std::clamp((mx1 - mx0) / 724.0f, 0.45f * s, 1.4f * s), big = 13 * k, small = 11 * k;
+    for (int i = 0; i < count; i++) {
+        const WorldArea& a = kWorldMap[i];
+        at[i].n = tracker_area_count(a.area);
+        const float tw = ui::size_of(c.f.body, a.dungeon ? small : big, a.label).x;
+        char tail[24] = "";
+        if (a.dungeon && at[i].n.left) snprintf(tail, sizeof tail, "  %d", at[i].n.left);
+        const float w = tw + (tail[0] ? ui::size_of(c.f.body, small, tail).x : 0) + (a.dungeon ? 14 : 18) * k, h = (a.dungeon ? 20 : 34) * k;
+        float cx = mx0 + a.x * (mx1 - mx0), cy = my0 + a.y * (my1 - my0);
+        cx = std::clamp(cx, mx0 + w * 0.5f, mx1 - w * 0.5f), cy = std::clamp(cy, my0 + h * 0.5f, my1 - h * 0.5f);
+        at[i].a = ImVec2(cx - w * 0.5f, cy - h * 0.5f), at[i].b = ImVec2(cx + w * 0.5f, cy + h * 0.5f), at[i].mid = ImVec2(cx, cy);
+    }
+    const auto find = [&](const char* area) { for (int i = 0; i < count; i++) if (!strcmp(kWorldMap[i].area, area)) return i; return -1; };
+    for (const auto& e : kWorldEdges) {
+        const int a = find(e[0]), b = find(e[1]);
+        if (a >= 0 && b >= 0) c.d->AddLine(at[a].mid, at[b].mid, kLine, std::max(1.0f, 3 * k));
+    }
+    for (int i = 0; i < count; i++)
+        if (kWorldMap[i].parent) {
+            const int p = find(kWorldMap[i].parent);
+            if (p >= 0) c.d->AddLine(at[i].mid, at[p].mid, kLine, std::max(1.0f, 1.2f * k));
+        }
+    for (int i = 0; i < count; i++) {
+        const WorldArea& a = kWorldMap[i];
+        const AreaCount& n = at[i].n;
+        const bool lit = here && !strcmp(here, a.area);
+        const ImU32 edge = !n.all ? kGot : n.in ? kIn : n.left ? kOut : kGot;
+        const ImU32 fill = lit ? ui::rgba(30, 60, 96, 250) : a.dungeon ? ui::rgba(30, 38, 56, 245) : ui::rgba(38, 48, 68, 245);
+        c.d->AddRectFilled(at[i].a, at[i].b, fill, 5 * k);
+        c.d->AddRect(at[i].a, at[i].b, lit ? ui::kAccent : edge, 5 * k, 0, std::max(1.0f, (a.dungeon ? 1.0f : 2) * k));
+        const ImU32 ink = !n.all || (n.all && !n.left) ? ui::kDim : ui::kInk;
+        if (a.dungeon) {
+            float tx = at[i].a.x + 7 * k;
+            tx += ui::text_mid(c, c.f.body, small, tx, at[i].mid.y, ink, a.label);
+            if (n.left) {
+                char tail[24];
+                snprintf(tail, sizeof tail, "  %d", n.left);
+                ui::text_mid(c, c.f.body, small, tx, at[i].mid.y, n.in ? kIn : kOut, tail);
+            }
+            continue;
+        }
+        ui::text_mid_centre(c, c.f.body, big, at[i].mid.x, at[i].mid.y - 7 * k, ink, a.label);
+        char line[40];
+        if (!n.all) snprintf(line, sizeof line, "no checks");
+        else if (!n.left) snprintf(line, sizeof line, "done");
+        else snprintf(line, sizeof line, "%d left", n.left);
+        const float lw = ui::size_of(c.f.body, small, line).x;
+        char in[16] = "";
+        if (n.left && n.in) snprintf(in, sizeof in, ", %d", n.in);
+        const float iw = in[0] ? ui::size_of(c.f.body, small, in).x : 0, lx = at[i].mid.x - (lw + iw) * 0.5f;
+        ui::text_mid(c, c.f.body, small, lx, at[i].mid.y + 8 * k, ui::kDim, line);
+        if (in[0]) ui::text_mid(c, c.f.body, small, lx + lw, at[i].mid.y + 8 * k, kIn, in);
+    }
+    return y1;
+}
+/// An area's checks as dots where they are (an area's row), in a box from y0 to y1, the one the row is stepped to ringed
+void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int row) {
+    const float s = c.s;
+    constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(138, 156, 184), kGot = ui::rgba(92, 104, 126);
+    ui::box(c, ImVec2(x0, y0), ImVec2(x1, y1));
+    ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y0 + 12 * s), ui::kDim, "Map: north is up");
+    const float mx0 = x0 + 30 * s, mx1 = x1 - 30 * s, my0 = y0 + 40 * s, my1 = y1 - 20 * s;
+    float lo[2] = {FLT_MAX, FLT_MAX}, hi[2] = {-FLT_MAX, -FLT_MAX};
+    int n = 0;
+    for (int i = 0; i < tracker_check_count; i++) {
+        if (strcmp(tracker_checks[i].area, tracker_name[row])) continue;
+        const float p[2] = {tracker_checks[i].pos[0], tracker_checks[i].pos[2]};
+        for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], p[k]), hi[k] = std::max(hi[k], p[k]);
+        n++;
+    }
+    if (!n || mx1 - mx0 < 20 * s || my1 - my0 < 20 * s) return;
+    const float span = std::max({hi[0] - lo[0], hi[1] - lo[1], 1.0f});
+    const float scale = std::min((mx1 - mx0) / std::max(hi[0] - lo[0], span * 0.05f), (my1 - my0) / std::max(hi[1] - lo[1], span * 0.05f));
+    const float ox = (mx0 + mx1) * 0.5f - (lo[0] + hi[0]) * 0.5f * scale, oy = (my0 + my1) * 0.5f - (lo[1] + hi[1]) * 0.5f * scale;
+    const TrackerCheck* picked = tracker_pick[row] ? tracker_row_check(row, tracker_pick[row]) : nullptr;
+    for (int pass = 0; pass < 2; pass++)   // (the others, then the one stepped to over them)
+        for (int i = 0; i < tracker_check_count; i++) {
+            const TrackerCheck& k = tracker_checks[i];
+            if (strcmp(k.area, tracker_name[row]) || (pass == 1) != (&k == picked)) continue;
+            const ImVec2 at(ox + k.pos[0] * scale, oy + k.pos[2] * scale);
+            const bool got = tracker_done[i].load(std::memory_order_relaxed) == 1, junk = !got && tracker_junk[i];
+            const int state = got || junk ? -1 : tracker_in_logic(k);
+            if (got) c.d->AddCircleFilled(at, 3 * s, kGot);
+            else if (junk) {
+                c.d->AddLine(ImVec2(at.x - 3 * s, at.y - 3 * s), ImVec2(at.x + 3 * s, at.y + 3 * s), kGot, 1.5f * s);
+                c.d->AddLine(ImVec2(at.x - 3 * s, at.y + 3 * s), ImVec2(at.x + 3 * s, at.y - 3 * s), kGot, 1.5f * s);
+            } else if (state > 0) c.d->AddCircleFilled(at, 5 * s, kIn);
+            else c.d->AddCircle(at, 4.5f * s, kOut, 0, 1.6f * s);
+            if (&k == picked) c.d->AddCircle(at, 10 * s, ui::kAccent, 0, 2.2f * s);
+        }
 }
 /// The help's last line for a row stepped to a check: in logic, or what Link still needs for it
 std::string tracker_hint(int row) {
@@ -4854,8 +5005,14 @@ void draw_options(ui::Ctx& c) {
         if (area_panel) tracker_panel(c, hx0, hx1, bottom + 8 * s, bar_top - 10 * s, selr.tracker, hint);
         else help_box(c, hx0, hx1, bottom + 8 * s, selr.name, row_help, hint, pending_line.empty() ? nullptr : pending_line.c_str(), help_tall,
                       after, bottom + 8 * s, bar_top - 10 * s, mic_help);
-    } else if (area_panel) {   // (an area's row of the Tracker tab: its checks, from under the banner down)
-        tracker_panel(c, hx0, hx1, hh + 18 * s, bar_top - 12 * s, selr.tracker, hint);
+    } else if (area_panel) {   // (an area's row of the Tracker tab: its checks, from under the banner down, and its map under them)
+        const float end = tracker_panel(c, hx0, hx1, hh + 18 * s, bar_top - 12 * s, selr.tracker, hint);
+        if (bar_top - 12 * s - end >= 150 * s) tracker_area_map(c, hx0, hx1, end + 10 * s, bar_top - 12 * s, selr.tracker);
+    } else if (selr.tracker == 0 && tracker_check_count && cur_tab == TAB_TRACKER) {   // (the whole game's row: the map of Hyrule, its stats under it)
+        const float top = hh + 18 * s, room = bar_top - 12 * s - top, map_h = std::min(room * 0.68f, (hx1 - hx0) * 0.78f);
+        tracker_world_map(c, hx0, hx1, top, top + map_h);
+        help_box(c, hx0, hx1, top + map_h + 10 * s, selr.name, row_help, hint, pending_line.empty() ? nullptr : pending_line.c_str(), 0, after,
+                 top + map_h + 10 * s, bar_top - 12 * s, mic_help);
     } else {
         help_box(c, hx0, hx1, std::max(hh + 26 * s, c.h * 0.30f), selr.name, row_help, hint,
                  pending_line.empty() ? nullptr : pending_line.c_str(), help_tall, after, hh + 18 * s, bar_top - 12 * s, mic_help);
