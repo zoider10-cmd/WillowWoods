@@ -128,7 +128,7 @@ DAMPE_HOOK_FROM = 19   # (the owner, 2026-11-21: "it should be randomized the sa
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
 # while it is shut: without the Bow the room is left by a warp song, as any other. Nothing new to learn for a player.
 FIXES = {0x74fb0489585fe0e2: {"IsDisableSaveAndWarp": False}}
-FIXES_VERSION = 68   # (67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
+FIXES_VERSION = 69   # (68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
 # The forest's two closed ways. Each is a flag of the game that starts set and is put out by the story: Mido stands in
 # the way to the Deku Tree until Link has a sword and a shield (KokiriForest_Npc_Kokiri_Mido_Child_Blocker), and a
 # Kokiri in the forest's way out until the Deku Tree is done (KokiriForest_Npc_Kokiri_007_Child_Blocker_00). An
@@ -3953,6 +3953,159 @@ def epona_song_flows(song_raw):
     out = io.BytesIO()
     own.write(out)
     return song_new, out.getvalue()
+
+
+# ---- Gifts kept when a quest is moved on first (the other randomizer's quest order, OOTRR 92dbffd, 2026-11-22 survey) ----
+# Two shuffled gifts are given only while their quest sits on one step, and a seed lets Link move the quest on first:
+# - the rolling Goron, as an adult (goron_tunic): his gift talk (SageOfFire's Step02_Npc_Goron_DaruniaJr_Adult_Talk) runs
+#   only while the Fire quest is at TalkDaruniaJr. Entering the Crater (the Bolero), the temple or the quest's end moves it
+#   on, and he then talks through his own flow (Npc_Goron_DaruniaJr_Adult: Talk, Npc_Goron_DaruniaJr_Step3_on,
+#   SageOfFire_IsCompleted_Exp_Talk) with no gift. His gift talk sets SageOfFire_Step02_DoorOpen;
+# - King Zora thawed (zora_tunic): after the Water Temple he talks through Npc_Zora_KingZora_adult's Talk with no gift;
+#   SageOfWater's Safety_Entry is the gift part, which sets SageOfWater_KingZora_adult_Talk_Event198.
+# In front of those talks (QUEST_LATE): an adult whose gift is still owed gets the gift part instead (a sub-call into the
+# quest's flow, where the seed's item is). A gift part also asks for its quest's step, and the game moves a quest BACK when
+# asked for an earlier step (Fire Temple progress undone): each Fire step request (QUEST_ORDER) runs only while the quest
+# is not past that step. And Goron City entered from the Crater plays no intro, so the Goron's creation flag is never set
+# there: the Crater's exit to the city sets it for an adult (QUEST_MAKE). Read in our files 2026-11-22: every entry,
+# flag and step as the other randomizer has them.
+QUEST_LATE = (   # (flow, its entries, a further condition (an expression) or None, the gift's done flag, (sub flow, entry), name)
+    ("Npc_Goron_DaruniaJr_Adult", ("Talk", "Npc_Goron_DaruniaJr_Step3_on", "SageOfFire_IsCompleted_Exp_Talk"), None,
+     "SageOfFire_Step02_DoorOpen", ("SageOfFire", "Step02_Npc_Goron_DaruniaJr_Adult_Talk"), "WillowLateGoron"),
+    ("Npc_Zora_KingZora_adult", ("Talk",), "SageOfWater_IsCompleted_Exp",
+     "SageOfWater_KingZora_adult_Talk_Event198", ("SageOfWater", "Safety_Entry"), "WillowLateZora"),
+)
+QUEST_ORDER = ("SageOfFire", "SageOfFire", ("StopDaruniaJr", "TalkDaruniaJr", "MoveStatue"), "WillowOrder")
+QUEST_MAKE = ("Dm_SY_BancChangeGo", "DeathMountainCrater_ToGoronCity", "SageOfFire_GenerateDaruniaJr", "WillowLateGoronMake")
+
+
+def quest_order_flow(raw, name):
+    """the flow `name` (one of QUEST_LATE's, QUEST_ORDER's or QUEST_MAKE's) with its quest-order change: the new bytes.
+    ValueError: not the flow this was written for, or changed already."""
+    import copy
+    import io
+    evfl = evfl_module()
+    flow = evfl.EventFlow()
+    flow.read(raw)
+    fc = flow.flowchart
+    if fc is None or fc.name != name or any(e.name.startswith("Willow") for e in fc.events):
+        raise ValueError("not the game's %s flow, or already changed" % name)
+
+    def actor_of(kind):
+        got = [a for a in fc.actors if a.identifier.name == kind and not a.identifier.sub_name]
+        if got:
+            return got[0]
+        a = evfl.Actor()
+        a.identifier = evfl.ActorIdentifier(kind)
+        a.params = copy.deepcopy(fc.actors[0].params)
+        a.params.data["EventMemberCreateMethod"] = 0
+        a.concurrent_clips = fc.actors[0].concurrent_clips
+        fc.actors.append(a)
+        return a
+
+    def holder(actor, what, kind):
+        got = [h for h in getattr(actor, kind) if h.v == what]
+        if got:
+            return got[0]
+        h = evfl.common.StringHolder(what)
+        getattr(actor, kind).append(h)
+        return h
+
+    def container(**items):
+        c = evfl.Container()
+        c.data.update(items)
+        return c
+
+    def ask(label, query, flag, yes, no):
+        """a switch on a flag (EventQueryIsGameDataBool) or an expression (...BoolExp): case 0 (true) yes, 1 (false) no"""
+        e = evfl.Event()
+        e.name = label
+        e.data = evfl.SwitchEvent()
+        data = actor_of("GameDataActor")
+        params = container(Index=-1, GameDataName=flag) if query == "EventQueryIsGameDataBool" else container(GameDataName=flag)
+        e.data.actor.v, e.data.actor_query.v, e.data.params = data, holder(data, query, "queries"), params
+        for value, to in ((0, yes), (1, no)):
+            if to is not None:
+                e.data.cases[value] = evfl.util.RequiredIndex()
+                e.data.cases[value].v = to
+        fc.events.append(e)
+        return e
+
+    def entry(n):
+        got = [p for p in fc.entry_points if p.name == n]
+        if len(got) != 1:
+            raise ValueError("%s has no entry %s" % (name, n))
+        return got[0]
+
+    def refs():
+        """every place that names an event: (an Index holder, how to set it)"""
+        for e in fc.events:
+            d = e.data
+            for attr in ("nxt", "join"):
+                if hasattr(d, attr):
+                    yield getattr(d, attr)
+            for f in getattr(d, "forks", []):
+                yield f
+            for c in getattr(d, "cases", {}).values():
+                yield c
+        for p in fc.entry_points:
+            yield p.main_event
+
+    late = [l for l in QUEST_LATE if l[0] == name]
+    if late:
+        _, entries, when, done, (sub_flow, sub_entry), label = late[0]
+        mains = []
+        for n in entries:
+            m = entry(n).main_event.v
+            if m is None:
+                raise ValueError("%s's entry %s starts nowhere" % (name, n))
+            if m not in mains:
+                mains.append(m)
+        for k, old in enumerate(mains):
+            give = evfl.Event()
+            give.name = "%s%dGive" % (label, k)
+            give.data = evfl.SubFlowEvent()
+            give.data.res_flowchart_name, give.data.entry_point_name = sub_flow, sub_entry
+            fc.events.append(give)
+            owed = ask("%s%dDone" % (label, k), "EventQueryIsGameDataBool", done, old, give)
+            then = ask("%s%dWhen" % (label, k), "EventQueryIsGameDataBoolExp", when, owed, old) if when else owed
+            top = ask("%s%dAdult" % (label, k), "EventQueryIsGameDataBool", "Sequence_IsChildhood", old, then)
+            at = fc.events.index(give)
+            for n in entries:
+                p = entry(n)
+                if p.main_event.v is old:
+                    p.main_event.v = top
+                    p._sub_flow_event_indices.append(at)
+    if name == QUEST_ORDER[0]:
+        _, quest, steps, label = QUEST_ORDER
+        targets = [e for e in fc.events if isinstance(e.data, evfl.ActionEvent)
+                   and e.data.actor_action.v.v == "EventExecuteProgressChallengeStep" and e.data.params is not None
+                   and e.data.params.data.get("ChallengeName") == quest and e.data.params.data.get("StepName") in steps]
+        if sorted(t.data.params.data["StepName"] for t in targets) != sorted(steps):
+            raise ValueError("%s does not ask for each of %s once" % (name, ", ".join(steps)))
+        for k, t in enumerate(targets):
+            after = t.data.nxt.v
+            holders = [h for h in refs() if h.v is t]
+            guard = ask("%s%d" % (label, k), "EventQueryIsGameDataBoolExp", "%s_IsAfter_%s_Exp" % (quest, t.data.params.data["StepName"]),
+                        after, t)
+            for h in holders:
+                h.v = guard
+    if name == QUEST_MAKE[0]:
+        _, n, flag, label = QUEST_MAKE
+        p = entry(n)
+        old = p.main_event.v
+        e = evfl.Event()
+        e.name = label + "Set"
+        e.data = evfl.ActionEvent()
+        data = actor_of("GameDataActor")
+        e.data.actor.v, e.data.actor_action.v = data, holder(data, "EventTriggerSetGameDataBool", "actions")
+        e.data.params = container(Index=-1, Value=True, GameDataName=flag)
+        e.data.nxt.v = old
+        fc.events.append(e)
+        p.main_event.v = ask(label + "Adult", "EventQueryIsGameDataBool", "Sequence_IsChildhood", old, e)
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
 
 
 def epona_event_rows(data, analyzed):
@@ -8283,6 +8436,17 @@ def main():
             tier_files["%s.%s" % (rel, combo)] = version
             sizes[sized] = max(sizes.get(sized, 0), len(version))
 
+    if a.quests:   # (gifts kept when their quest is moved on first, and no quest moved back: QUEST_LATE, QUEST_ORDER, QUEST_MAKE)
+        for n in [l[0] for l in QUEST_LATE] + [QUEST_ORDER[0], QUEST_MAKE[0]]:
+            rel = "%s/%s.bfevfl.zs" % (GIFT_FLOWS, n)
+            try:
+                was = gift_files[rel] if rel in gift_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+                gift_files[rel] = quest_order_flow(was, n)
+                gift_sizes[rel[:-3]] = len(gift_files[rel])
+            except (OSError, ValueError, struct.error) as e:
+                sys.exit("quest order, %s: %s. Nothing written." % (rel, e))
+        print("Quest rewards: the rolling Goron's and King Zora's gifts kept when their quest is moved on first; the Fire quest "
+              "never moved back")
     # ---- the size table ----
     folder = os.path.join(romfs, "System", "Resource")
     tables = sorted(n for n in (os.listdir(folder) if os.path.isdir(folder) else []) if "rsizetable" in n.lower())
