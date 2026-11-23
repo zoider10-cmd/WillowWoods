@@ -4197,6 +4197,21 @@ static int oot_hook_tip_at(Ctx *c, uint64_t sensor) {
    has the Hookshot's bit set, and is held so for a fifth of a second: the AI asks "any" before the type, so the frame the
    tip arrives the "any" has already said no, and the tip is gone from the sensor two frames on. HOS_OOT_NO_HOOK_HIT=1
    leaves the mask to the game (a test's). */
+/* (Rekarina's ringpost, 2026-11-22) One of the game's lock-free queue writers was about to end the game (a full ring, or the
+   reader swapped it while this writer copied: nx2/oot_patches.py patch_ring_post): 1, return instead, the record dropped
+   or read a frame later. The first 16 and then every 1000th are logged, with the writer's return address.
+   HOS_OOT_RING_ABORT=1 keeps the game's abort (a test's). */
+int hos_oot_ring_post(Ctx *c) {
+    static int keep = -1;
+    static volatile LONG dropped;
+    if (keep < 0) keep = getenv("HOS_OOT_RING_ABORT") != NULL;
+    if (keep) return 0;
+    const LONG n = InterlockedIncrement(&dropped);
+    if (n <= 16 || n % 1000 == 0)
+        hos_log("oot: a game queue's late writer returned instead of ending the game (%ld so far; lr %#llx)", (long)n,
+                (unsigned long long)c->x[30]);
+    return 1;
+}
 void hos_oot_hook_switch(Ctx *c, int any) {
     static int off = -1;
     static uint64_t held;           /* (the damage calculator given the hit) */

@@ -1699,6 +1699,60 @@ def patch_hook_switch(source):
     return source, hooked
 
 
+# (Rekarina's "ringpost", 2026-11-22 survey) The game's lock-free queues: a writer that finds the ring full, or still copies
+# its record when the once-a-frame reader swaps the ring's generation, ends the game with an nn::diag abort (f_8351c280).
+# The console's timing keeps writers out of the reader's way; on a PC a worker can be held up past it (a player's game
+# ended so after the first boss's death, in the post of a named text value, f_80d44e50). The same writer is compiled into
+# 77 functions, each ending in a tail call to the abort: made a return, the record is dropped (a full ring) or read a frame
+# later. The 78th tail call to it, in f_810cdb10 (a heap budget's abort), is not one of them and stays. The functions:
+# Rekarina's list (its main+X is f_<X + 0x80020000> here: all 77 sites checked in this build's image, 2026-11-22).
+# host/hos_main.c hos_oot_ring_post: HOS_OOT_RING_ABORT=1 keeps the game's abort (a test's).
+RING_POST_FUNCS = frozenset((
+    0x80d44e50, 0x80183b70, 0x80400980, 0x80464840, 0x8046c5d0, 0x804d4720, 0x8059af30, 0x8059bcc0,
+    0x80628a10, 0x806a2b20, 0x809d2f80, 0x809d39e0, 0x809d3ba0, 0x80bc6e50, 0x80bc6f80, 0x80bc7e00,
+    0x80c18dc0, 0x80ce2da0, 0x80d7e860, 0x80f271c0, 0x80f89ff0, 0x80fe42d0, 0x810c5ec0, 0x81120af0,
+    0x811369c0, 0x8113b680, 0x811f5760, 0x811fd8b0, 0x837654e0, 0x83768350, 0x8376ae10, 0x83779370,
+    0x8377d850, 0x8377f320, 0x8378a020, 0x8378a0b0, 0x8378a150, 0x8378a1e0, 0x8378a500, 0x8378a590,
+    0x8378a620, 0x8378a6b0, 0x8378a740, 0x8378a7d0, 0x8378a860, 0x8378a8f0, 0x8378a990, 0x8378aa30,
+    0x8378aac0, 0x8378ab50, 0x8378abe0, 0x8378ac70, 0x8378ad00, 0x8378ad90, 0x8378ae20, 0x8378aeb0,
+    0x8378af50, 0x8378aff0, 0x8378b0a0, 0x8378b140, 0x8378b1e0, 0x8378b280, 0x8378b320, 0x8378b3c0,
+    0x8378b4f0, 0x8378b620, 0x8378b750, 0x8378b880, 0x8378b9b0, 0x8378bae0, 0x8378bc20, 0x8378bcc0,
+    0x8378bd60, 0x8378be00, 0x8378be90, 0x8378bf20, 0x8378bfc0,
+))
+RING_POST_OLD = "TAILCALL(f_8351c280);"
+RING_POST_NEW = "if (hos_oot_ring_post(c)) return;   /* (nx2/oot_patches.py patch_ring_post) */\nTAILCALL(f_8351c280);"
+RING_POST_EXTERN = "extern int hos_oot_ring_post(Ctx *c);\n"
+
+
+def patch_ring_post(source):
+    """the 77 queue writers' abort made a return; (the source, how many of them this file has), or None with none"""
+    if RING_POST_OLD not in source:
+        return None
+    out, at, made = [], 0, 0
+    while True:
+        i = source.find(RING_POST_OLD, at)
+        if i < 0:
+            break
+        head = source.rfind("\nvoid f_", 0, i)
+        name = int(source[head + 8:source.index("(", head)], 16) if head >= 0 else 0
+        done = source.endswith("return;   /* (nx2/oot_patches.py patch_ring_post) */\n", 0, i)
+        if name in RING_POST_FUNCS:
+            made += 1
+            if not done:
+                out.append(source[at:i] + RING_POST_NEW)
+                at = i + len(RING_POST_OLD)
+                continue
+        out.append(source[at:i + len(RING_POST_OLD)])
+        at = i + len(RING_POST_OLD)
+    out.append(source[at:])
+    source = "".join(out)
+    if not made:
+        return None
+    if RING_POST_EXTERN not in source:
+        source = source.replace('#include "a64.h"\n', '#include "a64.h"\n' + RING_POST_EXTERN, 1)
+    return source, made
+
+
 def patch_file(s, name, protect_hearts=False):
     """One lifted file's patches (apply(), and nx2/chunks.py edit_c, a process per file): (its text, the places counted in it, the
     lines to print). The counts add up over the files; report() decides from the sums"""
@@ -1837,6 +1891,12 @@ def patch_file(s, name, protect_hearts=False):
             lines.append("oot_patches: the Hookshot's hit on a switch that asks for it (%d queries) in %s" % (hook[1], name))
         out = hook[0]
         counts["hook switch queries"] += hook[1]
+    ring = patch_ring_post(out)   # (Rekarina's ringpost: the game's lock-free queues' late writer returns, not aborts)
+    if ring is not None:
+        if ring[0] != out:
+            lines.append("oot_patches: the queues' abort made a return (%d writers) in %s" % (ring[1], name))
+        out = ring[0]
+        counts["ring post writers"] += ring[1]
     traced = patch_trace(out)   # (a test's: HOOKSHOT_TRACE_FNS)
     if traced is not None:
         out = traced[0]
@@ -2057,6 +2117,9 @@ def report(paths, counts, protect_hearts=False):
     if total["hook switch queries"] != len(HOOK_SWITCH_HEADS):   # (bug 91: the Water Temple's gate switch)
         print("oot_patches: WARNING: the damage queries were hooked %d times, not %d: the Water Temple's gate switch does not "
               "take the Hookshot's hit" % (total["hook switch queries"], len(HOOK_SWITCH_HEADS)))
+    if total["ring post writers"] != len(RING_POST_FUNCS):   # (Rekarina's ringpost: the game's lock-free queues)
+        print("oot_patches: WARNING: the queues' writers were made to return %d times, not %d: a late writer still ends the "
+              "game" % (total["ring post writers"], len(RING_POST_FUNCS)))
     if total["sound jobs"] != 1:   # (without it, above 60 fps sounds and then the music can stop after a few loading zones)
         print("oot_patches: WARNING: the sound job was found %d times, not once" % total["sound jobs"])
     if total["music manager time"] != 1:   # (without it, above 60 fps the music manager's timers run at 60 / fps of real time)
