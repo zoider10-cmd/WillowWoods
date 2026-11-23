@@ -312,6 +312,7 @@ SW(RX_VK_DLSS_ACTORS, kill, bool, "on: skinned actors' motion vectors made for t
 SW(RX_VK_DLSS_ACTOR_LIVE, kill, bool, "off: poses are read at the draw from the stream's view", "=1 copies every actor's pose from the GPU's buffer at the upscale, as before, for an A/B.")
 SW(RX_VK_DLSS_ACTOR_REACH, tune, float, "60 world units a second", "How far apart, in world units a second, two copies of a model may be and still pair for actor motion.")
 SW(RX_VK_DLSS_ACTOR_TOL, tune, int, "64", "Tolerance used when pairing an actor's pose with its pose of the frame before.")
+SW(RX_VK_UPSCALER_CUT_RESET, kill, bool, "on: a temporal upscaler's history reset at a camera cut", "=0 keeps the history across a camera cut (a cutscene's, a door, a warp), as before (ProjectReLink 596a723).")
 SW(RX_VK_DLSS_DEBUG, diag, enum, "unset: no debug view", "motion shows the motion vectors; alternate shows the game's own upscale every other frame as a test reference.")
 SW(RX_VK_DLSS_DIR, player, string, "the game folder's ngx, then the user's Hookshot/ngx data folder", "Names another folder NGX looks in first for the DLSS and frame generation runtimes.")
 SW(RX_VK_DLSS_FG, player, enum, "the Insert menu's Frame generation by row", "0 rules DLSS frame generation out for the run, 1 forces it, over the Frame generation by row.")

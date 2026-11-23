@@ -87,6 +87,23 @@ inline bool reprojection(const float* current, const float* previous, float out[
     return true;
 }
 
+/// (ProjectReLink 596a723) A camera cut, from the reprojection (this frame's clip space to the frame before's): the middle
+/// of the picture, far away (three depths from the far hundredth of the depth range to its end), was off the picture in the
+/// frame before, or behind its camera. Turning the camera as fast as the stick allows moves those points a few hundredths
+/// of the picture a frame, and walking or riding does not move something that far at all; a cut in a cutscene, a door or a
+/// warp puts them somewhere else altogether. The upscaler's history is of another view then, and has to be dropped: kept,
+/// it is blended into the new view for several frames (ghosts of the scene before)
+inline bool camera_cut(const float reproject[16]) {
+    const float depths[3] = {0.99f, 0.999f, 1.0f};
+    for (const float z : depths) {
+        const float x = reproject[2] * z + reproject[3], y = reproject[6] * z + reproject[7];
+        const float w = reproject[14] * z + reproject[15];
+        if (!(w > 1e-6f)) return true;
+        if (!(std::fabs(x) <= w && std::fabs(y) <= w)) return true;
+    }
+    return false;
+}
+
 /// A view-projection's jitter taken off (row major): a jitter moves clip x and y by jitter * w, so jitter times the w row
 /// comes off the first two rows
 inline void unjitter(float m[16], const float jitter[2]) {

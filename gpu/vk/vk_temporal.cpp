@@ -1380,8 +1380,17 @@ bool temporal_upscale(VkCommandBuffer cmd, uint64_t key, bool known, Texture* in
     float previous[16];
     std::memcpy(previous, s.last_vp, sizeof previous);
     dlss_math::unjitter(previous, s.last_jitter);
-    const bool motion = !reset && dlss_math::reprojection(cam.current, previous, pc.reproject);
+    bool motion = !reset && dlss_math::reprojection(cam.current, previous, pc.reproject);
     if (!motion) reset = true;   // (without a valid reprojection, prior history has no mapping to this camera)
+    // (ProjectReLink 596a723) A camera cut (a cutscene's, a door, a warp: dlss_math::camera_cut): the history is of another
+    // view, kept it showed the view before through the new one for a few frames (FSR 4's ghosts). Reset as a failed
+    // reprojection is. RX_VK_UPSCALER_CUT_RESET=0: kept, as before
+    static const bool cut_reset = env_switch("RX_VK_UPSCALER_CUT_RESET") != 0;
+    if (motion && cut_reset && dlss_math::camera_cut(pc.reproject)) {
+        static std::atomic<int> told{0};
+        if (told++ < 6) logf("vk: temporal upscaler: a camera cut (the view before is not this one): its history is reset");
+        reset = true, motion = false;
+    }
     pc.jitter[0] = cam.jitter[0], pc.jitter[1] = cam.jitter[1];
     pc.size[0] = (int32_t)rw, pc.size[1] = (int32_t)rh;
     pc.flags = (motion ? 1 : 0) | (show_motion ? 2 : 0) | (fsr_flip ? 8 : 0);

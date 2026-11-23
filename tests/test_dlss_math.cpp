@@ -170,5 +170,21 @@ int main() {
         CHECK("21:9 on a 21:9 window", dlss_jitter_clip(wide, 21.0f / 9.0f, 5, 8, 5040, 2160, out));
         CHECK("16:9 still, on a 21:9 window", dlss_jitter_clip(scene, 21.0f / 9.0f, 5, 8, 5040, 2160, out));
     }
+    {   // (ProjectReLink 596a723: a camera cut from the reprojection, dm::camera_cut)
+        float same[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        CHECK("no cut: the same view", !dm::camera_cut(same));
+        float turn[16];
+        std::memcpy(turn, same, sizeof turn);
+        turn[3] = 0.05f;   // (the far middle moved a few hundredths of the picture: a fast camera turn)
+        CHECK("no cut: a small turn", !dm::camera_cut(turn));
+        float away[16];
+        std::memcpy(away, same, sizeof away);
+        away[3] = 2.5f;   // (the far middle off the picture in the frame before: another view)
+        CHECK("a cut: the middle off the picture before", dm::camera_cut(away));
+        float behind[16];
+        std::memcpy(behind, same, sizeof behind);
+        behind[15] = -1.0f;   // (behind the camera before: a half turn)
+        CHECK("a cut: the middle behind the camera before", dm::camera_cut(behind));
+    }
     std::puts("dlss math: all checks passed");
 }
