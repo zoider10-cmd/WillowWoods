@@ -7364,6 +7364,11 @@
       "Magic Meter": 1
      }
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -7940,7 +7945,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -7950,7 +7954,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Slingshot": 1,
@@ -15735,6 +15738,11 @@
       "Magic Meter": 1
      }
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -16259,20 +16267,16 @@
     "17023457248274633121": [
      {
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1
      },
      {
-      "Bomb Bag": 1,
-      "Iron Boots": 1
+      "Bomb Bag": 1
      },
      {
-      "Iron Boots": 1,
       "Progressive Scale": 1
      },
      {
       "Dins Fire": 1,
-      "Iron Boots": 1,
       "Magic Meter": 1
      }
     ],
@@ -24181,6 +24185,11 @@
       "Magic Meter": 1
      }
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -24717,20 +24726,16 @@
     "17023457248274633121": [
      {
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1
      },
      {
-      "Bomb Bag": 1,
-      "Iron Boots": 1
+      "Bomb Bag": 1
      },
      {
-      "Iron Boots": 1,
       "Progressive Scale": 1
      },
      {
       "Dins Fire": 1,
-      "Iron Boots": 1,
       "Magic Meter": 1
      }
     ],
@@ -32337,6 +32342,11 @@
       "Progressive Scale": 1
      }
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -32880,7 +32890,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -32890,7 +32899,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Slingshot": 1,
@@ -40191,6 +40199,11 @@
       "Progressive Scale": 1
      }
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -40629,15 +40642,12 @@
     "17023457248274633121": [
      {
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1
      },
      {
-      "Bomb Bag": 1,
-      "Iron Boots": 1
+      "Bomb Bag": 1
      },
      {
-      "Iron Boots": 1,
       "Progressive Scale": 1
      }
     ],
@@ -47991,6 +48001,11 @@
       "Progressive Scale": 1
      }
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -48440,15 +48455,12 @@
     "17023457248274633121": [
      {
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1
      },
      {
-      "Bomb Bag": 1,
-      "Iron Boots": 1
+      "Bomb Bag": 1
      },
      {
-      "Iron Boots": 1,
       "Progressive Scale": 1
      }
     ],
@@ -55257,6 +55269,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -55714,7 +55731,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -55724,7 +55740,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Slingshot": 1,
@@ -61068,6 +61083,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -61309,9 +61329,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {
@@ -66603,6 +66621,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -66852,9 +66875,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {
@@ -73733,6 +73754,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -74268,7 +74294,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -74278,7 +74303,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Slingshot": 1,
@@ -79844,6 +79868,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -80087,9 +80116,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {
@@ -85687,6 +85714,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -86014,9 +86046,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {
@@ -92796,6 +92826,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -93253,7 +93288,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -93263,7 +93297,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Slingshot": 1,
@@ -98607,6 +98640,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -98848,9 +98886,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {
@@ -104142,6 +104178,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -104391,9 +104432,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {
@@ -111272,6 +111311,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -111807,7 +111851,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -111817,7 +111860,6 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
-      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Slingshot": 1,
@@ -117383,6 +117425,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -117626,9 +117673,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {
@@ -123226,6 +123271,11 @@
     "LH Child Fishing": [
      {}
     ],
+    "LH Lab Dive": [
+     {
+      "Progressive Scale": 2
+     }
+    ],
     "LW Ocarina Memory Game": [
      {
       "Ocarina": 1
@@ -123553,9 +123603,7 @@
      }
     ],
     "17023457248274633121": [
-     {
-      "Iron Boots": 1
-     }
+     {}
     ],
     "17445672702269453589": [
      {

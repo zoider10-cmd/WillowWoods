@@ -2460,6 +2460,8 @@ constexpr LogicItem kLogicItems[] = {
     {"HS", "Hookshot", {"Hookshot", "Longshot"}},
     // (each dungeon check by its own rule: the Shadow Temple's first torches. tools/rando/rando_seed.py DUNGEON_GATES)
     {"DF", "Din's Fire", {"Din's Fire"}},
+    // (the Golden Scale, placement 27: Lake Hylia's lab dive. tools/rando/rando_seed.py GOLD_SCALE)
+    {"GS", "Golden Scale", {"Golden Scale"}},
 };
 // (a rule's "T<N>": N Gold Skulltula tokens, by the Inventory page's count of them. tools/rando/rando_seed.py token_codes,
 // placement 12: the Skulltula house's rewards)

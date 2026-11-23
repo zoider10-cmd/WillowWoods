@@ -233,7 +233,7 @@ def main():
     check('"rando_scrubs": 0' in script and '(" scrubs 1 words 2" if a.scrubs else "")' in script, "the script does not read the setting, or does not name it in the seed's stamp")
     check("if len(now) > len(was):" in script and 'gift_files["Mals/" + n] = now' in script and "if g.key in SCRUB_LINES and gives[h] != g.item" in script,
           "a changed sale's words are not written with the seed, or an archive of another size would be")
-    check("if a.scrubs:   # (Deku Scrubs: with or without Quest rewards)" in script and "((g.entry, old) if g.entry else old, gives[h]) for old in g.olds" in script,
+    check("if a.scrubs:   # (Deku Scrubs: with or without Quest rewards)" in script and "((e, old) if e else old, gives[h]) for e in entries for old in g.olds" in script,
           "the scrubs wait for Quest rewards, or their sales are not swapped by their entry points")
     check("quest_need(gifts[h].need, gifts[h].area, placement >= 12, deep) if h in gifts" in script, "with Quest rewards a scrub does not ask for its two gating items")
     print("PASS: Deku Scrubs")

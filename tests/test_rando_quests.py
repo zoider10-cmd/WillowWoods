@@ -60,9 +60,11 @@ def main():
         # (bombs asked for the bracelet until every seed let Link lift a bomb without it: bomb_lift)
         check(g.need != seed.CHILD | {seed.BB, seed.BR}, "%s asks for the bracelet with a child's bombs still" % g.key)
         check(not (g.need >= seed.ADULT and seed.SSC not in g.need), "%s is an adult's and does not ask for the Silver Scale" % g.key)
-    by_flow = collections.Counter((g.flow, old) for g in seed.GIFTS for old in g.olds)
+    # (two gifts of one flow and item are told apart by their entries: the frogs' two prizes from FROGS_SPLIT_FROM)
+    entry = lambda g: seed.FROG_STORMS_ENTRY if g.key == "frogs" else g.entry
+    by_flow = collections.Counter((g.flow, old, entry(g)) for g in seed.GIFTS for old in g.olds)
     check(max(by_flow.values()) == 1, "an item of one flow is two gifts': %r" % [k for k, n in by_flow.items() if n > 1])
-    check({g.key: g.when for g in seed.GIFTS if g.when} == {"frogs": "frogs", "light_arrows": "light"},
+    check({g.key: g.when for g in seed.GIFTS if g.when} == {"frogs": "frogs", "frogs_game": "frogs", "light_arrows": "light"},
           "the frogs and the Light Arrows do not wait for their own settings, or another gift does")
     check(next(g for g in seed.GIFTS if g.key == "darunia").item == seed.BR and next(g for g in seed.GIFTS if g.key == "diving").item == seed.SSC,
           "the two gating gifts are not the bracelet and the Silver Scale")

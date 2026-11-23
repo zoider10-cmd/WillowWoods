@@ -237,8 +237,8 @@
    "name": "Chest (purple rupee) #2",
    "region": "Kakariko Village",
    "rule": "can_use(Longshot)",
-   "sure": false,
-   "why": "the same chest in the other village map (Adult_Dynamic vs Adult_Alternative)"
+   "sure": true,
+   "why": "the owner, 2026-11-23: the chest on top of Kakariko's windmill, the Longshot needed. #1 is the rainy village's copy (KakarikoVillage_Adult_Alternative: the storm between the Nocturne scene and the Shadow Temple), #2 the normal one's"
   },
   "a6a4e87da18fa678": {
    "area": "Hyrule Field",
@@ -269,8 +269,8 @@
    "name": "Chest (purple rupee) #1",
    "region": "Kakariko Village",
    "rule": "can_use(Longshot)",
-   "sure": false,
-   "why": "ootrr pin 'Kak Windmill Roof Chest' (ol:guess): 21 m above the windmill's Piece of Heart (that one needs the Hookshot); way unknown, the Longshot asked to be safe"
+   "sure": true,
+   "why": "the owner, 2026-11-23: the chest on top of Kakariko's windmill, the Longshot needed. #1 is the rainy village's copy (KakarikoVillage_Adult_Alternative: the storm between the Nocturne scene and the Shadow Temple), #2 the normal one's"
   },
   "bc85efca2b222cd9": {
    "area": "Gerudo Valley",
@@ -332,9 +332,9 @@
    "area": "Hyrule Field",
    "name": "Chest (red rupee), Lake Hylia #1",
    "region": "Lake Hylia",
-   "rule": "is_adult and Iron_Boots",
-   "sure": false,
-   "why": "ootrr pin 'LH Poe Chest'; review guess 'by the lake bottom, Iron Boots?'; but the child map has pots on the very spot (a dry nook), so is_adult alone is likely enough"
+   "rule": "is_adult and 'Water Temple Clear'",
+   "sure": true,
+   "why": "the owner, 2026-11-23: a remake change; the chest is there once the Water Temple is beaten and the lake filled ('Water Temple Clear', as LH Sun's rule)"
   },
   "f21b7ae43e7ff515": {
    "area": "Hyrule Field",

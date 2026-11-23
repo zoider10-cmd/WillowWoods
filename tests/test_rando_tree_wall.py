@@ -1,7 +1,8 @@
-"""Bug 119 (the owner's run 2026-11-23): the Longshot did not catch the vines of Lake Hylia's dead tree. A hookshot-
-stopping wall stands round the tree in both Links' Hyrule Field maps until the Water Temple's room 7 is walked into
-(WaterTemple_Room07_00); every seed takes it out (water_wall_out with TREE_WALL). Checked on a made-up map file and by
-source. No game files.
+"""Bug 119 (the owner's run 2026-11-23): the Longshot did not catch the vines of Lake Hylia's dead tree. A thin
+FldObj_AirWall_Hookshot lies along the vines in both Links' Hyrule Field maps while the Water Temple's room 7 is not
+walked into (WaterTemple_Room07_00). Fixes 73 took it out (read as a wall that stops the Hookshot) and the vines still
+did not catch; from fixes 79 it is what the Hookshot catches, kept there always (water_wall_out with TREE_WALL, keep:
+its Presence taken away). Checked on a made-up map file and by source. No game files.
 
 python -I -B tests/test_rando_tree_wall.py
 """
@@ -38,22 +39,22 @@ def main():
                                                                 actor("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")])))
     try:
         data = seed.byml_build(tree, 7)
-        out, _ = seed.byml_parse(seed.water_wall_out(data, seed.TREE_WALL))
+        out, _ = seed.byml_parse(seed.water_wall_out(data, seed.TREE_WALL, keep=True))
         left = [(a[1]["Gyaml"][1], a[1].get("Presence", ("", {}))[1].get("FlagName", ("", ""))[1] if "Presence" in a[1] else "")
                 for a in out[1]["Actors"][1]]
-        check(left == [("FldObj_AirWall_Hookshot", ""), ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")],
-              "the tree's wall alone is not taken out: %s" % left)
+        check(left == [("FldObj_AirWall_Hookshot", ""), ("FldObj_AirWall_Hookshot", ""), ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")],
+              "the tree's catch is not kept there always, the others as they were: %s" % left)
         out2, _ = seed.byml_parse(seed.water_wall_out(data))
         check(len(out2[1]["Actors"][1]) == 2, "the Water Temple gate's wall is no longer taken out by default")
     except (ValueError, struct.error, KeyError) as e:
         check(False, "a made-up map: %s" % e)
     src = open(seed.__file__, encoding="utf-8").read()
     main_src = src[src.index("\ndef main():"):]
-    check("for rel in TREE_WALL_FILES:" in main_src and "changed[rel] = water_wall_out(data, TREE_WALL)" in main_src and
-          main_src.index("water_wall_out(data, TREE_WALL)") < main_src.index("    # ---- the size table ----"),
-          "the tree's wall is not taken out of both maps before the size table")
-    check(seed.FIXES_VERSION >= 73, "FIXES_VERSION not past 72")
-    print("FAIL" if failed else "PASS: Lake Hylia's dead tree takes the Longshot from the start")
+    check("for rel in TREE_WALL_FILES:" in main_src and "changed[rel] = water_wall_out(data, TREE_WALL, keep=True)" in main_src and
+          main_src.index("water_wall_out(data, TREE_WALL, keep=True)") < main_src.index("    # ---- the size table ----"),
+          "the tree's catch is not kept in both maps before the size table")
+    check(seed.FIXES_VERSION >= 79, "FIXES_VERSION not past 78")
+    print("FAIL" if failed else "PASS: Lake Hylia's dead tree keeps the Hookshot's catch on its vines")
     return 1 if failed else 0
 
 

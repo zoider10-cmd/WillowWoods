@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 27  # 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 27  # 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -128,7 +128,7 @@ DAMPE_HOOK_FROM = 19   # (the owner, 2026-11-21: "it should be randomized the sa
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
 # while it is shut: without the Bow the room is left by a warp song, as any other. Nothing new to learn for a player.
 FIXES = {0x74fb0489585fe0e2: {"IsDisableSaveAndWarp": False}}
-FIXES_VERSION = 77   # (76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
+FIXES_VERSION = 81   # (80: before Darunia's gift was had after Dodongo's Cavern, DARUNIA_LATE (bug 128). 79: before Goron City's sign-order grotto gave its right chest after a wrong try, SIGN_GROTTO_LOGIC (bug 127). 78: before Lake Hylia's dead tree kept the Hookshot's catch along its vines, there always (TREE_WALL keep, bug 119; 73 had taken it out). 77: before a new game started with the mask salesman's trade done, MASK_TRADE (bug 133). 76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
 # The forest's two closed ways. Each is a flag of the game that starts set and is put out by the story: Mido stands in
 # the way to the Deku Tree until Link has a sword and a shield (KokiriForest_Npc_Kokiri_Mido_Child_Blocker), and a
 # Kokiri in the forest's way out until the Deku Tree is done (KokiriForest_Npc_Kokiri_007_Child_Blocker_00). An
@@ -555,10 +555,15 @@ Gift = collections.namedtuple("Gift", "key flow olds item area name need when en
 # the rules it asks for everything: such a gift only ever holds what the game can be finished without).
 # when: None, or the setting of its own it waits for ("frogs", "light"; "scrubs": Deku Scrubs, which does not wait
 # for Quest rewards). entry: None, or the one entry point of the flow whose calls are the gift's (two sales of one
-# flow that name the same item: the Business Scrubs' two Pieces of Heart).
+# flow that name the same item: the Business Scrubs' two Pieces of Heart), or a tuple of them (the frogs' game).
 # (a gift added after seeds were made takes part from the placement that added it: the seeds before keep their shuffle)
+# The Golden Scale a gating item with Quest rewards from placement 27 (GOLD_SCALE_FROM): Lake Hylia's lab dive asks for it
+# (the other logic's "LH Lab Dive": Progressive Scale 2), which overworld_rule drops while it is no gating item (the check
+# then asked for nothing). The fishing pond's adult prize puts it in the pool; the Tracker's letters "GS".
+GOLD_SCALE = "Item_Scale_Gold"
+GOLD_SCALE_FROM = 27
 GIFTS_FROM = {"potion_bottle": 9, "goron_tunic": 12, "zora_tunic": 12, "skulltula_house_40": 12,
-              "fairy_din": 14, "fairy_farore": 14, "fairy_nayru": 14}
+              "fairy_din": 14, "fairy_farore": 14, "fairy_nayru": 14, "lab_dive": 27, "frogs_game": 27}
 EVERYTHING = PROGRESSION | QUEST_GATES | TUNICS
 # The Skulltula house's rewards (bug 67, placement 12): each asks for its number of tokens, counted by the logic
 # (tokens), and for what it takes to come to the house in Kakariko, a child's or an adult's: out of the forest
@@ -601,6 +606,9 @@ GIFTS = (
     Gift("fishing_child", "MiniGame_Fishing", ("Obj_Heart_Piece",), "Obj_Heart_Piece", "HyruleField", "the fishing pond, as a child", CHILD, None),
     Gift("fishing_adult", "MiniGame_Fishing", ("Item_Scale_Gold",), "Item_Scale_Gold", "HyruleField", "the fishing pond, as an adult", GROWN, None),
     Gift("frogs", "MiniGame_FrogTenors", ("Obj_Heart_Piece",), "Obj_Heart_Piece", "ZoraRiver", "the frogs of Zora's River", GROWN, "frogs"),
+    # (the frogs' second prize, their ocarina game, from placement 27: FROGS_SPLIT_FROM)
+    Gift("frogs_game", "MiniGame_FrogTenors", ("Obj_Heart_Piece",), "Obj_Heart_Piece", "ZoraRiver", "the frogs of Zora's River: their ocarina game",
+         GROWN, "frogs", ("FrogMiniGame_Insectrepellent", "FrogMiniGame_RetryFlow")),
     Gift("gallery_market", "MiniGame_HitTarget", ("Item_BulletBag_Medium", "Item_BulletBag_Large"), "Item_BulletBag_Large", "Market",
          "the Market's shooting gallery", CHILD, None),
     Gift("gallery_kakariko", "MiniGame_HitTarget", ("Item_Quiver_Medium", "Item_Quiver_Large"), "Item_Quiver_Medium", "KakarikoVillage",
@@ -619,6 +627,10 @@ GIFTS = (
     Gift("skull_kid_song", "Npc_SkullKid_Child", ("Obj_Heart_Piece",), "Obj_Heart_Piece", "LostWood", "the Skull Kid: Saria's Song", CHILD, None),
     Gift("skull_kid_game", "Npc_SkullKid_Child_02", ("Obj_Heart_Piece",), "Obj_Heart_Piece", "LostWood", "the Skull Kids' memory game", CHILD, None),
     Gift("dog_lady", "SubEvent_FindRichard", ("Obj_Heart_Piece",), "Obj_Heart_Piece", "Market", "the dog lady", CHILD, None),
+    # (Lake Hylia's lab, placement 27, asked 2026-11-23: the scientist's diving game, either age, hands over a Piece of
+    #  Heart, Npc_Hylia_045_Child's DivingChallenge_Common. Its rule is the other logic's "LH Lab Dive", OVERWORLD_GIFTS:
+    #  the Golden Scale (the owner tried the Iron Boots as an adult: they do not count); EVERYTHING without the table)
+    Gift("lab_dive", "Npc_Hylia_045_Child", ("Obj_Heart_Piece",), "Obj_Heart_Piece", "HyruleField", "the Lake Hylia lab's diving game", EVERYTHING, None),
     Gift("potion_bottle", "Npc_Hylia_020_Shop_Child", ("Item_Bottle",), "Item_Bottle", "Market",
          "the Potion Shop keeper's bottle", CHILD, None),   # (his errand of the bug passed over: potion_errand_skip)
     Gift("light_arrows", "Dm_TimeTemple_0130", ("Item_Arrow_Light",), "Item_Arrow_Light", "Market", "Zelda: the Light Arrows",
@@ -3472,10 +3484,13 @@ CHU_FLOWS = (("Event/EventFlow/MiniGame_BombchuBowling.bfevfl.zs", "Event137"),
 WATER_WALL_FILE = "Banc/HyruleField/HyruleField_Adult_Dynamic.bcett.byml.zs"
 WATER_WALL = ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")
 # (bug 119, the owner's run 2026-11-23: the Longshot did not catch the vines of Lake Hylia's dead tree, its Gold
-# Skulltula's way, "LH GS Tree" by the Longshot in the rules.) A hookshot-stopping wall (FldObj_AirWall_Hookshot) stands
-# round the tree in both Links' Hyrule Field maps until WaterTemple_Room07_00 is set, by walking into the Water Temple's
-# room 7 (its Longshot chest's). The only such wall that waits for a flag. Taken out of both maps in every seed
-# (water_wall_out), so the tree is the Longshot's from the start, as the rules have it.
+# Skulltula's way, "LH GS Tree" by the Longshot in the rules.) A thin FldObj_AirWall_Hookshot lies along the vines in both
+# Links' Hyrule Field maps, there while WaterTemple_Room07_00 is not set (walking into the Water Temple's room 7). Fixes
+# 73 took it out, read as a wall that stops the Hookshot: the owner then saw the reticle red on the vines (in reach,
+# nothing to catch) and no catch, with the Water Temple done too. Its shape (0.87 x 1.21 x 0.29, tilted as the trunk, at
+# the vines' height) and the other such walls (Water Temple, Fire Temple, Kakariko: small boards where the Hookshot
+# catches) say it is what the Hookshot catches. From fixes 79 it is kept and there always (water_wall_out's keep: its
+# Presence taken away), so the vines take the Longshot whatever room 7 says.
 TREE_WALL_FILES = ("Banc/HyruleField/HyruleField_Adult_Dynamic.bcett.byml.zs", "Banc/HyruleField/HyruleField_Child_Dynamic.bcett.byml.zs")
 TREE_WALL = ("FldObj_AirWall_Hookshot", "WaterTemple_Room07_00")
 # That was not enough (seen in play, 2026-11-20: the switch hookshotted, the gate stayed shut, no cutscene). So the gate
@@ -3622,6 +3637,56 @@ def masks_open(data, names=MASK_EXPS):
     return bytes(out)
 
 
+# The mask salesman's trade done from a new game's start (bug 133, the owner's run 2026-11-23: with masks_open alone,
+# borrowing the Bunny Hood started the trade, and no other mask could be had until it was sold). The trade's step is an
+# enum of the game's list (Data.Enum, its name's hash 0xea010310 as the save keeps it: the name itself not found; seen in
+# the owner's save at UntilRentMaskOfKeaton): NotReady, Ready, UntilRentMaskOfKeaton ... Step08, Complete. Started at
+# Complete, every mask is the shop's to swap freely, as the game has it once the trade is done
+# (HappyMaskShop_RentalAnyMask reads SubEvent_MaskSalesman_IsCompleted_Exp). Every seed (fixes 78); a save made before
+# keeps its trade's step.
+MASK_TRADE = 0xea010310
+MASK_TRADE_WAS, MASK_TRADE_NOW = "NotReady", "Complete"
+
+
+def enum_default(data, key=MASK_TRADE, was=MASK_TRADE_WAS, now=MASK_TRADE_NOW):
+    """The game's list of flags with the enum of hash `key` starting a new game at `now` (one of its values) in place of
+    `was`: the new bytes (the same size). ValueError: not the file, no such enum, `now` not one of its values, or it
+    does not start at `was` (made already, or not the list this was written for)."""
+    if data[:2] != b"BY":
+        raise ValueError("not a big-endian BYML (%r)" % data[:4])
+    key_at, str_at, root = struct.unpack_from(">III", data, 4)
+    count = lambda at: int.from_bytes(data[at + 1:at + 4], "big")
+    u32 = lambda at: struct.unpack_from(">I", data, at)[0]
+    keys = [data[key_at + u32(key_at + 4 + 4 * k):data.index(b"\0", key_at + u32(key_at + 4 + 4 * k))].decode("utf-8", "replace")
+            for k in range(count(key_at))]
+
+    def fields(at):
+        if data[at] != 0xC1:
+            raise ValueError("no dictionary at %#x" % at)
+        return {keys[int.from_bytes(data[at + 4 + 8 * k:at + 7 + 8 * k], "big")]: (data[at + 7 + 8 * k], u32(at + 8 + 8 * k), at + 8 + 8 * k)
+                for k in range(count(at))}
+
+    def items(at):
+        if data[at] != 0xC0:
+            raise ValueError("no array at %#x" % at)
+        n = count(at)
+        return [(data[at + 4 + i], u32(at + 4 + (n + 3 & ~3) + 4 * i)) for i in range(n)]
+    enums = items(fields(fields(root)["Data"][1])["Enum"][1])
+    mine = [f for f in (fields(at) for t, at in enums if t == 0xC1) if f.get("Hash", (0, None))[1] == key]
+    if len(mine) != 1:
+        raise ValueError("the list has %d enums of hash %#x" % (len(mine), key))
+    f = mine[0]
+    values = [struct.unpack_from(">Q", data, v)[0] if t == 0xD5 else None for t, v in items(f["Values"][1])]
+    if murmur3(now.encode()) not in values:
+        raise ValueError("%s is not a value of the enum %#x" % (now, key))
+    kind, value, where = f["DefaultValue"]
+    if kind != 0xD3 or value != murmur3(was.encode()):
+        raise ValueError("the enum %#x does not start at %s (made already?)" % (key, was))
+    out = bytearray(data)
+    struct.pack_into(">I", out, where, murmur3(now.encode()))
+    return bytes(out)
+
+
 def ainb_exp_swap(data, old=BOMBCHU_QUEST, new=ALWAYS_EXP):
     """An AI file (AIB, version 0x408) whose one reading of the flag `old` reads `new`: the new name put at the end of
     its strings (the file's last part: a string is its place there) and the reading's place of the name changed. The new
@@ -3662,9 +3727,10 @@ def flow_switch_yes(data, event, query="EventQueryIsGameDataBoolExp", flag=BOMBC
     return bytes(out)
 
 
-def water_wall_out(data, wall=WATER_WALL):
+def water_wall_out(data, wall=WATER_WALL, keep=False):
     """The adult's Hyrule Field map file without the invisible wall over the Water Temple's gate switch (WATER_WALL), or
-    another wall (its Gyaml, the flag its Presence waits for): the file written anew. ValueError: not one such wall in it."""
+    another wall (its Gyaml, the flag its Presence waits for): the file written anew. keep: the wall stays, there always
+    (its Presence taken away: TREE_WALL). ValueError: not one such wall in it."""
     tree, version = byml_parse(data)
     actors = tree[1].get("Actors")
     if not actors or actors[0] != "array":
@@ -3673,7 +3739,10 @@ def water_wall_out(data, wall=WATER_WALL):
              and a[1]["Presence"][1].get("FlagName", ("", ""))[1] == wall[1]]
     if len(walls) != 1:
         raise ValueError("%d walls %s by %s in it, not 1" % (len(walls), wall[0], wall[1]))
-    tree[1]["Actors"] = ("array", [a for a in actors[1] if a is not walls[0]])
+    if keep:
+        del walls[0][1]["Presence"]
+    else:
+        tree[1]["Actors"] = ("array", [a for a in actors[1] if a is not walls[0]])
     return byml_build(tree, version)
 
 
@@ -3726,6 +3795,35 @@ def bow_room_fix(data):
     out = bytearray(data)
     at, frm = start + 8 * to_focus[0], start + 8 * partner
     out[at:at + 4] = data[frm:frm + 4]
+    return bytes(out)
+
+
+# Goron City's sign-order grotto (bug 127, the owner's run 2026-11-23: one wrong try, and the right order after gave no
+# chest). Its logic (SIGN_GROTTO_LOGIC: six signboards, two chests that appear) lets the right chest appear when the right
+# signs are cut AND node 31 is false, node 31 being OR(node 28, the saved _clear): node 28 is OR(clear_InLocalScene,
+# faild_InLocalScene). A wrong try sets faild_InLocalScene, which is not saved but lasts while Link is in Goron City (the
+# grotto is part of its scene), so the right chest could not come until he left. (The saved _OutOfService the wrong chest
+# sets is read by nothing that gates a chest.) sign_grotto_fix makes node 31's first input node 26's output 0 (the
+# clear_InLocalScene reader) instead of node 28's: a wrong try no longer holds the right chest back; the wrong chest's
+# own gate is as it was. Found by the agent's reading of the file, 2026-11-23. Every seed (fixes 80).
+SIGN_GROTTO_LOGIC = "Logic/HidingHole_Level_Hole_17_Prefab_e58a.logic.module.ainb"
+
+
+def sign_grotto_fix(data):
+    """The sign-order grotto's logic (SIGN_GROTTO_LOGIC) with node 31's first input (multi-input entry 28) reading node
+    26's output 0 in place of node 28's output 1: the new bytes, of the same size. ValueError: not the file known."""
+    u32 = lambda at: struct.unpack_from("<I", data, at)[0]
+    if data[:4] != b"AIB " or u32(4) != 0x408:
+        raise ValueError("not an AI file of version 0x408")
+    pool = u32(0x24)
+    kind = lambda i: data[pool + u32(0x74 + 0x3C * i + 8):data.index(b"\0", pool + u32(0x74 + 0x3C * i + 8))]
+    if u32(0x10) <= 31 or [kind(i) for i in (10, 26, 27, 28, 31)] != [b"HoldGameDataGetBoolSimple"] * 3 + [b"OperateOR"] * 2:
+        raise ValueError("not the nodes this was written for")
+    start, end = u32(0x38), u32(0x30)
+    if end - start < 8 * 30 or u32(start + 8 * 28) != 28 | 1 << 16 or u32(start + 8 * 29) != 10:
+        raise ValueError("node 31's inputs are not node 28's and node 10's (made already?)")
+    out = bytearray(data)
+    struct.pack_into("<I", out, start + 8 * 28, 26)
     return bytes(out)
 
 
@@ -4150,6 +4248,90 @@ QUEST_LATE = (   # (flow, its entries, a further condition (an expression) or No
      "SageOfWater_KingZora_adult_Talk_Event198", ("SageOfWater", "Safety_Entry"), "WillowLateZora"),
 )
 QUEST_ORDER = ("SageOfFire", "SageOfFire", ("StopDaruniaJr", "TalkDaruniaJr", "MoveStatue"), "WillowOrder")
+# Darunia's gift after Dodongo's Cavern (bug 128, the owner's run 2026-11-23: Saria's Song to Darunia after the cavern was
+# done gave a talk, no gift). Saria's Song at his ocarina point runs Get_StoneOfFire's Get_StoneOfFire_PlayOcarina, which
+# asks Get_StoneOfFire_IsAfter_SariaMelodyPlay_Exp: false, the gift's scene (EventTransition Dm_Goron_0030); true, a
+# talk. Finishing the cavern takes the quest past that step. Darunia's gift is owed while HavePlayedEvent.Dm_Goron_0030
+# is not set (the scene sets it; seen 1 in every save copy that had the gift): in front of the talk, a switch on it sends
+# a Link still owed the gift to the scene (DARUNIA_LATE). The scene asks for the quest's step DodongoCavernOpne, which
+# would move the quest back (QUEST_ORDER's note): that step is asked only while the quest is not past it
+# (DARUNIA_ORDER). Found by the agent's reading, 2026-11-23. With Quest rewards, placement aside (fixes 81).
+DARUNIA_LATE = ("Get_StoneOfFire", "Get_StoneOfFire_IsAfter_SariaMelodyPlay_Exp", "Dm_Goron_0030", "HavePlayedEvent.Dm_Goron_0030", "WillowDaruniaLate")
+DARUNIA_ORDER = ("Dm_Goron_0030", "Get_StoneOfFire", "DodongoCavernOpne", "WillowDaruniaOrder")
+
+
+def darunia_late_flow(raw, name):
+    """Get_StoneOfFire (DARUNIA_LATE) or Dm_Goron_0030 (DARUNIA_ORDER) with Darunia's late gift: the new bytes.
+    ValueError: not the flow this was written for, or changed already."""
+    import io
+    evfl = evfl_module()
+    flow = evfl.EventFlow()
+    flow.read(raw)
+    fc = flow.flowchart
+    if fc is None or fc.name != name or any(e.name.startswith("WillowDarunia") for e in fc.events):
+        raise ValueError("not the game's %s flow, or already changed" % name)
+    import copy
+    data_actor = [a for a in fc.actors if a.identifier.name == "GameDataActor" and not a.identifier.sub_name]
+    if data_actor:
+        data_actor = data_actor[0]
+    else:   # (the scene has none: one made as quest_order_flow's actor_of does)
+        data_actor = evfl.Actor()
+        data_actor.identifier = evfl.ActorIdentifier("GameDataActor")
+        data_actor.params = copy.deepcopy(fc.actors[0].params)
+        data_actor.params.data["EventMemberCreateMethod"] = 0
+        data_actor.concurrent_clips = fc.actors[0].concurrent_clips
+        fc.actors.append(data_actor)
+
+    def ask(label, query, flag, yes, no):
+        got = [h for h in data_actor.queries if h.v == query]
+        if got:
+            q = got[0]
+        else:
+            q = evfl.common.StringHolder(query)
+            data_actor.queries.append(q)
+        e = evfl.Event()
+        e.name = label
+        e.data = evfl.SwitchEvent()
+        c = evfl.Container()
+        c.data.update(dict(Index=-1, GameDataName=flag) if query == "EventQueryIsGameDataBool" else dict(GameDataName=flag))
+        e.data.actor.v, e.data.actor_query.v, e.data.params = data_actor, q, c
+        for value, to in ((0, yes), (1, no)):
+            e.data.cases[value] = evfl.util.RequiredIndex()
+            e.data.cases[value].v = to
+        fc.events.append(e)
+        return e
+    param = lambda e, k: e.data.params.data.get(k) if getattr(e.data, "params", None) is not None else None
+    if name == DARUNIA_LATE[0]:
+        _, exp, scene, done, label = DARUNIA_LATE
+        hits = [e for e in fc.events if isinstance(e.data, evfl.SwitchEvent) and param(e, "GameDataName") == exp
+                and 1 in e.data.cases and isinstance(e.data.cases[1].v.data, evfl.ActionEvent)
+                and param(e.data.cases[1].v, "EventName") == scene and 0 in e.data.cases]
+        if len(hits) != 1:
+            raise ValueError("%d switches of %s lead to %s, not 1" % (len(hits), exp, scene))
+        sw = hits[0]
+        owed = ask(label, "EventQueryIsGameDataBool", done, sw.data.cases[0].v, sw.data.cases[1].v)
+        sw.data.cases[0].v = owed
+    elif name == DARUNIA_ORDER[0]:
+        _, quest, step, label = DARUNIA_ORDER
+        hits = [e for e in fc.events if isinstance(e.data, evfl.ActionEvent) and e.data.actor_action.v.v == "EventExecuteProgressChallengeStep"
+                and param(e, "ChallengeName") == quest and param(e, "StepName") == step]
+        if len(hits) != 1:
+            raise ValueError("%s asks for %s's %s %d times, not once" % (name, quest, step, len(hits)))
+        t = hits[0]
+        holders = []
+        for e in fc.events:
+            d = e.data
+            holders += [getattr(d, a) for a in ("nxt", "join") if hasattr(d, a)] + list(getattr(d, "forks", [])) + list(getattr(d, "cases", {}).values())
+        holders += [p.main_event for p in fc.entry_points]
+        holders = [h for h in holders if h.v is t]
+        guard = ask(label, "EventQueryIsGameDataBoolExp", "%s_IsAfter_%s_Exp" % (quest, step), t.data.nxt.v, t)
+        for h in holders:
+            h.v = guard
+    else:
+        raise ValueError("not a flow of Darunia's late gift: %s" % name)
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
 QUEST_MAKE = ("Dm_SY_BancChangeGo", "DeathMountainCrater_ToGoronCity", "SageOfFire_GenerateDaruniaJr", "WillowLateGoronMake")
 
 
@@ -5417,7 +5599,7 @@ CHECK_CODES = collections.OrderedDict((
     ("Item_Melody_ZeldaLullaby", "ZL"), ("Item_Melody_EponaSong", "EP"), ("Item_Melody_SariaSong", "SR"), ("Item_Melody_TimeSong", "ST"),
     ("Item_Melody_StormSong", "SO"), ("Item_Melody_SpiritRequiem", "RQ"), ("Item_Melody_ShadowNocturne", "NC"),
     ("Obj_Armor_Goron", "GT"), ("Obj_Armor_Zora", "ZT"), (BOTTLE, "BO"), ("Item_ZeldaLetter", "LE"), ("Item_Ocarina_Fairy", "FO"),
-    ("Item_FairyBless_MPDouble", "MG"), ("Weapon_Sword_Master", "MW"), (HOOK, "HS"), ("Item_DinFire", "DF")))   # (the tunics, placement 12: TUNICS; MW: Shuffle the Master Sword, MASTER; HS: Shuffle Dampe's Hookshot, HOOK)
+    ("Item_FairyBless_MPDouble", "MG"), ("Weapon_Sword_Master", "MW"), (HOOK, "HS"), ("Item_DinFire", "DF"), ("Item_Scale_Gold", "GS")))   # (the tunics, placement 12: TUNICS; MW: Shuffle the Master Sword, MASTER; HS: Shuffle Dampe's Hookshot, HOOK)
 
 
 def token_codes(way):
@@ -5454,6 +5636,7 @@ GIFT_PLACES = {
     "fishing_child": ("C", (-97.6, 134.1, 489.7)),         # (MiniGame_Fishing_PlayerStart)
     "fishing_adult": ("A", (-97.6, 134.1, 489.7)),
     "frogs": ("C", (9.2, 101.9, -54.8)),                   # (OcarinaPoint_MiniGame_FrogTenors)
+    "frogs_game": ("C", (9.2, 101.9, -54.8)),
     "gallery_market": ("C", (-14.2, 100.1, -12.4)),        # (HitTargetStartPos)
     "gallery_kakariko": ("A", (-58.5, 91.4, 62.6)),        # (HitTargetStartPos)
     "cucco_lady": ("C", (-73.9, 99.5, 82.9)),              # (CatchCucco_GoalPoint)
@@ -5466,6 +5649,7 @@ GIFT_PLACES = {
     "skull_kid_song": ("C", (-28.6, 101.0, 1.6)),          # (On_Center_Npc_SkullKid_Child)
     "skull_kid_game": ("C", (48.4, 97.8, 15.8)),           # (OcarinaPoint_SkullKidSession)
     "dog_lady": ("C", (-0.3, 100.1, 26.9)),                # (SubEvent_FindRichard_Link_Stay)
+    "lab_dive": ("CA", (-172.5, 137.8, 422.2)),            # (beside Npc_Hylia_045, the scientist in Lake Hylia's lab, at x -174.5)
     "potion_bottle": ("C", (20.6, 100.1, 6.0)),            # (the Potion Shop, as its shelves: SHOPS "medicine")
     "light_arrows": ("A", (108.0, 103.9, -34.0)),          # (the Temple of Time, before the Spirit Stones' base at x 110.4)
     "scrub_heart_field": ("CA", (25.0, 129.9, 22.1)),      # (the scrubs: where the map has them)
@@ -5664,6 +5848,17 @@ MALON_HARD = ("song_epona",)
 MALON_HARD_FROM = 15
 MALON_FREE_FROM = 18
 SONGS_HARD = ("frogs",)   # (the frogs ask for six songs: with the songs shuffled, for everything, so no gating item is theirs)
+# The frogs' two prizes (bug 132, the owner's run 2026-11-23: the Song of Storms gave the check's item and the ocarina game
+# gave it again): MiniGame_FrogTenors gives a Piece of Heart for the Song of Storms (its PlayOcarinaForFrogMiniGame_Melody
+# entry: GetInEvent_NotTurn_NotNpc) and another for their game of the five other songs (FrogMiniGame_Insectrepellent and
+# FrogMiniGame_RetryFlow: MushiToriGame), the other logic's "ZR Frogs in the Rain" and "ZR Frogs Ocarina Game". Before 27
+# one gift made both its item. From FROGS_SPLIT_FROM, "frogs" is the Song of Storms' alone (its entry, and its name) and
+# "frogs_game" the game's; with the songs shuffled, the Song of Storms' asks as an adult's check does (the Song of Storms
+# with the others, song_need) and the game's for everything (SONGS_HARD_SPLIT).
+FROGS_SPLIT_FROM = 27
+FROG_STORMS_ENTRY = "PlayOcarinaForFrogMiniGame_Melody"
+FROG_STORMS_NAME = "the frogs of Zora's River: the Song of Storms"
+SONGS_HARD_SPLIT = ("frogs_game",)
 SONGS = (
     Gift("song_zelda", "Dm_MelodyGet_Zelda", (ZL,), ZL, "HyruleCastle", "Impa's lesson: Zelda's Lullaby", CHILD, "songs"),
     Gift("song_epona", "Dm_MelodyGet_Epona", (EPONA,), EPONA, "HyruleField", "Malon's lesson: Epona's Song", CHILD, "songs"),
@@ -6829,7 +7024,7 @@ OVERWORLD_GIFTS = {"darunia": "GC Darunias Joy", "lostwood_target": "LW Target i
                    "gallery_kakariko": "Kak Shooting Gallery Reward", "cucco_lady": "Kak Anju as Child", "archery_heart": "GF HBA 1000 Points",
                    "archery_quiver": "GF HBA 1500 Points", "goron_tunic": "GC Rolling Goron as Adult", "zora_tunic": "ZD King Zora Thawed",
                    "rolling_goron": "GC Rolling Goron as Child", "roof_man": "Kak Man on Roof", "skull_kid_song": "LW Skull Kid",
-                   "skull_kid_game": "LW Ocarina Memory Game", "dog_lady": "Market Lost Dog"}
+                   "skull_kid_game": "LW Ocarina Memory Game", "dog_lady": "Market Lost Dog", "lab_dive": "LH Lab Dive"}
 OVERWORLD_SHOPS = {"kokiri": "KF Shop Item 1", "general": "Market Bazaar Item 1", "medicine": "Market Potion Shop Item 1",
                    "goron": "GC Shop Item 1", "zora": "ZD Shop Item 1",
                    "kgeneral": "Kak Bazaar Item 1", "kmedicine": "Kak Potion Shop Item 1"}
@@ -7667,11 +7862,13 @@ def main():
     if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: a gating item, HOOK)
         PROGRESSION = PROGRESSION | {HOOK}
     if a.quests:
-        PROGRESSION = PROGRESSION | QUEST_GATES | (TUNICS if placement >= 12 else frozenset())
+        PROGRESSION = PROGRESSION | QUEST_GATES | (TUNICS if placement >= 12 else frozenset()) | ({GOLD_SCALE} if placement >= GOLD_SCALE_FROM else frozenset())
         for g in GIFTS:
             if g.key in GIFTS_FROM and placement < GIFTS_FROM[g.key]:
                 continue
             if g.when is None or g.when == "frogs" and a.frogs or g.when == "light" and a.light_arrows:
+                if g.key == "frogs" and placement >= FROGS_SPLIT_FROM:   # (the Song of Storms' prize alone: frogs_game has the other)
+                    g = g._replace(entry=FROG_STORMS_ENTRY, name=FROG_STORMS_NAME)
                 gifts[gift_hash(g.key)] = g
                 spots[gift_hash(g.key)] = [g.area, g.item, None, None, "gift", g.name, ""]
     if a.scrubs:   # (Deku Scrubs: with or without Quest rewards)
@@ -7804,7 +8001,7 @@ def main():
     if a.songs:    # (the songs named: a lesson's line names its own; the frogs ask for everything)
         malon_hard = a.songs == 2 and MALON_HARD_FROM <= placement < MALON_FREE_FROM   # (Malon's lesson asked for everything: MALON_HARD)
         needs = {h: frozenset(PROGRESSION) if malon_hard and h in lessons and gifts[h].key in MALON_HARD else
-                 n if h in lessons else frozenset(PROGRESSION) if h in gifts and gifts[h].key in SONGS_HARD else
+                 n if h in lessons else frozenset(PROGRESSION) if h in gifts and gifts[h].key in (SONGS_HARD_SPLIT if placement >= FROGS_SPLIT_FROM else SONGS_HARD) else
                  each(song_need, n, spots[h][0], gifts[h].key if h in gifts else None) for h, n in needs.items()}
     if a.magic:   # (magic where the Lens of Truth is asked for: magic_need)
         needs = {h: each(magic_need, n) for h, n in needs.items()}
@@ -8158,6 +8355,7 @@ def main():
                     new = more if more is not None else new
                 new = always_exp(new if new is not None else was)   # (the same file: ALWAYS_EXP, for the Bombchu Shop and Bowling)
                 new = masks_open(new)   # (the same file: every mask from the Happy Mask Shop, MASK_EXPS)
+                new = enum_default(new)   # (the same file: the mask salesman's trade done, MASK_TRADE)
             except Exception as e:
                 sys.exit("%s: %s. Nothing written." % (n, e))
             flag_files[FLAG_LIST + "/" + n] = new
@@ -8238,7 +8436,8 @@ def main():
     swaps = collections.OrderedDict()   # a flow -> {the item it names: the item it gives now}
     for h, g in gifts.items():
         if gives[h] != g.item and g.flow and h not in lessons:   # (a shop's shelf has no scene: its actor is the sale; the songs: below)
-            swaps.setdefault(g.flow, {}).update(((g.entry, old) if g.entry else old, gives[h]) for old in g.olds)
+            entries = g.entry if isinstance(g.entry, tuple) else (g.entry,) if g.entry else (None,)   # (a gift of several entries: the frogs' game)
+            swaps.setdefault(g.flow, {}).update(((e, old) if e else old, gives[h]) for e in entries for old in g.olds)
     for flow, old, new in test_gifts:
         swaps.setdefault(flow, {})[old] = new
         print("TEST: %s gives %s in place of %s (rando\\test_gifts.txt)" % (flow, new, old))
@@ -8797,11 +8996,19 @@ def main():
     try:   # (every seed: Lake Hylia's dead tree takes the Longshot before the Water Temple, TREE_WALL, bug 119)
         for rel in TREE_WALL_FILES:
             data = changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
-            changed[rel] = water_wall_out(data, TREE_WALL)
+            changed[rel] = water_wall_out(data, TREE_WALL, keep=True)
             sizes[rel[:-3]] = len(changed[rel])
     except (OSError, ValueError, struct.error, IndexError) as e:
         sys.exit("Lake Hylia's dead tree: %s: %s. Nothing written." % (rel, e))
-    print("Lake Hylia's dead tree takes the Longshot from the start")
+    print("Lake Hylia's dead tree's vines take the Longshot whatever the Water Temple's room 7 says")
+    try:   # (every seed: Goron City's sign-order grotto gives its right chest after a wrong try, sign_grotto_fix)
+        rel = SIGN_GROTTO_LOGIC
+        data = changed[rel] if rel in changed else open(os.path.join(romfs, *rel.split("/")), "rb").read()
+        changed[rel] = sign_grotto_fix(data)
+        sizes[rel] = len(changed[rel])
+    except (OSError, ValueError, struct.error) as e:
+        sys.exit("Goron City's sign-order grotto: %s. Nothing written." % e)
+    print("Goron City's sign-order grotto gives its right chest after a wrong try")
     try:   # (every seed: the Forest Temple's Bow room opens its barred door once its Stalfos are dead, bow_room_fix)
         rel = BOW_ROOM_LOGIC
         data = changed[rel] if rel in changed else open(os.path.join(romfs, *rel.split("/")), "rb").read()
@@ -8967,6 +9174,15 @@ def main():
                 sys.exit("quest order, %s: %s. Nothing written." % (rel, e))
         print("Quest rewards: the rolling Goron's and King Zora's gifts kept when their quest is moved on first; the Fire quest "
               "never moved back")
+        for n in (DARUNIA_LATE[0], DARUNIA_ORDER[0]):   # (Darunia's gift after Dodongo's Cavern, DARUNIA_LATE)
+            rel = "%s/%s.bfevfl.zs" % (GIFT_FLOWS if n == DARUNIA_LATE[0] else SCENE_FLOWS, n)
+            try:
+                was = gift_files[rel] if rel in gift_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+                gift_files[rel] = darunia_late_flow(was, n)
+                gift_sizes[rel[:-3]] = len(gift_files[rel])
+            except (OSError, ValueError, struct.error) as e:
+                sys.exit("Darunia's late gift, %s: %s. Nothing written." % (rel, e))
+        print("Quest rewards: Darunia's gift is had after Dodongo's Cavern too")
     for saver_on, rel, saver in ((a.any_fish, FISH_FLOW, "fish"), (a.skull_kid_fast, SKULL_KID_FLOW, "skull kid"),
                            (a.skip_tower, GANON_FLOW, "tower")):   # (the time savers: qol_flow, on what the gifts made)
         if not saver_on:

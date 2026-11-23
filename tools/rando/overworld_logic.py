@@ -38,7 +38,7 @@ EVENT_TYPES = ("Event", "Boss", "Drop")
 NAMED = ("GC Darunias Joy", "LW Target in Woods", "Deku Theater Skull Mask", "Deku Theater Mask of Truth", "ZD Diving Minigame",
          "LH Child Fishing", "LH Adult Fishing", "Market Shooting Gallery Reward", "Kak Shooting Gallery Reward",
          "Kak Anju as Child", "GF HBA 1000 Points", "GF HBA 1500 Points", "GC Rolling Goron as Adult", "ZD King Zora Thawed",
-         "GC Rolling Goron as Child", "Kak Man on Roof", "LW Skull Kid", "LW Ocarina Memory Game", "Market Lost Dog",
+         "GC Rolling Goron as Child", "Kak Man on Roof", "LW Skull Kid", "LW Ocarina Memory Game", "Market Lost Dog", "LH Lab Dive",
          "KF Shop Item 1", "Market Bazaar Item 1", "Market Potion Shop Item 1", "Market Bombchu Shop Item 1", "GC Shop Item 1",
          "ZD Shop Item 1", "Kak Bazaar Item 1", "Kak Potion Shop Item 1")
 # (bug 118, 2026-11-23) The remake's checks the other logic doesn't have (pinned to no location, or only to a pool of
