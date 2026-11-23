@@ -49,7 +49,7 @@
         "exits": {
             "Bottom of the Well Left Side": "(Silver_Rupee_Bottom_of_the_Well_Basement, 5)",
             "Bottom of the Well Dead Hand Area": "can_play(Zeldas_Lullaby)",
-            "Bottom of the Well Behind Fake Walls": "can_use(Lens_of_Truth)"
+            "Bottom of the Well Behind Fake Walls": "logic_lens_botw or can_use(Lens_of_Truth)"
         }
     },
     {
@@ -84,7 +84,7 @@
         "locations": {
             "Bottom of the Well Lens of Truth Chest": "Kokiri_Sword",
             # Up a hidden ladder above the Dead Hand pit.
-            "Bottom of the Well Invisible Chest": "can_use(Lens_of_Truth)",
+            "Bottom of the Well Invisible Chest": "logic_lens_botw or can_use(Lens_of_Truth)",
             "Bottom of the Well Underwater Left Chest": "True",
             "Bottom of the Well Underwater Front Chest": "True",
             "Bottom of the Well Underwater Pot": "True"

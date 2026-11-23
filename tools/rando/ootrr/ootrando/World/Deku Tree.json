@@ -1,14 +1,12 @@
+# Deku Tree, checked against the remake actors (docs/dungeon-logic/deku-tree.md).
 [
     {
         "region_name": "Deku Tree Lobby",
         "dungeon": "Deku Tree",
         "locations": {
             "Deku Tree Map Chest": "True",
-            "Deku Tree Compass Chest": "(can_use(Slingshot) or can_use(Boomerang)) and (is_adult or can_child_attack)",
-            "Deku Tree Compass Room Side Chest": "(can_use(Slingshot) or can_use(Boomerang)) and (is_adult or can_child_attack)",
             "Deku Tree Lower Lobby Recovery Heart": "True",
             "Deku Tree Upper Lobby Recovery Heart": "is_adult or can_child_attack or Nuts",
-            "Deku Tree GS Compass Room": "(can_use(Slingshot) or can_use(Boomerang)) and (is_adult or can_child_attack)",
             "Deku Baba Sticks": "is_adult or Kokiri_Sword or Boomerang",
             "Deku Baba Nuts": "
                 is_adult or Slingshot or Sticks or
@@ -27,6 +25,25 @@
         "locations": {
             "Deku Tree Slingshot Chest": "True",
             "Deku Tree Slingshot Room Side Chest": "True"
+        },
+        "exits": {
+            # The eye switch in this room drops the ladder up to the third floor.
+            # A damaging item is wanted for the big skulltula at the Compass Room door.
+            "Deku Tree Compass Room": "
+                (can_use(Slingshot) or can_use(Boomerang)) and (is_adult or can_child_attack)"
+        }
+    },
+    {
+        # The third floor: the Compass Room and the top ledge of the lobby beside it.
+        "region_name": "Deku Tree Compass Room",
+        "dungeon": "Deku Tree",
+        "locations": {
+            "Deku Tree Compass Chest": "True",
+            "Deku Tree Compass Room Side Chest": "True",
+            "Deku Tree GS Compass Room": "True"
+        },
+        "exits": {
+            "Deku Tree Lobby": "True"
         }
     },
     {
@@ -40,10 +57,20 @@
                 (logic_deku_basement_gs and (is_adult or Sticks or Kokiri_Sword))"
         },
         "exits": {
-            "Deku Tree Basement Back Room": "
+            # The web before the eye switch room gives way to fire or explosives.
+            "Deku Tree Basement Water Room": "
                 here(has_fire_source_with_torch or can_use(Bow) or has_explosives) and
                 here(can_use(Slingshot) or can_use(Boomerang) or can_use(Bow))",
             "Deku Tree Basement Ledge": "deku_tree_shortcuts or here(is_adult) or logic_deku_b1_skip"
+        }
+    },
+    {
+        # The eye switch room, the water room with the dive switch and the candle room.
+        "region_name": "Deku Tree Basement Water Room",
+        "dungeon": "Deku Tree",
+        "exits": {
+            # The candle room door opens only when its three timed candles burn.
+            "Deku Tree Basement Back Room": "here(has_fire_source_with_torch or can_use(Bow))"
         }
     },
     {
@@ -63,7 +90,9 @@
         "dungeon": "Deku Tree",
         "exits": {
             "Deku Tree Basement": "True",
-            "Deku Tree Basement Back Room": "is_child",
+            # Through the web on the ledge side of the Gohma egg room.
+            "Deku Tree Basement Back Room": "
+                is_child and here(has_fire_source_with_torch or can_use(Bow) or has_explosives)",
             "Deku Tree Before Boss": "
                 deku_tree_shortcuts or
                 here(has_fire_source_with_torch or (logic_deku_b1_webs_with_bow and can_use(Bow)))"

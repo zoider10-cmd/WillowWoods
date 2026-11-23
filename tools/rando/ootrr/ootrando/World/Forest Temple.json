@@ -165,13 +165,15 @@
             "Forest Temple Upper Stalfos Pot 2": "True",
             "Forest Temple Upper Stalfos Pot 3": "True",
             "Forest Temple Upper Stalfos Pot 4": "True",
-            "Forest Temple Blue Poe Room Pot 1": "(Small_Key_Forest_Temple, 4) and can_use(Bow)",
-            "Forest Temple Blue Poe Room Pot 2": "(Small_Key_Forest_Temple, 4) and can_use(Bow)",
-            "Forest Temple Blue Poe Room Pot 3": "(Small_Key_Forest_Temple, 4) and can_use(Bow)"
+            "Forest Temple Blue Poe Room Pot 1": "(Small_Key_Forest_Temple, 4)",
+            "Forest Temple Blue Poe Room Pot 2": "(Small_Key_Forest_Temple, 4)",
+            "Forest Temple Blue Poe Room Pot 3": "(Small_Key_Forest_Temple, 4)"
         },
         "exits": {
-            # The Bow Room door to the poe rooms opens from an eye behind a grate,
-            # which only arrows hit. The blue hallway is past the Blue Poe room.
+            # The Blue Poe room is behind the key door in the Bow room. Its door up to the
+            # blue hallway opens once the Blue Poe falls, and her paintings take arrows.
+            # (The barred door back to the Red Poe room opens when the Stalfos die:
+            # crate::dungeon_fixes. Vanilla only opened it from an eye that arrows hit.)
             "Forest Temple Frozen Eye Switch Room": "(Small_Key_Forest_Temple, 5) and can_use(Bow)"
         }
     },

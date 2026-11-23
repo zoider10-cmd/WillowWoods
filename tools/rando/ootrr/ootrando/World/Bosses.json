@@ -264,7 +264,7 @@
         "is_boss_room": true,
         "locations": {
             "Ganondorf Hint": "True",
-            "Ganon": "can_use(Light_Arrows)"
+            "Ganon": "can_use(Light_Arrows) and (skip_tower_escape or can_use(Longshot))"
         }
     }
 ]

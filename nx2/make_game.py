@@ -3254,7 +3254,9 @@ def main(a=None):
             os.makedirs(os.path.join(out, "rando"), exist_ok=True)
             shutil.copy2(rando, os.path.join(out, "rando", "rando_seed.py"))
             # (and the Tracker tab's directions to the checks it reads, with their licence: rando_seed.py CHECK_WAYS)
-            for data in ("atlas_ways.json", "ATLAS_NOTICE.txt"):
+            # (Willow Woods, 2026-11-22: and the logic's tables, each check's own rule: rando_seed.py DUNGEON_RULES_FILE,
+            # DUNGEON_RULES2_FILE, OVERWORLD_RULES_FILE. Left out before, a player's seed asked as before placement 21)
+            for data in ("atlas_ways.json", "ATLAS_NOTICE.txt", "dungeon_rules.json", "dungeon_rules_25.json", "overworld_rules.json"):
                 if os.path.isfile(os.path.join(ROOT, "tools", "rando", data)):
                     shutil.copy2(os.path.join(ROOT, "tools", "rando", data), os.path.join(out, "rando", data))
         except OSError as e:

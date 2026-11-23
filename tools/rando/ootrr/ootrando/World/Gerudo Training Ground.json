@@ -1,12 +1,20 @@
+# Checked against the remake actors (Banc/GerudoTrainingGround) and the Trophy Tom walkthrough
+# (docs/dungeon-logic/gerudo-training-ground.md). Eye switches take the Hookshot as well as arrows
+# in the remake. The Like Like room is entered from the Wolfos room (silver block, then an
+# invisible eye switch), not from the eye statue ledge. The Beamos falls to the Hammer.
 [
     {
         "region_name": "Gerudo Training Ground Lobby",
         "dungeon": "Gerudo Training Ground",
         "locations": {
-            "Gerudo Training Ground Lobby Left Chest": "can_use(Bow) or can_use(Slingshot)",
-            "Gerudo Training Ground Lobby Right Chest": "can_use(Bow) or can_use(Slingshot)",
+            # The remake left chest is invisible (Obj_TBox_GlassTruth); its N64 name is unpaired.
+            "Gerudo Training Ground Lobby Left Chest": "logic_lens_gtg or can_use(Lens_of_Truth)",
+            # Falls when the eye switch above the far door is hit (Hookshot in the video).
+            "Gerudo Training Ground Lobby Right Chest": "
+                can_use(Bow) or can_use(Slingshot) or can_use(Hookshot)",
             "Gerudo Training Ground Stalfos Chest": "is_adult or Kokiri_Sword",
-            "Gerudo Training Ground Beamos Chest": "has_explosives and (is_adult or Kokiri_Sword)",
+            # The chest appears once the Dinolfos and the Beamos fall; the Hammer breaks the Beamos.
+            "Gerudo Training Ground Beamos Chest": "can_blast_or_smash and (is_adult or Kokiri_Sword)",
             "Gerudo Training Ground Hidden Ceiling Chest": "
                 (Small_Key_Gerudo_Training_Ground, 3) and (logic_lens_gtg or can_use(Lens_of_Truth))",
             "Gerudo Training Ground Maze Path First Chest": "(Small_Key_Gerudo_Training_Ground, 4)",
@@ -22,7 +30,7 @@
         "exits": {
             "Gerudo Fortress": "True",
             "Gerudo Training Ground Lava Room Front": "
-                here(has_explosives and (is_adult or Kokiri_Sword))",
+                here(can_blast_or_smash and (is_adult or Kokiri_Sword))",
             "Gerudo Training Ground Central Maze Right": "(Small_Key_Gerudo_Training_Ground, 9)",
             "Gerudo Training Ground Boulder Room": "is_adult or Kokiri_Sword",
             "Farores Wind Warp": "can_use(Farores_Wind)"
@@ -120,9 +128,15 @@
             "Gerudo Training Ground Before Heavy Block Chest": "True"
         },
         "exits": {
+            # A Hookshot target pulls Link through a fake wall to the hallway above. The Lens is
+            # not needed in game, but logic always asks for it unless the trick is on.
             "Gerudo Training Ground Eye Statue Upper": "
-                is_adult and (logic_lens_gtg or can_use(Lens_of_Truth)) and
-                (Hookshot or (logic_gtg_fake_wall and Hover_Boots))"
+                (logic_lens_gtg or can_use(Lens_of_Truth)) and
+                (can_use(Hookshot) or (logic_gtg_fake_wall and can_use(Hover_Boots)))",
+            # The silver block, then the invisible eye switch over the shutter (Bow or Hookshot).
+            "Gerudo Training Ground Like Like Room": "
+                is_adult and Silver_Gauntlets and (logic_lens_gtg or can_use(Lens_of_Truth)) and
+                (can_use(Bow) or can_use(Hookshot))"
         }
     },
     {
@@ -133,7 +147,6 @@
             "Gerudo Training Ground Eye Statue Wonderitem": "can_use(Hover_Boots) or logic_gtg_eye_statue_wonderitem"
         },
         "exits": {
-            "Gerudo Training Ground Like Like Room": "Silver_Gauntlets",
             "Gerudo Training Ground Eye Statue Lower": "True"
         }
     },
@@ -141,11 +154,15 @@
         "region_name": "Gerudo Training Ground Like Like Room",
         "dungeon": "Gerudo Training Ground",
         "locations": {
-            "Gerudo Training Ground Heavy Block First Chest": "can_use(Bow) or can_use(Slingshot)",
+            # Falls when the eye switch is hit (Longshot in the video).
+            "Gerudo Training Ground Heavy Block First Chest": "
+                can_use(Bow) or can_use(Slingshot) or can_use(Hookshot)",
             "Gerudo Training Ground Heavy Block Second Chest": "True",
-            "Gerudo Training Ground Heavy Block Third Chest": "True",
+            # Invisible chest (Obj_TBox_GlassTruth).
+            "Gerudo Training Ground Heavy Block Third Chest": "logic_lens_gtg or can_use(Lens_of_Truth)",
             "Gerudo Training Ground Heavy Block Fourth Chest": "True",
-            "Gerudo Training Ground Heavy Block Fifth Chest": "True"
+            # Behind a cracked wall.
+            "Gerudo Training Ground Heavy Block Fifth Chest": "can_blast_or_smash"
         }
     },
     {
@@ -162,14 +179,17 @@
         "region_name": "Gerudo Training Ground Hammer Room",
         "dungeon": "Gerudo Training Ground",
         "locations": {
-            "Gerudo Training Ground Hammer Room Clear Chest": "True",
+            # The remake chest appears among Hammer pillars; its N64 name is unpaired.
+            "Gerudo Training Ground Hammer Room Clear Chest": "Megaton_Hammer",
             "Gerudo Training Ground Hammer Room Switch Chest": "Megaton_Hammer",
             "Gerudo Training Ground Lava Room Silver Rupee Hookshot Target": "Hookshot",
             "Gerudo Training Ground Hammer Room Wonderitem": "can_use(Bow)"
         },
         "exits": {
             "Gerudo Training Ground Lava Room Back": "True",
-            "Gerudo Training Ground Eye Statue Lower": "Megaton_Hammer and Bow"
+            # The eye switch behind the Hammer pillars opens the door to the statue room.
+            "Gerudo Training Ground Eye Statue Lower": "
+                Megaton_Hammer and (can_use(Bow) or can_use(Hookshot))"
         }
     }
 ]

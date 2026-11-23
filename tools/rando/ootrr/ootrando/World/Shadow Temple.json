@@ -9,7 +9,7 @@
             "Graveyard Warp Pad Region": "True",
             # Din's Fire lights the torches of the first hall, the Lens shows its real door.
             "Shadow Temple Beginning": "
-                can_use(Lens_of_Truth) and can_use(Dins_Fire) and
+                (logic_lens_shadow or can_use(Lens_of_Truth)) and can_use(Dins_Fire) and
                 (can_use(Hover_Boots) or can_use(Hookshot))",
             "Farores Wind Warp": "can_use(Farores_Wind)"
         }
@@ -69,7 +69,8 @@
         },
         "exits": {
             "Shadow Temple Falling Spikes": "(Silver_Rupee_Shadow_Temple_Huge_Pit, 5)",
-            "Shadow Temple Invisible Spikes": "(Small_Key_Shadow_Temple, 2) and can_use(Lens_of_Truth)"
+            "Shadow Temple Invisible Spikes": "
+                (Small_Key_Shadow_Temple, 2) and (logic_lens_shadow_platform or can_use(Lens_of_Truth))"
         }
     },
     {
@@ -103,7 +104,7 @@
         },
         "exits": {
             "Shadow Temple Wind Tunnel": "Hookshot and (Small_Key_Shadow_Temple, 3)",
-            "Shadow Temple Huge Pit": "can_use(Lens_of_Truth)"
+            "Shadow Temple Huge Pit": "logic_lens_shadow_platform or can_use(Lens_of_Truth)"
         }
     },
     {

@@ -1,3 +1,8 @@
+# Checked against the remake actors (Banc/IceCavern, DefaultDungeonRoomIndex) and the Trophy Tom
+# walkthrough (docs/dungeon-logic/ice-cavern.md). The route is the N64 one: Freezards (room 1),
+# the scythe room silver rupees open the map room, red ice walls lead to the compass room and to the
+# push block room, whose silver rupees open the way to a last red ice wall, the White Wolfos and
+# Sheik. The remake has no heart piece, no freestanding rupees or hearts and no Map Room frozen pot.
 [
     {
         "region_name": "Ice Cavern Beginning",
@@ -61,7 +66,8 @@
             "Ice Cavern Push Block Silver Rupee Back Left": "True",
             "Ice Cavern Push Block Silver Rupee Back Center": "True",
             "Ice Cavern Push Block Silver Rupee Front Center": "True",
-            "Ice Cavern Push Block Silver Rupee Red Ice": "True",
+            # Frozen in red ice (Obj_RedIce_A_09).
+            "Ice Cavern Push Block Silver Rupee Red Ice": "Blue_Fire",
             "Ice Cavern Push Block Silver Rupee Front Left": "True",
             "Ice Cavern GS Heart Piece Room": "can_use(Hookshot) or can_use(Boomerang)",
             "Ice Cavern GS Push Block Room": "
@@ -69,12 +75,17 @@
                 (logic_ice_block_gs and can_use(Hover_Boots))"
         },
         "exits": {
-            "Ice Cavern End": "(Silver_Rupee_Ice_Cavern_Push_Block, 5)"
+            # The silver rupees open the way to room 9, where red ice (Obj_RedIce_A_04) closes the
+            # White Wolfos door.
+            "Ice Cavern End": "(Silver_Rupee_Ice_Cavern_Push_Block, 5) and Blue_Fire"
         }
     },
     {
         "region_name": "Ice Cavern End",
         "dungeon": "Ice Cavern",
+        # Rooms 9 to 11. The last room also has a back door to Zora's Fountain through water, taken
+        # with the Iron Boots in the video; the way back through the cavern stays open, so it is
+        # not an exit here.
         "events": {
             "Water Temple Gate Open": "is_adult or Slingshot or Sticks or Kokiri_Sword or can_use(Dins_Fire)"
         },

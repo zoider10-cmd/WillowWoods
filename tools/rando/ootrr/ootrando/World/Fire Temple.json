@@ -8,7 +8,10 @@
     # landing, fire wall room to the flame maze, flame maze to its far side, the
     # Flare Dancer door, and last the Boss Key loop door. The loop door sits behind
     # a hammer pillar, so with an early Hammer a key can be spent there first.
-    # fire_keys keeps one key of slack for that, as the N64 rules did.
+    # fire_keys keeps one key of slack for that when keys roam. With Own dungeon
+    # keys the loop door starts unlocked (fire_loop_door, the door's
+    # IsChainLockDoorOpen flag) and one key leaves the pool, as in N64 OoTR, so
+    # the seven other doors keep the exact count in any order.
     {
         "region_name": "Fire Temple Lower",
         "dungeon": "Fire Temple",
@@ -20,7 +23,7 @@
                 (logic_fewer_tunic_requirements or can_use(Goron_Tunic))",
             # Hammer the pillar in front of the door first.
             "Fire Temple Lower Locked Door": "
-                (Small_Key_Fire_Temple, 8) and can_use(Megaton_Hammer)",
+                ((Small_Key_Fire_Temple, 8) or fire_loop_door == 'open') and can_use(Megaton_Hammer)",
             "Farores Wind Warp": "can_use(Farores_Wind)"
         }
     },

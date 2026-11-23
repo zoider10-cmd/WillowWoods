@@ -1,3 +1,6 @@
+# Ganon's Castle, checked against a remake walkthrough (docs/dungeon-logic/ganons-castle.md).
+# The remake has one small key, in the Light Trial's invisible chest, and one locked door
+# after it. Both the Fire and the Light Trial need the Golden Gauntlets.
 [
     {
         "region_name": "Ganons Castle Lobby",
@@ -40,7 +43,8 @@
         "dungeon": "Ganons Castle",
         "locations": {
             "Ganons Castle Forest Trial Silver Rupee Front Right": "True",
-            "Ganons Castle Forest Trial Silver Rupee Front Left": "True",
+            # On top of a Song of Time block.
+            "Ganons Castle Forest Trial Silver Rupee Front Left": "can_play(Song_of_Time)",
             "Ganons Castle Forest Trial Silver Rupee Back Right": "True",
             "Ganons Castle Forest Trial Silver Rupee Back Center": "True",
             "Ganons Castle Forest Trial Silver Rupee Center Left": "True"
@@ -152,8 +156,10 @@
             "Ganons Castle Fire Trial Silver Rupee Inside Pillar": "can_use(Golden_Gauntlets)"
         },
         "exits": {
+            # The pillar in the lava is lifted with the Golden Gauntlets on the way.
             "Ganons Castle Fire Trial Ending": "
-                is_adult and Longshot and (Silver_Rupee_Ganons_Castle_Fire_Trial, 5) and
+                is_adult and Longshot and can_use(Golden_Gauntlets) and
+                (Silver_Rupee_Ganons_Castle_Fire_Trial, 5) and
                 (shuffle_silver_rupees or Goron_Tunic)"
         }
     },
@@ -183,8 +189,8 @@
                 logic_lens_castle or can_use(Lens_of_Truth)",
             "Ganons Castle Light Trial Lullaby Room Invisible Chest": "
                 logic_lens_castle or can_use(Lens_of_Truth)",
-            "Ganons Castle Light Trial Lullaby Chest": "
-                (Small_Key_Ganons_Castle, 1) and can_play(Zeldas_Lullaby)"
+            # The Lullaby chest and the invisible key chest share the room before the locked door.
+            "Ganons Castle Light Trial Lullaby Chest": "can_play(Zeldas_Lullaby)"
         },
         "exits": {
             "Ganons Castle Light Trial Boulder Room": "(Small_Key_Ganons_Castle, 1)"

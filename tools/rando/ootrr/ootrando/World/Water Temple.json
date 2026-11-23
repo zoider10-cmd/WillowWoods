@@ -3,7 +3,7 @@
 # and 4 locked doors, opened in this order: the central pillar door on 1F, the pink pillar
 # door on 2F west (the room that raises the water to 3F), the 3F door to the falling
 # platforms and Dark Link, and the 1F north door to the Boss Key. water_keys(n) keeps one
-# key of slack when keys roam, because the 3F door can take a key on the first visit.
+# key of slack when keys are shuffled, because the 3F door can take a key on the first visit.
 [
     {
         "region_name": "Water Temple Lobby",

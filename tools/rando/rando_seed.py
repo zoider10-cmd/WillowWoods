@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 24  # 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 25  # 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -6258,6 +6258,23 @@ STICKS_FROM = 20
 # Door of Time, the songs, the tunics, the Hookshot, the sticks...) then works on these rules as on the old ones.
 DUNGEON_RULES_FROM = 21
 DUNGEON_RULES_FILE = "dungeon_rules.json"
+# (placement 25, 2026-11-22: the same tool on the other randomizer's newer dungeons, ootrr a253c9a "checked against
+# remake actors": 102 rules changed, the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials and three of
+# Dodongo's Cavern's. A new seed reads DUNGEON_RULES2_FILE; a seed made before keeps DUNGEON_RULES_FILE, its items where
+# they were. dungeon_table_for sets which, before the first dungeon_table)
+DUNGEON_RULES2_FROM = 25
+DUNGEON_RULES2_FILE = "dungeon_rules_25.json"
+_DUNGEON_FILE = [DUNGEON_RULES_FILE]
+
+
+def dungeon_table_for(placement):
+    """the dungeon rules' file for a seed of this placement (DUNGEON_RULES2_FILE from DUNGEON_RULES2_FROM), the table read
+    again if it was another"""
+    want = DUNGEON_RULES2_FILE if placement >= DUNGEON_RULES2_FROM else DUNGEON_RULES_FILE
+    if _DUNGEON_FILE[0] != want:
+        _DUNGEON_FILE[0] = want
+        del _DUNGEON_TABLE[:]
+    return want
 DIN = "Item_DinFire"
 DUNGEON_GATES = frozenset((DIN,))
 DUNGEON_AP_ITEMS = {("Kokiri Sword", 1): S, ("Master Sword", 1): "Weapon_Sword_Master", ("Slingshot", 1): SL, ("Boomerang", 1): BM,
@@ -6308,7 +6325,7 @@ def dungeon_table():
     """the table of DUNGEON_RULES_FILE beside this script: {an actor's hash: [way, ...]}, each way {item: tier}; {} without it"""
     if not _DUNGEON_TABLE:
         try:
-            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), DUNGEON_RULES_FILE), encoding="utf-8") as f:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), _DUNGEON_FILE[0]), encoding="utf-8") as f:
                 table = json.load(f)["by_actor"]
             _DUNGEON_TABLE.append({int(h): (e["ways"], e.get("age_ways")) for h, e in table.items()})
         except (OSError, ValueError, KeyError):
@@ -7290,6 +7307,7 @@ def main():
     logic = logic_now   # (without the event chests or the songs no gating item moves: nothing to ask)
     rng = random.Random("stage2:%d:%d:%d%s%s%s" % (seed, which, min(keys_mode, 1), ":events" if a.event_chests else "", ":logic" if logic else "",
                                                    ":songs2" if a.songs == 2 else ":songs" if a.songs else ""))
+    dungeon_table_for(placement)   # (placement 25: the newer dungeons' rules, DUNGEON_RULES2_FILE)
     dungeon_on = placement >= DUNGEON_RULES_FROM and bool(dungeon_table())   # (each dungeon check by its own rule)
     if placement >= DUNGEON_RULES_FROM and not dungeon_table():
         print("each dungeon check's own rule: %s is not beside the script, so the dungeons ask as before" % DUNGEON_RULES_FILE)

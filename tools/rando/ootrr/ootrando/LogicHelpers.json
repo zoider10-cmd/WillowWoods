@@ -7,8 +7,10 @@
     "Longshot": "(Progressive_Hookshot, 2)",
     "Silver_Gauntlets": "(Progressive_Strength_Upgrade, 2)",
     "Golden_Gauntlets": "(Progressive_Strength_Upgrade, 3)",
-    "Scarecrow": "Progressive_Hookshot and can_play(Scarecrow_Song)",
-    "Distant_Scarecrow": "(Progressive_Hookshot, 2) and can_play(Scarecrow_Song)",
+    "Scarecrow": "Progressive_Hookshot and can_call_scarecrow",
+    "Distant_Scarecrow": "(Progressive_Hookshot, 2) and can_call_scarecrow",
+    "can_call_scarecrow": "can_play(Scarecrow_Song) or (scarecrow_behavior == 'free' and (Ocarina or can_oi))",
+    "can_get_night_gs": "gold_skulls_ignore_daytime or (at_night and (not night_skulls_suns_song or can_play(Suns_Song)))",
     "skip_to_day": "True",
     "skip_to_night": "'Zelda Met' or time_always_passes",
     "skip_to_dampe": "'Zelda Met' or time_always_passes",
@@ -24,7 +26,7 @@
     # "Slingshot": "'Slingshot'",
     "Bombs": "Bomb_Bag",
     "Deku_Shield": "'Deku Shield' or Buy_Deku_Shield or Deku_Shield_Drop",
-    "Hylian_Shield": "Buy_Hylian_Shield",
+    "Hylian_Shield": "'Hylian Shield' or Buy_Hylian_Shield",
     "Nuts": "Buy_Deku_Nut_5 or Buy_Deku_Nut_10 or Deku_Nut_Drop",
     "Sticks": "Buy_Deku_Stick_1 or Deku_Stick_Drop",
     "Bugs": "'Bugs' or Buy_Bottle_Bug",
@@ -58,7 +60,7 @@
     "can_summon_gossip_fairy": "can_play(Zeldas_Lullaby) or can_play(Eponas_Song) or can_play(Song_of_Time) or can_play(Suns_Song)",
     "can_summon_gossip_fairy_without_suns": "can_play(Zeldas_Lullaby) or can_play(Eponas_Song) or can_play(Song_of_Time)",
     "can_take_damage": "damage_multiplier != 'ohko' or Fairy or can_use(Nayrus_Love)",
-    "can_plant_bean": "plant_beans or (is_child and (Magic_Bean, 10))",
+    "can_plant_bean": "plant_beans or (is_child and ((Magic_Bean, 10) or (Buy_Magic_Bean and Progressive_Wallet)))",
     "can_play(song)": "(Ocarina or can_oi)
         and song and (not shuffle_individual_ocarina_notes or has_all_notes_for_song(song))",
     "can_play_ocarina(song)": "Ocarina
@@ -130,7 +132,7 @@
     "can_jumpslash": "is_adult or Sticks or Kokiri_Sword or can_use(Megaton_Hammer)",
 
     # Enemy killing
-    "can_kill_armos": "has_soul(Armos) and (is_adult or Sticks or has_explosives or ((Nuts or Boomerang) and (Kokiri_Sword or Slingshot)) or can_use(Megaton_Hammer))",
+    "can_kill_armos": "has_soul(Armos) and (has_explosives or can_use(Megaton_Hammer))",
     "can_kill_octorok": "has_soul(Octorok) and ((is_child and (Boomerang or Slingshot or Deku_Shield)) or (is_adult and (Bow or Hookshot or Hylian_Shield or can_use(Slingshot) or can_use(Boomerang))))",
     "can_kill_octorok_with_bombs": "has_soul(Octorok) and (Bombs or (is_child and (Boomerang or Slingshot or Deku_Shield)) or (is_adult and (Bow or Hookshot or Hylian_Shield or can_use(Slingshot) or can_use(Boomerang))))",
     "can_kill_octorok_with_bombs_or_magic": "has_soul(Octorok) and (Bombs or (is_child and (Boomerang or Slingshot or Deku_Shield)) or (is_adult and (Magic_Meter or Bow or Hookshot or Hylian_Shield or can_use(Slingshot) or can_use(Boomerang))))",

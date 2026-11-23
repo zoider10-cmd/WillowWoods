@@ -72,6 +72,18 @@ def main():
     check("PROGRESSION = PROGRESSION | DUNGEON_GATES" in script and S.CHECK_CODES.get(S.DIN) == "DF" and
           '{"DF", "Din\'s Fire", {"Din\'s Fire"}},' in open(os.path.join(ROOT, "gpu", "vk", "vk_menu.cpp"), encoding="utf-8").read(),
           "Din's Fire is not a gating item with the fairies shuffled, or the tracker has no letters for it")
+    # (placement 25, 2026-11-22: the newer dungeons' table for new seeds, the old one kept for seeds made before; both, with
+    #  the overworld's, copied into a built game folder: before, make_game.py left them out and a player's seed asked as
+    #  before placement 21)
+    newer = json.load(open(os.path.join(ROOT, "tools", "rando", S.DUNGEON_RULES2_FILE), encoding="utf-8"))
+    used2 = {(k, v) for e in newer["by_actor"].values() for w in e["ways"] for k, v in w.items()}
+    check(S.DUNGEON_RULES2_FROM == 25 and S.PLACEMENT >= 25 and len(newer["by_actor"]) >= len(table["by_actor"]) and used2 <= known,
+          "the newer dungeons' table is missing, holds fewer actors, or names an item the seed tool doesn't know")
+    check(S.dungeon_table_for(24) == S.DUNGEON_RULES_FILE and S.dungeon_table_for(25) == S.DUNGEON_RULES2_FILE,
+          "a seed made before placement 25 does not keep the old table, or a new one does not take the newer")
+    make = open(os.path.join(ROOT, "nx2", "make_game.py"), encoding="utf-8").read()
+    check('"dungeon_rules.json", "dungeon_rules_25.json", "overworld_rules.json"' in make,
+          "a built game folder gets no logic tables: its seeds ask as before placement 21")
     print("FAIL" if failed else "PASS: each dungeon check by its own rule")
     return 1 if failed else 0
 
