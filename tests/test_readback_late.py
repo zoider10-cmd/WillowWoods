@@ -1,6 +1,6 @@
 """RX_VK_READBACK_LATE's rules (gpu/vk/readback_late.h; no game or GPU needed), and that vk_replay.cpp's invalidate asks them.
 
-Off unless the switch is set: every readback waits for its write-back, as before. `newest` names the ranges whose writer is
+Unset: 3980,40,2000 (2026-11-22, measured at the Market here: 1 % low +2.9 %); =0: every readback waits, as before. `newest` names the ranges whose writer is
 the newest submission handed out, a hex size the ranges of exactly that many bytes; either rule is enough. The by-range
 log that finds such ranges has a switch of its own, RX_VK_LOG_READBACK_RANGES, so nothing is noted or logged without it.
 The wait itself, with and without a rule, is run in tests/test_readback_part.py.
@@ -49,12 +49,18 @@ int main() {
 """
 
 
+def replay_src_for_default():
+    return (ROOT / "gpu" / "vk" / "vk_replay.cpp").read_text(encoding="utf-8")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--cxx", default="g++")
     a = p.parse_args()
     replay = (ROOT / "gpu/vk/vk_replay.cpp").read_text(encoding="utf-8")
     inv = replay[replay.index("void invalidate(uint64_t gpu, uint64_t size) {"):]
+    if 'if (!e) e = "3980,40,2000";' not in replay_src_for_default():
+        raise SystemExit("unset, the exposure meter's and the result slots' readbacks are not read late")
     for needle in ('readback_late::parse(e)', 'getenv("RX_VK_READBACK_LATE")', "return readback_late::wanted(rules, size, newest);"):
         if needle not in replay:
             raise SystemExit("vk_replay.cpp no longer has: " + needle)

@@ -3764,10 +3764,13 @@ void rb_diag_finish(RbDiag& d, uint64_t value) {
     d.snap = readback_wait_value(value);
 }
 /// (hookshot) RX_VK_READBACK_LATE (readback_late.h): whether a readback of that size, written by the newest submission or
-/// not, is read without its wait. Off unless the switch is set
+/// not, is read without its wait. (2026-11-22, Longshot f6913dd5's rule) Unset: 3980,40,2000 (the exposure meter, the 0x40
+/// result slots, the 0x2000 pair), measured here at the Market: 1 % low +2.9 % (55.5 -> 57.1, B ahead in 14 of 16 pairs),
+/// fps +0.6 %, gate PASS (runs rl_rlA_*, rl_rlB_*). =0: every readback waits, as before
 bool readback_late_wanted(uint64_t size, bool newest) {
     static const readback_late::Rules rules = [] {
         const char* e = getenv("RX_VK_READBACK_LATE");
+        if (!e) e = "3980,40,2000";
         const readback_late::Rules r = readback_late::parse(e);
         if (r.any()) logf("vk: readbacks read without their wait: RX_VK_READBACK_LATE=%s (newest %d, %d sizes)", e, (int)r.newest, (int)r.sizes.size());
         return r;
