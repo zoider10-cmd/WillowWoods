@@ -13,9 +13,9 @@
   <Grid x:Name="Root">
     <Grid.Background>
       <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#FF0C1730" Offset="0"/>
-        <GradientStop Color="#FF060A14" Offset="0.65"/>
-        <GradientStop Color="#FF05080F" Offset="1"/>
+        <GradientStop Color="#FF13200F" Offset="0"/>
+        <GradientStop Color="#FF0A1108" Offset="0.65"/>
+        <GradientStop Color="#FF060905" Offset="1"/>
       </LinearGradientBrush>
     </Grid.Background>
 
@@ -27,13 +27,13 @@
           <Ellipse Margin="24" RenderTransformOrigin="0.5,0.5" x:Name="Halo">
             <Ellipse.Fill>
               <RadialGradientBrush>
-                <GradientStop Color="#702E7BFF" Offset="0"/>
-                <GradientStop Color="#002E7BFF" Offset="0.68"/>
+                <GradientStop Color="#70549C3E" Offset="0"/>
+                <GradientStop Color="#00549C3E" Offset="0.68"/>
               </RadialGradientBrush>
             </Ellipse.Fill>
             <Ellipse.RenderTransform><ScaleTransform x:Name="HaloScale"/></Ellipse.RenderTransform>
           </Ellipse>
-          <Image Source="pack://application:,,,/Images/mako.png" Width="240" RenderTransformOrigin="0.5,0.5" RenderOptions.BitmapScalingMode="HighQuality">
+          <Image Source="pack://application:,,,/Images/willowwoods.png" Width="240" RenderTransformOrigin="0.5,0.5" RenderOptions.BitmapScalingMode="HighQuality">
             <Image.RenderTransform>
               <TransformGroup>
                 <RotateTransform x:Name="BobTurn"/>
@@ -43,15 +43,15 @@
             <Image.Effect><DropShadowEffect BlurRadius="24" ShadowDepth="14" Direction="270" Opacity="0.6" Color="Black"/></Image.Effect>
           </Image>
         </Grid>
-        <TextBlock Text="M A K O" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+        <TextBlock Text="W I L L O W   W O O D S" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
         <TextBlock x:Name="SplashText" Text="Starting…" FontSize="13" Foreground="#A6FFFFFF" HorizontalAlignment="Center" Margin="0,6,0,0" MinHeight="20"/>
         <Border Width="200" Height="3" CornerRadius="1.5" Background="#14FFFFFF" Margin="0,16,0,0" ClipToBounds="True">
           <Border Width="80" HorizontalAlignment="Left" CornerRadius="1.5">
             <Border.Background>
               <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#0038C8FF" Offset="0"/>
-                <GradientStop Color="#FF38C8FF" Offset="0.5"/>
-                <GradientStop Color="#0038C8FF" Offset="1"/>
+                <GradientStop Color="#00ACD662" Offset="0"/>
+                <GradientStop Color="#FFACD662" Offset="0.5"/>
+                <GradientStop Color="#00ACD662" Offset="1"/>
               </LinearGradientBrush>
             </Border.Background>
             <Border.RenderTransform><TranslateTransform x:Name="Sweep"/></Border.RenderTransform>
@@ -70,10 +70,10 @@
 
       <!-- the head: the hookshot, and the steps (or the update's versions) -->
       <StackPanel Orientation="Horizontal" Margin="28,0,0,0" VerticalAlignment="Center">
-        <Image Source="pack://application:,,,/Images/mako.png" Height="26" RenderOptions.BitmapScalingMode="HighQuality">
+        <Image Source="pack://application:,,,/Images/willowwoods.png" Height="30" RenderOptions.BitmapScalingMode="HighQuality">
           <Image.Effect><DropShadowEffect BlurRadius="6" ShadowDepth="2" Direction="270" Opacity="0.5" Color="Black"/></Image.Effect>
         </Image>
-        <TextBlock Text="MAKO" FontSize="15" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+        <TextBlock Text="WILLOW WOODS" FontSize="15" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
         <Border x:Name="VersionChip" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
           <TextBlock x:Name="VersionChipText" FontSize="12" Foreground="{StaticResource InkSoft}" VerticalAlignment="Center"/>
         </Border>
@@ -156,7 +156,7 @@
             <Grid VerticalAlignment="Center">
               <Grid.ColumnDefinitions><ColumnDefinition Width="16"/><ColumnDefinition/></Grid.ColumnDefinitions>
               <Border Width="16" Height="16" CornerRadius="8" Background="{StaticResource BrandSoft}" VerticalAlignment="Center">
-                <TextBlock Text="i" FontSize="10" FontWeight="Bold" Foreground="#B9C8FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Text="i" FontSize="10" FontWeight="Bold" Foreground="#C8E0A8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
               </Border>
               <TextBlock x:Name="ToolsNote" Grid.Column="1" Style="{StaticResource Note}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"/>
             </Grid>

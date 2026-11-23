@@ -4,35 +4,35 @@
              StartupUri="MainWindow.xaml">
   <Application.Resources>
 
-    <!-- Mako: deep navy and electric blue, from the shark logo (the launcher's palette, launcher/Launcher.cs Theme) -->
-    <SolidColorBrush x:Key="Page" Color="#0A1222"/>
-    <SolidColorBrush x:Key="Raised" Color="#0E1626"/>
-    <SolidColorBrush x:Key="RaisedHover" Color="#142036"/>
-    <SolidColorBrush x:Key="Line" Color="#20304E"/>
-    <SolidColorBrush x:Key="LineStrong" Color="#2C4470"/>
-    <SolidColorBrush x:Key="Ink" Color="#EAF1FF"/>
-    <SolidColorBrush x:Key="InkSoft" Color="#9AAAC8"/>
-    <SolidColorBrush x:Key="InkFaint" Color="#5E6E8E"/>
-    <SolidColorBrush x:Key="Brand" Color="#2E7BFF"/>
-    <SolidColorBrush x:Key="BrandHover" Color="#4A90FF"/>
-    <SolidColorBrush x:Key="BrandInk" Color="#CFE2FF"/>
-    <SolidColorBrush x:Key="Go" Color="#2E7BFF"/>
-    <SolidColorBrush x:Key="GoHover" Color="#4A90FF"/>
+    <!-- Willow Woods: the forest's dark greens and its leaf green (the launcher's palette, launcher/Launcher.cs Theme) -->
+    <SolidColorBrush x:Key="Page" Color="#070A06"/>
+    <SolidColorBrush x:Key="Raised" Color="#0D130B"/>
+    <SolidColorBrush x:Key="RaisedHover" Color="#131B10"/>
+    <SolidColorBrush x:Key="Line" Color="#2E3E26"/>
+    <SolidColorBrush x:Key="LineStrong" Color="#3E5432"/>
+    <SolidColorBrush x:Key="Ink" Color="#EEF4E4"/>
+    <SolidColorBrush x:Key="InkSoft" Color="#98A886"/>
+    <SolidColorBrush x:Key="InkFaint" Color="#5E6C52"/>
+    <SolidColorBrush x:Key="Brand" Color="#549C3E"/>
+    <SolidColorBrush x:Key="BrandHover" Color="#6CB44F"/>
+    <SolidColorBrush x:Key="BrandInk" Color="#DDF0C8"/>
+    <SolidColorBrush x:Key="Go" Color="#549C3E"/>
+    <SolidColorBrush x:Key="GoHover" Color="#6CB44F"/>
     <SolidColorBrush x:Key="GoInk" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="Warn" Color="#FFB547"/>
     <SolidColorBrush x:Key="Bad" Color="#FF5A6A"/>
     <!-- (kept for the old names the code still uses) -->
-    <SolidColorBrush x:Key="Accent" Color="#38C8FF"/>
+    <SolidColorBrush x:Key="Accent" Color="#ACD662"/>
 
     <!-- glass: white at low alpha over the acrylic backdrop -->
     <SolidColorBrush x:Key="Glass" Color="#0DFFFFFF"/>
     <SolidColorBrush x:Key="GlassHover" Color="#17FFFFFF"/>
     <SolidColorBrush x:Key="GlassLine" Color="#17FFFFFF"/>
     <SolidColorBrush x:Key="GlassLineStrong" Color="#2AFFFFFF"/>
-    <SolidColorBrush x:Key="GoSoft" Color="#262E7BFF"/>
+    <SolidColorBrush x:Key="GoSoft" Color="#26549C3E"/>
     <SolidColorBrush x:Key="BadSoft" Color="#26FF5A6A"/>
     <SolidColorBrush x:Key="WarnSoft" Color="#1FFFB547"/>
-    <SolidColorBrush x:Key="BrandSoft" Color="#332E7BFF"/>
+    <SolidColorBrush x:Key="BrandSoft" Color="#33549C3E"/>
 
     <FontFamily x:Key="Ui">pack://application:,,,/Fonts/#Inter</FontFamily>
     <FontFamily x:Key="Display">pack://application:,,,/Fonts/#Inter</FontFamily>
