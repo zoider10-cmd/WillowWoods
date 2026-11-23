@@ -424,7 +424,7 @@ def main():
           "A64Fn set = a64_lookup(0x806a2b20ULL);" in host and "c->x[0] = mgr, c->x[1] = value ? 1 : 0, c->x[2] = hash;" in host and
           "const int want = oot_checks[i].done != 1;" not in host and
           'oot_game_file(path, sizeof path, "mods/rando-seed/shelf_flags.txt")' in host and "const int changed = oot_shelf_flags(c);" in host and
-          "const char *tail = oot_checks[i].shelf && oot_checks[i].done != 1 ? strchr(oot_checks[i].item, '_') : NULL;" in host and "new, count = shelf_actors(data, on_shelf, lifts, scales, turns)" in script and
+          "const char *tail = oot_checks[i].shelf && oot_checks[i].done != 1 && (shop || !oot_tracker_shop_on) &&" in host and "new, count = shelf_actors(data, on_shelf, lifts, scales, turns)" in script and
           "text = shop_caption(text, name) or text" in script and "list(shop_files.items())" in script and
           'new_tables["System/Resource/" + n] = shop_table(' in script,
           "a shelf actor's pack, its rows, the goods lists, the map's shelves or the words are not written with the seed, or the size table does not know them")

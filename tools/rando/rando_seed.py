@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 25  # 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 26  # 26: with Progressive items no Gold Skulltula drops an item of a family, nor with Magic a magic tier (SKULL_FAMILY_FROM, bug 114); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -2581,9 +2581,27 @@ def skulltula_ai_day(data):
     return bytes(out)
 
 
-def skulltula_holds(item, gating):
-    """whether a Gold Skulltula may drop this item (placement 12, see above); gating: the seed's gating items"""
-    if item in SKULLTULA_NEVER or item.startswith("Item_Melody_") or item in DUNGEON_ITEMS:
+# (bug 114, the owner's run 2026-11-23: the Slingshot, the Bow and the Golden Gauntlets dropped by Gold Skulltulas lay
+# on the ground and could not be taken.) With Progressive items the game's side shows a check's item of a family as the
+# family's next for what Link has (host/hos_main.c hos_oot_drop_name, by Drop__DropActor): right for a chest, which
+# shows it, but a Skulltula's drop is that actor made in the world, and the family's next (a bigger seed bag,
+# Armor_Adult_Gauntlet_Silver) is no pick-up. From placement SKULL_FAMILY_FROM, with Progressive items no Skulltula
+# drops an item of a family (SHELF_FAMILIES), nor, with Magic, one of the magic gifts' tiers (MAGIC_FAMILY).
+SKULL_FAMILY_FROM = 26
+MAGIC_FAMILY = frozenset(("Item_MagicMeter", "Item_FairyBless_MPDouble", "Item_FairyBless_MP"))
+
+
+def skull_families(placement, progressive, magic):
+    """the items no Gold Skulltula of this seed drops for being of a family (SKULL_FAMILY_FROM)"""
+    if placement < SKULL_FAMILY_FROM:
+        return frozenset()
+    return frozenset(i for f in SHELF_FAMILIES for i in f if progressive) | (MAGIC_FAMILY if magic else frozenset())
+
+
+def skulltula_holds(item, gating, families=frozenset()):
+    """whether a Gold Skulltula may drop this item (placement 12, see above); gating: the seed's gating items;
+    families: skull_families'"""
+    if item in SKULLTULA_NEVER or item.startswith("Item_Melody_") or item in DUNGEON_ITEMS or item in families:
         return False
     return item == TOKEN or item in SKULLTULA_ITEMS or item in SKULLTULA_MORE or item in gating
 
@@ -7750,7 +7768,8 @@ def main():
         if a.heart_pieces:
             joined.update((h, [pieces[h][0], piece_own(h), None, None, "piece", pieces[h][1], ""]) for h in pieces)
         kinds = {s[1] for s in spots.values()} | {s[1] for s in joined.values()}
-        skull_may = frozenset(i for i in kinds if skulltula_holds(i, PROGRESSION))
+        families = skull_families(placement, a.progressive, a.magic)
+        skull_may = frozenset(i for i in kinds if skulltula_holds(i, PROGRESSION, families))
         piece_may = frozenset(i for i in kinds if piece_holds(i))
         for h, s in joined.items():
             spots[h] = s
@@ -7822,7 +7841,7 @@ def main():
             skull_drops[h] = item
         elif s[4] == "piece" and item != piece_own(h):
             heart_drops[h] = item
-    if joined and any(not skulltula_holds(i, PROGRESSION) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER) for h, i in heart_drops.items()):
+    if joined and any(not skulltula_holds(i, PROGRESSION, skull_families(placement, a.progressive, a.magic)) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER) for h, i in heart_drops.items()):
         sys.exit("a Gold Skulltula or a Piece of Heart was given what it may not hold: nothing written")
 
     # ---- the Gold Skulltulas: their tokens and the chests' rupees and supplies change places ----
