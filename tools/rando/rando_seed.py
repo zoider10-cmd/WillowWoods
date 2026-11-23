@@ -6699,6 +6699,7 @@ DUNGEON_ENTRY_SONGS = {"ShadowTemple": ADULT}
 # in is a young Link out of the forest (CHILD), the Song of Storms and the ocarina where they are shuffled; each check's
 # own ways (the table's) ask for the rest, Zelda's Lullaby only where it is needed.
 WELL_FROM = 26
+BOTTLE_ENTRY_FROM = 26   # (dungeon_rule's no_bottle: Ganon's Castle's way in without a bottle)
 WELL = "BottomOfTheWell"
 DUNGEON_REQUIEM = "SpiritTemple"
 DUNGEON_AGES_FROM = 22
@@ -6732,7 +6733,7 @@ def dungeon_table():
     return _DUNGEON_TABLE[0]
 
 
-def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=True, well_child=False):
+def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=True, well_child=False, no_bottle=False):
     """a dungeon check's own rule (see above), or None where the table doesn't know it: its dungeon's way in and any of
     its ways, in our items (progression: the seed's gating items; pool: what the seed shuffles. The others are held)"""
     found = dungeon_table().get(h)
@@ -6740,7 +6741,10 @@ def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=T
         return None
     ways, age_ways = found
     songs = "Item_Melody_ShadowNocturne" in progression
-    entries = [frozenset(progression) if DUNGEON_ENTRY[area] is None else DUNGEON_ENTRY_SONGS.get(area, DUNGEON_ENTRY[area]) if songs
+    # (no_bottle, placement BOTTLE_ENTRY_FROM: the owner's run 2026-11-23, every check of Ganon's Castle asked for a bottle,
+    #  its way in being every gating item; a bottle is no way in, and a check that needs one says so in its own ways)
+    everything = frozenset(progression) - ({BOTTLE} if no_bottle else set())
+    entries = [everything if DUNGEON_ENTRY[area] is None else DUNGEON_ENTRY_SONGS.get(area, DUNGEON_ENTRY[area]) if songs
                else DUNGEON_ENTRY[area]]
     if area == WELL and songs and well_child:   # (a young Link's, by the Song of Storms: WELL_FROM)
         entries = [CHILD | (frozenset((STORMS, OCARINA)) & frozenset(progression))]
@@ -7760,7 +7764,7 @@ def main():
     def own_rule(h, area, otherwise):
         """a dungeon check's own rule (dungeon_rule), or what the rules asked before"""
         made = dungeon_rule(h, area, PROGRESSION, pool, a.open_door or (a.door_song and _TIME in PROGRESSION),
-                            placement >= DUNGEON_AGES_FROM, placement >= WELL_FROM) if dungeon_on else None
+                            placement >= DUNGEON_AGES_FROM, placement >= WELL_FROM, placement >= BOTTLE_ENTRY_FROM) if dungeon_on else None
         if made is not None:
             ruled.add(h)
         return otherwise() if made is None else made
