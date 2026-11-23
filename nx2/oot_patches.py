@@ -109,6 +109,32 @@ def patch_life(source):
         'extern int hos_oot_is_player(Ctx *c, uint64_t actor);\n', 1)
 
 
+# Damage numbers (asked 2026-11-23, share/damage-values.md): every life loss at the life component's write tells the host
+# (host/hos_main.c hos_oot_hit: the actor x19, the old life x11, the new x12, the whole hit x9 before it was clamped), Link's
+# included, before patch_life's own guard may change x12. A line of its own in front of the damage write (the first
+# LIFE_CAS), so a file patch_life made already is given it too.
+LIFE_HIT = ("    if ((uint32_t)c->x[12] < (uint32_t)c->x[11]) hos_oot_hit(c, c->x[19], (uint32_t)c->x[11], (uint32_t)c->x[12], "
+            "(uint32_t)c->x[9]);   /* (nx2/oot_patches.py: damage numbers) */\n")
+
+
+def patch_life_hits(source):
+    start = source.find(LIFE_HEAD)
+    if start < 0:
+        return None
+    end = source.find("\n}", start)
+    if end < 0 or source[start:end].count(LIFE_CAS) != 2:
+        return None
+    if "hos_oot_hit(" in source[start:end]:
+        return source
+    body = source[start:end]
+    at = body.index(LIFE_CAS)
+    guard = body.rfind("    if ((uint32_t)c->x[12] < (uint32_t)c->x[11] &&\n", 0, at)   # (patch_life's guard, when made: the hit goes first)
+    at = guard if guard >= 0 and "hos_oot_damage(" in body[guard:at] else at
+    body = body[:at] + LIFE_HIT + body[at:]
+    return (source[:start] + body + source[end:]).replace(
+        '#include "a64.h"\n', '#include "a64.h"\nextern void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit);\n', 1)
+
+
 def patch_movement(source):
     start = source.find(MOVE_HEAD)
     if start < 0:
@@ -1835,6 +1861,12 @@ def patch_file(s, name, protect_hearts=False):
         out = life
         counts["player heart protection"] += 1
         lines.append("oot_patches: player heart protection in " + name)
+    hits = patch_life_hits(out) if protect_hearts else None
+    if hits is not None:
+        if hits != out:
+            lines.append("oot_patches: damage numbers' hits in " + name)
+        out = hits
+        counts["damage hits"] += 1
     move = patch_movement(out) if protect_hearts else None
     if move is not None:
         out = move
@@ -2075,6 +2107,7 @@ def report(paths, counts, protect_hearts=False):
         done["glyph hook"] = 0
         done["text layout hook"] = 0
         done["player heart protection"] = 0
+        done["damage hits"] = 0
         done["player flight"] = 0
         done["player flight rotation"] = 0
         done["free camera"] = 0

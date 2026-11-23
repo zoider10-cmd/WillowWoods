@@ -34,7 +34,7 @@ def main():
     assert patches.patch_life(source.replace(patches.LIFE_CAS, '', 1)) is None
     assert patches.patch_life(source.replace(patches.LIFE_HEAD, 'void unrelated(void) {\n')) is None
     assert patches.patch_file(source, 'authored.c', protect_hearts=False)[0] == source
-    assert patches.patch_file(source, 'authored.c', protect_hearts=True)[0] == made
+    assert patches.patch_file(source, 'authored.c', protect_hearts=True)[0] == patches.patch_life_hits(made)   # (and the damage numbers' hits: tests/test_damage_hits.py)
     # Compile the guard from each injected site, not a reimplementation of it.
     body = made.split(patches.LIFE_HEAD)[1].rsplit('\n}', 1)[0]
     guards = body.split(patches.LIFE_CAS)[:2]

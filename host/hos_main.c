@@ -776,6 +776,33 @@ int hos_oot_is_player(Ctx *c, uint64_t actor) {
            recomp_load8(c, resource + 94) == 0;
 }
 
+/* Damage numbers (asked 2026-11-23, share/damage-values.md): every life loss at the life component's write (nx2/oot_patches.py
+   patch_life_hits: the actor, its old and new life, and the whole hit before it was clamped at 0), kept in a small ring the
+   overlay reads (hos_oot_hits), Link's own losses left out. HOS_OOT_DAMAGE_LOG=1 logs each: "damage: <actor> took <hit>
+   (<old> -> <new>)". The actor's name is its resource record's (+16, then +88), as hos_oot_is_player reads it. */
+#define OOT_HITS 32
+static struct { uint64_t actor; int64_t at_ns; uint32_t hit, old, next; char name[48]; } oot_hits[OOT_HITS];
+static volatile uint32_t oot_hit_count;   /* (how many were ever kept: the newest is at (count - 1) % OOT_HITS) */
+
+void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit) {
+    if (!actor || hos_oot_is_player(c, actor)) return;
+    /* (the name: the actor's resource record's, at its +88, as hos_oot_is_player reads "Player"; +0x260 named no Deku Baba) */
+    const uint64_t resource = recomp_load64(c, actor + 16);
+    char text[48] = {0};
+    for (int i = 0; resource && i < (int)sizeof text - 1; i++) {
+        text[i] = (char)recomp_load8(c, resource + 88 + (unsigned)i);
+        if (!text[i]) break;
+    }
+    const uint32_t n = __atomic_load_n(&oot_hit_count, __ATOMIC_RELAXED);
+    __typeof__(oot_hits[0]) *h = &oot_hits[n % OOT_HITS];
+    h->actor = actor, h->at_ns = hos_now_ns(), h->hit = hit, h->old = old, h->next = next;
+    memcpy(h->name, text, sizeof h->name);
+    __atomic_store_n(&oot_hit_count, n + 1, __ATOMIC_RELEASE);
+    static int log = -1;
+    if (log < 0) log = env_on("HOS_OOT_DAMAGE_LOG");
+    if (log) hos_log("damage: %s took %u (%u -> %u)", text[0] ? text : "?", hit, old, next);
+}
+
 /* Movement speed (the Debug tab's row): Link's character controller and the row's percent, as oot_player_speed saw them on
    his last update (0: none, or 1x) */
 static uint64_t oot_speed_controller;
