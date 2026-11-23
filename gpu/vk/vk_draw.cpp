@@ -42,6 +42,7 @@
 #include <malloc.h>
 #endif
 
+#include "index_rebase.h"   // (Triforce: an indexed draw's buffer bound at 0)
 #include "shader_recompiler/backend/spirv/emit_spirv.h"
 
 #include "vk_paths.h"
@@ -8900,6 +8901,7 @@ void draw(VkCommandBuffer cmd, NvnState& s, const DrawArgs& d) {
     } else if (d.indexed) {
         const uint32_t unit = d.itype == 0 ? 1 : d.itype == 1 ? 2 : 4;
         BufferRef ib;
+        uint32_t first_index = 0;   // (Triforce: the draw's offset in indices where the buffer is bound at 0)
         {
             FINE_SCOPE(FT_VERTEX);
             const uint64_t ib_n = (uint64_t)std::max(d.count, 1) * unit;
@@ -8913,11 +8915,16 @@ void draw(VkCommandBuffer cmd, NvnState& s, const DrawArgs& d) {
             }
             if (!ib) SKIP_HERE();
             FINE_N(FC_IBIND, 1);
-            bind_index(cmd, ib.buffer, ib.offset, itype);
+            // (Triforce DESC-12, index_rebase.h) the buffer bound at 0 and the draw's offset as its first index, so that
+            // draws at different offsets of one buffer bind it once (about 2,900 binds a frame in the Market otherwise).
+            // RX_VK_INDEX_REBASE=0: at the draw's own offset, first index 0, as before
+            static const bool rebase_on = index_rebase::on(getenv("RX_VK_INDEX_REBASE"));
+            const bool rebased = rebase_on && index_rebase::rebase((uint64_t)ib.offset, unit, &first_index);
+            bind_index(cmd, ib.buffer, rebased ? 0 : ib.offset, itype);
         }
         FINE_SCOPE(FT_DRAWCALL);
         occ.issue();
-        vkCmdDrawIndexed(cmd, (uint32_t)d.count, (uint32_t)std::max(1, d.instances), 0, d.base_vertex, (uint32_t)d.base_instance);
+        vkCmdDrawIndexed(cmd, (uint32_t)d.count, (uint32_t)std::max(1, d.instances), first_index, d.base_vertex, (uint32_t)d.base_instance);
     } else {
         FINE_SCOPE(FT_DRAWCALL);
         occ.issue();
