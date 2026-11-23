@@ -613,6 +613,7 @@ Staging staging(uint64_t n, uint64_t align = 256) {
 // ---- the GPU ASTC decoder (Eden's) ----
 struct AstcPush {
     uint32_t block_dims[2], layer_stride, block_size, x_shift, block_height, block_height_mask, native_tiling;
+    uint32_t blocks_x, blocks_y;   // (Longshot 658e5f2b: the level's size in blocks, the rewritten decoder's bounds)
 };
 VkDescriptorSetLayout astc_set = VK_NULL_HANDLE;
 VkPipelineLayout astc_layout = VK_NULL_HANDLE;
@@ -945,8 +946,29 @@ void bc_encode_into(VkCommandBuffer cmd, uint32_t w, uint32_t h, uint32_t n, Tex
     vkCmdPushConstants(cmd, bc_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof pc, &pc);
     vkCmdDispatch(cmd, (pc.blocks_x + 7) / 8, (pc.blocks_y + 7) / 8, n);
     full_barrier(cmd);
-    const VkBufferImageCopy c{0, 0, 0, {VK_IMAGE_ASPECT_COLOR_BIT, level, layer, n}, {dx, dy, 0}, {w, h, 1}};
-    vkCmdCopyBufferToImage(cmd, bc_out, dst.image, VK_IMAGE_LAYOUT_GENERAL, 1, &c);
+    // (Longshot ed602b94's pitch half: the buffer's rows and layers given in whole blocks, as the encoder wrote them,
+    // blocks_x * blocks_y blocks a layer; left at 0 the driver worked the layers' pitch out from the extent. And Longshot
+    // aafc8381: on AMD's Windows driver (RX 6700 XT, RX 6600) a multi-layer copy into a compressed level whose size is not
+    // a multiple of 4 (the 1365 x 1365 x 90 terrain arrays' small levels) copies floor(w/4) x floor(h/4) blocks a layer,
+    // the right and bottom edge blocks left black: Hyrule Field's grid lines, why runs are one layer here (bc_layers).
+    // Such a copy is one region a layer; correct on every driver. RX_VK_BC_COPY_PER_LAYER=0: one region, as before)
+    static const bool per_layer = [] { const char* e = getenv("RX_VK_BC_COPY_PER_LAYER"); return !e || !env_value_off(e); }();
+    if (per_layer && n > 1 && ((w & 3) || (h & 3))) {
+        const uint64_t layer_bytes = (uint64_t)pc.blocks_x * pc.blocks_y * 16;   // (BC3 and BC7: 16 bytes a block)
+        for (uint32_t i0 = 0; i0 < n;) {
+            VkBufferImageCopy regions[8];
+            const uint32_t m = n - i0 < 8 ? n - i0 : 8;
+            for (uint32_t j = 0; j < m; ++j)
+                regions[j] = {(uint64_t)(i0 + j) * layer_bytes, pc.blocks_x * 4, pc.blocks_y * 4,
+                              {VK_IMAGE_ASPECT_COLOR_BIT, level, layer + i0 + j, 1}, {dx, dy, 0}, {w, h, 1}};
+            vkCmdCopyBufferToImage(cmd, bc_out, dst.image, VK_IMAGE_LAYOUT_GENERAL, m, regions);
+            i0 += m;
+        }
+    } else {
+        const VkBufferImageCopy c{0, per_layer ? pc.blocks_x * 4 : 0, per_layer ? pc.blocks_y * 4 : 0,
+                                  {VK_IMAGE_ASPECT_COLOR_BIT, level, layer, n}, {dx, dy, 0}, {w, h, 1}};
+        vkCmdCopyBufferToImage(cmd, bc_out, dst.image, VK_IMAGE_LAYOUT_GENERAL, 1, &c);
+    }
     full_barrier(cmd);   // (the scratch and the buffer are the next part's)
 }
 
@@ -1212,6 +1234,7 @@ bool upload_astc_gpu(Texture& tex, uint64_t total, const Ranges* dirty) {
             pc.block_height = g.tile_h;
             pc.block_height_mask = (1u << g.tile_h) - 1;
             pc.native_tiling = 1;
+            pc.blocks_x = g.tw, pc.blocks_y = g.th;
             for (size_t k0 = 0; k0 < layers.size();) {
                 size_t k1 = k0 + 1;
                 // (one layer a run: with runs of up to kBcLayers, an array's layers past the run's first came out wrong in the
@@ -1256,6 +1279,7 @@ bool upload_astc_gpu(Texture& tex, uint64_t total, const Ranges* dirty) {
         pc.block_height = g.tile_h;
         pc.block_height_mask = (1u << g.tile_h) - 1;
         pc.native_tiling = 1;
+        pc.blocks_x = g.tw, pc.blocks_y = g.th;
         for (size_t k = 0; k < (all ? 1 : layers.size()); k++) {
             const VkImageView view = astc_level_view(&tex, level, all ? ~0u : layers[k]);
             if (!view) {
