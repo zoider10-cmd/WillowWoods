@@ -3310,8 +3310,9 @@ class LauncherForm : Form {
     // whole height. A row is shown, lit and pressed only inside the view.
     // (Willow Woods: on the Randomizer page the list starts under its bar, the search box and the presets)
     const float RandoTop = 150;
+    const float CosmeticTop = 104;   // (the Cosmetics page's list: its view's top, whatever page is shown now)
     RectangleF RandoView { get { return PageNow == RandoPage ? new RectangleF(LeftW + 1, RandoTop, W - LeftW - 2, 534 - RandoTop)
-                                                             : new RectangleF(LeftW + 1, 104, W - LeftW - 2, 430); } }
+                                                             : new RectangleF(LeftW + 1, CosmeticTop, W - LeftW - 2, 534 - CosmeticTop); } }
     float randoScroll, randoHeight;
     float cosmeticScroll, cosmeticHeight;   // (the Cosmetics page's list, the same way)
     bool InView(Widget w, PointF p) { return !w.Scrolls || RandoView.Contains(p); }
@@ -3509,7 +3510,9 @@ class LauncherForm : Form {
     void ShowModels() {
         bool on = modelsSwitch.Index == 1;
         foreach (var s in modelRows) s.Page = on ? CosmeticPage : NoPage;
-        cosmeticHeight = (on ? cosmeticsBase + (modelRows.Count + 1) / 2 * 47 : cosmeticsBase) - RandoView.Y;
+        // (from the Cosmetics view's own top: made at the start, RandoView was the Randomizer page's, 46 lower, and the list
+        //  stopped 46 short, the Experimental heading's switch out of reach, the owner, 2026-11-23)
+        cosmeticHeight = (on ? cosmeticsBase + (modelRows.Count + 1) / 2 * 47 : cosmeticsBase) - CosmeticTop;
         ScrollCosmetics(0);
     }
 
