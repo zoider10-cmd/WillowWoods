@@ -781,6 +781,32 @@ int hos_oot_is_player(Ctx *c, uint64_t actor) {
    overlay reads (hos_oot_hits), Link's own losses left out. HOS_OOT_DAMAGE_LOG=1 logs each: "damage: <actor> took <hit>
    (<old> -> <new>)". The actor's name is its resource record's (+16, then +88), as hos_oot_is_player reads it. */
 #define OOT_HITS 32
+static float oot_load_float(Ctx *c, uint64_t addr);
+/* (the number's place: OOT_DAMAGE_ABOVE metres over the actor's own place, [actor +0x18] +0x31c, the same +0x31c as Link's
+   own; found headless on a Deku Baba, 2026-11-23: its map placement 2.9 100 -6.6 there) */
+#define OOT_DAMAGE_ABOVE 1.2f
+
+/* A point of the world on the screen, by the gameplay camera's view (oot_gameplay_view: its 3x4 view matrix at +8, rows
+   right, up and back with the translation last; +0x128 the near distance, +0x13c the tangent of half the vertical field
+   of view, +0x140 the picture's width over its height: 0.1, tan 25 degrees, 1.778 as read headless 2026-11-23): x and y
+   each from 0 to 32767 across the game's picture (left to right, top to bottom), as (y << 15) | x; -1 when the point is
+   behind the camera or the camera is not there. */
+static uint64_t oot_gameplay_view(Ctx *c);
+static int oot_damage_screen(Ctx *c, const float p[3]) {
+    const uint64_t view = oot_gameplay_view(c);
+    if (!view || recomp_load64(c, view) != 0x84c18a88ULL) return -1;
+    float m[12];
+    for (int i = 0; i < 12; i++) m[i] = oot_load_float(c, view + 8 + 4 * i);
+    const float cx = m[0] * p[0] + m[1] * p[1] + m[2] * p[2] + m[3];
+    const float cy = m[4] * p[0] + m[5] * p[1] + m[6] * p[2] + m[7];
+    const float cz = m[8] * p[0] + m[9] * p[1] + m[10] * p[2] + m[11];
+    const float znear = oot_load_float(c, view + 0x128), tan_half = oot_load_float(c, view + 0x13c), aspect = oot_load_float(c, view + 0x140);
+    if (!(znear > 0 && tan_half > 0.01f && aspect > 0.1f) || !(-cz > znear)) return -1;
+    const float nx = cx / (-cz * tan_half * aspect), ny = cy / (-cz * tan_half);
+    if (!(fabsf(nx) <= 1.2f && fabsf(ny) <= 1.2f)) return -1;   /* (off the picture: the middle of the screen instead) */
+    const int x = (int)((fminf(fmaxf(nx, -1), 1) * 0.5f + 0.5f) * 32767), y = (int)((0.5f - fminf(fmaxf(ny, -1), 1) * 0.5f) * 32767);
+    return y << 15 | x;
+}
 static struct { uint64_t actor; int64_t at_ns; uint32_t hit, old, next; char name[48]; } oot_hits[OOT_HITS];
 static volatile uint32_t oot_hit_count;   /* (how many were ever kept: the newest is at (count - 1) % OOT_HITS) */
 
@@ -801,8 +827,16 @@ void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t h
     static int log = -1;
     if (log < 0) log = env_on("HOS_OOT_DAMAGE_LOG");
     if (log) hos_log("damage: %s took %u (%u -> %u)", text[0] ? text : "?", hit, old, next);
+    /* (where on the screen: the actor's place, a little above it, through the gameplay camera, oot_damage_screen) */
+    float place[3];
+    const uint64_t body = recomp_load64(c, actor + 0x18);
+    for (int i = 0; i < 3; i++) place[i] = body ? oot_load_float(c, body + 0x31c + 4 * i) : 0;
+    place[1] += OOT_DAMAGE_ABOVE;
+    const int at = body ? oot_damage_screen(c, place) : -1;
+    if (log) hos_log("damage: at %.2f %.2f %.2f, the screen's %d", place[0], place[1], place[2], at);
     void rx_option_set(int id, int value);
-    rx_option_set(OOT_DAMAGE_HIT, (int)(hit > 0xffff ? 0xffff : hit) | (next == 0) << 16);   /* (the renderer's Damage numbers row) */
+    rx_option_set(OOT_DAMAGE_AT, at);   /* (the renderer's Damage numbers row: where, then the hit) */
+    rx_option_set(OOT_DAMAGE_HIT, (int)(hit > 0xffff ? 0xffff : hit) | (next == 0) << 16);
 }
 
 /* Movement speed (the Debug tab's row): Link's character controller and the row's percent, as oot_player_speed saw them on

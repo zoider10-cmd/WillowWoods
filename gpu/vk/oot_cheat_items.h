@@ -130,6 +130,9 @@
 /* (Willow Woods, asked 2026-11-23) the Damage numbers row: rx_option_set(OOT_DAMAGE_HIT, hit | (1 << 16) when it killed) from the
    game side at each life an actor other than Link loses (host/hos_main.c hos_oot_hit), the hit before it was clamped at 0 */
 #define OOT_DAMAGE_HIT 4088
+/* (and just before it, where: rx_option_set(OOT_DAMAGE_AT, (y << 15) | x), each from 0 to 32767 across the game's picture, over
+   the enemy as the camera sees it; -1 not on the picture: the hit's number shows in the middle of the screen) */
+#define OOT_DAMAGE_AT 4087
 /* (Willow Woods, asked 2026-11-20) the Inventory page's Add all: every item Link lacks given and every amount filled, but
    the masks, the Biggoron's Sword, the Giant's Knife and the Gold Skulltula tokens (host/hos_main.c oot_add_all_tick) */
 #define OOT_CHEAT_ADD_ALL 8

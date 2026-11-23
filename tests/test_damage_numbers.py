@@ -31,7 +31,16 @@ def main():
     check("rx_option_set(OOT_DAMAGE_HIT, (int)(hit > 0xffff ? 0xffff : hit) | (next == 0) << 16);" in fn,
           "the game side does not send each hit, with whether it defeated the enemy")
     check(fn.index("hos_oot_is_player(c, actor)) return;") < fn.index("rx_option_set("), "Link's own losses are sent too")
+    # (above the enemy: its place, [actor +0x18] +0x31c, a little over it, through the gameplay camera; sent before the hit)
+    check("const uint64_t body = recomp_load64(c, actor + 0x18);" in fn and "body + 0x31c + 4 * i" in fn and "place[1] += OOT_DAMAGE_ABOVE;" in fn,
+          "the hit's place is not the actor's own, a little above it")
+    check(fn.index("rx_option_set(OOT_DAMAGE_AT, at);") < fn.index("rx_option_set(OOT_DAMAGE_HIT"), "the place is not sent before its hit")
+    scr = host[host.index("static int oot_damage_screen(Ctx *c, const float p[3]) {"):]
+    scr = scr[:scr.index("\n}\n")]
+    check("view + 0x13c" in scr and "view + 0x140" in scr and "!(-cz > znear)) return -1;" in scr and "return y << 15 | x;" in scr,
+          "the place is not put through the camera's field of view and aspect, or one behind it is not refused")
     menu = read("gpu", "vk", "vk_menu.cpp")
+    check("if (id == OOT_DAMAGE_AT) {" in menu and "damage_next_at.exchange(-1" in menu, "the renderer does not keep a hit's place with it")
     opts = read("gpu", "vk", "vk_menu.h")
     check("int show_damage = 0;" in opts, "the row is not off by default")
     check('{TAB_GAMEPLAY, "Damage numbers", &opts.show_damage, 0, 1, 1, tx_onoff,' in menu, "the Gameplay tab has no Damage numbers row")

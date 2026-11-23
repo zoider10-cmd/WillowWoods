@@ -6560,15 +6560,22 @@ constexpr int kDamageHits = 16;
 constexpr int64_t kDamageShown = 1100000000;   // (how long a number shows, in ns)
 std::atomic<int64_t> damage_at[kDamageHits];
 std::atomic<int> damage_value[kDamageHits];
+std::atomic<int> damage_place[kDamageHits];   // (OOT_DAMAGE_AT's: over the enemy, or -1 the middle of the screen)
+std::atomic<int> damage_next_at{-1};
 std::atomic<unsigned> damage_count{0};
 void damage_hit(int value) {
     const unsigned n = damage_count.load(std::memory_order_relaxed);
     damage_value[n % kDamageHits].store(value, std::memory_order_relaxed);
+    damage_place[n % kDamageHits].store(damage_next_at.exchange(-1, std::memory_order_relaxed), std::memory_order_relaxed);
     damage_at[n % kDamageHits].store(prof_now(), std::memory_order_relaxed);
     damage_count.store(n + 1, std::memory_order_release);
 }
 std::atomic<int> game_clock{-1};   // (the game side's time of day in seconds, OOT_CLOCK_ID: -1 no save loaded)
 void menu_option_set(int id, int value) {
+    if (id == OOT_DAMAGE_AT) {   // (the Damage numbers row: where the next hit shows)
+        damage_next_at.store(value, std::memory_order_relaxed);
+        return;
+    }
     if (id == OOT_DAMAGE_HIT) {   // (the Damage numbers row: a hit, kept with when it came)
         damage_hit(value);
         return;
@@ -7655,9 +7662,11 @@ void draw_clock(ui::Ctx& c) {
     c.d->AddText(c.f.strong, size, ImVec2(x, y), ui::rgba(255, 255, 255), text);
 }
 
-/// (Willow Woods) The Damage numbers row: each hit of the last kDamageShown (damage_hit) as its number in the middle of the
-/// screen, a little above Link, rising and fading; the newer ones beside the older, so a quick combo reads as a row. White with
-/// a dark outline, as the clock's; gold when the hit defeated the enemy. Not while the menu is open.
+/// (Willow Woods) The Damage numbers row: each hit of the last kDamageShown (damage_hit) as its number over the enemy it hit
+/// (damage_place: where the game's camera saw it, across the game's picture, kept in the middle of the window at the game's
+/// width over height when the window is wider or taller), rising and fading; a few quick hits on one place step aside so
+/// they read as a row. One the camera did not see (behind it, or off the picture) shows in the middle of the screen. White
+/// with a dark outline, as the clock's; gold when the hit defeated the enemy. Not while the menu is open.
 bool damage_shows() {
     if (!opts.show_damage) return false;
     const unsigned n = damage_count.load(std::memory_order_acquire);
@@ -7677,8 +7686,14 @@ void draw_damage(ui::Ctx& c) {
         char text[16];
         snprintf(text, sizeof text, "%d", value & 0xffff);
         const ImVec2 ext = ui::size_of(c.f.strong, size, text);
-        const float spread = (float)((shown % 5) - 2) * size * 0.9f;   // (side by side, five across)
-        const float x = c.w * 0.5f + spread - ext.x * 0.5f, y = c.h * 0.36f - t * size * 1.6f;
+        const int place = damage_place[i].load(std::memory_order_relaxed);
+        float px = c.w * 0.5f, py = c.h * 0.36f, spread = (float)((shown % 5) - 2) * size * 0.9f;   // (side by side, five across)
+        if (place >= 0) {   // (the game's picture: 16:9 in the middle of the window)
+            const float pw = std::min((float)c.w, c.h * 16.0f / 9.0f), ph = std::min((float)c.h, c.w * 9.0f / 16.0f);
+            px = (c.w - pw) * 0.5f + (place & 32767) / 32767.0f * pw, py = (c.h - ph) * 0.5f + (place >> 15) / 32767.0f * ph;
+            spread = (float)(shown % 3) * size * 0.35f;   // (a quick second hit on one place a little aside)
+        }
+        const float x = px + spread - ext.x * 0.5f, y = py - ext.y * 0.5f - t * size * 1.6f;
         const int alpha = (int)(255 * std::min(1.0f, (1.0f - t) * 3.0f));
         for (int dy = -1; dy <= 1; dy++)
             for (int dx = -1; dx <= 1; dx++)
