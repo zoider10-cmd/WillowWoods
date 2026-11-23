@@ -51,7 +51,7 @@ def main():
     check("c->x[3] = OOT_RUPEE_FILL_COUNT;" in rupee and "#define OOT_RUPEE_FILL_COUNT 1000" in host,
           "a rupee picked up does not fill the wallet by its own add")
     add = host[host.index("int hos_oot_pouch_add(Ctx *c) {"):]
-    check(add.index("oot_tracker_item(name);") < add.index("oot_pickup_qol(c, name);") < add.index("if ((int32_t)c->x[3] <= 0) return 0;"),
+    check(add.index("oot_tracker_item(name, shop, price);") < add.index("oot_pickup_qol(c, name);") < add.index("if ((int32_t)c->x[3] <= 0) return 0;"),
           "the pick-ups' settings are not applied in the pouch's add")
     print("PASS: ammo pick-ups and rupees fill the wallet")
 

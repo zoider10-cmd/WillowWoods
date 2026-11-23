@@ -1986,6 +1986,7 @@ static struct {
     int boss;         /* (a boss's Heart Container: tools/rando/rando_seed.py BOSS_HEARTS, bug 31) */
     uint32_t shelf;   /* (a shop's shelf: the hash of the flag it waits for, "still for sale"; 0: another kind of check) */
     signed char sold; /* (a shelf bought, or a check with a key collected, just now: its flag is to be set, oot_shelf_flags) */
+    int price;        /* (a shop's shelf: its price, from its name's ", <n> rupees"; -1: none) */
     uint64_t key;     /* (an actor of a map: its hash, by which the save keeps a truth value; 0: none) */
     uint32_t opened;  /* (a chest: the hash of the game's own flag IsTreasureBoxOpen.<key in decimal>, set when it is opened, bug 70; 0: none) */
 } oot_checks[OOT_TRACKER_MAX];
@@ -2082,6 +2083,12 @@ static void oot_tracker_load(const char *stamp) {
         }
         oot_checks[oot_check_count].shelf = 0;
         oot_checks[oot_check_count].sold = 0;
+        {   /* (a shelf's price: tools/rando/rando_seed.py names it "<shop>: shelf <k>, <n> rupees") */
+            const char *r = strstr(kind, " rupees");
+            const char *d = r;
+            while (d && d > kind && d[-1] >= '0' && d[-1] <= '9') d--;
+            oot_checks[oot_check_count].price = r && d < r && d >= kind + 2 && d[-1] == ' ' && d[-2] == ',' ? atoi(d) : -1;
+        }
         oot_checks[oot_check_count++].done = 0;
     }
     if (f) fclose(f);
@@ -2203,8 +2210,22 @@ static int oot_family_of(const char *name, int *spelling) {
 
 int hos_rando_progressive(void);   /* host/oot_rando.c */
 
-/* An item given (hos_oot_pouch_add): the check that gives it is collected */
-static void oot_tracker_item(const char *name) {
+/* HOS_OOT_TRACK_SHOP=0: shelves matched by any add, as before 2026-11-23 */
+static int oot_tracker_shop_on = 1;
+
+/* An item given (hos_oot_pouch_add): the check that gives it is collected.
+   shop: the add is a shop's sale (the game's add from 0x828d50ac with x4 5: every shelf bought in the owner's run of
+   2026-11-23 had it, and no chest, gift or pick-up did). A sale is a shelf's and only a shelf's: bug 115, two shelves of
+   one item in a shop, the first in the list was marked and hidden, not the one bought; and the adult rolling Goron's
+   Heart Container marked the Goron shop's Heart Container shelf (the nearer), which then vanished. price: the game's
+   Shop_SelectItemPrice at the sale (-1: not read), which tells the shelves of one item apart. */
+static void oot_tracker_item(const char *name, int shop, int price) {
+    static int read;
+    if (!read) {
+        const char *e = getenv("HOS_OOT_TRACK_SHOP");
+        oot_tracker_shop_on = !(e && *e == '0');
+        read = 1;
+    }
     AcquireSRWLockExclusive(&oot_checks_lock);
     int best = -1, elsewhere = -1, others = 0;
     float nearest = 1e30f;
@@ -2213,6 +2234,8 @@ static void oot_tracker_item(const char *name) {
     const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
     for (int i = 0; i < oot_check_count; i++) {
         if (oot_checks[i].done == 1) continue;
+        if (oot_tracker_shop_on && (!oot_checks[i].shelf) != !shop) continue;   /* (a sale is a shelf's; anything else is not) */
+        if (shop && price >= 0 && oot_checks[i].price >= 0 && oot_checks[i].price != price) continue;
         if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
         if (!oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) {
             others++, elsewhere = i;
@@ -2232,7 +2255,8 @@ static void oot_tracker_item(const char *name) {
            Obj_) is the end of the name given is the one) */
         const size_t length = strlen(name);
         for (int i = 0; i < oot_check_count && best < 0; i++) {
-            const char *tail = oot_checks[i].shelf && oot_checks[i].done != 1 ? strchr(oot_checks[i].item, '_') : NULL;
+            const char *tail = oot_checks[i].shelf && oot_checks[i].done != 1 && (shop || !oot_tracker_shop_on) &&
+                               (!shop || price < 0 || oot_checks[i].price < 0 || oot_checks[i].price == price) ? strchr(oot_checks[i].item, '_') : NULL;
             const size_t n = tail ? strlen(tail) : 0;   /* (with its "_": a whole word's end) */
             if (n < 2 || n > length || strcmp(name + length - n, tail) || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
             const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
@@ -4826,7 +4850,13 @@ int hos_oot_pouch_add(Ctx *c) {
             view = oot_pouch_name(c, view, gives);
             snprintf(name, sizeof name, "%s", gives);
         }
-        if (!oot_holder_giving) oot_tracker_item(name);   /* (a holder given for a Skulltula's bundle is no check's: bug 87) */
+        if (!oot_holder_giving) {   /* (a holder given for a Skulltula's bundle is no check's: bug 87) */
+            const int shop = c->x[30] == 0x828d50acULL && (uint32_t)c->x[4] == 5;   /* (a shop's sale: oot_tracker_item) */
+            int32_t price = -1;
+            if (shop && !oot_gamedata_int(c, 0x07a1b798u, &price, 0)) price = -1;   /* Shop_SelectItemPrice */
+            if (shop) hos_log("rando: tracker: %s bought in a shop (price %d)", name, (int)price);
+            oot_tracker_item(name, shop, price);
+        }
     }
     /* (bug 42: with no Bomb Bag, the bombs that follow the bag the game is not let give made the inventory's bombs at
        0/0, a slot that can't be used: a bomb added while Link has no bag adds nothing. Here, after the tracker's record

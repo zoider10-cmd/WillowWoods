@@ -85,7 +85,7 @@ def main():
     block = host[host.index("int hos_oot_pouch_add(Ctx *c) {"):]
     check('(!strcmp(name, OOT_PIECE) || !strcmp(name, OOT_PIECE_VALLEY)) && c->x[30] != 0x828d50acULL &&' in block and
           "view = oot_pouch_name(c, view, gives);" in block and 'snprintf(name, sizeof name, "%s", gives);' in block and
-          block.index("view = oot_pouch_name(c, view, gives);") < block.index("oot_tracker_item(name);") < block.index("hos_rando_progressive()"),
+          block.index("view = oot_pouch_name(c, view, gives);") < block.index("oot_tracker_item(name, shop, price);") < block.index("hos_rando_progressive()"),
           "a piece lying in the world does not give its check's item, a chest's piece does, or the record and Progressive items see the piece")
     check("const int other = best >= 0 && oot_checks[best].item[0] && strcmp(oot_checks[best].item, boss ? OOT_CONTAINER : OOT_PIECE);" in host and "#define OOT_PIECE_NEAR 12.0f" in host and
           "float nearest = boss ? 1e30f : OOT_PIECE_NEAR;" in host,
@@ -114,7 +114,7 @@ def main():
           'oot_checks[oot_check_count].boss = !strncmp(kind, "Heart Container, ", 17);' in host,
           "the containers' checks are not named so that the game's side knows them")
     check('} else if (!strcmp(name, OOT_CONTAINER) && c->x[30] != 0x828d50acULL && oot_piece_gives(gives, sizeof gives, 1)) {' in block and
-          block.index("oot_piece_gives(gives, sizeof gives, 1)") < block.index("oot_tracker_item(name);"),
+          block.index("oot_piece_gives(gives, sizeof gives, 1)") < block.index("oot_tracker_item(name, shop, price);"),
           "a boss's container that the seed made another item does not give it, or a chest's container is renamed")
     # (the container's own taking still makes a heart, seen without a window: five became six. It is put back in the
     #  saved max and in Link's own, the one the hearts shown go by)

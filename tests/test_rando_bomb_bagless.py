@@ -66,7 +66,7 @@ def main():
     fn = block(host, "static int oot_bombs_bagless(Ctx *c, const char *name) {")
     add = block(host, "int hos_oot_pouch_add(Ctx *c) {")
     at = add.index("if (oot_bombs_bagless(c, name)) {")
-    if not (add.index("oot_tracker_item(name);") < at < add.index("oot_pickup_qol(c, name);")):
+    if not (add.index("oot_tracker_item(name, shop, price);") < at < add.index("oot_pickup_qol(c, name);")):
         raise SystemExit("hos_main.c: the bagless bombs are not asked after the tracker's record and before the add")
     if "return 1;" not in add[at:at + 200]:
         raise SystemExit("hos_main.c: bagless bombs are still added")

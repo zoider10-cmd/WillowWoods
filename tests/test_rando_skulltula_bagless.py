@@ -141,7 +141,7 @@ def main():
         "static int oot_drop_check_near(const char *name) {")) + "\n" + block(
         host, "int hos_oot_pickup_room(Ctx *c) {")
     add = block(host, "int hos_oot_pouch_add(Ctx *c) {")
-    if "if (!oot_holder_giving) oot_tracker_item(name);" not in add:
+    if "if (!oot_holder_giving) {" not in add:
         raise SystemExit("hos_main.c: a holder given for a Skulltula's bundle would be marked as a check")
     sys.path.insert(0, str(ROOT / "nx2"))
     import oot_patches as P   # noqa: E402
