@@ -30,6 +30,7 @@
 #include "vk_internal.h"
 #include "vk_new.h"   // (NewNothrow)
 #include "readback_early.h"  // (RX_VK_READBACK_EARLY's and RX_VK_LATE_DEFER's rules)
+#include "cap_spare.h"   // (Triforce: which spare a capture takes, cap_buf_get)
 #include "vk_texture.h"   // (upload_command_buffer)
 #include "vk_draw.h"      // (linux_pressure_shortfall)
 #include "vk_gprof.h"      // (RX_VK_PASS_TIMING)
@@ -1125,19 +1126,32 @@ uint64_t cap_spare_max() {
     }();
     return v;
 }
+// (Triforce, RX_VK_CAP_SPARE_FIT, on; =0: as before) A capture takes the smallest spare that fits and leaves a load's big
+// spare (32 MB or more, over twice its class) to a load; a big spare taken is made again on a worker; a new buffer is made,
+// and one past the limits destroyed, with cap_free_mu let go (AMD's driver: ~0.8 ms a MB to make one; the replay's take and
+// the other submitting threads wait on that mutex). Reborn measured 61 such makes at scene loads, 10-63 ms each, on an
+// RX 7900 XTX (cap_spare.h)
+bool cap_spare_fit() {
+    static const bool v = [] { const char* e = getenv("RX_VK_CAP_SPARE_FIT"); return !e || !env_value_off(e); }();
+    return v;
+}
 void cap_buf_free(VkBuffer buffer, VmaAllocation alloc, void* map, uint64_t size, bool from_worker = false) {
-    std::lock_guard lk(cap_free_mu);
-    if (from_worker && cap_shutting_down.load()) return;
-    // (hookshot, RX 7800 XT: buffers up to 256 MB are kept for the next capture, not only up to 64 MB: a new one costs ~100 ms of
-    // vkAllocateMemory on AMD's driver. RX_VK_CAPTURE_KEEP_OLD=1: as before)
-    static const bool keep_old = env_on("RX_VK_CAPTURE_KEEP_OLD");
-    if (cap_free.size() < 12 && size <= (keep_old ? 64ull << 20 : 256ull << 20) &&
-        cap_free_bytes + size <= std::min<uint64_t>(cap_spare_max(), keep_old ? ~0ull : 768ull << 20)) {
-        cap_free.push_back({buffer, alloc, map, size});
-        cap_free_bytes += size;
-    } else {
-        destroy_buffer(buffer, alloc);
+    bool keep;
+    {
+        std::lock_guard lk(cap_free_mu);
+        if (from_worker && cap_shutting_down.load()) return;
+        // (hookshot, RX 7800 XT: buffers up to 256 MB are kept for the next capture, not only up to 64 MB: a new one costs ~100 ms of
+        // vkAllocateMemory on AMD's driver. RX_VK_CAPTURE_KEEP_OLD=1: as before)
+        static const bool keep_old = env_on("RX_VK_CAPTURE_KEEP_OLD");
+        keep = cap_free.size() < 12 && size <= (keep_old ? 64ull << 20 : 256ull << 20) &&
+               cap_free_bytes + size <= std::min<uint64_t>(cap_spare_max(), keep_old ? ~0ull : 768ull << 20);
+        if (keep) {
+            cap_free.push_back({buffer, alloc, map, size});
+            cap_free_bytes += size;
+        }
+        if (!keep && !cap_spare_fit()) destroy_buffer(buffer, alloc);   // (as before: inside the lock)
     }
+    if (!keep && cap_spare_fit()) destroy_buffer(buffer, alloc);   // (Triforce: with the lock let go)
 }
 void cap_buf_retire(std::map<uint32_t, CapBuf>::iterator it) {
     cap_bytes -= it->second.size;
@@ -1252,7 +1266,7 @@ void cap_prewarm_class(uint64_t size) {
     }
 }
 bool cap_buf_get(uint64_t need, VkBuffer& buffer, VmaAllocation& alloc, void*& map, uint64_t& size) {
-    std::lock_guard lk(cap_free_mu);
+    std::unique_lock lk(cap_free_mu);
     if (cap_prewarm_on()) {
         static bool first = true;
         if (first) {   // (the first capture: the classes a load asks for)
@@ -1260,17 +1274,24 @@ bool cap_buf_get(uint64_t need, VkBuffer& buffer, VmaAllocation& alloc, void*& m
             for (uint64_t c : {32ull << 20, 64ull << 20, 128ull << 20, 192ull << 20}) cap_prewarm_class(c);
         }
     }
-    size_t best = cap_free.size();
-    for (size_t i = 0; i < cap_free.size(); i++)
-        if (cap_free[i].size >= need && (best == cap_free.size() || cap_free[i].size < cap_free[best].size)) best = i;
+    const bool fit = cap_spare_fit();
+    const uint64_t cls = cap_buf_size(need);
+    // (Triforce: a big spare is left to a load unless spares are capped at 32 MB, where every spare is that small)
+    const size_t best = cap_spare::pick(cap_free.size(), [&](size_t i) { return cap_free[i].size; }, need, cls,
+                                        !fit || cap_spare_max() <= cap_spare::kBig);
     if (best < cap_free.size()) {
         buffer = cap_free[best].buffer, alloc = cap_free[best].alloc, map = cap_free[best].map, size = cap_free[best].size;
         cap_free_bytes -= size;
         cap_free.erase(cap_free.begin() + (ptrdiff_t)best);
+        if (fit && size >= cap_spare::kBig) cap_prewarm_class(size);   // (Triforce: the big spare a load took, made again ahead)
         return map != nullptr;
     }
-    size = cap_buf_size(need);
+    size = cls;
     map = nullptr;
+    if (!fit)   // (as before: made inside the lock)
+        return create_buffer_cached(size, cap_usage(), buffer, alloc, &map,
+                                    size >= (16ull << 20) && !env_on("RX_VK_CAP_BLOCKS")) && map;
+    lk.unlock();   // (Triforce: made with the lock let go)
     return create_buffer_cached(size, cap_usage(), buffer, alloc, &map,
                                 size >= (16ull << 20) && !env_on("RX_VK_CAP_BLOCKS")) && map;
 }
@@ -5116,6 +5137,7 @@ void mirror_free(Pool& p) {
     p.mstate = Pool::MIRROR_NONE;
     pools_gen++;   // (a parallel replay thread's pool cache: looked up again)
 }
+bool mirror_idle_backlog = false;   // (Ocarina Reborn: long-idle mirrors left for later calls, mirrors_give_back's pacing; pools_mu)
 void mirrors_give_back(uint64_t want_bytes) {   // (pools_mu held)
     static const bool keep = env_on("RX_VK_MIRROR_KEEP");   // (A/B: mirrors kept, as before)
     if (keep) return;
@@ -5148,9 +5170,29 @@ void mirrors_give_back(uint64_t want_bytes) {   // (pools_mu held)
             else idle.push_back(&p);
         }
     std::sort(idle.begin(), idle.end(), [](const Pool* a, const Pool* b) { return a->synced_epoch < b->synced_epoch; });
+    // (Ocarina Reborn adcb6f7) the mirrors one area's load made were all synced last at the same submit, so they all passed
+    // kLongIdle at once: on a 9800X3D + RX 7900 XTX 22 of them (475 MB), then 53 more (951 MB in all) went in two calls, their
+    // buffers freed on the submitting thread, and the game's main thread sat 90 and 477 ms in that submit (the driver's
+    // frees). Long-idle ones are not needed for room, so they go a few at a time: RX_VK_MIRROR_IDLE_MB a call (default 32, at
+    // least one mirror; 0: all at once, as before), the rest at the next calls, every 8 submissions while some are left
+    // (memory_begin_submission). Frees for room are not held back
+    static const uint64_t idle_step = [] {
+        const char* e = getenv("RX_VK_MIRROR_IDLE_MB");
+        return (uint64_t)(e && e[0] ? std::max(0, atoi(e)) : 32) << 20;
+    }();
+    uint64_t idle_freed = 0;
+    mirror_idle_backlog = false;
     for (Pool* p : idle) {
+        const bool for_room = mirror_bytes + want_bytes > mirror_budget();
         const bool long_idle = mirror_epoch - p->synced_epoch > kLongIdle;
-        if (long_idle || mirror_bytes + want_bytes > mirror_budget()) told(*p, long_idle ? "idle" : "idle, for room"), mirror_free(*p);
+        if (!for_room && long_idle && idle_step && idle_freed > 0 && idle_freed + (p->hi - p->lo) > idle_step) {
+            mirror_idle_backlog = true;   // (its turn at a later call)
+            continue;
+        }
+        if (for_room || long_idle) {
+            if (!for_room) idle_freed += p->hi - p->lo;
+            told(*p, for_room ? "idle, for room" : "idle"), mirror_free(*p);
+        }
     }
     static int64_t logged_at;
     if (st_mirrors_freed / 16 != logged_at) {
@@ -5457,7 +5499,8 @@ void memory_begin_submission() {
     {
         uint64_t want = 0;
         for (Pool* p : mirror_wanted) want += p->hi - p->lo;
-        if (mirror_epoch % 64 == 0 || mirror_bytes + want > mirror_budget()) mirrors_give_back(want);
+        if (mirror_epoch % 64 == 0 || (mirror_idle_backlog && mirror_epoch % 8 == 0) || mirror_bytes + want > mirror_budget())
+            mirrors_give_back(want);   // (Ocarina Reborn: every 8 while long-idle ones are left)
     }
     if (mirror_sparse_on()) {   // (hookshot, RX_VK_MIRROR_SPARSE: blocks the game's pools left go, blocks bindings wanted come)
         if (mirror_epoch % 64 == 0) sparse_release();
