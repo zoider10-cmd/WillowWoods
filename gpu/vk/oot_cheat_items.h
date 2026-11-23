@@ -98,7 +98,7 @@
     OOT_ITEM("Nocturne of Shadow", "Item_Melody_ShadowNocturne", 0) \
     OOT_ITEM("Requiem of Spirit", "Item_Melody_SpiritRequiem", 0) \
     OOT_ITEM("Prelude of Light", "Item_Melody_LightPrelude", 0) \
-    OOT_ITEM("Stone of Agony", "Item_AgonyStone", 0) \
+    OOT_ITEM("Echo Gem", "Item_AgonyStone", 0) \
     OOT_ITEM("Gerudo's Card", "Item_Token_Gerudo", 0) \
     OOT_ITEM("Gold Skulltula Tokens", "Item_Token_Gold", 1) \
     OOT_ITEM("Zelda's Letter", "Item_ZeldaLetter", 0) \

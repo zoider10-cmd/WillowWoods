@@ -301,7 +301,7 @@ std::string tracker_item_name(const char* actor) {
         {"Item_HeavyBoot", "Iron Boots"}, {"Item_HoverBoot", "Hover Boots"}, {"Item_Hammer", "Megaton Hammer"},
         {"Item_Gauntlet_Goron", "Goron's Bracelet"}, {"Item_Gauntlet_Silver", "Silver Gauntlets"}, {"Item_Gauntlet_Gold", "Golden Gauntlets"},
         {"Item_Shield_Mirror", "Mirror Shield"}, {"TBox_Shield_Hylian", "Hylian Shield"}, {"TBox_Shield_Deku", "Deku Shield"},
-        {"Item_Sword_Kokiri", "Kokiri Sword"}, {"Item_AgonyStone", "Stone of Agony"}, {"Item_ScrubBusinessSeed", "Deku Seeds"},
+        {"Item_Sword_Kokiri", "Kokiri Sword"}, {"Item_AgonyStone", "Echo Gem"}, {"Item_ScrubBusinessSeed", "Deku Seeds"},
         {"Item_Wallet_Medium", "Adult's Wallet"}, {"Item_Wallet_Large", "Giant's Wallet"}, {"Item_Scale_Silver", "Silver Scale"},
         {"Item_Scale_Gold", "Golden Scale"}, {"Item_BombBag_Small", "Bomb Bag"}, {"Item_BombBag_Medium", "Big Bomb Bag"},
         {"Item_BombBag_Large", "Biggest Bomb Bag"}, {"Item_Quiver_Medium", "Big Quiver"}, {"Item_Quiver_Large", "Biggest Quiver"},
