@@ -1995,6 +1995,14 @@ static char oot_checks_seed[1024];   /* (the stamp the checks and the record are
    seed's 243-304 characters short, so a record written with the whole line was never this seed's, 2026-11-19) */
 static float oot_link_place[3];
 static char oot_link_map[80];
+/* (bug 124, the owner's run 2026-11-23: the Song of Time's lesson at the castle's moat gave its item just as the game
+   took Link to another map, and the check was not marked: the add was looked for in the new map only. The map Link
+   left, and his last place there, count for OOT_LEFT_MAP_NS after: oot_tracker_item) */
+static char oot_left_map[80];
+static float oot_left_place[3];
+static int64_t oot_left_at;
+static float oot_link_place_was[3];   /* (Link's place at the last second's look: his last in a map he then leaves) */
+#define OOT_LEFT_MAP_NS 30000000000LL
 static SRWLOCK oot_checks_lock = SRWLOCK_INIT;
 
 /* <game folder>/<tail>, into out: 1, or 0 when the game's folder is not known */
@@ -2232,21 +2240,28 @@ static void oot_tracker_item(const char *name, int shop, int price) {
     /* (with Progressive items a check gives the family's next, by its own name or, since the chest says so, by that
        next's: a check of the same family is the one) */
     const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
-    for (int i = 0; i < oot_check_count; i++) {
-        if (oot_checks[i].done == 1) continue;
-        if (oot_tracker_shop_on && (!oot_checks[i].shelf) != !shop) continue;   /* (a sale is a shelf's; anything else is not) */
-        if (shop && price >= 0 && oot_checks[i].price >= 0 && oot_checks[i].price != price) continue;
-        if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
-        if (!oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) {
-            others++, elsewhere = i;
-            continue;
+    /* (pass 0: the map Link is in; pass 1, when nothing near was found there: the map he left within OOT_LEFT_MAP_NS) */
+    const int left = oot_left_map[0] && hos_now_ns() - oot_left_at < OOT_LEFT_MAP_NS;
+    for (int pass = 0; pass < 1 + left && best < 0; pass++) {
+        const char *map = pass ? oot_left_map : oot_link_map;
+        const float *at = pass ? oot_left_place : oot_link_place;
+        nearest = 1e30f, others = 0, elsewhere = -1;
+        for (int i = 0; i < oot_check_count; i++) {
+            if (oot_checks[i].done == 1) continue;
+            if (oot_tracker_shop_on && (!oot_checks[i].shelf) != !shop) continue;   /* (a sale is a shelf's; anything else is not) */
+            if (shop && price >= 0 && oot_checks[i].price >= 0 && oot_checks[i].price != price) continue;
+            if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
+            if (!oot_banc_in_folder(map, oot_checks[i].folder)) {
+                others++, elsewhere = i;
+                continue;
+            }
+            const float dx = oot_checks[i].place[0] - at[0], dy = oot_checks[i].place[1] - at[1], dz = oot_checks[i].place[2] - at[2];
+            const float away = sqrtf(dx * dx + dy * dy + dz * dz);
+            if (away < nearest) nearest = away, best = i;
         }
-        const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
-                    dz = oot_checks[i].place[2] - oot_link_place[2];
-        const float away = sqrtf(dx * dx + dy * dy + dz * dz);
-        if (away < nearest) nearest = away, best = i;
+        if (best >= 0 && nearest > OOT_CHECK_NEAR) best = -1;
+        if (best >= 0 && pass) hos_log("rando: tracker: %s: the check is in the map Link just left (%s)", name, map);
     }
-    if (best >= 0 && nearest > OOT_CHECK_NEAR) best = -1;
     if (best < 0 && others == 1 && nearest > 1e29f) best = elsewhere;   /* (the one check left that gives it, in another map's file) */
     if (best < 0) {
         /* (a shop's shelf gives its item by the name the pouch has it by, which is not always the seed's: seen without
@@ -3048,6 +3063,12 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     char map[80];
     oot_gamedata_string(c, 0x1d6189dau, map, sizeof map);   /* Sequence_CurrentBanc */
     AcquireSRWLockExclusive(&oot_checks_lock);
+    if (map[0] && strcmp(map, oot_link_map)) {   /* (the map left, for an add that comes as it changes: bug 124) */
+        memcpy(oot_left_map, oot_link_map, sizeof oot_left_map);
+        memcpy(oot_left_place, oot_link_place_was, sizeof oot_left_place);
+        oot_left_at = now;
+    }
+    memcpy(oot_link_place_was, oot_link_place, sizeof oot_link_place_was);
     memcpy(oot_link_map, map, sizeof oot_link_map);
     if (oot_check_count < 0 || now >= next_stamp) {   /* (a seed made anew while the game runs: its checks, and no record of another's) */
         next_stamp = now + 15000000000LL;
