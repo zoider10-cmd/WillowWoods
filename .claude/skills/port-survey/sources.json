@@ -47,6 +47,14 @@
    "surveyed_on": "2026-11-20"
   },
   {
+   "name": "Rekarina",
+   "url": "https://git.rekarina.dev/rekarina/rekarina",
+   "kind": "port",
+   "license": "GPL-3.0",
+   "base": "its own static recompilation (not a Hookshot fork) of the same remake, for base 1.0.0 + update 1.1.1 (ours is the later update): read for ideas, re-find addresses in our build; one squashed commit per release",
+   "surveyed": ""
+  },
+  {
    "name": "Fritchii",
    "url": "https://github.com/Frizti/Fritchii",
    "kind": "emulator",
