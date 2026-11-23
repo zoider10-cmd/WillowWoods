@@ -57,6 +57,8 @@ def main():
         "Item_StickBag_Medium_GetCaption": b"You can carry a lot more " + tag + b"Deku sticks now!\nThis bag fits up to 20 of them!",
         "Item_StickBag_Small_GetMessage": b"Kept as it is",
     }
+    # (the gauntlets' lines there already: COPY_WORDS, fixes 75, adds nothing to this text; test_rando_gauntlet_words has it)
+    lines.update((item + suffix, b"Gauntlets") for item in S.COPY_WORDS for suffix in ("_GetMessage", "_GetCaption"))
     data, added = S.first_bag_words(msbt(lines), True)
     check(added == 3, "not the three lines missing were added (%d)" % added)
     check(line(data, "Item_NutBag_Small_GetMessage") == b"You got a " + tag + tag + b"Deku-nut bag!" and
