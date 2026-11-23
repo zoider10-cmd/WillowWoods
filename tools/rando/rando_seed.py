@@ -4473,8 +4473,9 @@ def quest_order_flow(raw, name):
 # plays the 8-note way's preparation, and a win under 8 notes goes on to the Heart Piece's question (Event68), where the
 # seed's item is. Skip the tower escape (rando_skip_tower): Defeat_Ganon's banc change to the collapsing tower loads the
 # field below it at its entrance with the escape's end event (InsideGanonCaslte_Dungeon_Escape, the game's spelling);
-# the tower's preloading anchor (InsideGanonCastle_Dynamic) preloads that field. NOT SEEN IN PLAY (the other randomizer
-# marks the last one untested too).
+# the tower's preloading anchor (InsideGanonCastle_Dynamic) preloads that field. The tower skip SEEN IN PLAY by the owner,
+# 2026-11-23 (turned on for a seed already made: Ganondorf beaten, straight to the field); any fish and the Skull Kid seen
+# before.
 FISH_FLOW = "Event/EventFlow/MiniGame_Fishing.bfevfl.zs"
 SKULL_KID_FLOW = "Event/EventFlow/Npc_SkullKid_Child_02.bfevfl.zs"
 GANON_FLOW = "Event/EventFlow/Defeat_Ganon.bfevfl.zs"
