@@ -26,16 +26,18 @@ using System.Windows.Forms;
 // of the seed's random part and every setting, with a checksum. Bits, low first: the format's version 4, the random part 31,
 // 16 settings of 2 bits in the table's order, the checksum 8. And the longer one, 20 characters, made only when a setting
 // past the sixteenth is set: the version 2, the random part 31, 28 settings of 2 bits, a bit that is 0, the checksum 8.
-// And the longest, 25 characters, made only when a setting past the 28th is set: the version 3, the random part 31, 41
-// settings of 2 bits, the checksum 8.
+// And 25 characters, made only when a setting past the 28th is set: the version 3, the random part 31, 41 settings of 2
+// bits, the checksum 8. And the longest, 30 characters (2026-11-22, the 25's being full), made only when a setting past
+// the 41st is set: the version 4, the random part 31, 53 settings of 2 bits, a bit that is 0, the checksum 8.
 static class RandoId {
     const string Alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
     const int Bits = 75, Check = 8, Slots = 16, FormatVersion = 1;
     const int LongBits = 100, LongSlots = 28, LongVersion = 2;
     const int XlBits = 125, XlSlots = 41, XlVersion = 3;
-    static int FormBits(int form) { return form == 2 ? XlBits : form == 1 ? LongBits : Bits; }
-    static int FormSlots(int form) { return form == 2 ? XlSlots : form == 1 ? LongSlots : Slots; }
-    static int FormVersion(int form) { return form == 2 ? XlVersion : form == 1 ? LongVersion : FormatVersion; }
+    const int XxlBits = 150, XxlSlots = 53, XxlVersion = 4;
+    static int FormBits(int form) { return form == 3 ? XxlBits : form == 2 ? XlBits : form == 1 ? LongBits : Bits; }
+    static int FormSlots(int form) { return form == 3 ? XxlSlots : form == 2 ? XlSlots : form == 1 ? LongSlots : Slots; }
+    static int FormVersion(int form) { return form == 3 ? XxlVersion : form == 2 ? XlVersion : form == 1 ? LongVersion : FormatVersion; }
 
     static void Put(byte[] bits, ref int n, uint value, int width) { for (int i = 0; i < width; i++) bits[n++] = (byte)(value >> i & 1); }
     static uint Get(byte[] bits, ref int n, int width) { uint v = 0; for (int i = 0; i < width; i++) v |= (uint)bits[n++] << i; return v; }
@@ -49,15 +51,16 @@ static class RandoId {
     public static string Make(int seed, int[] choices) {
         bool longer = false;
         for (int i = Slots; i < LongSlots; i++) longer |= Choice(choices, i) != 0;
-        bool xl = false;
+        bool xl = false, xxl = false;
         for (int i = LongSlots; i < XlSlots; i++) xl |= Choice(choices, i) != 0;
-        return Make(seed, choices, xl ? 2 : longer ? 1 : 0);
+        for (int i = XlSlots; i < XxlSlots; i++) xxl |= Choice(choices, i) != 0;
+        return Make(seed, choices, xxl ? 3 : xl ? 2 : longer ? 1 : 0);
     }
 
     // (longer: the 20 characters, which hold the settings past the sixteenth; else the 15)
     public static string Make(int seed, int[] choices, bool longer) { return Make(seed, choices, longer ? 1 : 0); }
 
-    // (form 0: the 15 characters, 1: the 20, 2: the 25, which hold the settings past the 28th)
+    // (form 0: the 15 characters, 1: the 20, 2: the 25, which hold the settings past the 28th, 3: the 30, past the 41st)
     public static string Make(int seed, int[] choices, int form) {
         int total = FormBits(form);
         var bits = new byte[total];
@@ -79,7 +82,7 @@ static class RandoId {
     // (null and the seed and its choices, or what is wrong with the text. counts: how many choices each setting has)
     public static string Read(string text, int[] counts, out int seed, out int[] choices) {
         seed = 0; choices = new int[counts.Length];
-        var bits = new byte[XlBits];
+        var bits = new byte[XxlBits];
         int n = 0;
         foreach (char raw in text) {
             char ch = char.ToUpperInvariant(raw);
@@ -88,14 +91,14 @@ static class RandoId {
             if (ch == 'I' || ch == 'L') ch = '1';
             int at = Alphabet.IndexOf(ch);
             if (at < 0) return "it has a character no seed ID has";
-            if (n == XlBits) return "it is too long (a seed ID has 15, 20 or 25 characters)";
+            if (n == XxlBits) return "it is too long (a seed ID has 15, 20, 25 or 30 characters)";
             Put(bits, ref n, (uint)at, 5);
         }
-        if (n < Bits) return "it is too short (a seed ID has 15, 20 or 25 characters)";
-        if (n != Bits && n != LongBits && n != XlBits) return "it is not as long as a seed ID is (15, 20 or 25 characters)";
+        if (n < Bits) return "it is too short (a seed ID has 15, 20, 25 or 30 characters)";
+        if (n != Bits && n != LongBits && n != XlBits && n != XxlBits) return "it is not as long as a seed ID is (15, 20, 25 or 30 characters)";
         int total = n;
-        int form = n == XlBits ? 2 : n == LongBits ? 1 : 0;
-        bool longer = form == 1;
+        int form = n == XxlBits ? 3 : n == XlBits ? 2 : n == LongBits ? 1 : 0;
+        bool longer = form == 1 || form == 3;   // (a spare bit before the checksum, 0)
         n = total - Check;
         if (Get(bits, ref n, Check) != Sum(bits, total)) return "a typo? Its checksum does not match";
         n = 0;
@@ -202,7 +205,7 @@ public static class SaveSlots {
     // (the randomizer's settings that move no item: changed on a save being played, its seed is written again as it was,
     // tools/rando/rando_seed.py QOL_STAMP and the stamp's second line; the others are the game's side's alone)
     static readonly HashSet<string> NoItemKeys = new HashSet<string> { "rando_skip_intro", "rando_skip_cutscenes", "rando_start_rupees",
-        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow" };
+        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" };
     static bool MovesNoItem(string line) { int eq = line.IndexOf('='); return eq > 0 && NoItemKeys.Contains(line.Substring(0, eq).Trim()); }
 
     // (the seed there is now is not the one that save was last played on: settings that move no item aside. A line one
@@ -2079,7 +2082,7 @@ static class RandoLayout {
                                  Experimental = Color.FromArgb(240, 112, 86), SectionColor = Color.FromArgb(172, 214, 98);
     // (how far each is tested: Tested unless named here)
     static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_water_gate", "rando_magic", "rando_ageless_items", "rando_ageless_tunics",
-        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas" };
+        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" };
     public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards" };
     public static Color Status(string key) {
         if (Array.IndexOf(NotYetKeys, key) >= 0) return Experimental;
@@ -2124,7 +2127,7 @@ static class RandoLayout {
             Rows = new[] { "rando_progressive", "+ageless", "rando_ageless_tunics" } },
         new RandoSection { Title = "QUALITY OF LIFE", Sub = "moves no item: can be changed for a seed being played", Accent = SectionColor,
             Rows = new[] { "+skips", "+rupees", "rando_ammo_pickups", "rando_infinite_ammo", "rando_hints", "rando_chest_size", "rando_epona_song",
-                           "rando_castle_guards", "rando_free_scarecrow" } },
+                           "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" } },
     };
     public static RandoDuo Duo(string entry) {
         if (!entry.StartsWith("+")) return null;
@@ -2912,10 +2915,6 @@ class LauncherForm : Form {
             "The Great Fairies of the improved spin attack, doubled magic and halved damage join the shuffle (as the spell fairies do with Quest rewards), and magic becomes two items of the shuffle: the first gives the magic meter, the second doubles it. The Lens of Truth, the spells and the magic arrows no longer give magic by themselves. Needs Quest rewards." },
         new object[] { "rando_ageless_items", "Either age's items", new[] { "Off", "On" }, new[] { 0, 1 },
             "Each age can use the other's items: young Link the Bow with its arrows, fire, ice and light arrows too (held like the Slingshot), the Hammer, the Hookshots and the Iron and Hover Boots; adult Link the Slingshot, the Boomerang and Deku Sticks; both the Kokiri and Mirror Shields. Tested in play: young Link's Bow, fire arrows, Hammer, Longshot and boots, adult Link's Deku Sticks, Slingshot and Boomerang. Known quirks: adult Link's Boomerang stops in front of him on its way back (equip another item and back to throw again); the shot's prompt may name the other age's ammo; young Link's boots don't show on the d-pad. Young Link can't use the Biggoron's Sword: it stays adult Link's. Harmless: Link's model may look stretched or wrong in some cutscenes and for a moment while he uses the other age's item, as it does whenever a cutscene plays at the age it was not made for. The logic does not count on it. Moves no item." },
-        new object[] { "rando_ageless_tunics", "Either age's tunics", new[] { "Off", "On" }, new[] { 0, 1 },
-            "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. The logic does not count on it. Moves no item." },
-        new object[] { "rando_water_gate", "Water Temple gate", new[] { "Shut", "Open" }, new[] { 0, 1 },
-            "The gate in front of the Water Temple, at the bottom of Lake Hylia. Shut (the default): it is closed as the game has it; with the Iron Boots on, fire the Hookshot or Longshot at the ring above the door to open it (the Ice Cavern is not needed). Open: it is open from the start. The logic asks for the Iron Boots, the Longshot and the Bow to enter either way. A save whose gate is already open keeps it open. Moves no item." },
         new object[] { "rando_chest_size", "Chest size matches contents", new[] { "Off", "On" }, new[] { 0, 1 },
             "A chest holding a major item (one the seed's logic needs, a song or magic) is a big chest; any other is a small chest, so a chest's size tells you whether it is worth opening. Moves no item: it can be turned on for a seed being played. Big chests keep their long opening." },
         new object[] { "rando_bridge_medallions", "Bridge medallions", new[] { "6", "5", "4", "3" }, new[] { 0, 1, 2, 3 },
@@ -2931,8 +2930,17 @@ class LauncherForm : Form {
         new object[] { "rando_free_scarecrow", "Free Scarecrow's Song", new[] { "Off", "On" }, new[] { 0, 1 },
             "The Scarecrow's Song is known from the start, as L R L R L: play it at Pierre's spots to call him, with no visits to Bonooru. A save that already has a Scarecrow's Song of its own keeps it. Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_ocarinas", "Shuffle the ocarinas", new[] { "Off", "On" }, new[] { 0, 1 },
-            "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing." }
-
+            "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing." },
+        new object[] { "rando_ageless_tunics", "Either age's tunics", new[] { "Off", "On" }, new[] { 0, 1 },
+            "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. The logic does not count on it. Moves no item." },
+        new object[] { "rando_water_gate", "Water Temple gate", new[] { "Shut", "Open" }, new[] { 0, 1 },
+            "The gate in front of the Water Temple, at the bottom of Lake Hylia. Shut (the default): it is closed as the game has it; with the Iron Boots on, fire the Hookshot or Longshot at the ring above the door to open it (the Ice Cavern is not needed). Open: it is open from the start. The logic asks for the Iron Boots, the Longshot and the Bow to enter either way. A save whose gate is already open keeps it open. Moves no item." },
+        new object[] { "rando_any_fish", "Any fish wins", new[] { "Off", "On" }, new[] { 0, 1 },
+            "At the fishing pond, any fish you hand in wins the prize, young Link's and adult Link's, whatever its size; the loach and the sinking lure win it too. Moves no item: it can be turned on for a seed being played." },
+        new object[] { "rando_skull_kid_fast", "Faster Skull Kid game", new[] { "Off", "On" }, new[] { 0, 1 },
+            "The Skull Kids' ocarina game in the Lost Woods is one turn of 6 notes; winning it gives its check. The rupee prizes of the longer game are gone. Moves no item: it can be turned on for a seed being played." },
+        new object[] { "rando_skip_tower", "Skip the tower escape", new[] { "Off", "On" }, new[] { 0, 1 },
+            "After Ganondorf falls, Link goes straight to the field below the tower, as if he had run out of the collapsing castle, and the Ganon fight follows. Not tried in play yet. Moves no item." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and

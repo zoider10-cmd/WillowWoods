@@ -27,7 +27,7 @@ def main():
           "the guards' flow is not written with the setting on")
     check('X(CASTLE_GUARDS, "Castle guards let Link pass", "rando_castle_guards",' in read("gpu", "vk", "oot_rando.h"), "the settings table has no row for it")
     launcher = read("launcher", "Launcher.cs")
-    check('new object[] { "rando_castle_guards", "Castle guards let Link pass",' in launcher and '"rando_epona_song", "rando_castle_guards", "rando_free_scarecrow" };' in launcher,
+    check('new object[] { "rando_castle_guards", "Castle guards let Link pass",' in launcher and '"rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish"' in launcher,
           "the launcher has no row for it, or does not keep a seed when it changes")
     # (Free Scarecrow's Song, rando_free_scarecrow, asked 2026-11-21: whatever is played at a Pierre spot calls him)
     check('a.free_scarecrow = a.free_scarecrow or ini["rando_free_scarecrow"] != 0' in seed and 'stamp = stamp[:-1] + " scarecrow free\\n"' in seed

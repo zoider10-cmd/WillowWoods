@@ -182,13 +182,25 @@ def sources(rows):
           "for (int i = Slots; i < LongSlots; i++) longer |= Choice(choices, i) != 0;" in launcher and
           "const int XlBits = 125, XlSlots = 41, XlVersion = 3;" in launcher and
           "for (int i = LongSlots; i < XlSlots; i++) xl |= Choice(choices, i) != 0;" in launcher and
-          "if (n != Bits && n != LongBits && n != XlBits) return" in launcher and "if (longer && Get(bits, ref n, 1) != 0) return" in launcher,
+          "const int XxlBits = 150, XxlSlots = 53, XxlVersion = 4;" in launcher and
+          "for (int i = XlSlots; i < XxlSlots; i++) xxl |= Choice(choices, i) != 0;" in launcher and
+          "if (n != Bits && n != LongBits && n != XlBits && n != XxlBits) return" in launcher and
+          "bool longer = form == 1 || form == 3;" in launcher and "if (longer && Get(bits, ref n, 1) != 0) return" in launcher,
           "the launcher does not make, copy and paste a seed's ID as gpu/vk/oot_rando.h has it")
+    # (a setting's place in the table is its place in a seed ID: v0.1.3's 38 keep theirs, later ones come after them. Two
+    #  added 2026-11-21/22 in the middle had moved every later one: an older ID read as other settings. 2026-11-22)
+    header = read("gpu", "vk", "oot_rando.h")
+    order = re.findall(r"^    X\(([A-Z_]+),", header, re.M)
+    check(order[:38] == V013_ORDER, "a setting of v0.1.3 is not in its place in the table (its seed IDs would read as other settings): %r" %
+          [n for n, o in zip(order, V013_ORDER) if n != o][:3])
     header = read("gpu", "vk", "oot_rando.h")
     check('return "0123456789ABCDEFGHJKMNPQRSTVWXYZ";' in header and "OOT_RANDO_ID_VERSION = 1," in header and "OOT_RANDO_ID_SLOTS = 16," in header and
           "OOT_RANDO_ID_BITS = 75," in header and "OOT_RANDO_ID_CHECK = 8," in header and "OOT_RANDO_ID_LONG_VERSION = 2," in header and
           "OOT_RANDO_ID_LONG_SLOTS = 28," in header and "OOT_RANDO_ID_LONG_BITS = 100," in header and
           "OOT_RANDO_ID_XL_VERSION = 3," in header and "OOT_RANDO_ID_XL_SLOTS = 41," in header and "OOT_RANDO_ID_XL_BITS = 125," in header, "the header's seed ID is no longer the one the launcher makes")
+
+
+V013_ORDER = ['CHESTS', 'SKULLTULAS', 'QUESTS', 'SONGS', 'HEART_PIECES', 'SHOPS', 'SCRUBS', 'DUNGEON_REWARDS', 'KEYS', 'MAJOR', 'OPEN_DEKU', 'OPEN_FOREST', 'SKIP_INTRO', 'FROGS', 'LIGHT_ARROWS', 'START_RUPEES', 'PROGRESSIVE', 'SKIP_CUTSCENES', 'SHOP_SHELVES', 'SWORD_SHIELD', 'OPEN_DOOR', 'AMMO_PICKUPS', 'RUPEE_FILL', 'SKULLTULAS_DAY', 'GANON_BRIDGE', 'HINTS', 'AGELESS', 'LETTER', 'MAGIC', 'AGELESS_ITEMS', 'CHEST_SIZE', 'BRIDGE_MEDALLIONS', 'MASTER_SWORD', 'INFINITE_AMMO', 'EPONA_SONG', 'CASTLE_GUARDS', 'FREE_SCARECROW', 'OCARINAS']   # (gpu/vk/oot_rando.h's X rows in v0.1.3, 61785645)
 
 
 def main():

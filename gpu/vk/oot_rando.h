@@ -133,12 +133,6 @@
     X(AGELESS_ITEMS, "Either age's items", "rando_ageless_items", \
       "Each age can use the other's items: young Link the Bow with its arrows, fire, ice and light arrows too (held like the Slingshot), the Hammer, the Hookshots and the Iron and Hover Boots; adult Link the Slingshot, the Boomerang and Deku Sticks; both the Kokiri and Mirror Shields. Tested in play: young Link's Bow, fire arrows, Hammer, Longshot and boots, adult Link's Deku Sticks, Slingshot and Boomerang. Known quirks: adult Link's Boomerang stops in front of him on its way back (equip another item and back to throw again); the shot's prompt may name the other age's ammo; young Link's boots don't show on the d-pad. Young Link can't use the Biggoron's Sword: it stays adult Link's. Harmless: Link's model may look stretched or wrong in some cutscenes and for a moment while he uses the other age's item, as it does whenever a cutscene plays at the age it was not made for. The logic does not count on it. Moves no item.", \
       "Off", "On") \
-    X(AGELESS_TUNICS, "Either age's tunics", "rando_ageless_tunics", \
-      "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. The logic does not count on it. Moves no item.", \
-      "Off", "On") \
-    X(WATER_GATE, "Water Temple gate", "rando_water_gate", \
-      "The gate in front of the Water Temple, at the bottom of Lake Hylia. Shut (the default): it is closed as the game has it; with the Iron Boots on, fire the Hookshot or Longshot at the ring above the door to open it (the Ice Cavern is not needed). Open: it is open from the start. The logic asks for the Iron Boots, the Longshot and the Bow to enter either way. A save whose gate is already open keeps it open. Moves no item.", \
-      "Shut", "Open") \
     X(CHEST_SIZE, "Chest size matches contents", "rando_chest_size", \
       "A chest holding a major item (one the seed's logic needs, a song or magic) is a big chest; any other is a small chest, so a chest's size tells you whether it is worth opening. Moves no item: it can be turned on for a seed being played. Big chests keep their long opening.", \
       "Off", "On") \
@@ -162,6 +156,21 @@
       "Off", "On") \
     X(OCARINAS, "Shuffle the ocarinas", "rando_ocarinas", \
       "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing.", \
+      "Off", "On") \
+    X(AGELESS_TUNICS, "Either age's tunics", "rando_ageless_tunics", \
+      "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. The logic does not count on it. Moves no item.", \
+      "Off", "On") \
+    X(WATER_GATE, "Water Temple gate", "rando_water_gate", \
+      "The gate in front of the Water Temple, at the bottom of Lake Hylia. Shut (the default): it is closed as the game has it; with the Iron Boots on, fire the Hookshot or Longshot at the ring above the door to open it (the Ice Cavern is not needed). Open: it is open from the start. The logic asks for the Iron Boots, the Longshot and the Bow to enter either way. A save whose gate is already open keeps it open. Moves no item.", \
+      "Shut", "Open") \
+    X(ANY_FISH, "Any fish wins", "rando_any_fish", \
+      "At the fishing pond, any fish you hand in wins the prize, young Link's and adult Link's, whatever its size; the loach and the sinking lure win it too. Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
+    X(SKULL_KID_FAST, "Faster Skull Kid game", "rando_skull_kid_fast", \
+      "The Skull Kids' ocarina game in the Lost Woods is one turn of 6 notes; winning it gives its check. The rupee prizes of the longer game are gone. Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
+    X(SKIP_TOWER, "Skip the tower escape", "rando_skip_tower", \
+      "After Ganondorf falls, Link goes straight to the field below the tower, as if he had run out of the collapsing castle, and the Ganon fight follows. Not tried in play yet. Moves no item.", \
       "Off", "On")
 
 enum {
@@ -181,10 +190,13 @@ enum {
     OOT_RANDO_ID_XL_VERSION = 3,
     OOT_RANDO_ID_XL_SLOTS = 41,     /* settings the 25 characters have room for (made 2026-11-19, the 20's being full) */
     OOT_RANDO_ID_XL_BITS = 125,     /* 4 + 31 + 2 * 41 + 8 */
-    OOT_RANDO_ID_TEXT = 30,      /* 25 characters, 4 dashes and the end */
+    OOT_RANDO_ID_XXL_VERSION = 4,
+    OOT_RANDO_ID_XXL_SLOTS = 53,    /* settings the 30 characters have room for (made 2026-11-22, the 25's being full) */
+    OOT_RANDO_ID_XXL_BITS = 150,    /* 4 + 31 + 2 * 53 + 1 + 8 */
+    OOT_RANDO_ID_TEXT = 36,      /* 30 characters, 5 dashes and the end */
     OOT_RANDO_SEED_MAX = 0x7fffffff
 };
-typedef char oot_rando_fits_an_id[(int)OOT_RANDO_N <= (int)OOT_RANDO_ID_XL_SLOTS ? 1 : -1];
+typedef char oot_rando_fits_an_id[(int)OOT_RANDO_N <= (int)OOT_RANDO_ID_XXL_SLOTS ? 1 : -1];
 
 typedef struct OotRandoSetting {
     const char *label, *key, *help;
@@ -231,16 +243,23 @@ static inline uint32_t oot_rando_choice(const OotRando *r, int i) {
     return i < OOT_RANDO_N && v > 0 && v < oot_rando_settings[i].count ? (uint32_t)v : 0;
 }
 
-/* An ID's form (0: the 15 characters, 1: the 20, 2: the 25): its bits, the settings it holds, its version */
-static inline int oot_rando_form_bits(int form) { return form == 2 ? OOT_RANDO_ID_XL_BITS : form ? OOT_RANDO_ID_LONG_BITS : OOT_RANDO_ID_BITS; }
-static inline int oot_rando_form_slots(int form) { return form == 2 ? OOT_RANDO_ID_XL_SLOTS : form ? OOT_RANDO_ID_LONG_SLOTS : OOT_RANDO_ID_SLOTS; }
-static inline int oot_rando_form_version(int form) { return form == 2 ? OOT_RANDO_ID_XL_VERSION : form ? OOT_RANDO_ID_LONG_VERSION : OOT_RANDO_ID_VERSION; }
+/* An ID's form (0: the 15 characters, 1: the 20, 2: the 25, 3: the 30): its bits, the settings it holds, its version */
+static inline int oot_rando_form_bits(int form) {
+    return form == 3 ? OOT_RANDO_ID_XXL_BITS : form == 2 ? OOT_RANDO_ID_XL_BITS : form ? OOT_RANDO_ID_LONG_BITS : OOT_RANDO_ID_BITS;
+}
+static inline int oot_rando_form_slots(int form) {
+    return form == 3 ? OOT_RANDO_ID_XXL_SLOTS : form == 2 ? OOT_RANDO_ID_XL_SLOTS : form ? OOT_RANDO_ID_LONG_SLOTS : OOT_RANDO_ID_SLOTS;
+}
+static inline int oot_rando_form_version(int form) {
+    return form == 3 ? OOT_RANDO_ID_XXL_VERSION : form == 2 ? OOT_RANDO_ID_XL_VERSION : form ? OOT_RANDO_ID_LONG_VERSION : OOT_RANDO_ID_VERSION;
+}
 
 /* The seed ID of a seed's random part and settings in one of its three forms, into out[OOT_RANDO_ID_TEXT]: the 15
-   characters (form 0: the settings past the sixteenth are not in it), the 20 (1: not those past the 28th) or the 25. */
+   characters (form 0: the settings past the sixteenth are not in it), the 20 (1: not those past the 28th), the 25 (2: not
+   those past the 41st) or the 30. */
 static inline void oot_rando_id_as(const OotRando *r, char *out, int form) {
     const int total = oot_rando_form_bits(form);
-    uint8_t bits[OOT_RANDO_ID_XL_BITS];
+    uint8_t bits[OOT_RANDO_ID_XXL_BITS];
     int n = 0;
     memset(bits, 0, sizeof bits);
     oot_rando_put(bits, &n, (uint32_t)oot_rando_form_version(form), 4);
@@ -258,19 +277,20 @@ static inline void oot_rando_id_as(const OotRando *r, char *out, int form) {
 }
 
 /* The seed ID of a seed's random part and settings (on or not), into out[OOT_RANDO_ID_TEXT]: the 15 characters, the
-   20 when a setting past the sixteenth is set, or the 25 when one past the 28th is. A choice past its setting's last
-   counts as the game's own, as oot_rando_read keeps them. */
+   20 when a setting past the sixteenth is set, the 25 when one past the 28th is, or the 30 when one past the 41st is.
+   A choice past its setting's last counts as the game's own, as oot_rando_read keeps them. */
 static inline void oot_rando_id(const OotRando *r, char *out) {
-    int longer = 0, xl = 0;
+    int longer = 0, xl = 0, xxl = 0;
     for (int i = OOT_RANDO_ID_SLOTS; i < OOT_RANDO_ID_LONG_SLOTS; i++) longer |= oot_rando_choice(r, i) != 0;
     for (int i = OOT_RANDO_ID_LONG_SLOTS; i < OOT_RANDO_ID_XL_SLOTS; i++) xl |= oot_rando_choice(r, i) != 0;
-    oot_rando_id_as(r, out, xl ? 2 : longer);
+    for (int i = OOT_RANDO_ID_XL_SLOTS; i < OOT_RANDO_ID_XXL_SLOTS; i++) xxl |= oot_rando_choice(r, i) != 0;
+    oot_rando_id_as(r, out, xxl ? 3 : xl ? 2 : longer);
 }
 
 /* A seed ID as typed or pasted (dashes, spaces and the line's end are skipped; small letters count) into r: its random
    part and settings, the randomizer on. Returns NULL, or what is wrong with the text, r untouched. */
 static inline const char *oot_rando_from_id(const char *text, OotRando *r) {
-    uint8_t bits[OOT_RANDO_ID_XL_BITS];
+    uint8_t bits[OOT_RANDO_ID_XXL_BITS];
     int n = 0;
     for (const char *p = text; *p; p++) {
         char ch = *p;
@@ -280,13 +300,14 @@ static inline const char *oot_rando_from_id(const char *text, OotRando *r) {
         if (ch == 'I' || ch == 'L') ch = '1';
         const char *at = strchr(oot_rando_alphabet(), ch);
         if (!at) return "not a seed ID (a character no seed ID has)";
-        if (n == OOT_RANDO_ID_XL_BITS) return "too long for a seed ID (15, 20 or 25 characters)";
+        if (n == OOT_RANDO_ID_XXL_BITS) return "too long for a seed ID (15, 20, 25 or 30 characters)";
         oot_rando_put(bits, &n, (uint32_t)(at - oot_rando_alphabet()), 5);
     }
-    if (n < OOT_RANDO_ID_BITS) return "too short for a seed ID (15, 20 or 25 characters)";
-    if (n != OOT_RANDO_ID_BITS && n != OOT_RANDO_ID_LONG_BITS && n != OOT_RANDO_ID_XL_BITS)
-        return "not as long as a seed ID is (15, 20 or 25 characters)";
-    const int total = n, form = n == OOT_RANDO_ID_XL_BITS ? 2 : n == OOT_RANDO_ID_LONG_BITS, longer = form == 1;
+    if (n < OOT_RANDO_ID_BITS) return "too short for a seed ID (15, 20, 25 or 30 characters)";
+    if (n != OOT_RANDO_ID_BITS && n != OOT_RANDO_ID_LONG_BITS && n != OOT_RANDO_ID_XL_BITS && n != OOT_RANDO_ID_XXL_BITS)
+        return "not as long as a seed ID is (15, 20, 25 or 30 characters)";
+    const int total = n, form = n == OOT_RANDO_ID_XXL_BITS ? 3 : n == OOT_RANDO_ID_XL_BITS ? 2 : n == OOT_RANDO_ID_LONG_BITS,
+              longer = form == 1 || form == 3;   /* (a spare bit before the checksum, 0) */
     n = total - OOT_RANDO_ID_CHECK;
     if (oot_rando_get(bits, &n, OOT_RANDO_ID_CHECK) != oot_rando_check_of(bits, total)) return "a typo? (the seed ID's checksum does not match)";
     n = 0;

@@ -310,7 +310,7 @@ def main():
     check("CHECK_WAYS" in (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8") and
           'os.path.join(mod, CHECK_WAYS), "w"' in (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8"),
           "the seed does not write check_ways.txt")
-    check('for data in ("atlas_ways.json", "ATLAS_NOTICE.txt"):' in (ROOT / "nx2" / "make_game.py").read_text(encoding="utf-8"),
+    check('for data in ("atlas_ways.json", "ATLAS_NOTICE.txt",' in (ROOT / "nx2" / "make_game.py").read_text(encoding="utf-8"),
           "the build does not put the directions and their notice beside rando_seed.py")
     check('"check_ways.txt"' in menu and "tracker_ways[way] = bar + 1;" in menu and
           'snprintf(k.hash, sizeof k.hash, "%s", got >= 9 ? hash : "");' in menu and

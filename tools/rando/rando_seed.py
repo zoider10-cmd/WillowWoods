@@ -4150,6 +4150,157 @@ def quest_order_flow(raw, name):
     return out.getvalue()
 
 
+# ---- Time savers from the other randomizer (asked 2026-11-22; OOTRR's qol/fishing.rs, skull_kid_session.rs,
+# tower_escape.rs, read again in our files). Each a setting, off by default; none moves an item ----
+# Any fish wins (rando_any_fish): MiniGame_Fishing's size checks at 40, 50 and 60 (EventQueryIsGameDataInt on
+# MiniGame_Fishing_KeepFishSize) compare with 0, and the sinking lure's and the loach's questions go the prize way.
+# Faster Skull Kid game (rando_skull_kid_fast): Npc_SkullKid_Child_02's session is one turn of 6 notes: SessionStart sets
+# CurrentGradeSoundNumForSession 6 and MaxRallyCount 1 (both of its MaxRallyCount sets 1), the example's 6-note case
+# plays the 8-note way's preparation, and a win under 8 notes goes on to the Heart Piece's question (Event68), where the
+# seed's item is. Skip the tower escape (rando_skip_tower): Defeat_Ganon's banc change to the collapsing tower loads the
+# field below it at its entrance with the escape's end event (InsideGanonCaslte_Dungeon_Escape, the game's spelling);
+# the tower's preloading anchor (InsideGanonCastle_Dynamic) preloads that field. NOT SEEN IN PLAY (the other randomizer
+# marks the last one untested too).
+FISH_FLOW = "Event/EventFlow/MiniGame_Fishing.bfevfl.zs"
+SKULL_KID_FLOW = "Event/EventFlow/Npc_SkullKid_Child_02.bfevfl.zs"
+GANON_FLOW = "Event/EventFlow/Defeat_Ganon.bfevfl.zs"
+TOWER_ANCHOR_FILE = "Banc/InsideGanonCastle/InsideGanonCastle_Dynamic.bcett.byml.zs"
+
+
+def qol_flow(raw, which):
+    """a time saver's flow change (which: "fish", "skull kid", "tower"): the new bytes. ValueError: not the flow known"""
+    import io
+    evfl = evfl_module()
+    flow = evfl.EventFlow()
+    flow.read(raw)
+    fc = flow.flowchart
+    if fc is None or any(e.name.startswith("Willow") for e in fc.events):
+        raise ValueError("no flowchart, or changed already")
+    p = lambda e, k: e.data.params.data.get(k) if getattr(e.data, "params", None) is not None else None
+    call = lambda e: ((e.data.actor.v.identifier.name + "." + (e.data.actor_query.v.v if isinstance(e.data, evfl.SwitchEvent) else
+                       e.data.actor_action.v.v)) if isinstance(e.data, (evfl.SwitchEvent, evfl.ActionEvent)) else None)
+
+    def named(n):
+        got = [e for e in fc.events if e.name == n]
+        if len(got) != 1:
+            raise ValueError("%d events named %s, not 1" % (len(got), n))
+        return got[0]
+
+    def case(e, v):
+        return e.data.cases[v].v if v in e.data.cases else None
+
+    def set_case(e, v, to):
+        if v not in e.data.cases:
+            e.data.cases[v] = evfl.util.RequiredIndex()
+        e.data.cases[v].v = to
+
+    if which == "fish":
+        if fc.name != "MiniGame_Fishing":
+            raise ValueError("not MiniGame_Fishing")
+        first = None
+        for limit in (40, 50, 60):
+            hits = [e for e in fc.events if call(e) == "GameDataActor.EventQueryIsGameDataInt" and
+                    p(e, "GameDataName") == "MiniGame_Fishing_KeepFishSize" and p(e, "Value") == limit]
+            if len(hits) != 1:
+                raise ValueError("%d fish size checks at %d, not 1" % (len(hits), limit))
+            hits[0].data.params.data["Value"] = 0
+            first = first or hits[0]
+        talks = lambda e: e is not None and call(e) == "Npc_EventStarter.EventTalk" and p(e, "MessageId") == "EventFlowMsg/MiniGame_Fishing:Talk_145"
+        lures = [e for e in fc.events if call(e) == "GameDataActor.EventQueryIsGameDataBool" and
+                 p(e, "GameDataName") == "MiniGame_Fishing_UseSinkingLure" and talks(case(e, 1))]
+        if len(lures) != 2:
+            raise ValueError("%d sinking lure checks before the prizes, not 2" % len(lures))
+        for e in lures:
+            set_case(e, 0, case(e, 1))
+        loach = [e for e in fc.events if call(e) == "GameDataActor.EventQueryIsGameDataBool" and
+                 p(e, "GameDataName") == "MiniGame_Fishing_KeepLoach" and case(e, 1) is first]
+        if len(loach) != 1:
+            raise ValueError("%d loach checks before the size checks, not 1" % len(loach))
+        set_case(loach[0], 0, first)
+    elif which == "skull kid":
+        if fc.name != "Npc_SkullKid_Child_02":
+            raise ValueError("not Npc_SkullKid_Child_02")
+        grade, rally = "Minigame_SkullKidSession_CurrentGradeSoundNumForSession", "Minigame_SkullKidSession_MaxRallyCount"
+        ask = named("Event64")
+        if call(ask) != "GameDataActor.EventQueryIsGameDataBool" or p(ask, "GameDataName") != "Minigame_SkullKidSession_IsGetHeartPiece":
+            raise ValueError("Event64 no longer asks for the Heart Piece's flag")
+        way = named("Event68")
+        nxt = way.data.nxt.v if isinstance(way.data, evfl.ActionEvent) else None
+        if not (nxt is not None and isinstance(nxt.data, evfl.ActionEvent) and nxt.data.nxt.v is ask):
+            raise ValueError("Event68 no longer leads to the Heart Piece's question")
+        eight = named("Event10")
+        if call(eight) != "GameDataActor.EventQueryIsGameDataInt" or p(eight, "GameDataName") != grade or p(eight, "Value") != 8 or 0 not in eight.data.cases:
+            raise ValueError("Event10 no longer asks for the 8-note game with a case below it")
+        set_case(eight, 0, way)
+        prep = named("Event143")
+        if not isinstance(prep.data, evfl.SwitchEvent) or 8 not in prep.data.cases or 6 not in prep.data.cases:
+            raise ValueError("Event143 no longer branches on the 6- and 8-note games")
+        set_case(prep, 6, case(prep, 8))
+        sets = [e for e in fc.events if p(e, "GameDataName") == rally and isinstance(e.data, evfl.ActionEvent)]
+        if len(sets) != 2:
+            raise ValueError("%d MaxRallyCount sets, not 2" % len(sets))
+        for e in sets:
+            e.data.params.data["Value"] = 1
+        entry = [x for x in fc.entry_points if x.name == "SessionStart"]
+        if len(entry) != 1:
+            raise ValueError("no SessionStart entry")
+        holder = sets[0].data.actor.v
+        act = [h for h in holder.actions if h.v == "EventTriggerSetGameDataInt"]
+        if not act:
+            raise ValueError("the flow's GameDataActor sets no ints")
+
+        def set_int(n, name, value, to):
+            e = evfl.Event()
+            e.name = n
+            e.data = evfl.ActionEvent()
+            e.data.actor.v, e.data.actor_action.v = holder, act[0]
+            c = evfl.Container()
+            c.data.update(GameDataName=name, Index=-1, Value=value)
+            e.data.params = c
+            e.data.nxt.v = to
+            fc.events.append(e)
+            return e
+        turn = set_int("WillowSkullKidOneTurn", rally, 1, entry[0].main_event.v)
+        entry[0].main_event.v = set_int("WillowSkullKidSixNotes", grade, 6, turn)
+    elif which == "tower":
+        if fc.name != "Defeat_Ganon":
+            raise ValueError("not Defeat_Ganon")
+        hits = [e for e in fc.events if call(e) == "GameSystemActor.EventReserveBancChange" and
+                p(e, "NextBanc") == "CrumblingGanonCastle" and p(e, "BootEventName") == "CrumblingGanonCastle_Arrive"]
+        if len(hits) != 1:
+            raise ValueError("%d banc changes to the collapsing tower, not 1" % len(hits))
+        d = hits[0].data.params.data
+        for k, v in (("NextBanc", "FinalBattleField"), ("NextStartPos", "FinalBattleField_Entrance"),
+                     ("BootEventName", "InsideGanonCaslte_Dungeon_Escape"), ("EventStarterName", "FinalBattleField_Entrance")):
+            if k in d:
+                d[k] = v
+    else:
+        raise ValueError("no time saver " + which)
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
+
+
+def tower_anchor(data):
+    """Ganon's tower's map with its preloading anchor (ChangeBancBeforehandAnchor, to CrumblingGanonCastle) preloading
+    the field instead: the new bytes. ValueError: not one such anchor"""
+    tree, version = byml_parse(data)
+    actors = tree[1].get("Actors")
+    if not actors or actors[0] != "array":
+        raise ValueError("the map file has no actors")
+    hit = 0
+    for a in actors[1]:
+        if a[1].get("Gyaml", ("", ""))[1] != "ChangeBancBeforehandAnchor":
+            continue
+        dyn = a[1].get("Dynamic")
+        if dyn and dyn[0] == "dict" and dyn[1].get("NextBancParamName", ("", ""))[1] == "CrumblingGanonCastle":
+            dyn[1]["NextBancParamName"] = (dyn[1]["NextBancParamName"][0], "FinalBattleField")
+            hit += 1
+    if hit != 1:
+        raise ValueError("%d anchors preloading the collapsing tower, not 1" % hit)
+    return byml_build(tree, version)
+
+
 def epona_event_rows(data, analyzed):
     """An event table (EVENT_TABLES: analyzed False the settings', True the analyzed one's) with a row for EPONA_OWN
     copied from EPONA_TEMPLATE's, and (the analyzed one) EPONA_OWN among the ocarina event's child events: the new bytes.
@@ -4959,7 +5110,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6987,6 +7138,9 @@ def main():
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
+    a.any_fish = ini["rando_any_fish"] != 0             # (time savers, 2026-11-22: qol_flow; move no item)
+    a.skull_kid_fast = ini["rando_skull_kid_fast"] != 0
+    a.skip_tower = ini["rando_skip_tower"] != 0
     a.free_scarecrow = a.free_scarecrow or ini["rando_free_scarecrow"] != 0
     a.start = start_codes(a.start if a.start is not None else start_option(game))   # (Starting items: START_ITEMS)
     a.gate_open = ini["rando_letter"] == 2   # (Kakariko gate Open: the overworld's rules by it, placement 23, OVERWORLD_RULES)
@@ -7120,6 +7274,9 @@ def main():
         stamp = stamp[:-1] + " epona by song\n"
     if a.castle_guards:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " guards pass\n"
+    for on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped")):
+        if on:   # (the time savers: move no item either, the same line)
+            stamp = stamp[:-1] + word + "\n"
     if a.free_scarecrow:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " scarecrow free\n"
     if a.ageless:   # (moves no item either: the same line)
@@ -8515,6 +8672,24 @@ def main():
                 sys.exit("quest order, %s: %s. Nothing written." % (rel, e))
         print("Quest rewards: the rolling Goron's and King Zora's gifts kept when their quest is moved on first; the Fire quest "
               "never moved back")
+    for on, rel, saver in ((a.any_fish, FISH_FLOW, "fish"), (a.skull_kid_fast, SKULL_KID_FLOW, "skull kid"),
+                           (a.skip_tower, GANON_FLOW, "tower")):   # (the time savers: qol_flow, on what the gifts made)
+        if not on:
+            continue
+        try:
+            was = gift_files[rel] if rel in gift_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+            gift_files[rel] = qol_flow(was, saver)
+            gift_sizes[rel[:-3]] = len(gift_files[rel])
+            if saver == "tower":
+                data = changed[TOWER_ANCHOR_FILE] if TOWER_ANCHOR_FILE in changed else unpack(
+                    open(os.path.join(romfs, *TOWER_ANCHOR_FILE.split("/")), "rb").read(), zs, dicts)
+                changed[TOWER_ANCHOR_FILE] = tower_anchor(data)
+                sizes[TOWER_ANCHOR_FILE[:-3]] = len(changed[TOWER_ANCHOR_FILE])
+        except (OSError, ValueError, struct.error, KeyError) as e:
+            sys.exit("a time saver (%s), %s: %s. Nothing written." % (saver, rel, e))
+        print({"fish": "Any fish wins: the fishing pond's prizes for any fish",
+               "skull kid": "Faster Skull Kid game: one turn of 6 notes",
+               "tower": "Skip the tower escape: Ganondorf's fall leads to the field below the tower"}[saver])
     # ---- the size table ----
     folder = os.path.join(romfs, "System", "Resource")
     tables = sorted(n for n in (os.listdir(folder) if os.path.isdir(folder) else []) if "rsizetable" in n.lower())
