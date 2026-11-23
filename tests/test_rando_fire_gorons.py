@@ -60,9 +60,12 @@ def main():
         except ValueError:
             pass
     script = open(os.path.join(HERE, "..", "tools", "rando", "rando_seed.py"), encoding="utf-8").read()
-    check(len(seed.FIRE_GORONS) == 9 and len(seed.FIRE_CHESTS) == 8 and not set(seed.FIRE_GORONS) & set(seed.FIRE_CHESTS) and
+    check(len(seed.FIRE_GORONS) == 9 and len(seed.FIRE_CHESTS) == 9 and
+          # (Room 17's big chest too, the Boss Key's: unlocked by its Goron's Npc_Goron_010_Delete and Link in its area, an
+          #  AND; missed at first, so it stayed locked with the Goron gone (OOTRR 7146d21 found it, 2026-11-22))
+          "Logic/FireTemple_Level_Room_17_Prefab_a4ce.logic.module.ainb" in seed.FIRE_CHESTS and seed.FIXES_VERSION >= 68 and not set(seed.FIRE_GORONS) & set(seed.FIRE_CHESTS) and
           all(r.startswith("Logic/FireTemple_Level_Room_") and r.endswith(".logic.module.ainb") for r in seed.FIRE_GORONS + seed.FIRE_CHESTS),
-          "the nine Gorons' rooms and eight chests' logic files are not listed")
+          "the nine Gorons' rooms and nine chests' logic files (Room 17's Boss Key chest among them) are not listed")
     check("    if a.skip_cutscenes:   # (the Fire Temple's jailed Gorons gone and their chests unlocked, FIRE_GORONS)" in script and
           seed.FIXES_VERSION >= 64, "the Gorons are not taken away with Skip cutscenes, or seeds made before are not written again")
     print("FAIL" if failed else "PASS: the Fire Temple's jailed Gorons gone with Skip cutscenes")
