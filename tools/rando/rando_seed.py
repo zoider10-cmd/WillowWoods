@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 26  # 26: with Progressive items no Gold Skulltula drops an item of a family, nor with Magic a magic tier (SKULL_FAMILY_FROM, bug 114); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 26  # 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -256,13 +256,13 @@ def door_away(data, door=True):
     return (byml_build(tree, version) if doors or sheiks else None), doors, sheiks
 
 
-def door_need(need, adult_only, open_forest=False, area=None, song=False):
+def door_need(need, adult_only, open_forest=False, area=None, song=False, sword_asked=True):
     """what a place asks for with the Door of Time open (see above): `need` as the other settings made it;
     adult_only: only an adult has the place; open_forest: Open forest exit is on too; area: the place's (its Banc
     folder), for the dungeons gone through one by one"""
     if not adult_only:
         return need
-    sword = {MASTER} if MASTER_SHUFFLED else set()   # (Shuffle the Master Sword: an adult's place asks for it)
+    sword = {MASTER} if MASTER_SHUFFLED and sword_asked else set()   # (Shuffle the Master Sword: an adult's place asks for it; not where its own rule says, SWORD_FROM)
     if not need >= ADULT:
         return frozenset(need) | sword
     free = {BM}
@@ -640,6 +640,12 @@ GIFTS = (
 # the pool (the Forest Stage's gifts, with Quest rewards, put in the middle ones).
 # What each asks for is in the rules' words before Quest rewards; with it on, quest_need adds its two.
 SCRUB_FLOW = "Enemy_Scrub_Business_Common"
+# (bug 126, the owner's run 2026-11-23: the Hyrule Field grotto's scrub asked for the password and gave the item put on
+# "the Business Scrub with a secret" (Death Mountain Crater), and the crater's gave Hyrule Field's: neither marked. The
+# flow's entries are the other way round from the names: its "Secret" entry is the Hyrule Field grotto's scrub (who sells
+# only for the password, Hyrule Field's note 07, an adult's), its pouch entry the crater's.) From SCRUB_SWAP_FROM each of
+# the two keeps its entry and item and takes the other's area, place and name (scrubs_swapped); seeds made before keep theirs.
+SCRUB_SWAP_FROM = 26
 SCRUBS = (
     Gift("scrub_heart_field", SCRUB_FLOW, ("Obj_Heart_Piece",), "Obj_Heart_Piece", "HyruleField",
          "a Business Scrub: a Piece of Heart", ADULT | {HAM}, "scrubs", "SimpleShopRoot_Enemy_Scrub_Business_Pouch"),
@@ -867,6 +873,17 @@ FAIRY_PRICES = {"Dm_FairyFountain_Din": (1, 25, "fairy_din"), "Dm_FairyFountain_
                 "Dm_FairyFountain_Nayru": (5, 300, "fairy_nayru"), "Dm_FairyFountain_Courage": (6, 500, "fairy_courage")}
 FAIRY_PRICES_FROM = 16
 FAIRY_PRICE_TEXT = "EventFlowMsg/Dm_FairyFountain_Din.msbt"
+
+
+# The Great Fairy prices setting (rando_fairy_prices, asked 2026-11-23: a setting of their own, with the shops' choices):
+# 0 as the shops (the way before it, the default), 1 the game's own, 2 to 4 rolled as Shops' Low prices, Any price,
+# Affordable (shop_price's modes 1 to 3), whatever Shops is.
+FAIRY_PRICE_MODES = {1: 0, 2: 1, 3: 2, 4: 3}
+
+
+def fairy_price_mode(setting, shops):
+    """shop_price's mode for the fairies' offerings (0: the game's own prices) by the setting and Shops"""
+    return shops if setting == 0 else FAIRY_PRICE_MODES.get(setting, 0)
 
 
 def fairy_prices(seed, mode):
@@ -1822,6 +1839,21 @@ def scrub_words(data, label, words=SCRUB_WORDS):
     return msbt_set(data, label, new)
 
 
+def scrubs_swapped():
+    """SCRUBS with the two Pieces of Heart's area and name as the game has their scrubs (SCRUB_SWAP_FROM): the "Secret"
+    entry's in Hyrule Field's grotto, the pouch entry's in Death Mountain Crater"""
+    by = {g.key: g for g in SCRUBS}
+    field, secret = by["scrub_heart_field"], by["scrub_heart_secret"]
+    swap = {"scrub_heart_field": field._replace(area=secret.area, name="the Business Scrub in the crater: a Piece of Heart"),
+            # (the password's: Hyrule Field's note 07 read, an adult's, ADULT; no hammer for the grotto)
+            "scrub_heart_secret": secret._replace(area=field.area, name="the Business Scrub with a secret (the password): a Piece of Heart",
+                                                  need=ADULT)}
+    return tuple(swap.get(g.key, g) for g in SCRUBS)
+
+
+SCRUB_PLACES_SWAPPED = {"scrub_heart_field": ("C", (-23.0, 119.1, 33.0)), "scrub_heart_secret": ("A", (25.0, 129.9, 22.1))}   # (an adult's: the password is read as one, ADULT)
+
+
 def gift_hash(key):
     """a gift's place among the chests' hashes: its own, the same in every seed (no chest's is this high)"""
     return 0xF1F7000000000000 | zlib.crc32(key.encode())
@@ -2581,27 +2613,9 @@ def skulltula_ai_day(data):
     return bytes(out)
 
 
-# (bug 114, the owner's run 2026-11-23: the Slingshot, the Bow and the Golden Gauntlets dropped by Gold Skulltulas lay
-# on the ground and could not be taken.) With Progressive items the game's side shows a check's item of a family as the
-# family's next for what Link has (host/hos_main.c hos_oot_drop_name, by Drop__DropActor): right for a chest, which
-# shows it, but a Skulltula's drop is that actor made in the world, and the family's next (a bigger seed bag,
-# Armor_Adult_Gauntlet_Silver) is no pick-up. From placement SKULL_FAMILY_FROM, with Progressive items no Skulltula
-# drops an item of a family (SHELF_FAMILIES), nor, with Magic, one of the magic gifts' tiers (MAGIC_FAMILY).
-SKULL_FAMILY_FROM = 26
-MAGIC_FAMILY = frozenset(("Item_MagicMeter", "Item_FairyBless_MPDouble", "Item_FairyBless_MP"))
-
-
-def skull_families(placement, progressive, magic):
-    """the items no Gold Skulltula of this seed drops for being of a family (SKULL_FAMILY_FROM)"""
-    if placement < SKULL_FAMILY_FROM:
-        return frozenset()
-    return frozenset(i for f in SHELF_FAMILIES for i in f if progressive) | (MAGIC_FAMILY if magic else frozenset())
-
-
-def skulltula_holds(item, gating, families=frozenset()):
-    """whether a Gold Skulltula may drop this item (placement 12, see above); gating: the seed's gating items;
-    families: skull_families'"""
-    if item in SKULLTULA_NEVER or item.startswith("Item_Melody_") or item in DUNGEON_ITEMS or item in families:
+def skulltula_holds(item, gating):
+    """whether a Gold Skulltula may drop this item (placement 12, see above); gating: the seed's gating items"""
+    if item in SKULLTULA_NEVER or item.startswith("Item_Melody_") or item in DUNGEON_ITEMS:
         return False
     return item == TOKEN or item in SKULLTULA_ITEMS or item in SKULLTULA_MORE or item in gating
 
@@ -5256,7 +5270,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -5469,6 +5483,9 @@ GIFT_PLACES = {
 # "Gold Skulltula, night, by the Lost Woods exit". Two of an area that come out the same are numbered, by place.
 # Nobody has gone through them: they tell one check from the next, and are not the names a player would give.
 ITEM_WORDS = {
+    # (the owner's run 2026-11-23: the Bottom of the Well's "Chest (Fairy Bless MPDouble)": the magic gifts by the game's own names)
+    "Item_FairyBless_MPDouble": "Doubled Magic", "Item_FairyBless_MP": "Improved Spin", "Item_FairyBless_DefenseDouble": "Halved Damage",
+    "Item_Arrow_Fire": "Fire Arrows", "Item_Arrow_Ice": "Ice Arrows", "Item_Arrow_Light": "Light Arrows",
     "TBox_Rupee_Green": "green rupee", "TBox_Rupee_Blue": "blue rupee", "TBox_Rupee_Red": "red rupee", "TBox_Rupee_Purple": "purple rupee",
     "TBox_Shield_Deku": "Deku Shield", "TBox_Shield_Hylian": "Hylian Shield",
     "TBox_Rupee_Silver": "silver rupee", "TBox_Rupee_Gold": "gold rupee", "Item_ScrubBusinessSeed": "Deku Seeds", "Obj_Heart_Piece": "Piece of Heart",
@@ -6620,14 +6637,24 @@ DUNGEON_RULES_FILE = "dungeon_rules.json"
 DUNGEON_RULES2_FROM = 25
 DUNGEON_RULES2_FILE = "dungeon_rules_25.json"
 _DUNGEON_FILE = [DUNGEON_RULES_FILE]
+# (the owner's ask 2026-11-23: with Shuffle the Master Sword, adult checks asked for the sword everywhere, door_need's
+#  blanket rule, where bombs, the Bow or the Hammer do.) From placement SWORD_FROM, with the sword shuffled, a check that
+#  has a rule of its own (the dungeons' table, the overworld's, our own: worked out by dungeon_logic.py and
+#  overworld_logic.py with the engine's shuffle_master_sword, so a way asks for the sword only where nothing else will
+#  fight) is not given the sword by door_need. The bosses (their hearts and rewards) and the gifts keep it. The tables:
+#  DUNGEON_RULES2_FILE's "ms_by_actor", OVERWORLD_RULES_FILE's ",ms" variants.
+SWORD_FROM = 26
+_DUNGEON_SWORD = [False]
 
 
-def dungeon_table_for(placement):
+def dungeon_table_for(placement, master=False):
     """the dungeon rules' file for a seed of this placement (DUNGEON_RULES2_FILE from DUNGEON_RULES2_FROM), the table read
-    again if it was another"""
+    again if it was another; master: the sword shuffled, its own table from SWORD_FROM"""
     want = DUNGEON_RULES2_FILE if placement >= DUNGEON_RULES2_FROM else DUNGEON_RULES_FILE
-    if _DUNGEON_FILE[0] != want:
+    sword = bool(master) and placement >= SWORD_FROM
+    if _DUNGEON_FILE[0] != want or _DUNGEON_SWORD[0] != sword:
         _DUNGEON_FILE[0] = want
+        _DUNGEON_SWORD[0] = sword
         del _DUNGEON_TABLE[:]
     return want
 DIN = "Item_DinFire"
@@ -6688,7 +6715,8 @@ def dungeon_table():
     if not _DUNGEON_TABLE:
         try:
             with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), _DUNGEON_FILE[0]), encoding="utf-8") as f:
-                table = json.load(f)["by_actor"]
+                whole = json.load(f)
+            table = whole["ms_by_actor"] if _DUNGEON_SWORD[0] and "ms_by_actor" in whole else whole["by_actor"]
             _DUNGEON_TABLE.append({int(h): (e["ways"], e.get("age_ways")) for h, e in table.items()})
         except (OSError, ValueError, KeyError):
             _DUNGEON_TABLE.append({})
@@ -6757,11 +6785,11 @@ OWN_FROM = 26
 OVERWORLD_MORE = {0xd1cef51cf294fb86: [frozenset((BM,))]}
 
 
-def overworld_variant(open_deku, open_forest, gate_open, open_door):
+def overworld_variant(open_deku, open_forest, gate_open, open_door, master=False):
     """the table's key for the seed's settings (overworld_logic.py variant_key): the forest (both ways open, the way out
     only, closed), Kakariko's gate (open from the start, or the letter's), the Door of Time"""
     forest = "open" if open_deku and open_forest else "closed_deku" if open_forest else "closed"
-    return "%s,%s,%d" % (forest, "open" if gate_open else "zelda", 1 if open_door else 0)
+    return "%s,%s,%d%s" % (forest, "open" if gate_open else "zelda", 1 if open_door else 0, ",ms" if master and open_door else "")
 
 
 # (the checks taken by name, not by a map's actor: a character's gift by its key, a shop's shelves by its key (each
@@ -7319,6 +7347,7 @@ def main():
     a.any_fish = ini["rando_any_fish"] != 0             # (time savers, 2026-11-22: qol_flow; move no item)
     a.skull_kid_fast = ini["rando_skull_kid_fast"] != 0
     a.skip_tower = ini["rando_skip_tower"] != 0
+    a.fairy_prices = ini["rando_fairy_prices"] if 0 <= ini["rando_fairy_prices"] <= 4 else 0   # (FAIRY_PRICE_MODES)
     a.free_scarecrow = a.free_scarecrow or ini["rando_free_scarecrow"] != 0
     a.start = start_codes(a.start if a.start is not None else start_option(game))   # (Starting items: START_ITEMS)
     a.gate_open = ini["rando_letter"] == 2   # (Kakariko gate Open: the overworld's rules by it, placement 23, OVERWORLD_RULES)
@@ -7415,7 +7444,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -7604,9 +7633,15 @@ def main():
                 gifts[gift_hash(g.key)] = g
                 spots[gift_hash(g.key)] = [g.area, g.item, None, None, "gift", g.name, ""]
     if a.scrubs:   # (Deku Scrubs: with or without Quest rewards)
-        for g in SCRUBS:
+        for g in (scrubs_swapped() if placement >= SCRUB_SWAP_FROM else SCRUBS):
             gifts[gift_hash(g.key)] = g
             spots[gift_hash(g.key)] = [g.area, g.item, None, None, "scrub", g.name, ""]
+
+    def gift_place(key, default=None):
+        """a gift's (ages, place) for the Tracker and the door's step: GIFT_PLACES, the two scrubs' swapped from SCRUB_SWAP_FROM"""
+        if placement >= SCRUB_SWAP_FROM and key in SCRUB_PLACES_SWAPPED:
+            return SCRUB_PLACES_SWAPPED[key]
+        return GIFT_PLACES[key] if default is None else GIFT_PLACES.get(key, default)
     if a.ocarina:   # (the Fairy Ocarina: with Songs' Anywhere, ocarina_need)
         PROGRESSION = PROGRESSION | {OCARINA}
         gifts[gift_hash(OCARINA_GIFT.key)] = OCARINA_GIFT
@@ -7674,7 +7709,8 @@ def main():
     # (the Skulltula house's rewards ask for their tokens from placement 12: house_need)
     gifts.update((h, g._replace(need=house_need(g.key, g.need, placement))) for h, g in list(gifts.items()) if g.key in HOUSE_TOKENS)
     # (the Great Fairies' offerings: rolled with Shops, and a fairy past the child's wallet asks for its wallet: FAIRY_PRICES)
-    fairy_cost = fairy_prices(seed, a.shops) if a.shops and placement >= FAIRY_PRICES_FROM else {}
+    fairy_mode = fairy_price_mode(a.fairy_prices, a.shops)
+    fairy_cost = fairy_prices(seed, fairy_mode) if fairy_mode and placement >= FAIRY_PRICES_FROM else {}
     by_gift = {FAIRY_PRICES[flow][2]: price for flow, price in fairy_cost.items()}
     gifts.update((h, g._replace(need=frozenset(g.need) | wallet_need(by_gift[g.key]))) for h, g in list(gifts.items())
                  if g.key in by_gift and isinstance(g.need, (set, frozenset)))
@@ -7684,7 +7720,7 @@ def main():
     logic = logic_now   # (without the event chests or the songs no gating item moves: nothing to ask)
     rng = random.Random("stage2:%d:%d:%d%s%s%s" % (seed, which, min(keys_mode, 1), ":events" if a.event_chests else "", ":logic" if logic else "",
                                                    ":songs2" if a.songs == 2 else ":songs" if a.songs else ""))
-    dungeon_table_for(placement)   # (placement 25: the newer dungeons' rules, DUNGEON_RULES2_FILE)
+    dungeon_table_for(placement, a.master_sword)   # (placement 25: the newer dungeons' rules, DUNGEON_RULES2_FILE; SWORD_FROM)
     dungeon_on = placement >= DUNGEON_RULES_FROM and bool(dungeon_table())   # (each dungeon check by its own rule)
     if placement >= DUNGEON_RULES_FROM and not dungeon_table():
         print("each dungeon check's own rule: %s is not beside the script, so the dungeons ask as before" % DUNGEON_RULES_FILE)
@@ -7696,7 +7732,15 @@ def main():
         """a dungeon check's own rule (dungeon_rule), or what the rules asked before"""
         made = dungeon_rule(h, area, PROGRESSION, pool, a.open_door or (a.door_song and _TIME in PROGRESSION),
                             placement >= DUNGEON_AGES_FROM, placement >= WELL_FROM) if dungeon_on else None
+        if made is not None:
+            ruled.add(h)
         return otherwise() if made is None else made
+    ruled = set()   # (the checks with a rule of their own: no sword from door_need, SWORD_FROM)
+    # (and the gifts and the shelves: a character's gift, a lesson, a fairy's, a shop's sale is no fight. The bosses'
+    #  rewards keep it; the owner's run 2026-11-23: the Great Fairy of the crater asked for the sword)
+    reward_keys = {g.key for g in REWARDS}
+    no_sword = lambda h: placement >= SWORD_FROM and h not in bosses and (
+        h in ruled or h in shelves or h in gifts and gifts[h].key not in reward_keys)
     needs = {h: own_rule(h, s[0], lambda s=s: rule(s[0], s[6])) for h, s in spots.items()}
     deep = a.quests and placement >= TUNIC_WATER_FROM   # (the tunics by hot rooms and deep water, TUNIC_WATER_FROM)
     if deep:   # (Zora's Fountain's chest above its water: an adult alone, TUNIC_DRY)
@@ -7734,8 +7778,8 @@ def main():
     grown = lambda h, area: area in DOOR_ADULT_AREAS or check_ages(maps[h]) == "A" if h in maps else area in DOOR_ADULT_AREAS
     if door_rules:
         needs = {h: each(door_need, n, shelves[h][0].ages == "A" if h in shelves else
-                              GIFT_PLACES.get(gifts[h].key, ("CA",))[0] == "A" if h in gifts else grown(h, spots[h][0]), a.open_forest, spots[h][0],
-                         a.door_song)
+                              gift_place(gifts[h].key, ("CA",))[0] == "A" if h in gifts else grown(h, spots[h][0]), a.open_forest, spots[h][0],
+                         a.door_song, sword_asked=not no_sword(h))
                  for h, n in needs.items()}
     bolero = LETTER_BOLERO in PROGRESSION and a.songs != 0
     letter_gate = (lambda need, area: letter_need(need, area, bolero)) if a.letter else (lambda need, area: need)
@@ -7744,7 +7788,8 @@ def main():
     if a.ocarina:   # (a lesson: its notes are played back on an ocarina)
         needs = {h: ocarina_need(n, True) if h in lessons else n for h, n in needs.items()}
     # (each overworld check by its own rule, placement 23: its table ways, through the items' own steps alone)
-    over, over_named, over_own = overworld_table(overworld_variant(a.open_deku, a.open_forest, a.gate_open, a.open_door)) if placement >= OVERWORLD_FROM else ({}, {}, {})
+    over, over_named, over_own = overworld_table(overworld_variant(a.open_deku, a.open_forest, a.gate_open, a.open_door,
+                                                                   a.master_sword and placement >= SWORD_FROM)) if placement >= OVERWORLD_FROM else ({}, {}, {})
     if placement >= OVERWORLD_FROM and not over:
         print("each overworld check's own rule: %s is not beside the script, so the overworld asks as before" % OVERWORLD_RULES_FILE)
     song_lessons = {g.item: g.need for g in SONGS if g.item not in PROGRESSION}
@@ -7784,12 +7829,13 @@ def main():
             made = over_rule(h, s[0])
         if made is not None:
             needs[h] = made
-    door = (lambda need, h, area: gate(each(door_need, forest(need, area), grown(h, area), a.open_forest, area, a.door_song), area)) if door_rules else (
+            ruled.add(h)
+    door = (lambda need, h, area: gate(each(door_need, forest(need, area), grown(h, area), a.open_forest, area, a.door_song, sword_asked=not no_sword(h)), area)) if door_rules else (
         lambda need, h, area: gate(forest(need, area), area))   # (with Open forest exit's step: the Gold Skulltulas' and the Pieces of Heart's)
     # (what a Gold Skulltula asks for, by the same settings; from placement 8 without Open forest exit's step: in a
     #  Skulltula's rule CHILD is often a weapon to kill it, or the sword past Mido into the Deku Tree, not the forest's
     #  way out. Found 2026-11-15: a seed put the Kokiri Sword on a Deku Tree Skulltula, with Open Deku Tree off)
-    skull_door = (lambda need, h, area: gate(each(door_need, need, grown(h, area), a.open_forest, area, a.door_song), area)) if door_rules else (
+    skull_door = (lambda need, h, area: gate(each(door_need, need, grown(h, area), a.open_forest, area, a.door_song, sword_asked=not no_sword(h)), area)) if door_rules else (
         lambda need, h, area: gate(need, area))
     skull_door = skull_door if placement >= 8 else door
     bottles = BOTTLE in PROGRESSION   # (placement BOTTLE_FROM with the bottles shuffled: soil_need)
@@ -7875,8 +7921,7 @@ def main():
         if a.heart_pieces:
             joined.update((h, [pieces[h][0], piece_own(h), None, None, "piece", pieces[h][1], ""]) for h in pieces)
         kinds = {s[1] for s in spots.values()} | {s[1] for s in joined.values()}
-        families = skull_families(placement, a.progressive, a.magic)
-        skull_may = frozenset(i for i in kinds if skulltula_holds(i, PROGRESSION, families))
+        skull_may = frozenset(i for i in kinds if skulltula_holds(i, PROGRESSION))
         piece_may = frozenset(i for i in kinds if piece_holds(i))
         for h, s in joined.items():
             spots[h] = s
@@ -7948,7 +7993,7 @@ def main():
             skull_drops[h] = item
         elif s[4] == "piece" and item != piece_own(h):
             heart_drops[h] = item
-    if joined and any(not skulltula_holds(i, PROGRESSION, skull_families(placement, a.progressive, a.magic)) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER) for h, i in heart_drops.items()):
+    if joined and any(not skulltula_holds(i, PROGRESSION) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER) for h, i in heart_drops.items()):
         sys.exit("a Gold Skulltula or a Piece of Heart was given what it may not hold: nothing written")
 
     # ---- the Gold Skulltulas: their tokens and the chests' rupees and supplies change places ----
@@ -9095,7 +9140,7 @@ def main():
                                       [(pieces[h][0], pieces[h][1], check_ages(maps[h]), heart_asks(h),
                                         "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
                                         heart_drops.get(h, piece_own(h))) for h in pieces],
-                                      [(g.area, GIFT_PLACES[g.key][1], GIFT_PLACES[g.key][0], needs[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
+                                      [(g.area, gift_place(g.key)[1], gift_place(g.key)[0], needs[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
                                        for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES] +
                                       [(shop.areas[0], shop.place, shop.ages, needs[h], gifts[h].name, None, gives[h])
                                        for h, (shop, _, _) in shelves.items() if h in gives])) + "\n")

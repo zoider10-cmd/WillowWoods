@@ -38,7 +38,9 @@ def main():
           "the tower's preloading anchor is not changed with the escape skipped, or its size is not given to the table")
     header = open(os.path.join(ROOT, "gpu", "vk", "oot_rando.h"), encoding="utf-8").read()
     order = re.findall(r"^    X\(([A-Z_]+),", header, re.M)
-    check(order[-3:] == ["ANY_FISH", "SKULL_KID_FAST", "SKIP_TOWER"], "the three are not the table's last rows (a seed ID's order)")
+    at = order.index("ANY_FISH") if "ANY_FISH" in order else -1
+    check(at >= 0 and order[at:at + 3] == ["ANY_FISH", "SKULL_KID_FAST", "SKIP_TOWER"] and order.index("FAIRY_PRICES") == at + 3,
+          "the three are not the rows after the ones before them, the Great Fairy prices after (a seed ID's order)")
     launcher = open(os.path.join(ROOT, "launcher", "Launcher.cs"), encoding="utf-8").read()
     check(all('new object[] { "%s",' % k in launcher for k in ("rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower")) and
           '"rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" } },' in launcher,

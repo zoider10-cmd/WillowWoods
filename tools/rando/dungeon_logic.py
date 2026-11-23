@@ -178,8 +178,11 @@ def tiers():
 
 
 class Calc:
-    def __init__(self):
+    def __init__(self, master_sword=False):
         self.data, settings, self.pins = world()
+        # (master_sword: Shuffle the Master Sword, the engine's shuffle_master_sword: an adult's sword is the "Master
+        #  Sword" tried, asked for only where a check needs one (has_adult_sword), a boss always: rando_seed.py SWORD_FROM)
+        settings = dict(settings, shuffle_master_sword=bool(master_sword))
         # (the Spirit Temple's door from the Colossus closed: its way in is given to the ages asked for, AGE_SPLIT)
         self.logic = Logic(self.data, settings, extra_exit_requirements={DOOR: ["Never Held"] for DOOR in CLOSED_DOORS})
         self.ages_now = None
@@ -312,8 +315,9 @@ def main():
     p.add_argument("--dungeon", action="append")
     p.add_argument("--write")
     p.add_argument("--all", action="store_true", help="list pots, hearts and the like too")
+    p.add_argument("--master-sword", action="store_true", help="with the Master Sword shuffled (the engine's shuffle_master_sword)")
     a = p.parse_args()
-    calc = Calc()
+    calc = Calc(a.master_sword)
     result, ages = {}, {}
     for dungeon in a.dungeon or DUNGEONS:
         result[dungeon] = calc.rules(dungeon)

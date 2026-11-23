@@ -1,0 +1,402 @@
+{
+ "rules": {
+  "04be4a8ff29f2099": {
+   "area": "Hyrule Field",
+   "name": "Gold Skulltula",
+   "region": "Lon Lon Ranch",
+   "rule": "can_bonk and ((is_child and can_child_attack) or (is_adult and can_adult_attack))",
+   "sure": true,
+   "why": "owner 2026-11-23 (tree on the way to the corral) + Atlas"
+  },
+  "0a564328faf93c71": {
+   "area": "Death Mountain Crater",
+   "name": "Piece of Heart #1",
+   "region": "DMC Central Nearby",
+   "rule": "is_adult and can_use(Goron_Tunic) and at('Bolero of Fire Warp', can_plant_bean)",
+   "sure": true,
+   "why": "Atlas (child plants by the Bolero platform, adult rides the leaf in the Goron Tunic) = ootrr 'DMC Volcano Freestanding PoH'; at() on the warp since a child can't enter DMC Central in this engine"
+  },
+  "10266fe15a73cb29": {
+   "area": "Hyrule Field",
+   "name": "Chest (red rupee) #1",
+   "region": "Hyrule Field",
+   "rule": "is_adult",
+   "sure": true,
+   "why": "owner 2026-11-23: easy as an adult (ootrr pin 'HF South Poe Chest')"
+  },
+  "10761d44d9d4fa3e": {
+   "area": "Desert Colossus",
+   "name": "Chest (purple rupee)",
+   "region": "Colossus Grotto",
+   "rule": "has_explosives",
+   "sure": false,
+   "why": "map: a grotto chest that appears (DesertColossus_SecretHole_AppearTreasureBox) on a Beamos' spot, 5 Skullwalltulas; ootrr pin 'Colossus Grotto Beamos Chest' (ol:likely); a Beamos takes explosives"
+  },
+  "187c597584cfdb4a": {
+   "area": "Sacred Forest Meadow",
+   "name": "Chest (Deku Seeds)",
+   "region": "SFM Storms Grotto",
+   "rule": "can_play(Song_of_Time)",
+   "sure": false,
+   "why": "review: a gossip-stone grotto (ootrr: the remake has no SFM scrub grotto); ootrr pin 'SFM Time Block Grotto Chest' (ol:guess), so the Song of Time asked too; both may be too much"
+  },
+  "1e38e8d23596eecf": {
+   "area": "Hyrule Field",
+   "name": "Gold Skulltula",
+   "region": "Hyrule Field",
+   "rule": "can_bonk and ((is_child and can_child_attack) or (is_adult and can_adult_attack))",
+   "sure": true,
+   "why": "owner 2026-11-23 (lone pine in the east) + Atlas"
+  },
+  "25e6072d4df023b3": {
+   "area": "Hyrule Field",
+   "name": "Gold Skulltula, night, Lon Lon Ranch",
+   "region": "Lon Lon Ranch",
+   "rule": "at_night and (can_use(Hookshot) or can_use(Boomerang))",
+   "sure": true,
+   "why": "owner 2026-11-23: adult Hookshot, child Boomerang (actor CA, Nocturnal, beside the tunnel-ledge chest; the Atlas crate text likely belongs to 7d8ec14bdd1f6341)"
+  },
+  "35b54149ba5a641a": {
+   "area": "Goron City",
+   "name": "Chest (purple rupee) #2",
+   "region": "Goron City",
+   "rule": "can_use(Silver_Gauntlets)",
+   "sure": true,
+   "why": "OotrR remake.json 'GC Silver Rock Chest' (GC_chest_6, in game) + ootrr pin 'GC Maze Silver Chest'"
+  },
+  "3c2b585ac5c0443e": {
+   "area": "Lost Woods",
+   "name": "Gold Skulltula",
+   "region": "LW Beyond Mido",
+   "rule": "is_adult and (here(can_plant_bean) or (logic_lost_woods_gs_bean and Hookshot and (Longshot or Bow or has_bombchus or can_use(Dins_Fire))))",
+   "sure": true,
+   "why": "Atlas (ledge by the Forest Stage, bean leaf from the lone-tree clearing) = ootrr 'LW GS Above Theater' less at_night (game data not Nocturnal; Atlas says night)"
+  },
+  "3c5bb811b4cf54dd": {
+   "area": "Kokiri Forest",
+   "name": "Chest (purple rupee), by the Hyrule Field exit",
+   "region": "LW Bridge From Forest",
+   "rule": "is_adult and here(can_plant_bean)",
+   "sure": true,
+   "why": "owner (bugs.md 36, review 'sure'): hollow stump, adult on the leaf of a bean a child planted in the soil by the bridge = OotrR remake.json's 'LW Near Shortcuts Grotto Chest' rule; region: the bridge's forest end"
+  },
+  "3f38f9b9a399e19a": {
+   "area": "Kokiri Forest",
+   "name": "Chest (blue rupee), by the Lost Woods exit #1",
+   "region": "KF Midos House",
+   "rule": "True",
+   "sure": true,
+   "why": "Mido's house chests (review: sure); ootrr's four 'KF Midos ... Chest' are all True"
+  },
+  "4fdf975f9a02007c": {
+   "area": "Hyrule Field",
+   "name": "Chest (purple rupee)",
+   "region": "Kak Redead Grotto",
+   "rule": "has_adult_sword or can_use(Sticks) or can_use(Kokiri_Sword) or can_use(Dins_Fire)",
+   "sure": false,
+   "why": "map: 2 ReDeads + KakarikoVillage_TreasureBoxAppear = the N64 Kak Redead Grotto (ootrr left 'Kak Redead Grotto Chest' unmatched and pinned this as 'HF Redead Grotto Chest'); rule copied"
+  },
+  "58c75badf059ca54": {
+   "area": "Death Mountain Crater",
+   "name": "Gold Skulltula, bean soil",
+   "region": "Bolero of Fire Warp",
+   "rule": "can_plant_bugs and can_child_attack",
+   "sure": true,
+   "why": "Atlas (child, by the Bolero platform) + ootrr 'DMC GS Bean Patch' rule; region is the Bolero warp because OotrR remake.json makes Bolero -> DMC Central Local is_adult (child crater cut)"
+  },
+  "59b30a4094780bae": {
+   "area": "Gerudo Valley",
+   "name": "Chest (Deku Seeds)",
+   "region": "GV Octorok Grotto",
+   "rule": "True",
+   "sure": false,
+   "why": "ootrr pin 'GV Octorok Grotto Chest' (ol:likely); area-rules-review: 'a hidden hole with flowing water'; the grotto's way in (Silver Gauntlets) is the region's"
+  },
+  "6a8d9b2373d08fcb": {
+   "area": "Kakariko Village",
+   "name": "Gold Skulltula",
+   "region": "Kakariko Village",
+   "rule": "is_child and can_bonk and can_child_attack",
+   "sure": true,
+   "why": "owner's tree rule (child-only actor) + ootrr 'Kak GS Tree'; game data not Nocturnal, so no at_night (Atlas and ootrr say night)"
+  },
+  "781e0de8eed42373": {
+   "area": "Hyrule Field",
+   "name": "Gold Skulltula, Lake Hylia #1",
+   "region": "Lake Hylia",
+   "rule": "is_child and can_child_attack",
+   "sure": true,
+   "why": "Atlas: a child crawls into the west-shore cave, sword; the adult copy can't crawl (the child is asked)"
+  },
+  "7d8ec14bdd1f6341": {
+   "area": "Hyrule Field",
+   "name": "Gold Skulltula",
+   "region": "Hyrule Field",
+   "rule": "at('Hyrule Field', is_adult and can_adult_attack) and is_child and can_child_attack",
+   "sure": true,
+   "why": "the owner, 2026-11-23: a grotto shown on the map (south-west, by the woods south of Lon Lon Ranch); kill a spider in it as an adult, then come back as a child and the Gold Skulltula is there. Ocarina Atlas's way for this hash (the stone tower) is another Skulltula's"
+  },
+  "7eb06d3218678cf3": {
+   "area": "Death Mountain Crater",
+   "name": "Chest (purple rupee)",
+   "region": "DMC Hammer Grotto",
+   "rule": "has_adult_sword or can_use(Megaton_Hammer)",
+   "sure": false,
+   "why": "map: a grotto chest that appears (DeathMountainCrater_SecretHole_AppearTreasureBox) beside 2 Dinolfos; ootrr pin 'DMC Hammer Grotto Chest' (ol:likely; the remake has no DMC scrub grotto); kill the Dinolfos"
+  },
+  "7f1dd488b05f0bf6": {
+   "area": "Goron City",
+   "name": "Chest (green rupee)",
+   "region": "Goron City",
+   "rule": "can_use(Kokiri_Sword) or has_adult_sword or can_use(Boomerang) or can_use(Hookshot)",
+   "sure": true,
+   "why": "the owner, 2026-11-23: the sign-order grotto in Goron City; the signs must be cut, which a sword, the Boomerang or the Hookshot does (either age)"
+  },
+  "8186bcb07d6c2cf9": {
+   "area": "Lost Woods",
+   "name": "Gold Skulltula, bean soil #1",
+   "region": "Lost Woods",
+   "rule": "can_plant_bugs and can_child_attack",
+   "sure": true,
+   "why": "Atlas (soil in the bridge area) = ootrr 'LW GS Bean Patch Near Bridge' (pin pool-swapped)"
+  },
+  "8325fea55edfbe97": {
+   "area": "Zora's River",
+   "name": "Gold Skulltula, night #2",
+   "region": "Zora River",
+   "rule": "can_use(Hookshot) and at_night",
+   "sure": true,
+   "why": "Atlas (above the bridge, Hookshot) = ootrr 'ZR GS Above Bridge'"
+  },
+  "86f700bfe72c18fc": {
+   "area": "Kokiri Forest",
+   "name": "Chest (blue rupee), by the Lost Woods exit #3",
+   "region": "KF Midos House",
+   "rule": "True",
+   "sure": true,
+   "why": "Mido's house chests (review: sure); ootrr's four 'KF Midos ... Chest' are all True"
+  },
+  "89444976a912e2fa": {
+   "area": "Hyrule Field",
+   "name": "Chest (red rupee) #2",
+   "region": "Hyrule Field",
+   "rule": "is_adult",
+   "sure": true,
+   "why": "the owner, 2026-11-23 (screenshots): in the open by the bridge over the river, north-east of the field, by the Zora's River side; an adult's, nothing else"
+  },
+  "9652edaf3158c9b6": {
+   "area": "Kokiri Forest",
+   "name": "Chest (green rupee), by the Lost Woods exit",
+   "region": "KF Midos House",
+   "rule": "True",
+   "sure": true,
+   "why": "Mido's house chest (review: sure)"
+  },
+  "97824c2ffeaa877c": {
+   "area": "Zora's River",
+   "name": "Gold Skulltula, night #1",
+   "region": "Zora River",
+   "rule": "can_use(Hookshot) and at_night",
+   "sure": true,
+   "why": "Atlas (above the raised grottos, Hookshot) = ootrr 'ZR GS Near Raised Grottos'"
+  },
+  "97e2ec1944316626": {
+   "area": "Goron City",
+   "name": "Chest (purple rupee) #1",
+   "region": "Goron City",
+   "rule": "can_use(Kokiri_Sword) or has_adult_sword or can_use(Boomerang) or can_use(Hookshot)",
+   "sure": true,
+   "why": "the owner, 2026-11-23: the sign-order grotto in Goron City; the signs must be cut, which a sword, the Boomerang or the Hookshot does (either age)"
+  },
+  "9ae3d0ac392e6cda": {
+   "area": "Desert Colossus",
+   "name": "Gold Skulltula, night",
+   "region": "Desert Colossus",
+   "rule": "is_adult and at_night and (here(can_plant_bean) or Longshot or (logic_colossus_gs and Hookshot))",
+   "sure": true,
+   "why": "Atlas (top of the big rock, bean leaf, adult, night) = ootrr 'Colossus GS Hill', copied"
+  },
+  "a017ce09904c2dce": {
+   "area": "Gerudo Valley",
+   "name": "Gold Skulltula, night, by the Gerudo's Fortress exit #2",
+   "region": "GV Fortress Side",
+   "rule": "can_use(Hookshot) and at_night",
+   "sure": true,
+   "why": "Atlas (rock arch, Hookshot) = ootrr 'GV GS Pillar', same rule"
+  },
+  "a1632e322c612b97": {
+   "area": "Kakariko Village",
+   "name": "Gold Skulltula, night #1",
+   "region": "Kakariko Village",
+   "rule": "is_child and at_night and can_child_attack",
+   "sure": true,
+   "why": "Atlas (house by the mountain gate, ground level, sword) ~ ootrr 'Kak GS Near Gate Guard'"
+  },
+  "a58e4896b72a2f2a": {
+   "area": "Kakariko Village",
+   "name": "Chest (purple rupee) #2",
+   "region": "Kakariko Village",
+   "rule": "can_use(Longshot)",
+   "sure": false,
+   "why": "the same chest in the other village map (Adult_Dynamic vs Adult_Alternative)"
+  },
+  "a6a4e87da18fa678": {
+   "area": "Hyrule Field",
+   "name": "Gold Skulltula, Lon Lon Ranch",
+   "region": "Hyrule Field",
+   "rule": "can_blast_or_smash and (can_use(Hookshot) or can_use(Boomerang))",
+   "sure": true,
+   "why": "Atlas: stone-circle grotto SW of the ranch, Bomb or Hammer, GS on the wall by Hookshot/Boomerang (as ootrr 'HF GS Near Kak Grotto'); no grotto region of its own, so the opening is in the rule"
+  },
+  "abad0e9f0d471156": {
+   "area": "Zora's River",
+   "name": "Gold Skulltula, bean soil",
+   "region": "Zora River",
+   "rule": "can_plant_bugs and can_child_attack",
+   "sure": true,
+   "why": "Atlas (soil by the Bean Seller) + ootrr soil style; the Bean Seller is in Zora River"
+  },
+  "b171aee0229fa97e": {
+   "area": "Kokiri Forest",
+   "name": "Chest (blue rupee), by the Lost Woods exit #2",
+   "region": "KF Midos House",
+   "rule": "True",
+   "sure": true,
+   "why": "Mido's house chests (review: sure); ootrr's four 'KF Midos ... Chest' are all True"
+  },
+  "b588e3f93990af69": {
+   "area": "Kakariko Village",
+   "name": "Chest (purple rupee) #1",
+   "region": "Kakariko Village",
+   "rule": "can_use(Longshot)",
+   "sure": false,
+   "why": "ootrr pin 'Kak Windmill Roof Chest' (ol:guess): 21 m above the windmill's Piece of Heart (that one needs the Hookshot); way unknown, the Longshot asked to be safe"
+  },
+  "bc85efca2b222cd9": {
+   "area": "Gerudo Valley",
+   "name": "Gold Skulltula, night, by the Gerudo's Fortress exit #1",
+   "region": "GV Fortress Side",
+   "rule": "can_use(Hookshot) and at_night",
+   "sure": true,
+   "why": "Atlas (behind the tent, Hookshot) = ootrr 'GV GS Behind Tent' (pin pool-swapped with Pillar; same rule)"
+  },
+  "c3c68d0ac4b85831": {
+   "area": "Kakariko Village",
+   "name": "Gold Skulltula, night, by the Bottom of the Well exit #1",
+   "region": "Kakariko Village",
+   "rule": "is_child and at_night and can_child_attack",
+   "sure": true,
+   "why": "Atlas (house under construction, sword) = ootrr 'Kak GS House Under Construction'"
+  },
+  "d0ee852c5e8a8bea": {
+   "area": "Zora's Fountain",
+   "name": "Chest (purple rupee)",
+   "region": "Zoras Fountain",
+   "rule": "is_adult and Iron_Boots",
+   "sure": false,
+   "why": "review: the scarecrow's marker, 'adult and the Iron Boots (as today): keep'; ootrr pin 'ZF Scarecrow Ledge Chest' (the Scarecrow's Song may be the real way)"
+  },
+  "d0f7e5ffa76ba288": {
+   "area": "Desert Colossus",
+   "name": "Gold Skulltula, night, by the Spirit Temple exit",
+   "region": "Desert Colossus",
+   "rule": "can_use(Hookshot) and at_night",
+   "sure": true,
+   "why": "Atlas (rock wall right of the temple, Hookshot) = ootrr 'Colossus GS Tree', copied"
+  },
+  "d4883a16973b1d06": {
+   "area": "Kakariko Village",
+   "name": "Gold Skulltula, night, by the Bottom of the Well exit #3",
+   "region": "Kakariko Village",
+   "rule": "is_child and at_night and can_child_attack",
+   "sure": true,
+   "why": "Atlas (House of Skulltula's front, sword) = ootrr 'Kak GS Skulltula House'"
+  },
+  "dc8113831c56b194": {
+   "area": "Hyrule Field",
+   "name": "Gold Skulltula, night",
+   "region": "Lon Lon Ranch",
+   "rule": "can_use(Boomerang) and at_night",
+   "sure": true,
+   "why": "Atlas (Talon's window, Boomerang) = ootrr 'LLR GS House Window'"
+  },
+  "e6a415884d4825c9": {
+   "area": "Gerudo's Fortress",
+   "name": "Chest (red rupee)",
+   "region": "Gerudo Fortress",
+   "rule": "is_adult",
+   "sure": true,
+   "why": "the owner, 2026-11-23: nothing but reaching it as an adult in the fortress"
+  },
+  "ec3f782c547551a1": {
+   "area": "Hyrule Field",
+   "name": "Chest (red rupee), Lake Hylia #1",
+   "region": "Lake Hylia",
+   "rule": "is_adult and Iron_Boots",
+   "sure": false,
+   "why": "ootrr pin 'LH Poe Chest'; review guess 'by the lake bottom, Iron Boots?'; but the child map has pots on the very spot (a dry nook), so is_adult alone is likely enough"
+  },
+  "f21b7ae43e7ff515": {
+   "area": "Hyrule Field",
+   "name": "Chest (Deku Seeds), Lon Lon Ranch",
+   "region": "Lon Lon Ranch",
+   "rule": "can_use(Hookshot)",
+   "sure": true,
+   "why": "owner 2026-11-23: adult with the Hookshot (ootrr pin 'LLR Tunnel Ledge Chest')"
+  },
+  "f2948997ede7b25f": {
+   "area": "Lost Woods",
+   "name": "Chest (purple rupee)",
+   "region": "LW Near Shortcuts Grotto",
+   "rule": "True",
+   "sure": false,
+   "why": "review 'a grotto room, blast or smash (the grotto by the shortcuts)' (fair) = N64 LW Near Shortcuts Grotto (way in here(can_blast_or_smash)); OotrR moved that name's rule to the KF stump chest"
+  },
+  "f6571bb2b874c05d": {
+   "area": "Gerudo Valley",
+   "name": "Chest (green rupee)",
+   "region": "GV Storms Grotto",
+   "rule": "True",
+   "sure": false,
+   "why": "ootrr pin 'GV Storms Grotto Chest' (ol:likely), a plain chest beside the Lens chest; region: adult and the Song of Storms"
+  },
+  "f6fa6ef0ca152948": {
+   "area": "Lost Woods",
+   "name": "Gold Skulltula, bean soil #2",
+   "region": "LW Beyond Mido",
+   "rule": "can_plant_bugs and can_child_attack",
+   "sure": true,
+   "why": "Atlas (lone-tree clearing) = ootrr 'LW GS Bean Patch Near Theater' (a weapon asked, no Deku Shield trick)"
+  },
+  "fcd7f04dcf755e8e": {
+   "area": "Death Mountain Crater",
+   "name": "Gold Skulltula, by the Death Mountain Trail exit",
+   "region": "Death Mountain Summit",
+   "rule": "is_child and can_child_attack and can_break_heated_crate",
+   "sure": true,
+   "why": "Atlas (crate a few steps in from the summit) + ootrr 'DMC GS Crate' rule; region is the Summit because remake.json makes Summit -> DMC Upper Local is_adult"
+  },
+  "ff8a367dbd828c94": {
+   "area": "Gerudo Valley",
+   "name": "Chest (red rupee) #1",
+   "region": "GV Storms Grotto",
+   "rule": "can_use(Lens_of_Truth)",
+   "sure": false,
+   "why": "map: Obj_TBox_GlassTruth (invisible chest); ootrr pin 'GV Storms Grotto Lens Chest'; review: the Lens of Truth"
+  }
+ },
+ "skipped": {
+  "02b982471f5248d1": "Bombchu Bowling: a Gift with its own need (CHILD_BOMBS), kept ours by choice (bugs.md 99). If wanted: region 'Market Bombchu Bowling', rule 'is_child' (open from the start, fix 59)",
+  "08c44828386468bd": "a Business Scrub's Piece of Heart: a gift, keyed by its gift hash, not this; its rule is SCRUBS' (scrubs_swapped from placement 26, bug 126)",
+  "228e7b7a60ba339b": "the Spirit Temple's own (ootrr 'Spirit Temple Silver Gauntlets Chest', pin conf=item): the dungeon table; review: keep",
+  "2c0f7c71d105e425": "Skulltula house: rando_seed house_need (tokens + CHILD); the engine's token counts can't work here (overworld_logic holds every token 'always')",
+  "2fa5e3dfba115735": "Skulltula house (as the 10 tokens')",
+  "3330422225a7368d": "Skulltula house (as the 10 tokens')",
+  "339bcc54345541e5": "a Business Scrub's Piece of Heart: a gift, keyed by its gift hash, not this; its rule is SCRUBS' (scrubs_swapped from placement 26, bug 126)",
+  "3d1a64837516e780": "Skulltula house (as the 10 tokens')",
+  "49a3d494a379b081": "Skulltula house (as the 10 tokens')",
+  "561cbe4b374f3739": "the child's copy of the Gerudo Valley Lens chest: no way for a child in the engine; keeps its old rule",
+  "8af25d13333bf6dc": "the Spirit Temple's own (ootrr 'Spirit Temple Mirror Shield Chest', pin conf=item): the dungeon table (dungeon_logic.py) rules it; review: keep"
+ },
+ "source": "tools/rando/overworld_own.json: rules of our own for the remake's checks the other logic doesn't have (bug 118, 2026-11-23). Each is put in its region of the engine's world as a location 'OWN <hash>' with its rule (the engine's words); overworld_logic.py works out its ways from a new game's start for each variant. sure: false where the rule is a guess that asks for more rather than less."
+}

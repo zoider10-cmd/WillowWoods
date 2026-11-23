@@ -632,11 +632,11 @@
 "way": "Next to the drawbridge, at the entrance to Hyrule Castle Town, is the guard house, a building full of pots with a Gold Skulltula hidden inside a wooden crate. Go to the back wall and roll into the crate farthest to the right, the one to the right of the soldier as you face him."
 },
 "7d8ec14bdd1f6341": {
-"age": "child",
+"age": "both",
 "id": "lonlon-gs-04",
-"name": "Inside the stone tower",
-"night": true,
-"way": "The stone tower at the back of Lon Lon Ranch, behind the corral, holds a Gold Skulltula inside at night. Go in through the tower door and look up: it's high on the wall, above the clump of hay hanging below the window. Only the Boomerang can reach it: throw it from the tower floor and it defeats the Skulltula and brings you the Gold Skulltula Token in the same throw. The Slingshot kills it, but the token stays up there."
+"name": "Grotto south-west of the ranch",
+"night": false,
+"way": "In the grotto shown on the map at the south-west of Hyrule Field, by the woods south of Lon Lon Ranch. As an adult, go in and defeat the Skulltula there; then come back as a child: the Gold Skulltula is there now. (From the owner's play, 2026-11-23: Ocarina Atlas's text for this one was the stone tower's, another Skulltula's.)"
 },
 "7d8ec14bdd1f6343": {
 "age": "child",

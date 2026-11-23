@@ -41,19 +41,44 @@ NAMED = ("GC Darunias Joy", "LW Target in Woods", "Deku Theater Skull Mask", "De
          "GC Rolling Goron as Child", "Kak Man on Roof", "LW Skull Kid", "LW Ocarina Memory Game", "Market Lost Dog",
          "KF Shop Item 1", "Market Bazaar Item 1", "Market Potion Shop Item 1", "Market Bombchu Shop Item 1", "GC Shop Item 1",
          "ZD Shop Item 1", "Kak Bazaar Item 1", "Kak Potion Shop Item 1")
+# (bug 118, 2026-11-23) The remake's checks the other logic doesn't have (pinned to no location, or only to a pool of
+# unlike ones): OWN_FILE's rules of our own, each put in its region as the location "OWN <hash>" and worked out as the
+# others are; written in each variant's "own" ({the actor's hash in decimal: [way, ...]}), which the seed tool reads
+# from its placement 26 (rando_seed.py OWN_FROM), so the tables' other parts stay as they were.
+OWN_FILE = os.path.join(HERE, "overworld_own.json")
+OWN_PREFIX = "OWN "
+
+
+def own_rules():
+    """{hex hash: {"region", "rule", ...}} of OWN_FILE; {} without it"""
+    try:
+        with open(OWN_FILE, encoding="utf-8") as f:
+            return json.load(f)["rules"]
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
 FORESTS = ("open", "closed_deku", "closed")
 GATES = ("open", "zelda")
 DOORS = (True, False)
 
 
-def variant_key(forest, gate, door):
-    return "%s,%s,%d" % (forest, gate, 1 if door else 0)
+def variant_key(forest, gate, door, master=False):
+    """the table's key; master: Shuffle the Master Sword (the engine's shuffle_master_sword), only with the Door of Time
+    open, as the seed tool has it: ",ms" after the key"""
+    return "%s,%s,%d%s" % (forest, gate, 1 if door else 0, ",ms" if master else "")
 
 
 class Over(D.Calc):
-    def __init__(self, forest, gate, door):
+    def __init__(self, forest, gate, door, master=False):
         self.data, settings, self.pins = D.world()
-        settings = dict(settings, open_forest=forest, open_kakariko=gate, open_door_of_time=door)
+        regions = {r["region_name"]: r for r in self.data.regions}
+        for h, e in own_rules().items():   # (OWN_FILE's: our own rules of the remake's checks)
+            if e["region"] not in regions:
+                raise ValueError("%s: no region %s" % (h, e["region"]))
+            regions[e["region"]].setdefault("locations", {})[OWN_PREFIX + h] = e["rule"]
+            self.data.location_table[OWN_PREFIX + h] = {"type": "Item", "scene": None, "vanilla": None, "categories": [e.get("area", "")]}
+        settings = dict(settings, open_forest=forest, open_kakariko=gate, open_door_of_time=door, shuffle_master_sword=bool(master))
         self.logic = Logic(self.data, settings)
         self.ages_now = None
         tried = {name for name, _ in TRIED}
@@ -117,17 +142,21 @@ class Over(D.Calc):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--variant", action="append", help="forest,gate,door (e.g. open,open,1); all of them without it")
+    p.add_argument("--variant", action="append", help="forest,gate,door[,ms] (e.g. open,open,1); all of them without it")
+    p.add_argument("--master-sword", action="store_true", help="the variants with the Master Sword shuffled (door 1, ',ms') in place of the others")
     p.add_argument("--area")
     p.add_argument("--write")
     a = p.parse_args()
-    wanted = a.variant or [variant_key(f, g, d) for f in FORESTS for g in GATES for d in DOORS]
+    wanted = a.variant or ([variant_key(f, g, True, True) for f in FORESTS for g in GATES] if a.master_sword else
+                           [variant_key(f, g, d) for f in FORESTS for g in GATES for d in DOORS])
     out = {}
     for key in wanted:
-        forest, gate, door = key.split(",")
-        calc = Over(forest, gate, door == "1")
+        forest, gate, door = key.split(",")[:3]
+        calc = Over(forest, gate, door == "1", key.endswith(",ms"))
         rules = calc.rules()
-        out[key] = {"by_actor": D.by_actor({"overworld": rules}, calc.pins), "named": {n: rules[n] for n in NAMED if n in rules}}
+        out[key] = {"by_actor": D.by_actor({"overworld": {k: v for k, v in rules.items() if not k.startswith(OWN_PREFIX)}}, calc.pins),
+                    "named": {n: rules[n] for n in NAMED if n in rules},
+                    "own": {str(int(k[len(OWN_PREFIX):], 16)): v for k, v in rules.items() if k.startswith(OWN_PREFIX)}}
         missing = [n for n in NAMED if n not in rules]
         if missing:
             print("not in the logic: %s" % ", ".join(missing))

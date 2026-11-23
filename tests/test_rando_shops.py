@@ -468,7 +468,7 @@ def main():
           "for index, actor in shop_slots(shop, a.shop_shelves, shield_shelf)}" in script,
           "the two settings do not reach the sword's chest, the shelves priced or the shelves written")
     # (named in the stamp only when set: a seed made before the settings keeps its stamp, and is not made again)
-    check('(" shelves all" if a.shop_shelves else "") + (" sword and shield 1" if a.sword_shield else "")' in script,
+    check('(" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "")' in script,
           "the two settings are not in the seed's stamp, or are named when off")
     # ---- Bombchus: a limit of their own, not the Bomb Bag's (found before a bag they were lost: seen in play) ----
     pouch = byml([{"__RowId": "Item_Bomb", "MaxNumGameData": "Bomb", "SmallBagActor": "Work/Actor/Item_BombBag_Small.engine__actor__ActorParam.gyml"},

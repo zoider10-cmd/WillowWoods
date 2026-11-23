@@ -97,7 +97,8 @@ def main():
     name = seed.check_name
     check(name("Chest", "TBox_Rupee_Red", {"room": 10}, (1.0, 2.0, 3.0), exits, parts) == "Chest (red rupee), room 10" and
           name("Chest", "Item_Sword_Kokiri", {"big": True}, (-300.0, 0.0, 0.0), exits, parts) == "Big chest (Kokiri Sword)" and
-          name("Chest", "Item_Arrow_Fire", {}, (0.0, 0.0, 0.0), exits, parts) == "Chest (Arrow Fire), by the Hyrule Field exit" and
+          name("Chest", "Item_Arrow_Fire", {}, (0.0, 0.0, 0.0), exits, parts) == "Chest (Fire Arrows), by the Hyrule Field exit" and
+          name("Chest", "Item_FairyBless_MPDouble", {"room": 1}, (), exits, parts) == "Chest (Doubled Magic), room 1" and
           name("Chest", "Obj_Heart_Piece", {}, (450.0, 130.0, 420.0), exits, parts) == "Chest (Piece of Heart), Lake Hylia" and
           name("Gold Skulltula", "", {"night": True}, (90.0, 5.0, 0.0), exits, parts) == "Gold Skulltula, night, by the Lost Woods exit" and
           name("Gold Skulltula", "", {"soil": True, "room": 0}, (), exits, parts) == "Gold Skulltula, bean soil, room 0" and

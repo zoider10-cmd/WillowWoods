@@ -2082,7 +2082,7 @@ static class RandoLayout {
                                  Experimental = Color.FromArgb(240, 112, 86), SectionColor = Color.FromArgb(172, 214, 98);
     // (how far each is tested: Tested unless named here)
     static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_water_gate", "rando_magic", "rando_ageless_items", "rando_ageless_tunics",
-        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" };
+        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_fairy_prices" };
     public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards" };
     public static Color Status(string key) {
         if (Array.IndexOf(NotYetKeys, key) >= 0) return Experimental;
@@ -2119,7 +2119,7 @@ static class RandoLayout {
     };
     public static readonly RandoSection[] Sections = {
         new RandoSection { Title = "WHAT'S SHUFFLED", Sub = "where items can be", Accent = SectionColor,
-            Rows = new[] { "rando_on", "rando_chests", "+skulltulas", "+quests", "+songs", "+shops", "rando_heart_pieces", "rando_scrubs",
+            Rows = new[] { "rando_on", "rando_chests", "+skulltulas", "+quests", "+songs", "+shops", "rando_fairy_prices", "rando_heart_pieces", "rando_scrubs",
                            "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_dungeon_rewards" } },
         new RandoSection { Title = "OPEN WORLD", Sub = "what's open from a new game's start", Accent = SectionColor,
             Rows = new[] { "+forest", "rando_open_door", "rando_letter", "+bridge", "rando_water_gate" } },
@@ -2940,7 +2940,9 @@ class LauncherForm : Form {
         new object[] { "rando_skull_kid_fast", "Faster Skull Kid game", new[] { "Off", "On" }, new[] { 0, 1 },
             "The Skull Kids' ocarina game in the Lost Woods is one turn of 6 notes; winning it gives its check. The rupee prizes of the longer game are gone. Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_skip_tower", "Skip the tower escape", new[] { "Off", "On" }, new[] { 0, 1 },
-            "After Ganondorf falls, Link goes straight to the field below the tower, as if he had run out of the collapsing castle, and the Ganon fight follows. Not tried in play yet. Moves no item." }
+            "After Ganondorf falls, Link goes straight to the field below the tower, as if he had run out of the collapsing castle, and the Ganon fight follows. Not tried in play yet. Moves no item." },
+        new object[] { "rando_fairy_prices", "Great Fairy prices", new[] { "As the shops", "The game's own", "Low prices", "Any price", "Affordable" }, new[] { 0, 1, 2, 3, 4 },
+            "What the Great Fairies ask as an offering for their gift. As the shops: rolled as the shops' prices are (the game's own when Shops is off). The game's own: 25 to 500 rupees, as the game has them. Low prices, Any price, Affordable: rolled as those shop prices are, whatever Shops is. A price asks for a wallet that holds it." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and

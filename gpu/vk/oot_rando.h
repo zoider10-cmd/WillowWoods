@@ -171,7 +171,10 @@
       "Off", "On") \
     X(SKIP_TOWER, "Skip the tower escape", "rando_skip_tower", \
       "After Ganondorf falls, Link goes straight to the field below the tower, as if he had run out of the collapsing castle, and the Ganon fight follows. Not tried in play yet. Moves no item.", \
-      "Off", "On")
+      "Off", "On") \
+    X(FAIRY_PRICES, "Great Fairy prices", "rando_fairy_prices", \
+      "What the Great Fairies ask as an offering for their gift. As the shops: rolled as the shops' prices are (the game's own when Shops is off). The game's own: 25 to 500 rupees, as the game has them. Low prices, Any price, Affordable: rolled as those shop prices are, whatever Shops is. A price asks for a wallet that holds it.", \
+      "As the shops", "The game's own", "Low prices", "Any price", "Affordable")
 
 enum {
 #define OOT_RANDO_ENUM(NAME, label, key, help, ...) OOT_RANDO_##NAME,

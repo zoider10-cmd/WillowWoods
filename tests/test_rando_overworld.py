@@ -31,6 +31,7 @@ def main():
           "Kakariko's watchtower Gold Skulltula is not had by the Boomerang (the owner, 2026-11-21)")
     table = json.load(open(os.path.join(ROOT, "tools", "rando", S.OVERWORLD_RULES_FILE), encoding="utf-8"))["variants"]
     want = {"%s,%s,%d" % (f, g, d) for f in ("open", "closed_deku", "closed") for g in ("open", "zelda") for d in (0, 1)}
+    want |= {"%s,%s,1,ms" % (f, g) for f in ("open", "closed_deku", "closed") for g in ("open", "zelda")}   # (Shuffle the Master Sword: SWORD_FROM)
     check(set(table) == want, "the table has not every variant of the settings: %s" % sorted(want - set(table)))
     check(S.overworld_variant(True, True, True, True) == "open,open,1" and S.overworld_variant(False, True, False, False) == "closed_deku,zelda,0"
           and S.overworld_variant(True, False, False, True) == "closed,zelda,1", "the seed's settings pick the wrong table")
