@@ -528,6 +528,7 @@ const char* tx_framegen(int v) {
     return t[v];
 }
 const char* tx_onoff(int v) { return v ? "On" : "Off"; }
+const char* tx_boss_health(int v) { return v ? "Hearts" : "Bar"; }   // (opts.boss_hearts: the Boss health row)
 const char* tx_fps_level(int v) { return fps_stats::level_name(v); }
 const char* tx_fps_corner(int v) { return fps_stats::corner_name(v); }
 const char* tx_fps_size(int v) {   // (the FPS counter size row: Auto, then the Menu size row's names)
@@ -2015,6 +2016,9 @@ Row rows[] = {
     {TAB_GAMEPLAY, "Health bars", &opts.show_health, 0, 1, 1, tx_onoff,
      "A health bar over each enemy you hit, for a few seconds after the last hit. A boss's is a wide bar with its name at the "
      "bottom of the screen, for the whole fight.", nullptr, false, true},
+    {TAB_GAMEPLAY, "Boss health", &opts.boss_hearts, 0, 1, 1, tx_boss_health,
+     "How a boss's health shows at the bottom of the screen with Health bars on: a bar, or hearts as Link's, each a quarter "
+     "heart for a point of damage.", nullptr, false, true},
     {TAB_GAMEPLAY, "FPS counter size", &opts.fps_size, 0, 3, 1, tx_fps_size,
      "How large the FPS counter is drawn. Auto grows with the window, as the menu does; Small, Medium and Large keep one size "
      "whatever the window, the size Auto has in a 720p, 1080p and 1440p window.", nullptr, false, true},
@@ -7732,6 +7736,26 @@ void draw_damage(ui::Ctx& c) {
 /// sees it (health_at, as the damage numbers' places), its life in green, turning yellow then red as it falls, on a dark
 /// plate with a thin outline; a boss's (health_kind) as a wide bar at the foot of the screen with its name over it, in red.
 /// Not while the menu is open.
+/// A heart of the boss's hearts: two circles over a triangle, of radius r about (cx, cy)
+void heart_shape(ImDrawList* d, float cx, float cy, float r, ImU32 col) {
+    d->AddCircleFilled(ImVec2(cx - r * 0.47f, cy - r * 0.28f), r * 0.53f, col, 20);
+    d->AddCircleFilled(ImVec2(cx + r * 0.47f, cy - r * 0.28f), r * 0.53f, col, 20);
+    d->AddTriangleFilled(ImVec2(cx - r * 0.98f, cy - r * 0.12f), ImVec2(cx + r * 0.98f, cy - r * 0.12f), ImVec2(cx, cy + r * 0.95f), col);
+}
+/// A heart with `quarters` of its four filled (Link's hearts' order: bottom left, top left, top right, bottom right), a
+/// dark outline round it and the rest dim
+void heart_quarters(ImDrawList* d, float cx, float cy, float r, int quarters, float o) {
+    heart_shape(d, cx, cy, r + o, ui::rgba(20, 0, 0, 230));
+    heart_shape(d, cx, cy, r, ui::rgba(90, 25, 25, 235));
+    static const int qx[4] = {-1, -1, 1, 1}, qy[4] = {1, -1, -1, 1};
+    for (int q = 0; q < quarters && q < 4; q++) {
+        const ImVec2 a(qx[q] < 0 ? cx - r * 1.1f : cx, qy[q] < 0 ? cy - r * 1.1f : cy - r * 0.12f);
+        const ImVec2 b(qx[q] < 0 ? cx : cx + r * 1.1f, qy[q] < 0 ? cy - r * 0.12f : cy + r * 1.1f);
+        d->PushClipRect(a, b, true);
+        heart_shape(d, cx, cy, r, ui::rgba(235, 45, 50));
+        d->PopClipRect();
+    }
+}
 bool health_shows() {
     if (!opts.show_health) return false;
     const int64_t now = prof_now();
@@ -7756,6 +7780,20 @@ void draw_health(ui::Ctx& c) {
             const float y = c.h - c.safe - 40 * s - bosses * 56 * s;
             const char* name = kBossNames[kind - 1];
             const float nsize = 22 * s, o = std::max(1.0f, s);
+            if (opts.boss_hearts) {   // (the Boss health row's Hearts: a heart each 4 points, ten a row, the last row nearest the foot)
+                const int hearts = (most + 3) / 4, rows = (hearts + 9) / 10;
+                const float r = 11 * s, step = r * 2.25f, hx = c.w * 0.5f - (std::min(hearts, 10) - 1) * step * 0.5f;
+                const float top = c.h - c.safe - 30 * s - bosses * 56 * s - (rows - 1) * step;
+                const ImVec2 nat(hx - r, top - r - nsize - 6 * s);
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dx = -1; dx <= 1; dx++)
+                        if (dx || dy) c.d->AddText(c.f.strong, nsize, ImVec2(nat.x + dx * o, nat.y + dy * o), ui::rgba(0, 0, 0, 220), name);
+                c.d->AddText(c.f.strong, nsize, nat, ui::rgba(255, 255, 255), name);
+                for (int i = 0; i < hearts; i++)
+                    heart_quarters(c.d, hx + (i % 10) * step, top + (i / 10) * step, r, std::clamp(life - i * 4, 0, 4), std::max(1.0f, 1.5f * s));
+                bosses += rows;
+                continue;
+            }
             const ImVec2 at(x, y - nsize - 4 * s);
             for (int dy = -1; dy <= 1; dy++)
                 for (int dx = -1; dx <= 1; dx++)

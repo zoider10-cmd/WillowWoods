@@ -60,6 +60,11 @@ def main():
     draw = draw[:draw.index("\n}\n")]
     check("now - health_seen[k].load(std::memory_order_relaxed) >= kHealthStale" in draw and "kBossNames[kind - 1]" in draw,
           "a slot not heard of lately is drawn, or a boss's bar is not named")
+    # (the Boss health row: Bar, or Hearts as Link's, a quarter heart a point, ten a row)
+    check('{TAB_GAMEPLAY, "Boss health", &opts.boss_hearts, 0, 1, 1, tx_boss_health,' in menu and "int boss_hearts = 0;" in read("gpu", "vk", "vk_menu.h"),
+          "the Gameplay tab has no Boss health row, Bar by default")
+    check("const int hearts = (most + 3) / 4, rows = (hearts + 9) / 10;" in draw and "std::clamp(life - i * 4, 0, 4)" in draw,
+          "a boss's hearts are not a heart each 4 points, a quarter each point")
     print("FAIL" if failed else "PASS: health bars")
     return 1 if failed else 0
 
