@@ -5803,6 +5803,18 @@ static void image_waits_note(int64_t ns) {
 }
 // (250 ms: past a refresh of a 24 Hz display for each image FIFO may hold queued; far under the GPU hang watch's 30 s)
 constexpr uint64_t kImageFreeNs = 250000000ull;
+// (longshot, #1482) An image held this long is taken as never coming back, and the swapchain is made again: then twice as
+// long, and at most 4 s, between the remakes that brought none back. With frame generation on an RX 9070 XT (Windows, full
+// screen) an image held after Alt+Tab was not given back once the game was in front again either, until F11 made the
+// swapchain again: the game and its sound went on, its picture stayed as it was. The system lets an image go when another
+// is shown, and while one is held nothing else is presented, so nothing ever let it go. A new swapchain's images are all
+// free; while the window stays hidden its first image is held again, and the remakes are kept far apart
+constexpr int64_t kHeldRemakeNs = 1000000000ll;
+/// Whether an image held for held_ns, after `remakes` swapchains made again for holds that brought no image back, is let go
+/// with its swapchain
+static bool held_remake_due(int64_t held_ns, int remakes) {
+    return held_ns >= kHeldRemakeNs << (remakes < 2 ? remakes : 2);
+}
 /// Whether the acquired image is free (acquire_fence signaled, and reset for the next acquire), waiting up to timeout_ns
 static bool image_free(uint64_t timeout_ns) {
     if (!acquire_fence) return false;   // (none could be made again: held_image_drop)
@@ -5970,16 +5982,31 @@ void present_image(VkImage src, uint32_t sw, uint32_t sh, const int crop[4], VkI
         if (image_count) image_waits_note(fps_clock() - image_t0);
         static int said;     // (the first 16 holds are said, and their ends)
         static bool told;    // (this hold was said)
+        static int64_t held_since;   // (#1482: when this hold began, fps_clock)
+        static int remakes, said_remakes;   // (swapchains made again for holds since an image last came back; the first 16 said)
         if (!ready) {
+            const int64_t now = fps_clock();
             if (!was_held || was_ahead) {
+                held_since = now;
                 told = said < 16;
                 if (told) said++, logf("vk: the window's image was not given back in 250 ms (the window hidden?): frames are not "
                                        "shown until it is");
             }
             held_image = {true, index, dev.swapchain_generation, false};
+            if (held_remake_due(now - held_since, remakes)) {   // (#1482: never given back; a new swapchain, as F11 makes)
+                if (said_remakes < 16)
+                    said_remakes++, logf("vk: the window's image was not given back in %.0f s: the swapchain made again",
+                                         (now - held_since) / 1e9);
+                if (remakes < 1000) remakes++;
+                present_thread_drain();   // (before the queue's lock: the presenter takes it)
+                std::lock_guard qk(dev.present_mu);
+                create_swapchain(dev.swap_extent.width, dev.swap_extent.height);   // (the held image let go at the next present)
+                held_since = now;   // (not made, a window with no size: tried again only after the next wait, not at each present)
+            }
             return;
         }
         held_image.held = false, held_image.ahead = false;
+        remakes = 0;
         if (was_held && told) told = false, logf("vk: the window's image was given back: frames are shown again");
     }
     if (vkResetFences(dev.device, 1, &f.done) == VK_ERROR_DEVICE_LOST) device_lost();
