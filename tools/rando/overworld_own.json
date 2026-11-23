@@ -35,10 +35,10 @@
   "187c597584cfdb4a": {
    "area": "Sacred Forest Meadow",
    "name": "Chest (Deku Seeds)",
-   "region": "SFM Storms Grotto",
-   "rule": "can_play(Song_of_Time)",
-   "sure": false,
-   "why": "review: a gossip-stone grotto (ootrr: the remake has no SFM scrub grotto); ootrr pin 'SFM Time Block Grotto Chest' (ol:guess), so the Song of Time asked too; both may be too much"
+   "region": "Sacred Forest Meadow",
+   "rule": "can_blast_or_smash and can_play(Song_of_Time)",
+   "sure": true,
+   "why": "the owner, 2026-11-23: the grotto in the ruins in front of the Forest Temple, opened by explosives or the Megaton Hammer (can_blast_or_smash), and the Song of Time inside"
   },
   "1e38e8d23596eecf": {
    "area": "Hyrule Field",
@@ -108,9 +108,9 @@
    "area": "Gerudo Valley",
    "name": "Chest (Deku Seeds)",
    "region": "GV Octorok Grotto",
-   "rule": "True",
-   "sure": false,
-   "why": "ootrr pin 'GV Octorok Grotto Chest' (ol:likely); area-rules-review: 'a hidden hole with flowing water'; the grotto's way in (Silver Gauntlets) is the region's"
+   "rule": "is_adult and can_use(Silver_Gauntlets) and can_use(Iron_Boots) and can_use(Zora_Tunic)",
+   "sure": true,
+   "why": "the owner, 2026-11-23: needs the Silver Gauntlets, the Iron Boots and the Zora Tunic (the grotto under the silver rock, the chest under water)"
   },
   "6a8d9b2373d08fcb": {
    "area": "Kakariko Village",

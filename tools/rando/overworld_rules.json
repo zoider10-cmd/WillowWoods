@@ -7987,40 +7987,8 @@
     ],
     "1764383515296652106": [
      {
-      "Ocarina": 1,
-      "Slingshot": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
       "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Ocarina": 1,
-      "Progressive Scale": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Dins Fire": 1,
-      "Magic Meter": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Minuet of Forest": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Buy Deku Stick (1)": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -8268,6 +8236,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -8278,6 +8247,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -16347,40 +16317,32 @@
     ],
     "1764383515296652106": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Slingshot": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
       "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Ocarina": 1,
-      "Progressive Scale": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
+      "Megaton Hammer": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Sarias Song": 1,
       "Song of Time": 1
      },
      {
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Megaton Hammer": 1,
       "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Buy Deku Stick (1)": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -16643,19 +16605,23 @@
     "6463521162691873710": [
      {
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Progressive Strength Upgrade": 2
      },
      {
       "Bomb Bag": 1,
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      },
      {
+      "Iron Boots": 1,
       "Progressive Scale": 1,
       "Progressive Strength Upgrade": 2
      },
      {
       "Dins Fire": 1,
+      "Iron Boots": 1,
       "Magic Meter": 1,
       "Progressive Strength Upgrade": 2
      }
@@ -16702,7 +16668,18 @@
     ],
     "9047381233010434881": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1
+     },
+     {
       "Bomb Bag": 1
+     },
+     {
+      "Progressive Scale": 1
+     },
+     {
+      "Dins Fire": 1,
+      "Magic Meter": 1
      }
     ],
     "9128916506605227251": [
@@ -24798,40 +24775,32 @@
     ],
     "1764383515296652106": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Slingshot": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
       "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Ocarina": 1,
-      "Progressive Scale": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
       "Dins Fire": 1,
       "Magic Meter": 1,
+      "Megaton Hammer": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Sarias Song": 1,
       "Song of Time": 1
      },
      {
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Megaton Hammer": 1,
       "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Buy Deku Stick (1)": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -25091,19 +25060,23 @@
     "6463521162691873710": [
      {
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Progressive Strength Upgrade": 2
      },
      {
       "Bomb Bag": 1,
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      },
      {
+      "Iron Boots": 1,
       "Progressive Scale": 1,
       "Progressive Strength Upgrade": 2
      },
      {
       "Dins Fire": 1,
+      "Iron Boots": 1,
       "Magic Meter": 1,
       "Progressive Strength Upgrade": 2
      }
@@ -25150,7 +25123,20 @@
     ],
     "9047381233010434881": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Master Sword": 1
+     },
+     {
       "Bomb Bag": 1
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Scale": 1
+     },
+     {
+      "Dins Fire": 1,
+      "Magic Meter": 1
      }
     ],
     "9128916506605227251": [
@@ -32941,40 +32927,8 @@
     ],
     "1764383515296652106": [
      {
-      "Ocarina": 1,
-      "Slingshot": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
       "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Ocarina": 1,
-      "Progressive Scale": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Dins Fire": 1,
-      "Magic Meter": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Minuet of Forest": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Buy Deku Stick (1)": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -33209,6 +33163,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -33219,6 +33174,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -40716,40 +40672,30 @@
     ],
     "1764383515296652106": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Slingshot": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
       "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
+      "Megaton Hammer": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
-      "Song of Storms": 1,
+      "Sarias Song": 1,
       "Song of Time": 1
      },
      {
-      "Dins Fire": 1,
-      "Magic Meter": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
+      "Megaton Hammer": 1,
       "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Buy Deku Stick (1)": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
+      "Progressive Scale": 1,
       "Song of Time": 1
      }
     ],
@@ -40966,14 +40912,17 @@
     "6463521162691873710": [
      {
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Progressive Strength Upgrade": 2
      },
      {
       "Bomb Bag": 1,
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      },
      {
+      "Iron Boots": 1,
       "Progressive Scale": 1,
       "Progressive Strength Upgrade": 2
      }
@@ -41012,7 +40961,14 @@
     ],
     "9047381233010434881": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1
+     },
+     {
       "Bomb Bag": 1
+     },
+     {
+      "Progressive Scale": 1
      }
     ],
     "9128916506605227251": [
@@ -48527,40 +48483,31 @@
     ],
     "1764383515296652106": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Slingshot": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
       "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      },
      {
+      "Biggoron Sword": 1,
+      "Megaton Hammer": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
-      "Song of Storms": 1,
+      "Sarias Song": 1,
       "Song of Time": 1
      },
      {
-      "Dins Fire": 1,
-      "Magic Meter": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
+      "Megaton Hammer": 1,
       "Minuet of Forest": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
-      "Song of Time": 1
-     },
-     {
-      "Buy Deku Stick (1)": 1,
-      "Ocarina": 1,
-      "Song of Storms": 1,
+      "Progressive Scale": 1,
       "Song of Time": 1
      }
     ],
@@ -48785,14 +48732,17 @@
     "6463521162691873710": [
      {
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Progressive Strength Upgrade": 2
      },
      {
       "Bomb Bag": 1,
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      },
      {
+      "Iron Boots": 1,
       "Progressive Scale": 1,
       "Progressive Strength Upgrade": 2
      }
@@ -48831,7 +48781,25 @@
     ],
     "9047381233010434881": [
      {
+      "Boomerang": 1,
+      "Kokiri Sword": 1,
+      "Master Sword": 1
+     },
+     {
       "Bomb Bag": 1
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Scale": 1
+     },
+     {
+      "Dins Fire": 1,
+      "Magic Meter": 1,
+      "Progressive Scale": 1
+     },
+     {
+      "Biggoron Sword": 1,
+      "Progressive Scale": 1
      }
     ],
     "9128916506605227251": [
@@ -55793,8 +55761,8 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -55985,6 +55953,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -55995,6 +55964,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -61358,8 +61328,20 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -61450,6 +61432,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -61466,9 +61449,7 @@
      {}
     ],
     "9047381233010434881": [
-     {
-      "Bomb Bag": 1
-     }
+     {}
     ],
     "9128916506605227251": [
      {
@@ -66890,8 +66871,21 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Biggoron Sword": 1,
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -66992,6 +66986,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -67009,7 +67004,20 @@
     ],
     "9047381233010434881": [
      {
-      "Bomb Bag": 1
+      "Master Sword": 1
+     },
+     {
+      "Bow": 1
+     },
+     {
+      "Progressive Hookshot": 1
+     },
+     {
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Biggoron Sword": 1
      }
     ],
     "9128916506605227251": [
@@ -74307,8 +74315,8 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -74597,6 +74605,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -74607,6 +74616,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -80096,8 +80106,20 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -80188,6 +80210,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -80204,9 +80227,7 @@
      {}
     ],
     "9047381233010434881": [
-     {
-      "Bomb Bag": 1
-     }
+     {}
     ],
     "9128916506605227251": [
      {
@@ -86012,8 +86033,21 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Biggoron Sword": 1,
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -86228,6 +86262,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -86293,7 +86328,24 @@
     ],
     "9047381233010434881": [
      {
-      "Bomb Bag": 1
+      "Master Sword": 1
+     },
+     {
+      "Bow": 1
+     },
+     {
+      "Megaton Hammer": 1
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Scale": 1
+     },
+     {
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Biggoron Sword": 1
      }
     ],
     "9128916506605227251": [
@@ -93248,8 +93300,8 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -93440,6 +93492,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -93450,6 +93503,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -98813,8 +98867,20 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -98905,6 +98971,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -98921,9 +98988,7 @@
      {}
     ],
     "9047381233010434881": [
-     {
-      "Bomb Bag": 1
-     }
+     {}
     ],
     "9128916506605227251": [
      {
@@ -104345,8 +104410,21 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Biggoron Sword": 1,
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -104447,6 +104525,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -104464,7 +104543,20 @@
     ],
     "9047381233010434881": [
      {
-      "Bomb Bag": 1
+      "Master Sword": 1
+     },
+     {
+      "Bow": 1
+     },
+     {
+      "Progressive Hookshot": 1
+     },
+     {
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Biggoron Sword": 1
      }
     ],
     "9128916506605227251": [
@@ -111762,8 +111854,8 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
       "Song of Time": 1
      }
     ],
@@ -112052,6 +112144,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Scale": 1,
@@ -112062,6 +112155,7 @@
      {
       "Bomb Bag": 1,
       "Boomerang": 1,
+      "Iron Boots": 1,
       "Kokiri Sword": 1,
       "Ocarina": 1,
       "Progressive Strength Upgrade": 2,
@@ -117551,8 +117645,20 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -117643,6 +117749,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -117659,9 +117766,7 @@
      {}
     ],
     "9047381233010434881": [
-     {
-      "Bomb Bag": 1
-     }
+     {}
     ],
     "9128916506605227251": [
      {
@@ -123467,8 +123572,21 @@
     ],
     "1764383515296652106": [
      {
+      "Bomb Bag": 1,
       "Ocarina": 1,
-      "Song of Storms": 1,
+      "Song of Time": 1
+     },
+     {
+      "Biggoron Sword": 1,
+      "Megaton Hammer": 1,
+      "Ocarina": 1,
+      "Sarias Song": 1,
+      "Song of Time": 1
+     },
+     {
+      "Megaton Hammer": 1,
+      "Minuet of Forest": 1,
+      "Ocarina": 1,
       "Song of Time": 1
      }
     ],
@@ -123683,6 +123801,7 @@
     ],
     "6463521162691873710": [
      {
+      "Iron Boots": 1,
       "Progressive Strength Upgrade": 2
      }
     ],
@@ -123748,7 +123867,24 @@
     ],
     "9047381233010434881": [
      {
-      "Bomb Bag": 1
+      "Master Sword": 1
+     },
+     {
+      "Bow": 1
+     },
+     {
+      "Megaton Hammer": 1
+     },
+     {
+      "Progressive Hookshot": 1,
+      "Progressive Scale": 1
+     },
+     {
+      "Dins Fire": 1,
+      "Magic Meter": 1
+     },
+     {
+      "Biggoron Sword": 1
      }
     ],
     "9128916506605227251": [
