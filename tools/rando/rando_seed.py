@@ -128,7 +128,7 @@ DAMPE_HOOK_FROM = 19   # (the owner, 2026-11-21: "it should be randomized the sa
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
 # while it is shut: without the Bow the room is left by a warp song, as any other. Nothing new to learn for a player.
 FIXES = {0x74fb0489585fe0e2: {"IsDisableSaveAndWarp": False}}
-FIXES_VERSION = 73   # (72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
+FIXES_VERSION = 74   # (73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
 # The forest's two closed ways. Each is a flag of the game that starts set and is put out by the story: Mido stands in
 # the way to the Deku Tree until Link has a sword and a shield (KokiriForest_Npc_Kokiri_Mido_Child_Blocker), and a
 # Kokiri in the forest's way out until the Deku Tree is done (KokiriForest_Npc_Kokiri_007_Child_Blocker_00). An
@@ -3529,6 +3529,77 @@ def always_exp(data):
     at = len(out)
     out += bytes((0xC0, 0, 0, len(use))) + bytes((0xC0,)) * len(use) + b"".join(struct.pack(">I", steps[s]) for s in use)
     struct.pack_into(">I", out, target["Values"][2], at)
+    return bytes(out)
+
+
+# Every mask from the Happy Mask Shop from the start (bug 120, the owner's word 2026-11-23: the Forest Stage's two checks
+# ask for a young Link wearing the Skull Mask or the Mask of Truth, and the masks came only by the mask salesman's trade).
+# The shop's goods list shows each mask by a formula of its own (HappyMaskShop_HasMask_<mask>): the trade's step (or, for
+# the Keaton Mask, the gate guard's Npc_Hylia_Soldier_003_GateOpen) AND the rest (no mask held from the shop just now,
+# and the mask's own). The first part is made always true ("ALWAYS_FLAG or not ALWAYS_FLAG", as always_exp), the rest
+# kept: one mask lent at a time, as the game has it. The salesman is there once the gate is open (his actor waits for
+# GateOpen: Zelda's Letter shown, or Kakariko's gate Open). Every seed (fixes 74); the rules from MASKS_FROM.
+MASK_EXPS = tuple("HappyMaskShop_HasMask_" + m for m in ("Keaton", "Skull", "Spooky", "Bunny", "Zora", "Goron", "Gerudo", "Truth"))
+MASKS_FROM = 26
+MASK_GIFTS = ("forest_stage_skull", "forest_stage_truth")
+
+
+def masks_open(data, names=MASK_EXPS):
+    """The game's list of flags with each formula of `names` made true in its first part (MASK_EXPS, above): the new
+    bytes, longer by the formulas' new arrays. ValueError: not the file, or a formula not as the game has it."""
+    if data[:2] != b"BY":
+        raise ValueError("not a big-endian BYML (%r)" % data[:4])
+    key_at, _, root = struct.unpack_from(">III", data, 4)
+    count = lambda at: int.from_bytes(data[at + 1:at + 4], "big")
+    u32 = lambda at: struct.unpack_from(">I", data, at)[0]
+    keys = [data[key_at + u32(key_at + 4 + 4 * k):data.index(b"\0", key_at + u32(key_at + 4 + 4 * k))].decode("utf-8", "replace")
+            for k in range(count(key_at))]
+
+    def fields(at):
+        if data[at] != 0xC1:
+            raise ValueError("no dictionary at %#x" % at)
+        return {keys[int.from_bytes(data[at + 4 + 8 * k:at + 7 + 8 * k], "big")]: (data[at + 7 + 8 * k], u32(at + 8 + 8 * k), at + 8 + 8 * k)
+                for k in range(count(at))}
+
+    def items(at):
+        if data[at] != 0xC0:
+            raise ValueError("no array at %#x" % at)
+        n = count(at)
+        return [(data[at + 4 + i], u32(at + 4 + (n + 3 & ~3) + 4 * i)) for i in range(n)]
+
+    def step(at):
+        return tuple(struct.unpack_from(">Q", data, v)[0] if t == 0xD5 else None for t, v in items(at))
+
+    data_at = fields(root).get("Data", (0, 0, 0))[1]
+    exps = items(fields(data_at)["BoolExp"][1])
+    bools = {fields(v).get("Hash", (0, None))[1] for t, v in items(fields(data_at)["Bool"][1]) if t == 0xC1}
+    flag = murmur3(ALWAYS_FLAG.encode())
+    if flag not in bools:
+        raise ValueError("the list has no truth value %s" % ALWAYS_FLAG)
+    want = {murmur3(n.encode()): n for n in names}
+    found, steps = {}, {}
+    for t, at in exps:
+        f = fields(at)
+        if f.get("Hash", (0, None))[1] in want:
+            found[f["Hash"][1]] = f
+        for t2, st in items(f["Values"][1]):
+            steps.setdefault(step(st), st)
+    if len(found) != len(want):
+        raise ValueError("the list has no formula %s" % ", ".join(n for h, n in want.items() if h not in found))
+    use = [(0, flag), (0, flag), (5,), (4,)]
+    if any(u not in steps for u in use):
+        raise ValueError("no formula has the steps of an always true to share")
+    out = bytearray(data) + bytes(-len(data) & 3)
+    for h, f in sorted(found.items()):
+        own = items(f["Values"][1])
+        first = step(own[0][1])
+        if not (first[0] == 10 or first == (0, murmur3(b"Npc_Hylia_Soldier_003_GateOpen"))) or len(own) < 5:
+            raise ValueError("%s is not the formula this was written for (or is made already)" % want[h])
+        offsets = [steps[u] for u in use] + [v for _, v in own[1:]]
+        out += bytes(-len(out) & 3)
+        at = len(out)
+        out += bytes((0xC0, 0, 0, len(offsets))) + bytes((0xC0,)) * len(offsets) + bytes(-len(offsets) & 3) + b"".join(struct.pack(">I", o) for o in offsets)
+        struct.pack_into(">I", out, f["Values"][2], at)
     return bytes(out)
 
 
@@ -7674,12 +7745,23 @@ def main():
         if a.magic:
             made = each(magic_need, made)
         return ocarina_need(made) if a.ocarina else made
+    def mask_need(made):
+        """a Forest Stage check's rule with the way to the Happy Mask Shop's masks (MASK_EXPS): a young Link in the Market,
+        as the Bazaar's first shelf asks, and Kakariko's gate opened (Open, or Zelda's Letter shown: the letter where it
+        is shuffled, else the meeting that gives it, a young Link's at the castle as the Market's)"""
+        market = over_rule(None, "Market", name=OVERWORLD_SHOPS["general"]) if over else None
+        market = CHILD if market is None else market
+        gate = NONE if a.gate_open or LETTER not in PROGRESSION else frozenset((LETTER,))
+        shop = each(lambda w: w | gate, market)
+        return shop if made is None else each(lambda w: each(lambda v: w | v, shop), made)
     for h, s in spots.items():
         if h in shelves:   # (a shop's shelf: its shop's first, and its price's wallet)
             made = over_rule(h, s[0], name=OVERWORLD_SHOPS.get(shelves[h][0].key)) if over else None
             made = None if made is None else each(lambda w: w | wallet_need(shelf_prices[h]), made)
         elif h in gifts:
             made = over_rule(h, s[0], name=OVERWORLD_GIFTS.get(gifts[h].key)) if over and gifts[h].key in OVERWORLD_GIFTS else None
+            if gifts[h].key in MASK_GIFTS and placement >= MASKS_FROM:   # (the Forest Stage: a mask from the Happy Mask Shop, MASK_EXPS)
+                made = mask_need(made)
         else:
             made = over_rule(h, s[0])
         if made is not None:
@@ -7963,6 +8045,7 @@ def main():
                     more = flag_defaults(new if new is not None else was, {RUPEES: START_RUPEES}, kind="Int")
                     new = more if more is not None else new
                 new = always_exp(new if new is not None else was)   # (the same file: ALWAYS_EXP, for the Bombchu Shop and Bowling)
+                new = masks_open(new)   # (the same file: every mask from the Happy Mask Shop, MASK_EXPS)
             except Exception as e:
                 sys.exit("%s: %s. Nothing written." % (n, e))
             flag_files[FLAG_LIST + "/" + n] = new
