@@ -2203,8 +2203,9 @@ static const char *const oot_families[][3][2] = {
    the spelling with the message; the first Stick and Nut bags have none: such a chest shows its own item as before) */
 static const char *const oot_show_as[][2] = {
     {"Item_Range_Bow", "Weapon_Range_Bow"}, {"Item_Range_SlingShot", "Weapon_Range_SlingShot"},
-    {"Item_Gauntlet_Goron", "Armor_Child_Gauntlet_Goron"}, {"Item_Gauntlet_Silver", "Armor_Adult_Gauntlet_Silver"},
-    {"Item_Gauntlet_Gold", "Armor_Adult_Gauntlet_Gold"},
+    /* (the gauntlets were shown as Armor_Child_Gauntlet_Goron, Armor_Adult_Gauntlet_*: words but no model, the owner's run
+       2026-11-23. Every seed from fixes 75 gives the Item_Gauntlet_* spellings the words, tools/rando/rando_seed.py
+       COPY_WORDS, so they are shown as they are) */
 };
 /* (bug 48: the first Stick and Nut bags had no "You got" words in the game; every seed adds them from fixes 49,
    tools/rando/rando_seed.py FIRST_BAG_WORDS, so they are shown as they are. The list is kept for an item that has none) */
