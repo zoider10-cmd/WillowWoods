@@ -47,6 +47,19 @@ def main():
     check("ox + k.pos[0] * scale, oy + k.pos[2] * scale" in body and "&k == picked" in body, "the dots are not x across and z down, or the stepped check not ringed")
     check("rx_option_set(OOT_LINK_X, (int)lrintf(oot_link_place[0] * 100));" in open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
           and "if (link) {" in body and "here && !strcmp(here, tracker_name[row])" in body, "Link is not on the map of the area he is in")
+    # (the Minimap checks row: the area's square of the world on the game's minimap, fitted to the owner's screenshots)
+    check('{TAB_GAMEPLAY, "Minimap checks", &opts.minimap_checks, 0, 1, 1, tx_onoff,' in menu and "int minimap_checks = 0;" in
+          open(os.path.join(ROOT, "gpu", "vk", "vk_menu.h"), encoding="utf-8").read(), "no Minimap checks row, off by default")
+    mini = menu[menu.index("constexpr MiniMapArea kMiniMaps[] = {"):menu.index("constexpr MiniMapArea kMiniLake")]
+    mini_areas = re.findall(r'\{"([^"]+)", (-?[0-9]+), (-?[0-9]+), ([0-9]+)\}', mini)
+    check(len(mini_areas) == 19 and all(a in names for a, _, _, _ in mini_areas) and ("Kokiri Forest", "-5", "-12", "300") in mini_areas,
+          "the minimaps' areas are not the field areas the map has, or Kokiri Forest's square is not its picture's")
+    draw = menu[menu.index("void draw_minimap_checks(ui::Ctx& c) {"):]
+    draw = draw[:draw.index("\n}\n")]
+    check("cx + dx * scale, cy + dz * scale" in draw and "tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]" in draw,
+          "the dots are not the checks left, x across and z down on the minimap")
+    check(menu.count("if (minimap) draw_minimap_checks(c);") == 2 and "next = now + 5000, tracker_load();" in menu,
+          "the minimap's dots are not drawn on screen and on test pictures, or the seed's checks are never read with the menu shut")
     print("FAIL" if failed else "PASS: the Tracker's map")
     return 1 if failed else 0
 

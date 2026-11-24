@@ -2184,6 +2184,9 @@ Row rows[] = {
     {TAB_GAMEPLAY, "Health bars", &opts.show_health, 0, 1, 1, tx_onoff,
      "A health bar over each enemy you hit, for a few seconds after the last hit. A boss's is a wide bar with its name at the "
      "bottom of the screen, for the whole fight.", nullptr, false, true},
+    {TAB_GAMEPLAY, "Minimap checks", &opts.minimap_checks, 0, 1, 1, tx_onoff,
+     "The randomizer's checks left in the area Link is in, as dots on the game's minimap: green ones are in logic, rings not yet. "
+     "Outdoor areas only, not dungeons or indoors.", nullptr, false, true},
     {TAB_GAMEPLAY, "Boss health", &opts.boss_hearts, 0, 1, 1, tx_boss_health,
      "How a boss's health shows at the bottom of the screen with Health bars on: a bar, or hearts as Link's, each a quarter "
      "heart for a point of damage.", nullptr, false, true},
@@ -7997,6 +8000,65 @@ void draw_health(ui::Ctx& c) {
     }
 }
 
+/// (Willow Woods, asked 2026-11-23) The Minimap checks row: the checks left in the outdoor area Link is in (not collected, not
+/// junk) as dots on the game's own minimap, green in logic, a ring not yet. The game's minimap of a field area is the whole area,
+/// north up, fixed (Link's arrow moves on it): a square of kMiniSide of the window's height whose middle is kMiniRight and
+/// kMiniUp of the height from the bottom right corner (fitted 2026-11-23 to the owner's Kokiri Forest screenshots at
+/// 2560x1440: the exits' and the Deku Tree's marks, the shop by Link's arrow), showing the square of the world that the area's
+/// map picture was taken of (romfs Game/MapCaptureInfo: its camera's x and z and Height, by Game/MapMenuInfo's order). Hyrule
+/// Field's folder has three pictures: Lake Hylia's within 199 of its middle (its LocationArea, a sphere), Lon Lon Ranch's near
+/// its LocationArea, Hyrule Field's elsewhere. Dungeons (a picture a floor) and indoor maps have none here.
+struct MiniMapArea { const char* area; float x, z, height; };
+constexpr MiniMapArea kMiniMaps[] = {
+    {"Kokiri Forest", -5, -12, 300}, {"Kakariko Village", -50, 42, 246}, {"Market", 0, 3, 214}, {"Goron City", -5, 0, 156},
+    {"Zora's Domain", 30, -14, 151}, {"Gerudo's Fortress", 86, -22, 340}, {"Lost Woods", 6, -1, 400}, {"Sacred Forest Meadow", -12, -25, 317},
+    {"Hyrule Field", -23, 197, 736}, {"Hyrule Castle", 0, -80, 242}, {"Ganon's Castle (outside)", 0, -80, 242}, {"Graveyard", 18, 8, 148},
+    {"Death Mountain Trail", -21, -36, 390}, {"Death Mountain Crater", -12, 12, 188}, {"Zora's River", 20, -15, 265},
+    {"Zora's Fountain", 30, -13, 195}, {"Gerudo Valley", 0, -13, 240}, {"Haunted Wasteland", 6, -52, 645}, {"Desert Colossus", -88, 12, 305},
+};
+constexpr MiniMapArea kMiniLake = {"Hyrule Field", -200, 490, 422}, kMiniRanch = {"Hyrule Field", -86, 239, 276};
+constexpr float kMiniSide = 666.0f / 1440, kMiniRight = (2560.0f - 2201) / 1440, kMiniUp = (1440.0f - 1233) / 1440;
+bool minimap_shows() {
+    if (!opts.minimap_checks) return false;
+    {   // (the seed's checks, read by the Tracker tab when it is opened: here every 5 s too, so they are there with the menu never
+        //  opened; seldom enough that the tab's own "not on screen for a while" still puts its rows in order when it opens)
+        static ULONGLONG next = 0;
+        const ULONGLONG now = GetTickCount64();
+        if (now >= next) next = now + 5000, tracker_load();
+    }
+    return tracker_check_count && link_place[0].load(std::memory_order_relaxed) != INT_MIN && tracker_here_area();
+}
+void draw_minimap_checks(ui::Ctx& c) {
+    const char* here = tracker_here_area();
+    if (!here) return;
+    const float lx = link_place[0].load(std::memory_order_relaxed) / 100.0f, lz = link_place[1].load(std::memory_order_relaxed) / 100.0f;
+    const MiniMapArea* m = nullptr;
+    for (const auto& a : kMiniMaps)
+        if (!strcmp(a.area, here)) m = &a;
+    if (!m) return;   // (a dungeon)
+    if (!strcmp(here, "Hyrule Field")) {   // (its three pictures, by where Link is)
+        if (hypotf(lx + 205.4f, lz - 559.2f) <= 199) m = &kMiniLake;
+        else if (hypotf(lx + 83.9f, lz - 233.1f) <= 75) m = &kMiniRanch;
+    }
+    const float side = kMiniSide * c.h, cx = c.w - kMiniRight * c.h, cy = c.h - kMiniUp * c.h, scale = side / m->height;
+    constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(230, 236, 248);
+    const float r = std::max(2.5f, c.h / 1440.0f * 6);
+    for (int i = 0; i < tracker_check_count; i++) {
+        const TrackerCheck& k = tracker_checks[i];
+        if (strcmp(k.area, here) || tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]) continue;
+        const float dx = k.pos[0] - m->x, dz = k.pos[2] - m->z;
+        if (fabsf(dx) > m->height * 0.5f || fabsf(dz) > m->height * 0.5f) continue;   // (off this picture: Lake Hylia's while on the field's)
+        const ImVec2 at(cx + dx * scale, cy + dz * scale);
+        if (tracker_in_logic(k) > 0) {
+            c.d->AddCircleFilled(at, r + 1.5f, ui::rgba(10, 30, 16, 230));
+            c.d->AddCircleFilled(at, r, kIn);
+        } else {
+            c.d->AddCircle(at, r, ui::rgba(10, 10, 10, 220), 0, 3.0f);
+            c.d->AddCircle(at, r, kOut, 0, 1.6f);
+        }
+    }
+}
+
 void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool start = startup_on.load(std::memory_order_acquire);
     const bool fps = (opts.show_fps || opts.resource_monitor) && !start;   // (no game frames yet: not "0 FPS" over the start-up screen)
@@ -8004,7 +8066,8 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool clock = clock_shows() && !start && !open;   // (the In-game clock row)
     const bool damage = damage_shows() && !start && !open;   // (the Damage numbers row)
     const bool health = health_shows() && !start && !open;   // (the Health bars row)
-    if (!start && !fps && !open && !clock && !damage && !health) {   // (nothing shows: no ImGui frame, no render pass)
+    const bool minimap = minimap_shows() && !start && !open;   // (the Minimap checks row)
+    if (!start && !fps && !open && !clock && !damage && !health && !minimap) {   // (nothing shows: no ImGui frame, no render pass)
         // (but a new window size or Menu size since the last bake: one frame with nothing drawn that bakes the menu's glyphs
         // and measures its page for the new size, so the next open has no hitch whatever was resized while nothing showed)
         if (prebake_needed(w, h) && ui::begin(w, h)) {
@@ -8031,6 +8094,7 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
+    if (minimap) draw_minimap_checks(c);
     if (health) draw_health(c);   // (under the numbers)
     if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
@@ -8043,12 +8107,14 @@ void menu_record_image(VkCommandBuffer cmd, VkImage image, VkImageView view, uin
     const bool clock = clock_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the In-game clock row)
     const bool damage = damage_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Damage numbers row)
     const bool health = health_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Health bars row)
-    if (!open && !fps && !clock && !damage && !health) return;
+    const bool minimap = minimap_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Minimap checks row)
+    if (!open && !fps && !clock && !damage && !health && !minimap) return;
     if (!ui::begin(w, h)) return;
     ui::Ctx c = ui_ctx(w, h);
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
+    if (minimap) draw_minimap_checks(c);
     if (health) draw_health(c);   // (under the numbers)
     if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)

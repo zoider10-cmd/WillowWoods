@@ -66,6 +66,7 @@ struct Options {
     int show_clock = 0;   // (Willow Woods) the In-game clock row: the game's time of day at the top of the screen (OOT_CLOCK_ID)
     int show_damage = 0;  // (Willow Woods) the Damage numbers row: each hit Link's foes take, rising over the enemy (OOT_DAMAGE_HIT)
     int show_health = 0;  // (Willow Woods) the Health bars row: a bar over each enemy hit lately, a boss's at the foot of the screen (OOT_HEALTH_AT)
+    int minimap_checks = 0;   // (Willow Woods) the Minimap checks row: the checks left in the area Link is in, as dots on the game's minimap
     int boss_hearts = 0;  // (Willow Woods) the Boss health row: a boss's life 0 as a bar, 1 as hearts, a quarter heart a point, as Link's
     int fps_version_always = 0;   // (hookshot) the version and the hardware lines at every level of the counter, not only at Dev
     // (hookshot) which of the Dev level's lines show: fps_stats.h's DevLine order, then the CPU, GPU and driver lines; all by default
