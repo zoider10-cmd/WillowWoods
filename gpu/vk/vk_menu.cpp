@@ -8027,10 +8027,10 @@ void draw_health(ui::Ctx& c) {
 /// picture, a least squares fit per area): x across = the window's right edge + (u + a*x) of its height, y down = (v + a*z) of
 /// its height, kMiniMaps (a fitted area's a is 1 / (2.245 * the Height of its map picture's capture, romfs
 /// Game/MapCaptureInfo), the size the data foretold; its middle is not that capture's). Areas not measured (Hyrule Castle, the
-/// crater, Gerudo's Fortress: no minimap, or one spot, in the runs) have no dots, rather than wrong ones; Kakariko, Zora's
+/// crater, Gerudo's Fortress: no minimap, or one spot, in the runs; Sacred Forest Meadow, whose tall minimap scrolls with Link) have no dots, rather than wrong ones; Kakariko, Zora's
 /// Domain and Fountain and Gerudo Valley were measured once the game's side marked them visited (hos_main.c IsVisitLocation). Hyrule
 /// Field's folder has three pictures: Lake Hylia's within 199 of its LocationArea's middle (a sphere, there once the owl's
-/// lake scene is seen), Lon Lon Ranch's within 80 of (-90, 240) (a measured spot 64 off was the ranch's, the owner's 98 off outside the fence the field's), the field's
+/// lake scene is seen), Lon Lon Ranch's within 60 of (-115, 255) (inside its walls: the measured ranch spots lie west of the ranch's LocationArea, and the owner wants it late rather than early: outside the south wall, 79 off, is the field's), the field's), the field's
 /// elsewhere. Dungeons (a picture a floor) and indoor maps have none.
 struct MiniMapArea { const char* area; float u, v, a; };
 constexpr MiniMapArea kMiniMaps[] = {
@@ -8044,7 +8044,6 @@ constexpr MiniMapArea kMiniMaps[] = {
     {"Zora's River", -0.2892f, 0.8790f, 0.001683f},
     {"Desert Colossus", -0.0718f, 0.8116f, 0.001456f},
     {"Haunted Wasteland", -0.1762f, 0.9031f, 0.001068f},
-    {"Sacred Forest Meadow", -0.1056f, 0.8728f, 0.001405f},
     {"Kakariko Village", -0.1002f, 0.7455f, 0.001812f},
     {"Gerudo Valley", -0.1955f, 0.8225f, 0.001855f},
     {"Zora's Domain", -0.3255f, 0.8568f, 0.002952f},
@@ -8071,7 +8070,7 @@ void draw_minimap_checks(ui::Ctx& c) {
     if (!m) return;   // (a dungeon)
     if (!strcmp(here, "Hyrule Field")) {   // (its three pictures, by where Link is)
         if (hypotf(lx + 205.4f, lz - 559.2f) <= 199) m = &kMiniLake;
-        else if (hypotf(lx + 90.0f, lz - 240.0f) <= 80) m = &kMiniRanch;
+        else if (hypotf(lx + 115.0f, lz - 255.0f) <= 60) m = &kMiniRanch;
     }
     constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(230, 236, 248);
     const float r = std::max(2.5f, c.h / 1440.0f * 6);

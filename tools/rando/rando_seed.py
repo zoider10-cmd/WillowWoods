@@ -6240,6 +6240,14 @@ def fit_rule(need):
     return either(kept)
 
 
+# Where the Tracker's maps put a check, when its own place is not where it is gone to (asked 2026-11-24): a grotto's chest
+# lies at the grotto's own place, under the ground, so its dot is put at the grotto's way in, where the owner found it.
+# The line's last field (where Go there puts Link) keeps the chest's own place; the game marks a chest by its opened flag,
+# not by its place, so it is still marked when opened. Kokiri Forest's Song of Storms grotto: the owner's screenshot,
+# Link at its soft soil, measured on the minimap (Kokiri Forest's fit).
+CHECK_PLACE = {0xcda7447b91ab4dba: (-49.5, 103.6, -59.5)}
+
+
 def check_lines(chests, skulls, gifts=()):
     """The checks file's lines. chests, skulls and gifts: [(area (the Banc folder), position, ages, what its rule asks
     for, its name, its actor's hash)]; a chest or a Gold Skulltula without a name is "Chest" or "Gold Skulltula". The
@@ -6255,6 +6263,10 @@ def check_lines(chests, skulls, gifts=()):
             if len(pos) != 3 or not ages:
                 continue
             name = more[0] if more else plain
+            if len(more) > 1 and more[1] in CHECK_PLACE:   # (its dot at the way in; Go there to its own place: CHECK_PLACE)
+                more = list(more) + [None] * (4 - len(more))
+                more[3] = more[3] or tuple(pos)
+                pos = CHECK_PLACE[more[1]]
             rows.append([AREA_NAMES.get(area, area).replace("|", "/")[:47], (name[:1].upper() + name[1:]).replace("|", "/"), area, ages, pos,
                          "/".join(rule_text(way) for way in (need if isinstance(need, Either) else (need,))),
                          order, more[1] if len(more) > 1 else None,
