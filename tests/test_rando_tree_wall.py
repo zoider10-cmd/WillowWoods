@@ -3,11 +3,11 @@ FldObj_AirWall_Hookshot lies along the vines in both Links' Hyrule Field maps wh
 walked into (WaterTemple_Room07_00). Fixes 73 took it out (read as a wall that stops the Hookshot) and the vines still
 did not catch; from fixes 79 it is what the Hookshot catches, kept there always (water_wall_out with TREE_WALL, keep:
 its Presence taken away); that hid the marker, so fixes 82 takes it out again. The Longshot then reached the tree but
-did not pull. The tree's collision is baked into Hyrule Field's static compound (HyruleField_<age>_X7_Z10), and this build
-seems to read only a shape's first material there (the owner: the vines' hit makes no sound after a load, then the
-wood's). Tried and changed nothing: its own mesh's Wood (83), its climbing boxes (84), unbaked (85: drawn dark). From
-fixes 86 the baked Wood, the tree's first material, is tagged StickHookshot (baked_tree_hook). Checked on made-up files
-and by source. No game files.
+did not pull. The tree's collision and its two invisible climbing boxes over the vines are baked into Hyrule Field's
+static compound (HyruleField_<age>_X7_Z10): the Longshot hits the boxes, an AirWall with no tags. Found with the owner by
+tagging parts of that file's material table: from fixes 87 its entry 1, the untagged AirWall, carries StickHookshot
+(baked_climb_hook). Tried before and dropped: the mesh's Wood (83), the boxes in the tree's own pack (84), the tree
+unbaked (85), the baked Wood (86). Checked on made-up files and by source. No game files.
 
 python -I -B tests/test_rando_tree_wall.py
 """
@@ -53,40 +53,40 @@ def main():
         check(len(out2[1]["Actors"][1]) == 2, "the Water Temple gate's wall is no longer taken out by default")
     except (ValueError, struct.error, KeyError) as e:
         check(False, "a made-up map: %s" % e)
-    # (a made-up static compound: the header's table bounds, another Wood, the tree's four, another entry after)
-    vines = [(2, 0x2B, 1 << 44), (2, 0x2B, 1 << 40), (2, 0x2B, 1 << 44)]
-    rows = [(14, 0, 0), (7, 0, 0), (14, 0, 1 << 3)] + vines + [(14, 0, 0)]
+    # (a made-up static compound: the header's table bounds, entry 0 a tagged AirWall, entry 1 the untagged one, a Wood)
+    rows = [(27, 0, 1 << 9), (27, 0, 0), (14, 0, 0), (27, 0, 0)]
     table = b"".join(struct.pack("<IIQ", *e) for e in rows)
     head = bytearray(b"Phive" + bytes(0x40 - 5))
     struct.pack_into("<II", head, 0x20, 0x40, 0x40 + len(table))
     baked = bytes(head) + table + b"rest"
     try:
-        got = seed.baked_tree_hook(baked)
-        want = rows[:2] + [(14, 0, (1 << 3) | (1 << 44))] + rows[3:]
+        got = seed.baked_climb_hook(baked)
+        want = [rows[0], (27, 0, 1 << 44)] + rows[2:]
         check(len(got) == len(baked) and [struct.unpack_from("<IIQ", got, 0x40 + 16 * k) for k in range(len(rows))] == want and got[-4:] == b"rest",
-              "the tree's baked Wood alone (the one before its vines) is not tagged StickHookshot")
+              "entry 1 alone (the untagged AirWall the climbing boxes have) is not tagged StickHookshot")
     except (ValueError, struct.error) as e:
         check(False, "a made-up static compound: %s" % e)
-    for bad in (baked.replace(b"Phive", b"Nope!", 1), baked[:0x40] + table[:16 * 3] + table[16 * 4:]):
+    for bad in (baked.replace(b"Phive", b"Nope!", 1), baked[:0x50] + struct.pack("<IIQ", 14, 0, 0) + baked[0x60:]):
         try:
-            seed.baked_tree_hook(bad)
-            check(False, "a file that is no Phive file, or without the tree's four materials, was changed")
+            seed.baked_climb_hook(bad)
+            check(False, "a file that is no Phive file, or whose entry 1 is no untagged AirWall, was changed")
         except ValueError:
             pass
-    check(len(seed.BAKED_TREE_FILES) == 2 and all("HyruleField" in f and "_X7_Z10." in f and f.endswith(".bphsc.zs") for f in seed.BAKED_TREE_FILES)
-          and not any(hasattr(seed, n) for n in ("tree_hook_wood", "tree_climb_hook", "tree_unbake")),
-          "not both ages' baked squares of the tree, or an earlier try is still made")
+    check(seed.CLIMB_WALL_ENTRY == 1 and seed.MATERIAL_AIRWALL == 27 and seed.TAG_STICK_HOOKSHOT == 1 << 44 and len(seed.BAKED_TREE_FILES) == 2
+          and all("HyruleField" in f and "_X7_Z10." in f and f.endswith(".bphsc.zs") for f in seed.BAKED_TREE_FILES)
+          and not any(hasattr(seed, n) for n in ("tree_hook_wood", "tree_climb_hook", "tree_unbake", "baked_tree_hook")),
+          "not both ages' baked squares of the tree, the entry, or an earlier try is still made")
     src = open(seed.__file__, encoding="utf-8").read()
     main_src = src[src.index("\ndef main():"):]
     check("for rel in TREE_WALL_FILES:" in main_src and "changed[rel] = water_wall_out(data, TREE_WALL)" in main_src and
           main_src.index("water_wall_out(data, TREE_WALL)") < main_src.index("    # ---- the size table ----"),
           "the tree's wall is not taken out of both maps before the size table")
-    check("for rel in BAKED_TREE_FILES:" in main_src and "changed[rel] = baked_tree_hook(" in main_src and
-          main_src.index("baked_tree_hook(") < main_src.index("    # ---- the size table ----")
-          and "sizes[rel[:-3]] = len(changed[rel])" in main_src[main_src.index("baked_tree_hook("):][:200],
-          "the tree's baked wood is not tagged in both files before the size table, or their sizes not counted")
-    check(seed.FIXES_VERSION >= 86, "FIXES_VERSION not past 85")
-    print("FAIL" if failed else "PASS: Lake Hylia's dead tree without its hookshot-stopping wall, its baked wood a Hookshot catch")
+    check("for rel in BAKED_TREE_FILES:" in main_src and "changed[rel] = baked_climb_hook(" in main_src and
+          main_src.index("baked_climb_hook(") < main_src.index("    # ---- the size table ----")
+          and "sizes[rel[:-3]] = len(changed[rel])" in main_src[main_src.index("baked_climb_hook("):][:200],
+          "the climbing boxes' entry is not tagged in both files before the size table, or their sizes not counted")
+    check(seed.FIXES_VERSION >= 87, "FIXES_VERSION not past 86")
+    print("FAIL" if failed else "PASS: Lake Hylia's dead tree without its hookshot-stopping wall, its vines a Hookshot catch")
     return 1 if failed else 0
 
 
