@@ -39,22 +39,22 @@ def main():
                                                                 actor("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")])))
     try:
         data = seed.byml_build(tree, 7)
-        out, _ = seed.byml_parse(seed.water_wall_out(data, seed.TREE_WALL, keep=True))
+        out, _ = seed.byml_parse(seed.water_wall_out(data, seed.TREE_WALL))
         left = [(a[1]["Gyaml"][1], a[1].get("Presence", ("", {}))[1].get("FlagName", ("", ""))[1] if "Presence" in a[1] else "")
                 for a in out[1]["Actors"][1]]
-        check(left == [("FldObj_AirWall_Hookshot", ""), ("FldObj_AirWall_Hookshot", ""), ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")],
-              "the tree's catch is not kept there always, the others as they were: %s" % left)
+        check(left == [("FldObj_AirWall_Hookshot", ""), ("FldObj_AirWall_All", "SageOfWater_IsAfter_Step03_Exp")],
+              "the tree's hookshot-stopping wall alone is not taken out: %s" % left)
         out2, _ = seed.byml_parse(seed.water_wall_out(data))
         check(len(out2[1]["Actors"][1]) == 2, "the Water Temple gate's wall is no longer taken out by default")
     except (ValueError, struct.error, KeyError) as e:
         check(False, "a made-up map: %s" % e)
     src = open(seed.__file__, encoding="utf-8").read()
     main_src = src[src.index("\ndef main():"):]
-    check("for rel in TREE_WALL_FILES:" in main_src and "changed[rel] = water_wall_out(data, TREE_WALL, keep=True)" in main_src and
-          main_src.index("water_wall_out(data, TREE_WALL, keep=True)") < main_src.index("    # ---- the size table ----"),
-          "the tree's catch is not kept in both maps before the size table")
-    check(seed.FIXES_VERSION >= 79, "FIXES_VERSION not past 78")
-    print("FAIL" if failed else "PASS: Lake Hylia's dead tree keeps the Hookshot's catch on its vines")
+    check("for rel in TREE_WALL_FILES:" in main_src and "changed[rel] = water_wall_out(data, TREE_WALL)" in main_src and
+          main_src.index("water_wall_out(data, TREE_WALL)") < main_src.index("    # ---- the size table ----"),
+          "the tree's wall is not taken out of both maps before the size table")
+    check(seed.FIXES_VERSION >= 82, "FIXES_VERSION not past 81")
+    print("FAIL" if failed else "PASS: Lake Hylia's dead tree without its hookshot-stopping wall")
     return 1 if failed else 0
 
 
