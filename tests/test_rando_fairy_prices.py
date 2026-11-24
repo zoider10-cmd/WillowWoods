@@ -34,7 +34,9 @@ def main():
     check('(" fairies %d" % a.fairy_prices if a.fairy_prices else "")' in src, "the setting is not on the stamp (it moves items: the wallets)")
     header = open(os.path.join(ROOT, "gpu", "vk", "oot_rando.h"), encoding="utf-8").read()
     order = re.findall(r"^    X\(([A-Z_]+),", header, re.M)
-    check(order[-1] == "FAIRY_PRICES" and '"rando_fairy_prices"' in header, "not the seed ID table's last row")
+    # (the last row when it was made: rows added since come after it, so a seed ID's settings keep their places)
+    check("FAIRY_PRICES" in order and order.index("FAIRY_PRICES") == order.index("SKIP_TOWER") + 1 and '"rando_fairy_prices"' in header,
+          "not the seed ID table's row after Skip the tower escape (its place when it was made)")
     launcher = open(os.path.join(ROOT, "launcher", "Launcher.cs"), encoding="utf-8").read()
     check('new object[] { "rando_fairy_prices", "Great Fairy prices"' in launcher and '"+shops", "rando_fairy_prices"' in launcher,
           "the launcher has no row for it beside Shops")

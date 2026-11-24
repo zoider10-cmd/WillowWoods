@@ -43,7 +43,8 @@ def main():
           "the three are not the rows after the ones before them, the Great Fairy prices after (a seed ID's order)")
     launcher = open(os.path.join(ROOT, "launcher", "Launcher.cs"), encoding="utf-8").read()
     check(all('new object[] { "%s",' % k in launcher for k in ("rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower")) and
-          '"rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" } },' in launcher,
+          '"rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower"' in
+          launcher[launcher.index('Title = "QUALITY OF LIFE"'):][:launcher[launcher.index('Title = "QUALITY OF LIFE"'):].index("} },")],
           "the launcher has no rows for them in Quality of life")
     # (v0.1.4's bug, 2026-11-23: the time savers' stamp loop was `for on, word in ...`, which overwrote main's `on`, the
     #  randomizer's own: with Skip the tower escape off, every seed was "randomizer off". No loop in main may take one of
