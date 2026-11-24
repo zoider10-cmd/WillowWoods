@@ -697,6 +697,17 @@ const char* tx_framegen(int v) {
 }
 const char* tx_onoff(int v) { return v ? "On" : "Off"; }
 const char* tx_boss_health(int v) { return v ? "Hearts" : "Bar"; }   // (opts.boss_hearts: the Boss health row)
+const char* tx_cycle_items(int v) {   // (Willow Woods, from ReLink) the Cycle items row
+    static const char* t[] = {"Off", "Last used", "Basic", "+Bombs", "+Tools"};
+    return t[(unsigned)v < 5 ? v : 0];
+}
+MENU_HINTS(hn_item_wheel, 0, "R and L scroll the game's own item row.",
+           "Pages of 8 items, one set for the child and one for the adult. Y moves an item; Left/Right or the mouse wheel turn "
+           "the page.")
+MENU_HINTS(hn_cycle_items, 0, "R and L open the item row (or the wheel) only.",
+           "A tap of R or L: the item that was on ZR before this one, whatever it is. Two taps: back again.",
+           "A tap of R or L: the next or previous arrow, bottle or spell on ZR.", "Basic, and the bombs and bombchus too.",
+           "+Bombs, and the hookshot, hammer, slingshot and boomerang too.")
 const char* tx_fps_level(int v) { return fps_stats::level_name(v); }
 const char* tx_fps_corner(int v) { return fps_stats::corner_name(v); }
 const char* tx_fps_size(int v) {   // (the FPS counter size row: Auto, then the Menu size row's names)
@@ -2190,6 +2201,12 @@ Row rows[] = {
     {TAB_GAMEPLAY, "Boss health", &opts.boss_hearts, 0, 1, 1, tx_boss_health,
      "How a boss's health shows at the bottom of the screen with Health bars on: a bar, or hearts as Link's, each a quarter "
      "heart for a point of damage.", nullptr, false, true},
+    {TAB_GAMEPLAY, "Item wheel", &opts.item_wheel, 0, 1, 1, tx_onoff,   // (Willow Woods, from ReLink: host/oot_wheel.c, vk_wheel.cpp)
+     "Hold R or L for a wheel of your items instead of the game's line: point at one with either stick and let go to put it "
+     "on ZR. The game's own icons, names and sounds.", hn_item_wheel, false, true},
+    {TAB_GAMEPLAY, "Cycle items", &opts.cycle_items, 0, 4, 1, tx_cycle_items,
+     "Changes the item on ZR with a tap of R or L, within its group. Holding R or L still opens the line (or the wheel), a "
+     "quarter of a second later.", hn_cycle_items, false, true},
     {TAB_GAMEPLAY, "FPS counter size", &opts.fps_size, 0, 3, 1, tx_fps_size,
      "How large the FPS counter is drawn. Auto grows with the window, as the menu does; Small, Medium and Large keep one size "
      "whatever the window, the size Auto has in a 720p, 1080p and 1440p window.", nullptr, false, true},
@@ -6626,6 +6643,9 @@ int menu_shadow_res() {
 int menu_transition_autosave() { return transition_autosave_enabled.load(std::memory_order_relaxed); }
 int menu_damage_taken() { return cheats_on() ? opts.damage_taken : 1; }   // (Normal while the tools are off; the choice is kept)
 int menu_take_cheat_action() { return cheat_action.exchange(0, std::memory_order_relaxed); }
+// (Willow Woods, from ReLink) the item wheel's numbers and pages (host/oot_wheel.c asks them through the option callback)
+int menu_item_count(int i) { return i >= 0 && i < kItems ? item_counts[i].load(std::memory_order_relaxed) : -1; }
+int menu_link_age() { return link_age.load(std::memory_order_relaxed); }
 
 void menu_note_present_sizes(uint32_t picture_w, uint32_t picture_h, uint32_t window_w, uint32_t window_h) {
     const auto c = [](uint32_t v) { return (uint64_t)std::min(v, 0xffffu); };

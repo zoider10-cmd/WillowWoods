@@ -67,6 +67,9 @@ struct Options {
     int show_damage = 0;  // (Willow Woods) the Damage numbers row: each hit Link's foes take, rising over the enemy (OOT_DAMAGE_HIT)
     int show_health = 0;  // (Willow Woods) the Health bars row: a bar over each enemy hit lately, a boss's at the foot of the screen (OOT_HEALTH_AT)
     int minimap_checks = 0;   // (Willow Woods) the Minimap checks row: the checks left in the area Link is in, as dots on the game's minimap
+    int item_wheel = 0;   // (Willow Woods, from ReLink) R or L held shows the item row as a wheel (host/oot_wheel.c, vk_wheel.cpp); HOS_ITEM_WHEEL over it
+    int cycle_items = 0;  // (Willow Woods, from ReLink) a tap of R or L changes the ZR item: 0 off (R and L as the game has them),
+                          // 1 Last used (the item on ZR before this one), 2 Basic, 3 +Bombs, 4 +Tools (host/oot_wheel.c cycle_level)
     int boss_hearts = 0;  // (Willow Woods) the Boss health row: a boss's life 0 as a bar, 1 as hearts, a quarter heart a point, as Link's
     int fps_version_always = 0;   // (hookshot) the version and the hardware lines at every level of the counter, not only at Dev
     // (hookshot) which of the Dev level's lines show: fps_stats.h's DevLine order, then the CPU, GPU and driver lines; all by default
@@ -171,6 +174,8 @@ int menu_transition_autosave();
 int menu_shadow_res();   // (Shadow resolution, HOS_OPT_SHADOW_RES: the size drawn, Auto resolved)
 int menu_damage_taken();   // (Damage taken, HOS_OPT_DAMAGE_TAKEN: 1, Normal, while the tools are off)
 int menu_take_cheat_action();
+int menu_item_count(int i);   // (Willow Woods, from ReLink) the game side's count of oot_cheat_items.h's item i, -1 unknown: the item wheel's numbers
+int menu_link_age();          // (Willow Woods, from ReLink) Link's age as the game side said it: 0 child, 1 adult, -1 unknown
 void menu_note_frame(bool game_frame, int shown = 1);   // (the frame rates the FPS counter shows)
 /// The game's picture's size (the Output resolution, its crop) and the window's, at each present: the Window scaling filter
 /// row says when it is not needed

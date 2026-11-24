@@ -769,8 +769,12 @@ int hos_oot_menu_open(void) {
     const int64_t t = InterlockedCompareExchange64(&menu_front_ns, 0, 0);
     return t && hos_now_ns() - t < 300000000;
 }
+int hos_wheel_menu_tick(Ctx *c, uint64_t screen);   /* (Willow Woods, from ReLink: host/oot_wheel.c, the item wheel) */
 void hos_oot_menu_tick(Ctx *c, uint64_t screen) {
     if (!screen) return;
+    /* (the item wheel first, as ReLink's own hook calls it: the game's item line while the wheel has it is the wheel's, its
+       mouse not this one's) */
+    if (hos_wheel_menu_tick(c, screen)) return;
     if (trace < 0) trace = env_on("HOS_MENU_TRACE");
     const int64_t now = hos_now_ns();
     AcquireSRWLockExclusive(&seen_lock);
@@ -833,6 +837,7 @@ void hos_oot_menu_focus(Ctx *c, uint64_t screen, uint64_t pane, uint64_t lr) {
     (void)c, (void)screen, (void)pane, (void)lr;
     hos_input_clear_toggles();
 }
-void hos_oot_menu_tick(Ctx *c, uint64_t screen) { (void)c, (void)screen; }
+int hos_wheel_menu_tick(Ctx *c, uint64_t screen);   /* (Willow Woods, from ReLink: host/oot_wheel.c) */
+void hos_oot_menu_tick(Ctx *c, uint64_t screen) { if (screen) hos_wheel_menu_tick(c, screen); }
 int hos_oot_menu_open(void) { return 0; }
 #endif

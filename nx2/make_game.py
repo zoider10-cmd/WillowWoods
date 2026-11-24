@@ -3278,6 +3278,15 @@ def main(a=None):
         except OSError as e:
             print("the cosmetics script was not copied (%s): run tools/rando/rando_cosmetics.py by hand" % e, flush=True)
     ship_state_list(out)
+    # (Willow Woods, from ReLink 0.7.9.2) the item wheel's icons, names and sounds (gpu/vk/vk_wheel.cpp, host/oot_wheel.c,
+    # host/nn_audio.c): the game's own, from the RomFS, at every build (nx2/wheel_assets.py). Without them the wheel shows the
+    # items' names in English, silently. They stay in the game folder: made from the game, never sent
+    wheel = os.path.join(out, "wheel")
+    for script, opt, name, without in (("wheel_assets.py", "--icons", "icons.bin", "it shows the items' names"),
+                                       ("wheel_names.py", "--out", "names.bin", "it names the items in English"),
+                                       ("wheel_sounds.py", "--out", "sounds.bin", "it is silent")):
+        if run(PY + [os.path.join(HERE, script), "--romfs", romfs, opt, os.path.join(wheel, name)], check=False, output=sys.stderr):
+            print("the item wheel's %s was not made: %s" % (name, without), flush=True)
     language = os.path.join(out, "language.txt")   # (the same text as host/nn_applet.c writes)
     with open(language, "w", encoding="utf-8", newline="\n") as f:
         f.write("# The game's language. Change the line below to one of the codes listed here, save, and start the game again.\n\n%s\n\n" % a.language)

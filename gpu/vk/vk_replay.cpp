@@ -43,6 +43,8 @@
 #include "vk_fps.h"
 #include "perf_report.h"
 #include "vk_menu.h"
+#include "oot_cheat_items.h"   // (Willow Woods, from ReLink: OOT_CHEAT_ITEM_BASE, OOT_CHEAT_AGE_ID: the item wheel's counts and pages)
+#include "oot_wheel_state.h"   // (and the Item wheel and Cycle items rows' option ids)
 #include "perf_monitor.h"
 #include "vk_jobs.h"
 #include "vk_shader.h"
@@ -5165,6 +5167,10 @@ void do_present(const nvn_tex* t, const int crop[4]) {
                  t ? t->d.width : 0, t ? t->d.height : 0, t ? t->d.format : 0,
                  tex ? (tex->gpu_written ? "rendered" : "never rendered") : "no image");
         if (tex) src = tex->image, sw = tex->width, sh = tex->height;
+        // (Willow Woods, from ReLink) the item wheel open: the game's picture covered with its scene before the HUD, blurred and
+        // dimmed, and the wheel over it (the game's own item line, its hints and the HUD gone from behind the wheel; before frame
+        // interpolation and shots read it)
+        if (tex) framegen_wheel_backdrop(r.cmd, tex->image, tex->format, sw, sh, crop);
         // (the Insert menu's HDR set to Native: the game, told its display is HDR10, presents PQ codes in RGB10A2 (vk
         // A2B10G10R10); that picture goes to the HDR10 swapchain as PQ, not through the SDR-to-HDR expansion. Told by the format
         // the game presents, the one its view is made in (direct_view below), not by the cached image's: images are shared by
@@ -7419,6 +7425,10 @@ void fill_replay_table(MkwVkRenderer& t) {
         if (id == HOS_OPT_HOLD_TOGGLE) return opts.hold_toggle;
         if (id == HOS_OPT_MOUSE_INVERT_X) return opts.mouse_invert_x;
         if (id == HOS_OPT_HUD_LAYOUT) return opts.hud_layout;
+        if (id == HOS_OPT_ITEM_WHEEL) return opts.item_wheel != 0;   // (Willow Woods, from ReLink: host/oot_wheel.c)
+        if (id == HOS_OPT_CYCLE_ITEMS) return opts.cycle_items;
+        if (id == OOT_CHEAT_AGE_ID) return menu_link_age();
+        if (id >= OOT_CHEAT_ITEM_BASE && id < OOT_CHEAT_ITEM_BASE + 4096) return menu_item_count(id - OOT_CHEAT_ITEM_BASE);
         if (id == HOS_OPT_SKIP_TITLE) return opts.skip_title != 0;
         if (id == HOS_OPT_RENDER_THREAD) return async_on();   // (host/nvn_native.c: the present poll answered at once)
         return id == 0 ? opts.realtime : id == 1 ? menu_is_open() : id == 2 ? resolution_auto() && !temporal_full_scale() : id == 3 ? (temporal_full_scale() ? 10000 : resolution_scale()) : id == 4 ? opts.pad_background : id == 5 ? opts.text_speed : id == 6 ? opts.mouse_native :

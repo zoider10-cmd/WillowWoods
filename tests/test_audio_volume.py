@@ -103,11 +103,17 @@ def source_checks():
     player = block(audio, audio.index("static float audio_player_gain(void)"))
     if "rx_option(HOS_OPT_VOLUME, 100)" not in player or "rx_option(HOS_OPT_MUTE_BACKGROUND, 0)" not in player:
         raise SystemExit("nn_audio.c: the volume is not read as HOS_OPT_VOLUME (default 100) and HOS_OPT_MUTE_BACKGROUND (off)")
-    replay, api = read("gpu", "vk", "vk_replay.cpp"), read("gpu", "vk", "vk_api.h")
+    replay = read("gpu", "vk", "vk_replay.cpp")
+    api = read("gpu", "vk", "vk_api.h") + read("gpu", "vk", "oot_wheel_state.h")   # (and the item wheel's two rows' ids)
     value = {}   # (every HOS_OPT_* enum: the cheats', the motion rows', the Audio tab's, and one-name ones as Text size's)
-    for first, start, rest in re.findall(r"enum \{ (HOS_OPT_\w+) = (\d+)([^}]*)\}", api):
-        names = [first] + [n.strip() for n in rest.split(",") if n.strip()]
-        value.update({n: int(start) + i for i, n in enumerate(names)})
+    for body in re.findall(r"enum \{ (HOS_OPT_\w+ = \d+[^}]*)\}", api):
+        n = -1   # (a name takes the value it is given, else one more than the name before)
+        for part in (p.strip() for p in body.split(",") if p.strip()):
+            name, _, given = part.partition("=")
+            n = int(given) if given.strip() else n + 1
+            value[name.strip()] = n
+    # (and the game side's own ids the table answers: OOT_CHEAT_AGE_ID, the item wheel's pages)
+    value.update({k: int(v) for k, v in re.findall(r"#define (OOT_\w+) (\d+)", read("gpu", "vk", "oot_cheat_items.h"))})
     table = block(replay, replay.index("t.option = [](int id) -> int {"))
     ids = [int(n) if n.isdigit() else value[n] for n in re.findall(r"\bid == (\w+)", table)]
     if len(ids) != len(set(ids)):

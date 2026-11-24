@@ -21,6 +21,7 @@ def main():
 typedef struct { int unused; } Ctx;
 static int clears;
 void hos_input_clear_toggles(void) { clears++; }
+int hos_wheel_menu_tick(Ctx *c, uint64_t screen) { (void)c, (void)screen; return 0; }   /* (host/oot_wheel.c: the item wheel, off) */
 // LINUX_MENU
 int main(void) {
     hos_oot_menu_focus(0, 0, 0, 0);

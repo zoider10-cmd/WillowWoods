@@ -478,3 +478,13 @@ void hos_display_loop(void) {
         keys_update();
     }
 }
+
+/* (Willow Woods, from ReLink) The item wheel's mouse (host/oot_wheel.c): not here yet, the wheel takes the sticks only. ReLink's
+   display.c lets the mouse go while the wheel is open and picks with the pointer; this window code is not ReLink's. Nor the
+   mouse wheel's notches: none are kept here */
+int hos_mouse_wheel_take(void) { return 0; }
+void hos_wheel_mouse_open(int open) { (void)open; }
+int hos_wheel_pointer(int32_t *x, int32_t *y, int32_t *w, int32_t *h, int *clicked, int32_t *click_x, int32_t *click_y) {
+    *x = *y = *w = *h = 0, *clicked = 0, *click_x = *click_y = 0;
+    return 0;
+}

@@ -53,4 +53,16 @@ void wide_sides_tick();
 /// Whether ultrawide's menu sides can show at all: Ultrawide with a margin and the Insert menu's setting on
 bool wide_sides_possible();
 
+/// (Willow Woods, from ReLink) The Gameplay tab's Item wheel row is on (off by default; HOS_ITEM_WHEEL over it). While it is
+/// false the two below record nothing and make nothing
+bool framegen_wheel_on();
+/// With the Item wheel row on: the gameplay upscale's output (image, its view format, w x h at level, GENERAL) as the upscale
+/// left it, the scene before the game draws its HUD on it, copied in the frame's own work (the game stops drawing its scene
+/// while its item row is shown: the frame before the row opens is the backdrop)
+void framegen_wheel_scene(VkCommandBuffer cmd, VkImage image, VkFormat format, uint32_t w, uint32_t h, uint32_t level);
+/// While the item wheel is open: the window texture's crop (dst, GENERAL, the game's RGBA8 picture) covered with the scene
+/// framegen_wheel_scene last copied, blurred and dimmed, and the wheel (vk_wheel.cpp) over it. False (nothing recorded) when
+/// the wheel is closed, no scene was copied since the row was turned on, or the picture is not that scene's
+bool framegen_wheel_backdrop(VkCommandBuffer cmd, VkImage dst, VkFormat format, uint32_t sw, uint32_t sh, const int crop[4]);
+
 } // namespace mkwvk
