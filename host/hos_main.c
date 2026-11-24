@@ -3162,6 +3162,30 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
             if (said++ < 4) hos_log("rando: the minimap was not shown yet (flag 2e315eb6 put out): the flag is set%s", done ? "" : ", NOT FOUND");
         }
     }
+    {   /* (the randomizer's fork, 2026-11-23) An area's minimap shows once the area is "visited" (IsVisitLocation.<location>),
+           which its first-visit scene sets: with Skip cutscenes those scenes are marked played (tools/rando/rando_seed.py
+           AREA_INTROS) and never run, so Lake Hylia, Kakariko, Zora's Fountain, Gerudo Valley and Hyrule Castle had no
+           minimap (seen headless: the lake's came with the flag set). The location Link is in is marked visited here, once a
+           second: his map's folder, the field's by where he stands (Lake Hylia's LocationArea, a sphere of 199; Lon Lon
+           Ranch within 80, as the Minimap checks row has it); Ganon's Castle's grounds are Hyrule Castle's (MapMenuInfo). */
+        static const struct { const char *location; uint32_t hash; } visit[] = {{"KokiriForest", 0x2e315eb6u}, {"KakarikoVillage", 0x5c9e740fu}, {"LonLonRanch", 0x009c5b53u}, {"Market", 0xc88633f0u}, {"GoronCity", 0xecf401b9u}, {"ZoraDomain", 0xede02703u}, {"GerudoFortress", 0x3d07b702u}, {"LostWood", 0xbd536912u}, {"SacredForestMeadow", 0xeb724c83u}, {"HyruleField", 0xdda673cbu}, {"HyruleCastle", 0xb7c0f231u}, {"Graveyard", 0x671a6e1bu}, {"DeathMountainTrail", 0x3c72143au}, {"DeathMountainCrater", 0xd0e4b0dau}, {"ZoraRiver", 0x2e975eedu}, {"ZoraFountain", 0x5de8bbd8u}, {"LakeHylia", 0x36778630u}, {"GerudoValley", 0x5a6c8704u}, {"HountedWasteland", 0x6160c3ecu}, {"DesertColossus", 0x607d9fe6u}};
+        char banc[80] = "";
+        oot_gamedata_string(c, 0x1d6189dau, banc, sizeof banc);   /* Sequence_CurrentBanc */
+        char folder[48];
+        snprintf(folder, sizeof folder, "%s", banc);
+        folder[strcspn(folder, "_")] = 0;
+        const char *location = !strcmp(folder, "GanonCastle") ? "HyruleCastle" : folder;
+        if (!strcmp(folder, "HyruleField")) {
+            const float x = oot_link_place[0], z = oot_link_place[2];
+            location = hypotf(x + 205.4f, z - 559.2f) <= 199 ? "LakeHylia" : hypotf(x + 90.0f, z - 240.0f) <= 80 ? "LonLonRanch" : "HyruleField";
+        }
+        for (unsigned i = 0; i < sizeof visit / sizeof visit[0]; i++) {
+            int was = 1;
+            if (strcmp(visit[i].location, location) || !oot_gamedata_bool(c, visit[i].hash, &was) || was) continue;
+            const int done = oot_gamedata_set_bool(c, visit[i].hash, 1);
+            hos_log("rando: %s marked visited (IsVisitLocation, its minimap)%s", location, done ? "" : ", NOT FOUND");
+        }
+    }
     char map[80];
     oot_gamedata_string(c, 0x1d6189dau, map, sizeof map);   /* Sequence_CurrentBanc */
     AcquireSRWLockExclusive(&oot_checks_lock);

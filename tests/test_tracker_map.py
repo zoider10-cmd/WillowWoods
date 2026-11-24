@@ -56,12 +56,12 @@ def main():
     check(len(mini_areas) >= 11 and all(a in names for a, _, _, _ in mini_areas) and
           all(-0.5 < float(u) < 0 and 0.3 < float(v) < 1 and 0.0003 < float(a) < 0.005 for _, u, v, a in mini_areas),
           "the minimaps' areas are not the field areas the map has, or a measured fit is off the corner")
-    check(not any(a in ("Kakariko Village", "Gerudo Valley", "Zora's Domain") for a, _, _, _ in mini_areas),
+    check(not any(a in ("Hyrule Castle", "Death Mountain Crater", "Gerudo's Fortress") for a, _, _, _ in mini_areas),
           "an area not measured has dots (they would be in the wrong place)")
     draw = menu[menu.index("void draw_minimap_checks(ui::Ctx& c) {"):]
     draw = draw[:draw.index("\n}\n")]
     check("c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h" in draw and
-          "tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]" in draw and "<= 100) m = &kMiniRanch;" in draw,
+          "tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]" in draw and "<= 80) m = &kMiniRanch;" in draw,
           "the dots are not the checks left on the measured minimap, or the ranch's picture not within 100 of it")
     check(menu.count("if (minimap) draw_minimap_checks(c);") == 2 and "next = now + 5000, tracker_load();" in menu,
           "the minimap's dots are not drawn on screen and on test pictures, or the seed's checks are never read with the menu shut")
