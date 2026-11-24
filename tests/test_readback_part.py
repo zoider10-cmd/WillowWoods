@@ -64,7 +64,7 @@ FIXTURE = r"""
 #include <vector>
 #include "readback_late.h"
 constexpr uint64_t kPageShift = 12, kChunkPages = 16, kPages = 64;
-static bool env_on(const char*) { return false; }   // (no switch set)
+#include "compat/hookshot_env.h"   // (env_on, env_value_off: no switch set here)
 namespace {
 /* PAGES */
 static int failures;
