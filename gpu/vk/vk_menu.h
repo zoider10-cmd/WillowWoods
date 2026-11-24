@@ -169,6 +169,7 @@ int menu_setting_set(const char* key, int value, MkwVkSetting* out);
 int menu_heart_protection();
 int menu_player_flight();
 int menu_free_camera();
+int menu_infinite_magic();   // (the Debug tab's Infinite magic, HOS_OPT_CHEAT_MAGIC: 0 while the tools are off)
 int menu_link_speed();   // (Movement speed in percent, 100 while the tools are off)
 int menu_transition_autosave();
 int menu_shadow_res();   // (Shadow resolution, HOS_OPT_SHADOW_RES: the size drawn, Auto resolved)

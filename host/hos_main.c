@@ -938,6 +938,7 @@ static int oot_gamedata_int(Ctx *c, uint32_t hash, int32_t *value, int set);
 static int oot_gamedata_bool(Ctx *c, uint32_t hash, int *value);
 static int oot_gamedata_set_bool(Ctx *c, uint32_t hash, int value);
 static void oot_magic_fill_tick(Ctx *c);   /* (a magic found: its meter filled, below) */
+static void oot_infinite_magic(Ctx *c);    /* (the Debug tab's Infinite magic, below) */
 static int oot_gamedata_string(Ctx *c, uint32_t hash, char *buf, size_t size);
 static int oot_event_playing(Ctx *c);
 
@@ -3662,6 +3663,7 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
         }
     }
     oot_magic_fill_tick(c);   /* (a magic found: its meter filled, oot_magic_meter) */
+    oot_infinite_magic(c);    /* (the Debug tab's Infinite magic: the meter kept full) */
     {   /* (bug 31: Link's max life followed, and a boss container's heart taken back: oot_container_back) */
         int32_t max;
         if (oot_gamedata_int(c, OOT_MAX_LIFE, &max, 0)) {
@@ -4206,6 +4208,31 @@ static void oot_magic_fill_tick(Ctx *c) {
         oot_pouch_change(c, "Tbox_MagicJar_Large", 1);
         jars--;
     }
+}
+
+/* (Willow Woods, asked 2026-11-23, share/todo.md) Infinite magic: the Debug tab's row (HOS_OPT_CHEAT_MAGIC, on with the
+   debug tools only, gpu/vk/vk_menu.cpp menu_infinite_magic), or HOS_OOT_INFINITE_MAGIC=1 for a test. Every
+   OOT_MAGIC_KEEP_EVERY player updates the meter is read (PlayerStatus.MP and MPMax, oot_gamedata_live_int); below its top
+   it gets one of the game's own large magic jars, as oot_magic_fill_tick fills a meter found (written directly, the
+   magic was the player's own again a frame later). A spell or a magic arrow is so made up within a few frames; the Lens
+   of Truth's drain never shows. No meter (MPMax 0): nothing. Not while an event plays, nor while a found magic's fill runs. */
+#define OOT_MAGIC_KEEP_EVERY 8
+int hos_oot_infinite_magic(void) {
+    int rx_option(int id, int otherwise);
+    static int env = -2;
+    if (env == -2) { const char *e = getenv("HOS_OOT_INFINITE_MAGIC"); env = e && *e ? *e == '1' : -1; }
+    return env >= 0 ? env : rx_option(HOS_OPT_CHEAT_MAGIC, 0) > 0;
+}
+static void oot_infinite_magic(Ctx *c) {
+    static unsigned tick;
+    if (++tick % OOT_MAGIC_KEEP_EVERY || !hos_oot_infinite_magic()) return;
+    if (__atomic_load_n(&oot_magic_fill_frames, __ATOMIC_ACQUIRE) > 0 || oot_event_playing(c)) return;
+    int32_t most = 0, now = 0;
+    if (!oot_gamedata_live_int(c, OOT_MPMAX_HASH, &most, 0, NULL) || most <= 0 || !oot_gamedata_live_int(c, OOT_MP_HASH, &now, 0, NULL) ||
+        now >= most) return;
+    static int logged;
+    if (logged++ < 8) hos_log("infinite magic: %d of %d: a large magic jar", (int)now, (int)most);
+    oot_pouch_change(c, "Tbox_MagicJar_Large", 1);
 }
 
 static const char *oot_progressive_give(Ctx *c, const char *name) {
