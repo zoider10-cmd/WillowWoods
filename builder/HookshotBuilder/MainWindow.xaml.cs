@@ -1300,9 +1300,14 @@ public partial class MainWindow : Window
     void OpenFolder(object sender, RoutedEventArgs e) =>
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{finished}\"") { UseShellExecute = true });
 
+    /// (the owner, 2026-11-24: the finished build's button opens the launcher, as the desktop shortcut does (its Randomizer
+    /// tab, seeds and settings come first); the game itself only in a folder without one)
     void Play(object sender, RoutedEventArgs e)
     {
-        StartGame(finished);
+        if (Finder.Launcher(finished) is { } launcher)
+            Process.Start(new ProcessStartInfo(launcher) { UseShellExecute = false, WorkingDirectory = finished });
+        else
+            StartGame(finished);
         WindowState = WindowState.Minimized;
     }
 

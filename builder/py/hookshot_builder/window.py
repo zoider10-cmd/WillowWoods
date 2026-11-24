@@ -1636,7 +1636,7 @@ class Window(QWidget):
         return " · last time %s (%s)" % (span(self.previous_total), how)
 
     def play(self):
-        core.start_game(self.finished)
+        core.start_finished(self.finished)
         self.showMinimized()
 
     # ================= when something goes wrong =================

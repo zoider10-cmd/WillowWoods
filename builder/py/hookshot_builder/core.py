@@ -474,6 +474,28 @@ def start_game(folder):
     subprocess.Popen([game_exe(folder)], cwd=folder, env=env)
 
 
+def launcher_exe(folder):
+    """the launcher beside the game (Willow Woods', or Mako's or Hookshot's in a folder built before), or None; Windows only
+    (it is a .NET Framework program)"""
+    if os.name != "nt":
+        return None
+    for name in ("Willow Woods Launcher.exe", "Mako Launcher.exe", "Hookshot Launcher.exe"):
+        path = os.path.join(folder, name)
+        if os.path.isfile(path):
+            return path
+    return None
+
+
+def start_finished(folder):
+    """the finished build's button (the owner, 2026-11-24): the launcher, as the desktop shortcut does; the game itself only
+    in a folder without one"""
+    launcher = launcher_exe(folder)
+    if launcher:
+        subprocess.Popen([launcher], cwd=folder)
+    else:
+        start_game(folder)
+
+
 def open_folder(folder):
     subprocess.Popen(["explorer.exe", folder])
 

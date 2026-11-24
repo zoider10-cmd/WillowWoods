@@ -106,6 +106,17 @@ static class Finder
         catch (Exception) { return false; }
     }
 
+    /// The launcher beside the game in a folder (Willow Woods', or Mako's or Hookshot's in a folder built before), or null
+    public static string? Launcher(string gameFolder)
+    {
+        foreach (var name in new[] { "Willow Woods Launcher.exe", "Mako Launcher.exe", "Hookshot Launcher.exe" })
+        {
+            var path = Path.Combine(gameFolder, name);
+            if (File.Exists(path)) return path;
+        }
+        return null;
+    }
+
     public static void Shortcuts(string gameFolder, bool desktop, bool start)
     {
         // (hookshot.exe: the game's launcher in a folder built since it came (Play, and Update when a newer release is out), else the
@@ -113,10 +124,7 @@ static class Finder
         var exe = Path.Combine(gameFolder, "hookshot.exe");
         var icon = File.Exists(Path.Combine(gameFolder, "bin", "hookshot.exe")) ? Path.Combine(gameFolder, "bin", "hookshot.exe") : exe;
         // (sharkiix version: the launcher beside the game, when there is one: update check, settings, saves, then the game)
-        var launcher = Path.Combine(gameFolder, "Willow Woods Launcher.exe");
-        if (!File.Exists(launcher)) launcher = Path.Combine(gameFolder, "Mako Launcher.exe");   // (a folder built before Willow Woods)
-        if (!File.Exists(launcher)) launcher = Path.Combine(gameFolder, "Hookshot Launcher.exe");
-        if (File.Exists(launcher)) { exe = launcher; icon = launcher; }   // (Mako's shark)
+        if (Launcher(gameFolder) is { } launcher) { exe = launcher; icon = launcher; }   // (Mako's shark)
         foreach (var (link, want) in new[] { (DesktopLink, desktop), (StartLink, start) })
         {
             try
