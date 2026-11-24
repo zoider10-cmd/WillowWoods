@@ -127,6 +127,7 @@ SW(HOS_NVN_WATCH_RT, diag, string, "off", "Logs who sets the render target at th
 SW(HOS_NVN_WATCH_TEX, diag, string, "off", "Logs who binds that texture handle (hex), as guest call chains, each once.")
 SW(HOS_OCB_NORMAL, kill, bool, "OoT's OptimizeChange background thread runs at lowered host priority", "=1 leaves the OptimizeChange thread at normal priority, as before.")
 SW(HOS_OOT_CHEATS, player, bool, "the Debug tab's tools row (off)", "=1 turns the Debug tab's tools (flight, free camera, teleport, inventory) on whatever the menu's row says.")
+SW(HOS_OOT_FIRST_NIGHT_FIX, attempt, bool, "off: a save's first-adult-night time lock is left as it is", "=1 clears the first adult night's time lock (HrlField_isFirstNightTime_Adult) in any map but Hyrule Field, no event playing.")
 SW(HOS_OOT_PROTECT_HEARTS, attempt, bool, "off", "=1 turns heart protection on at start (the host's own, and the menu's when HOS_OOT_CHEATS=1).")
 SW(HOS_OOT_TELEPORT_EVENT, diag, string, "Dm_SY_BancChangeGo", "Names the game event the Debug tab's teleport runs, in place of Dm_SY_BancChangeGo.")
 SW(HOS_OOT_TELEPORT_STARTER, kill, bool, "the teleport's event is run with its starter", "=0 runs the Debug tab's teleport event without the starter.")

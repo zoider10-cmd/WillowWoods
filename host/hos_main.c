@@ -939,6 +939,25 @@ static int oot_gamedata_bool(Ctx *c, uint32_t hash, int *value);
 static int oot_gamedata_set_bool(Ctx *c, uint32_t hash, int value);
 static void oot_magic_fill_tick(Ctx *c);   /* (a magic found: its meter filled, below) */
 static int oot_gamedata_string(Ctx *c, uint32_t hash, char *buf, size_t size);
+static int oot_event_playing(Ctx *c);
+
+/* The first adult night's time lock (Longshot d0b9c543, their #1064): f_8347c020 holds the clock at 20:00 while the saved
+   Bool HrlField_isFirstNightTime_Adult (0x8592aa82) is 1 and quest 0x4dbca27f is not Ready. The flag belongs to Hyrule
+   Field's first night only; a save in any other map that still holds it cannot leave night. This clears it there with the
+   game's own Bool, once, and says so, never in Hyrule Field nor while an event (the escape's cutscene) is running.
+   (Willow Woods) OFF unless HOS_OOT_FIRST_NIGHT_FIX=1: the same Bool also picks a town's arrival time (20:00 rather than
+   00:00, rekarina-2026-11-22.md) and gates Hyrule Field's first-night event, beside the randomizer's own clock work
+   (bugs 58, 81), and no run of ours has been stuck at night: the owner decides. Returns 1 when it cleared the flag. */
+static int oot_first_night_fix(Ctx *c, const char *map) {
+    static int on = -1;
+    if (on < 0) on = env_on("HOS_OOT_FIRST_NIGHT_FIX");
+    if (!on || !map[0] || !strncmp(map, "HyruleField", 11) || oot_event_playing(c)) return 0;
+    int set = 0;
+    if (!oot_gamedata_bool(c, 0x8592aa82u, &set) || !set) return 0;
+    if (!oot_gamedata_set_bool(c, 0x8592aa82u, 0)) return 0;
+    hos_log("oot: cleared the first adult night's time lock (the save was in %s, outside Hyrule Field)", map);
+    return 1;
+}
 
 static void oot_family_levels_refresh(Ctx *c);   /* (below: the shelves of a family, hos_oot_shelf_map) */
 static void oot_inventory_refresh(Ctx *c, int64_t now) {
@@ -984,6 +1003,7 @@ static void oot_inventory_refresh(Ctx *c, int64_t now) {
                 snprintf(map_now, sizeof map_now, "%s", line);
                 ReleaseSRWLockExclusive(&map_lock);
             }
+            oot_first_night_fix(c, map);
         }
     }
     if (loaded) oot_family_levels_refresh(c);
