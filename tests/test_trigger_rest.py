@@ -32,9 +32,11 @@ import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))   # (python -I leaves the check's own folder off the path)
 from srccut import between  # noqa: E402
+import os
 import shlex
+import shutil
 
-RUN_ALL_ARGS = ["--cc", "{cc}"]
+# (no RUN_ALL_ARGS: run_all.py has no C compiler placeholder; the check finds gcc or clang itself)
 
 ROOT = Path(__file__).resolve().parents[1]
 TOUCHPAD = "if (hos_sdl_pad_button(gc, BTN_TOUCHPAD)) b |= 1ULL << HOS_PAD_TOUCHPAD;"
@@ -42,7 +44,7 @@ TOUCHPAD = "if (hos_sdl_pad_button(gc, BTN_TOUCHPAD)) b |= 1ULL << HOS_PAD_TOUCH
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--cc", default="gcc")
+    p.add_argument("--cc", default=shutil.which("gcc") or shutil.which("clang") or "gcc")
     a = p.parse_args()
     src = (ROOT / "host/pad_sdl.c").read_text(encoding="utf-8")
     axes = between(src, "enum { AX_LX", ";") + ";"
@@ -232,7 +234,7 @@ int main(void) {
         c = Path(tmp) / "fixture.c"
         exe = Path(tmp) / "fixture.exe"
         c.write_text(fixture, encoding="utf-8")
-        subprocess.run(shlex.split(a.cc) + ["-std=gnu11", "-Wall", "-Wextra", "-Werror", str(c), "-o", str(exe)],
+        subprocess.run(([a.cc] if os.path.isfile(a.cc) else shlex.split(a.cc)) + ["-std=gnu11", "-Wall", "-Wextra", "-Werror", str(c), "-o", str(exe)],
                        check=True)
         r = subprocess.run([str(exe)], capture_output=True, text=True, timeout=60)
         print(r.stdout, end="")

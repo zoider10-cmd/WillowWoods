@@ -9,6 +9,7 @@ unset must leave the flag alone. oot_inventory_refresh must call it with the map
 python -I -B tests/test_oot_first_night.py [--cc clang]
 """
 import argparse
+import os
 import re
 import shlex
 import shutil
@@ -16,7 +17,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-RUN_ALL_ARGS = ["--cc", "{cc}"]
+# (no RUN_ALL_ARGS: run_all.py has no C compiler placeholder; the check finds gcc or clang itself)
 ROOT = Path(__file__).resolve().parents[1]
 
 FIXTURE = r'''
@@ -91,7 +92,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--cc", default=None)
     args = parser.parse_args()
-    cc = shlex.split(args.cc) if args.cc else [shutil.which("gcc") or shutil.which("clang") or "cc"]
+    cc = ([args.cc] if os.path.isfile(args.cc) else shlex.split(args.cc)) if args.cc else [shutil.which("gcc") or shutil.which("clang") or "cc"]
     host = (ROOT / "host/hos_main.c").read_text(encoding="utf-8")
     fix = re.search(r"^static int oot_first_night_fix\(Ctx \*c, const char \*map\) \{.*?^\}", host, re.M | re.S)
     if not fix:

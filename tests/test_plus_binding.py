@@ -20,7 +20,7 @@ from pathlib import Path
 
 import shutil
 
-RUN_ALL_ARGS = ["--cc", "{cc}"]
+# (no RUN_ALL_ARGS: run_all.py has no C compiler placeholder; the check finds gcc or clang itself)
 
 ROOT = Path(__file__).resolve().parents[1]
 
