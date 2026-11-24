@@ -15,6 +15,9 @@ namespace HookshotBuilder;
 static class Updater
 {
     const string Latest = "https://api.github.com/repos/zoider10-cmd/WillowWoods/releases/latest";
+    // (Willow Woods, 2026-11-24: every release is a pre-release, and GitHub's releases/latest leaves those out: it answered 404,
+    // and an update from v0.1.3 stopped there. The newest release is the first of the list, pre-releases with it)
+    const string Newest = "https://api.github.com/repos/zoider10-cmd/WillowWoods/releases?per_page=1";
     const string Asset = "HookshotBuilder.zip";
     const string MakoAsset = "WillowWoodsBuilder.zip";                 // (Mako 3.3: the new name, taken first; releases up to 3.0.2 have the old one)
     const string SetupAsset = "HookshotBuilder.exe";            // (the setup, builder/setup/setup.c: a release holds it and its list)
@@ -139,7 +142,7 @@ static class Updater
     }
 
     /// The API address of the release a target is on: the latest release for a release (as before), else that tag's
-    static string ReleaseApi(string? tag) => tag == null || TrackOf(tag) == Release ? Latest : Releases + "/tags/" + ReleaseOf(tag);
+    static string ReleaseApi(string? tag) => tag == null ? Latest : Releases + "/tags/" + ReleaseOf(tag);
 
     /// The latest release's tag, quietly (null: GitHub did not answer); a few tries, 20 s at most
     public static async Task<string?> LatestTag()
@@ -150,13 +153,15 @@ static class Updater
         {
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, Latest);
+                using var request = new HttpRequestMessage(HttpMethod.Get, Newest);
                 request.Headers.Accept.ParseAdd("application/vnd.github+json");
                 using var response = await http.SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
                     using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-                    return doc.RootElement.GetProperty("tag_name").GetString();
+                    var list = doc.RootElement;
+                    if (list.ValueKind == JsonValueKind.Array && list.GetArrayLength() > 0) return list[0].GetProperty("tag_name").GetString();
+                    break;
                 }
                 if ((int)response.StatusCode < 500) break;   // (the API's limit, 60 an hour a PC: the list below instead)
             }

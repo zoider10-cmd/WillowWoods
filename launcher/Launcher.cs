@@ -2051,7 +2051,7 @@ static class Fork {
     //  CheckUpdate reads the first)
     public const string Api_Url = "https://api.github.com/repos/zoider10-cmd/WillowWoods/releases?per_page=5";
     public const string TagPage = "https://github.com/zoider10-cmd/WillowWoods/releases/tag/";
-    public const string Page = "https://github.com/zoider10-cmd/WillowWoods/releases/latest";
+    public const string Page = "https://github.com/zoider10-cmd/WillowWoods/releases";   // (releases/latest: 404 with pre-releases only)
     public const string Home = "https://github.com/zoider10-cmd/WillowWoods";
     public const string GameExe = "hookshot.exe";
     public const string Label = "";                  // (a test build's own name, e.g. "v4.1 TEST": shown instead of the version)

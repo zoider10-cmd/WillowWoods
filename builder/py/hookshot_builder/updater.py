@@ -13,6 +13,8 @@ from . import REPO, paths, setup_parts
 from .core import Tools
 
 LATEST = "https://api.github.com/repos/%s/releases/latest" % REPO
+# (Willow Woods, 2026-11-24: every release is a pre-release, which releases/latest leaves out (404): the list's first instead)
+NEWEST = "https://api.github.com/repos/%s/releases?per_page=1" % REPO
 
 
 def latest_tag():
@@ -22,9 +24,10 @@ def latest_tag():
         return None if t == "none" else t
     for attempt in range(3):
         try:
-            req = urllib.request.Request(LATEST, headers={"User-Agent": "HookshotBuilder", "Accept": "application/vnd.github+json"})
+            req = urllib.request.Request(NEWEST, headers={"User-Agent": "HookshotBuilder", "Accept": "application/vnd.github+json"})
             with urllib.request.urlopen(req, timeout=8) as r:
-                return json.loads(r.read()).get("tag_name")
+                got = json.loads(r.read())
+                return got[0].get("tag_name") if isinstance(got, list) and got else None
         except urllib.error.HTTPError as e:
             if e.code < 500:   # (the API's limit, 60 an hour a PC: the list below instead)
                 break

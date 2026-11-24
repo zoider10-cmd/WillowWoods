@@ -1379,7 +1379,7 @@ public partial class MainWindow : Window
             Application.Current.Shutdown();
             return;
         }
-        Process.Start(new ProcessStartInfo("https://github.com/zoider10-cmd/WillowWoods/releases/latest") { UseShellExecute = true });
+        Process.Start(new ProcessStartInfo("https://github.com/zoider10-cmd/WillowWoods/releases") { UseShellExecute = true });   // (releases/latest: 404 with pre-releases only)
     }
 
     // ================= the update (Updater.cs): the game started this app with --update <folder> =================

@@ -50,8 +50,9 @@ static int not_newer(const char *tag, const char *have) {
 #define HOOKSHOT_FORK_BASE "v0.1.2"       /* (the exe: which graphics patches fit it) */
 #define HOOKSHOT_FORK_VERSION "v0.1.5"      /* (the release this folder was built from) */
 #define UPDATE_HOST L"api.github.com"
-#define UPDATE_PATH L"/repos/zoider10-cmd/WillowWoods/releases/latest"
-#define RELEASES_PAGE L"https://github.com/zoider10-cmd/WillowWoods/releases/latest"
+/* (Willow Woods, 2026-11-24: every release is a pre-release, which releases/latest leaves out (404): the list's first, the newest) */
+#define UPDATE_PATH L"/repos/zoider10-cmd/WillowWoods/releases?per_page=1"
+#define RELEASES_PAGE L"https://github.com/zoider10-cmd/WillowWoods/releases"
 
 /* (a line "name=value" of a text buffer: its value, trimmed) */
 static int value_in(const char *text, const char *name, char *out, size_t cap) {
