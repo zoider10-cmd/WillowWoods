@@ -321,8 +321,8 @@ def main():
           "the build does not put the directions and their notice beside rando_seed.py")
     check('"check_ways.txt"' in menu and "tracker_ways[way] = bar + 1;" in menu and
           'snprintf(k.hash, sizeof k.hash, "%s", got >= 9 ? hash : "");' in menu and
-          'std::string("How to get there: ") + way->second' in menu,
-          "the Tracker tab does not read the ways or say the chosen check's")
+          'std::string("How to get there: ") + way->second' not in menu,
+          "the Tracker tab does not read the ways, or still says them (no longer: the owner, 2026-11-23)")
     # ---- bug 70: a chest is marked by the game's own "opened" flag, IsTreasureBoxOpen.<actor hash in decimal> ----
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     check('snprintf(flag, sizeof flag, "IsTreasureBoxOpen.%llu", (unsigned long long)oot_checks[oot_check_count].key);' in host and

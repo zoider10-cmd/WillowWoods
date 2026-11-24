@@ -678,10 +678,8 @@ std::string tracker_hint(int row) {
     if (k && tracker_junk[k - tracker_checks]) return "Junk: not counted among the checks left. Mark it again to count it.";
     const int state = k ? tracker_in_logic(*k, &missing) : -1;
     std::string says = state > 0 ? "In logic: Link carries all the seed's rules ask for here." : state == 0 ? "Not in logic. Still asked for: " + missing + "." : "";
-    if (k && k->hash[0]) {   // (and the way there, where Ocarina Atlas describes it: tracker_ways)
-        const auto way = tracker_ways.find(k->hash);
-        if (way != tracker_ways.end()) says += (says.empty() ? "" : "\n") + std::string("How to get there: ") + way->second;
-    }
+    // (Ocarina Atlas's ways, tracker_ways, are read but no longer said: the owner, 2026-11-23, a long way made the panel's
+    // list and its map small)
     return says;
 }
 /// A row's hints from a table, the value lo first (nullptr: none for that value)
