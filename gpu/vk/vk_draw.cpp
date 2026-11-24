@@ -4633,7 +4633,7 @@ void build_descriptors(const NvnState& s, const Program& p, bool keep = false) {
             // are read once
             static thread_local std::vector<uint32_t> table;
             const bool is_table = d.handle_program != ~0U && d.count > 1;
-            if (is_table) table.resize(d.count), stage_handles(s, st, d.handle_program, d.count, table.data());
+            if (is_table) table.resize(d.count), stage_handles(s, st, d.handle_program, d.count, table.data(), p.key);
             uint32_t prev_handle = 0;
             VkImageView prev_view = VK_NULL_HANDLE;
             Texture* prev_tex = nullptr;
