@@ -3,7 +3,8 @@
 The game draws a depth prepass, then colour passes that test EQUAL against it with another program. Intel's compiler
 does not give the two programs the same position to the last bit, so most ground pixels failed the test and the sky
 showed through (issue 17, Arc B390). The test becomes LESS_OR_EQUAL with a depth bias towards the camera, only where depth
-is tested, not written, and the game asked for EQUAL. RX_VK_EQ_BIAS=<units> chooses it on any GPU, 0 turns it off.
+is tested, not written, the game asked for EQUAL and the draw does not blend; by default only on Intel's Windows
+driver, not on discrete Battlemage or Lunar Lake (Longshot 641030ed). RX_VK_EQ_BIAS=<units> chooses it on any GPU, 0 turns it off.
 python -I -B tests/test_equal_depth_margin.py
 """
 from pathlib import Path
@@ -20,9 +21,14 @@ def main():
     state = block(source, "void dynamic_state(VkCommandBuffer cmd")
     if 'getenv("RX_VK_EQ_BIAS")' not in state:
         raise SystemExit("no RX_VK_EQ_BIAS switch")
-    if "dev.props.vendorID == 0x8086 ? 64.0f : 0.0f" not in state:
-        raise SystemExit("the margin is not on by default on Intel only")
-    cond = "if (eq_bias > 0 && d.dt && !d.dw && d.dop == VK_COMPARE_OP_EQUAL)"
+    # (Longshot 641030ed: Intel's Windows driver only, not Battlemage 0xE2xx nor Lunar Lake 0x64xx, and not Mesa's)
+    rule = "dev.driver_id == VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS && family != 0xE200u && family != 0x6400u ? 64.0f : 0.0f"
+    if rule not in state:
+        raise SystemExit("the margin is not on by default on Intel's Windows driver only (Battlemage and Lunar Lake left out)")
+    # (a draw that blends keeps the game's EQUAL: Death Mountain Trail's haze sheet)
+    if "blend_factor(b.src_rgb) != VK_BLEND_FACTOR_ONE || blend_factor(b.dst_rgb) != VK_BLEND_FACTOR_ZERO" not in state:
+        raise SystemExit("a blending draw is not kept out of the margin")
+    cond = "if (eq_bias > 0 && d.dt && !d.dw && d.dop == VK_COMPARE_OP_EQUAL && !blends)"
     if cond not in state:
         raise SystemExit("the margin is not limited to EQUAL tests that do not write depth")
     margin = block(state, cond)

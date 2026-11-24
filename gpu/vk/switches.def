@@ -371,7 +371,7 @@ SW(RX_VK_DUMP_STAGES, diag, string, "unset: nothing written", "Folder that recei
 SW(RX_VK_DUMP_STEPS, diag, string, "every step dumped", "Narrows a frame dump to the steps lo-hi.")
 SW(RX_VK_DUMP_W, diag, int, "320 pixels (16 to 4096)", "Width of the scaled pictures a frame dump writes.")
 SW(RX_VK_DYN_PROG_KEY, kill, bool, "off: dynamic state is keyed by the program's write-mask signature", "Keys the dynamic state by the program itself, as before, so each program change works the state out again.")
-SW(RX_VK_EQ_BIAS, hw, float, "64 on Intel (vendor 0x8086), 0 (off) elsewhere", "Sets the margin that turns EQUAL depth tests into LESS_OR_EQUAL with a bias; 0 is as the game asks.")
+SW(RX_VK_EQ_BIAS, hw, float, "64 on Intel's Windows driver except discrete Battlemage (0xE2xx) and Lunar Lake (0x64xx), 0 (off) there and elsewhere (Mesa's Intel driver too); never on a draw that blends", "Sets the margin that turns EQUAL depth tests into LESS_OR_EQUAL with a bias; 0 is as the game asks.")
 SW(RX_VK_EVENT_WAITS, kill, bool, "on", "=0 turns off stopping a queue's replay at its event waits; submissions replay past them.")
 SW(RX_VK_EVICT_EXCESS, kill, bool, "on: the 90% rule and the driver's limit evict only their excess", "=0 makes those rules evict down to 7/8 of their budget, as before.")
 SW(RX_VK_EVICT_MIN_UNUSED, tune, int, "60 frames (8 before)", "Sets how many frames a texture must go unused before an over-budget eviction may take it.")
