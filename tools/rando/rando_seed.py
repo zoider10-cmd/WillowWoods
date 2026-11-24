@@ -4562,6 +4562,42 @@ def bowling_order_flow(raw):
     return out.getvalue()
 
 
+# Faster block pushing (rando_fast_push, asked 2026-11-23, share/todo.md; a Quality of life setting, off by default, moves
+# no item). How a pushed or pulled block moves is its GrabMoveActorParam's MoveSpeed: a curve (Hermit2DSplit: groups of
+# x, y and the slopes on either side) of how far along one push it is (y, 0 to 1) by the frames since it started (x, to
+# MaxX: 44 for the common block, Obj_MovableBox_A_01). Every x and MaxX are divided by FAST_PUSH (the slopes multiplied by
+# it): the same push in half the frames. The blocks of the Forest Temple, Dodongo's Cavern, the Fire, Shadow and Spirit
+# Temples and the like (FAST_PUSH_PARAMS: the boxes, the Armos and Goron statues, the Shadow Temple's statue, the
+# graveyard's tombstones), in every actor pack that carries a copy (a block's pack carries the file of the block it is
+# made from). Not the pivoting floors nor the Spirit Temple's mirror (turned, not pushed). NOT SEEN IN PLAY: whether Link's
+# push animation keeps with the block is for the owner to see (share/verify-list.md).
+FAST_PUSH = 2.0
+FAST_PUSH_PARAMS = ("Obj_MovableBox_A_01", "Obj_MovableBox_A_04", "Obj_MovableBox_A_05", "Obj_AmosStatue_A_01",
+                    "Obj_ShadowTemple_Statue_A_01", "Obj_Tombstone_A_01")
+FAST_PUSH_PART = "GameParameter/GrabMoveActorParam/%s.game__object__GrabMoveActorParam.bgyml"
+
+
+def fast_push_param(data, factor=FAST_PUSH):
+    """a GrabMoveActorParam file with its MoveSpeed curve run `factor` times as fast: the new bytes, or None when it has
+    no curve of its own (it takes its parent's). ValueError: a curve not as known"""
+    tree, version = byml_parse(data)
+    if tree[0] != "dict" or "MoveSpeed" not in tree[1]:
+        return None
+    curve = tree[1]["MoveSpeed"]
+    if curve[0] != "dict" or curve[1].get("Type") != ("string", "Hermit2DSplit") or "Data" not in curve[1] or "MaxX" not in curve[1]:
+        raise ValueError("a MoveSpeed that is not a Hermit2DSplit curve with its Data and MaxX")
+    points = curve[1]["Data"][1]
+    if len(points) % 4 or any(p[0] != 210 for p in points) or curve[1]["MaxX"][0] != 210:
+        raise ValueError("a MoveSpeed curve not of groups of four floats")
+    f = lambda node: struct.unpack("<f", node[1])[0]
+    pack = lambda v: (210, struct.pack("<f", v))
+    for k in range(0, len(points), 4):
+        points[k] = pack(f(points[k]) / factor)
+        points[k + 2], points[k + 3] = pack(f(points[k + 2]) * factor), pack(f(points[k + 3]) * factor)
+    curve[1]["MaxX"] = pack(f(curve[1]["MaxX"]) / factor)
+    return byml_build(tree, version)
+
+
 GALLERY_FLOW = "Event/EventFlow/MiniGame_HitTarget.bfevfl.zs"
 HORSE_ARCHERY_FLOW = "Event/EventFlow/Minigame_HorsebackArchery.bfevfl.zs"
 ARCHERY_TOP = 1400
@@ -5578,7 +5614,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -7697,6 +7733,7 @@ def main():
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
+    a.fast_push = ini["rando_fast_push"] != 0           # (FAST_PUSH, 2026-11-24: the blocks' curves; moves no item)
     a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
     a.any_fish = ini["rando_any_fish"] != 0             # (time savers, 2026-11-22: qol_flow; move no item)
     a.skull_kid_fast = ini["rando_skull_kid_fast"] != 0
@@ -7836,7 +7873,7 @@ def main():
     if a.castle_guards:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " guards pass\n"
     for saver_on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped"),
-                           (a.archery_wins, " archery won")):
+                           (a.archery_wins, " archery won"), (a.fast_push, " fast push")):
         if saver_on:   # (the time savers: move no item either, the same line. Not `on`: that is the randomizer's own, below)
             stamp = stamp[:-1] + word + "\n"
     if a.free_scarecrow:   # (moves no item either: the same line)
@@ -9223,6 +9260,36 @@ def main():
     except (OSError, KeyError, ValueError, struct.error, IndexError) as e:
         sys.exit("the songs' look: %s. Nothing written." % e)
     print("a song looks like Sheik's harp (%d songs, %d rows of the list of actors)" % (looked, count))
+
+    # ---- Faster block pushing (rando_fast_push): every copy of a block's push curve, FAST_PUSH_PARAMS ----
+    if a.fast_push:
+        try:
+            changed_packs = 0
+            for n in sorted(os.listdir(os.path.join(romfs, "Pack", "Actor"))):
+                if not n.endswith(".pack.zs"):
+                    continue
+                rel = "Pack/Actor/" + n
+                was = pack_files[rel] if rel in pack_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+                if not any((FAST_PUSH_PART % p).encode() in was for p in FAST_PUSH_PARAMS):
+                    continue
+                parts = sarc_read(was)
+                done = 0
+                for p in FAST_PUSH_PARAMS:
+                    part = FAST_PUSH_PART % p
+                    new = fast_push_param(parts[part]) if part in parts else None
+                    if new is not None:
+                        parts[part] = new
+                        pack_parts.add(part)
+                        done += 1
+                if done:
+                    pack_files[rel] = sarc_write(parts)
+                    pack_sizes[rel[:-3]] = len(pack_files[rel])
+                    changed_packs += 1
+            if not changed_packs:
+                raise ValueError("no pack with a block's push curve")
+        except (OSError, ValueError, KeyError, struct.error, IndexError) as e:
+            sys.exit("Faster block pushing: %s. Nothing written." % e)
+        print("Faster block pushing: the blocks' pushes in half the frames (%d packs)" % changed_packs)
 
     # ---- bombs without the Goron's Bracelet, in every seed ----
     try:

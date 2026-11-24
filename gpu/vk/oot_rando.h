@@ -177,6 +177,9 @@
       "As the shops", "The game's own", "Low prices", "Any price", "Affordable") \
     X(ARCHERY_WINS, "Archery games won", "rando_archery_wins", \
       "At the end of a round of the Market's and Kakariko's shooting galleries and of the Gerudo horseback archery, Link wins the prize whatever his score: the galleries' prize, and at the horseback archery the 1000 and 1500 points prizes (the Piece of Heart first, then the quiver's). Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
+    X(FAST_PUSH, "Faster block pushing", "rando_fast_push", \
+      "Link pushes and pulls the movable blocks twice as fast: the Forest Temple's, Dodongo's Cavern's, the Fire, Shadow and Spirit Temples' blocks, the Armos and Goron statues and the graveyard's tombstones. Not tried in play yet. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On")
 
 enum {
