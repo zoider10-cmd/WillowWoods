@@ -8030,7 +8030,7 @@ void draw_health(ui::Ctx& c) {
 /// crater, Gerudo's Fortress: no minimap, or one spot, in the runs; Sacred Forest Meadow, whose tall minimap scrolls with Link) have no dots, rather than wrong ones; Kakariko, Zora's
 /// Domain and Fountain and Gerudo Valley were measured once the game's side marked them visited (hos_main.c IsVisitLocation). Hyrule
 /// Field's folder has three pictures: Lake Hylia's within 199 of its LocationArea's middle (a sphere, there once the owl's
-/// lake scene is seen), Lon Lon Ranch's within 60 of (-115, 255) (inside its walls: the measured ranch spots lie west of the ranch's LocationArea, and the owner wants it late rather than early: outside the south wall, 79 off, is the field's), the field's), the field's
+/// lake scene is seen), Lon Lon Ranch's inside its walls (in_ranch, from the owner's screenshots), the field's), the field's), the field's
 /// elsewhere. Dungeons (a picture a floor) and indoor maps have none.
 struct MiniMapArea { const char* area; float u, v, a; };
 constexpr MiniMapArea kMiniMaps[] = {
@@ -8050,6 +8050,16 @@ constexpr MiniMapArea kMiniMaps[] = {
     {"Zora's Fountain", -0.2549f, 0.8420f, 0.002279f},
 };
 constexpr MiniMapArea kMiniLake = {"Hyrule Field", 0.0119f, 0.3135f, 0.001062f}, kMiniRanch = {"Hyrule Field", -0.0625f, 0.4508f, 0.001602f};
+/// Lon Lon Ranch's outline, inside its walls (the owner's screenshots 2026-11-24, Link's place from his arrow on the measured
+/// minimaps): the entrance just inside (-62.3, 186.1; just outside, -59.4 179.1, was still the field's picture), then the
+/// north-east corner, the east, south and west walls and the north-west corner. Inside it, the ranch's picture.
+bool in_ranch(float x, float z) {
+    static const float pts[][2] = {{-62.3f, 186.1f}, {-34.5f, 191.3f}, {-19.8f, 270.2f}, {-90.9f, 294.3f}, {-137.4f, 234.8f}, {-100.4f, 177.7f}};
+    bool in = false;
+    for (int i = 0, j = 5; i < 6; j = i++)
+        if ((pts[i][1] > z) != (pts[j][1] > z) && x < (pts[j][0] - pts[i][0]) * (z - pts[i][1]) / (pts[j][1] - pts[i][1]) + pts[i][0]) in = !in;
+    return in;
+}
 bool minimap_shows() {
     if (!opts.minimap_checks) return false;
     {   // (the seed's checks, read by the Tracker tab when it is opened: here every 5 s too, so they are there with the menu never
@@ -8070,7 +8080,7 @@ void draw_minimap_checks(ui::Ctx& c) {
     if (!m) return;   // (a dungeon)
     if (!strcmp(here, "Hyrule Field")) {   // (its three pictures, by where Link is)
         if (hypotf(lx + 205.4f, lz - 559.2f) <= 199) m = &kMiniLake;
-        else if (hypotf(lx + 115.0f, lz - 255.0f) <= 60) m = &kMiniRanch;
+        else if (in_ranch(lx, lz)) m = &kMiniRanch;
     }
     constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(230, 236, 248);
     const float r = std::max(2.5f, c.h / 1440.0f * 6);

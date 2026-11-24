@@ -3167,7 +3167,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
            AREA_INTROS) and never run, so Lake Hylia, Kakariko, Zora's Fountain, Gerudo Valley and Hyrule Castle had no
            minimap (seen headless: the lake's came with the flag set). The location Link is in is marked visited here, once a
            second: his map's folder, the field's by where he stands (Lake Hylia's LocationArea, a sphere of 199; Lon Lon
-           Ranch within 60 of (-115, 255), as the Minimap checks row has it); Ganon's Castle's grounds are Hyrule Castle's (MapMenuInfo). */
+           Ranch inside its walls, as the Minimap checks row has it); Ganon's Castle's grounds are Hyrule Castle's (MapMenuInfo). */
         static const struct { const char *location; uint32_t hash; } visit[] = {{"KokiriForest", 0x2e315eb6u}, {"KakarikoVillage", 0x5c9e740fu}, {"LonLonRanch", 0x009c5b53u}, {"Market", 0xc88633f0u}, {"GoronCity", 0xecf401b9u}, {"ZoraDomain", 0xede02703u}, {"GerudoFortress", 0x3d07b702u}, {"LostWood", 0xbd536912u}, {"SacredForestMeadow", 0xeb724c83u}, {"HyruleField", 0xdda673cbu}, {"HyruleCastle", 0xb7c0f231u}, {"Graveyard", 0x671a6e1bu}, {"DeathMountainTrail", 0x3c72143au}, {"DeathMountainCrater", 0xd0e4b0dau}, {"ZoraRiver", 0x2e975eedu}, {"ZoraFountain", 0x5de8bbd8u}, {"LakeHylia", 0x36778630u}, {"GerudoValley", 0x5a6c8704u}, {"HountedWasteland", 0x6160c3ecu}, {"DesertColossus", 0x607d9fe6u}};
         char banc[80] = "";
         oot_gamedata_string(c, 0x1d6189dau, banc, sizeof banc);   /* Sequence_CurrentBanc */
@@ -3177,7 +3177,11 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
         const char *location = !strcmp(folder, "GanonCastle") ? "HyruleCastle" : folder;
         if (!strcmp(folder, "HyruleField")) {
             const float x = oot_link_place[0], z = oot_link_place[2];
-            location = hypotf(x + 205.4f, z - 559.2f) <= 199 ? "LakeHylia" : hypotf(x + 115.0f, z - 255.0f) <= 60 ? "LonLonRanch" : "HyruleField";
+            static const float ranch[][2] = {{-62.3f, 186.1f}, {-34.5f, 191.3f}, {-19.8f, 270.2f}, {-90.9f, 294.3f}, {-137.4f, 234.8f}, {-100.4f, 177.7f}};
+            int in = 0;   /* (Lon Lon Ranch inside its walls, as the Minimap checks row's in_ranch: the owner's screenshots, 2026-11-24) */
+            for (int i = 0, j = 5; i < 6; j = i++)
+                if ((ranch[i][1] > z) != (ranch[j][1] > z) && x < (ranch[j][0] - ranch[i][0]) * (z - ranch[i][1]) / (ranch[j][1] - ranch[i][1]) + ranch[i][0]) in = !in;
+            location = hypotf(x + 205.4f, z - 559.2f) <= 199 ? "LakeHylia" : in ? "LonLonRanch" : "HyruleField";
         }
         for (unsigned i = 0; i < sizeof visit / sizeof visit[0]; i++) {
             int was = 1;
