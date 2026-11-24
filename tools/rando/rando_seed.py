@@ -324,6 +324,11 @@ FIRST_PICKUPS = {"HavePlayedGetEvent." + n: True for n in (
 # has its bag already: the first stick's or nut's box, whose scene gives the bag in an ordinary game, then only says so
 # again. With Skip cutscenes it is marked played too, for the starting bag only (START_PICKUPS)
 START_PICKUPS = {"DK": "HavePlayedGetEvent.Item_DekuStick", "DN": "HavePlayedGetEvent.Item_DekuNut"}
+# (bug 123, the owner's run 2026-11-23) A small arrow bundle from a pot showed "You got" each time, with Obj_ArrowBundle_Small's
+# scene marked played (FIRST_PICKUPS). The pick-up's event AI (AI/PouchContent.event.root.ainb) names Item_Arrow_Normal with
+# it: the arrows' own scene, which a game whose Bow came from the shuffle never played (the owner's save: 0; the finished
+# story's, played the game's way: 1). Every new game of a seed has it marked played, Skip cutscenes or not.
+SHUFFLED_FIRSTS = {"HavePlayedGetEvent.Item_Arrow_Normal": True}
 # The HUD of the d-pad's items (Navi and the boots, by the hearts). A new game has none of it until the first scene in
 # the Deku Tree; with a seed's items found long before that, the owner asked for it from the start. What shows it is a
 # flag of the list that no event, AI or logic file names: only its hash is known (no string of the game's files or its
@@ -8508,7 +8513,7 @@ def main():
         for n in lists:
             try:
                 was = unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
-                new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),
+                new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **SHUFFLED_FIRSTS, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),
                                                      **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))
                 if shelf_flag:   # (the same file: the shelves' flags; a flag the game has not is an error)
                     assert not set(shelf_flag.values()) & set(FIRST_PICKUPS), "a shelf's flag is a first pick-up's"

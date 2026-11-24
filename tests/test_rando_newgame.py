@@ -194,7 +194,7 @@ def sources():
     check(seed.OPEN_DOOR == {"Market_Child_TimeTempleDoor_Opened": True, "HavePlayedEvent.Dm_TimeTemple_0065": True} and
           "#define OOT_LEFT_TEMPLE_FLAG 0x%08xu" % seed.murmur3(b"HavePlayedEvent.Dm_TimeTemple_0065") in host and '"rando_open_door": 0' in script and
           'a.open_door = a.open_door or ini["rando_open_door"] == 1' in script and
-          "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
+          "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **SHUFFLED_FIRSTS, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
           'X(OPEN_DOOR, "Open Door of Time", "rando_open_door",' in header,
           "the Door of Time's flag does not start set with the setting, or the setting is not read")
     # (the rules: only what it takes to be an adult is taken off, only from a place that is an adult's alone)
@@ -268,7 +268,7 @@ def main():
     #  Found with a save made before the owl: with HyruleField_ArriveEntrance set, a night asked for stayed)
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
-    check(seed.FIELD_CLOCK == {"HyruleField_ArriveEntrance": True} and "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
+    check(seed.FIELD_CLOCK == {"HyruleField_ArriveEntrance": True} and "new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **SHUFFLED_FIRSTS, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),\n                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))" in script and
           "if True:   # (every seed: Hyrule Field's clock, FIELD_CLOCK" in script,
           "a seed's new game does not start with the flag that ends Hyrule Field's held day, or only with other settings on")
     check(seed.FIXES_VERSION >= 5 and "field_clock(" not in script, "a seed made before the field's clock ran is not made again, or the step tried first is still passed over")
@@ -300,6 +300,9 @@ def main():
     check(len(seed.FIRST_PICKUPS) == 11 and all(v is True and k.startswith("HavePlayedGetEvent.Obj_") for k, v in seed.FIRST_PICKUPS.items()) and
           not any(n in k for k in seed.FIRST_PICKUPS for n in ("Heart_", "Gold", "Silver", "Item_")) and seed.FIXES_VERSION >= 63,
           "the small pick-ups' first boxes are not marked played with Skip cutscenes, or a bag's or a piece's is")
+    # ---- (bug 123) the arrows' own first scene starts played in every seed's new game: a pot's small bundle asked for it ----
+    check(seed.SHUFFLED_FIRSTS == {"HavePlayedGetEvent.Item_Arrow_Normal": True} and not set(seed.SHUFFLED_FIRSTS) & set(seed.FIRST_PICKUPS),
+          "the arrows' first scene is not marked played in a seed's new game (a pot's small bundle showed its box each time)")
     # ---- Link's door: with Skip opening a new game starts with it open and the scene at it done ----
     check(seed.LINK_DOOR == {"KokiriForest_LinkHouseDoor_Open": True, "Dm_Kokiri_0050_After_Near_End": True},
           "Link's door is not open from a new game's start with Skip opening")
