@@ -51,13 +51,18 @@ def main():
     check('{TAB_GAMEPLAY, "Minimap checks", &opts.minimap_checks, 0, 1, 1, tx_onoff,' in menu and "int minimap_checks = 0;" in
           open(os.path.join(ROOT, "gpu", "vk", "vk_menu.h"), encoding="utf-8").read(), "no Minimap checks row, off by default")
     mini = menu[menu.index("constexpr MiniMapArea kMiniMaps[] = {"):menu.index("constexpr MiniMapArea kMiniLake")]
-    mini_areas = re.findall(r'\{"([^"]+)", (-?[0-9]+), (-?[0-9]+), ([0-9]+)\}', mini)
-    check(len(mini_areas) == 19 and all(a in names for a, _, _, _ in mini_areas) and ("Kokiri Forest", "-5", "-12", "300") in mini_areas,
-          "the minimaps' areas are not the field areas the map has, or Kokiri Forest's square is not its picture's")
+    # (measured 2026-11-23: each area's u + a*x across from the right edge, v + a*z down, of the window's height)
+    mini_areas = re.findall(r'\{"([^"]+)", (-?[0-9.]+)f, (-?[0-9.]+)f, ([0-9.]+)f\}', mini)
+    check(len(mini_areas) >= 11 and all(a in names for a, _, _, _ in mini_areas) and
+          all(-0.5 < float(u) < 0 and 0.3 < float(v) < 1 and 0.0003 < float(a) < 0.005 for _, u, v, a in mini_areas),
+          "the minimaps' areas are not the field areas the map has, or a measured fit is off the corner")
+    check(not any(a in ("Kakariko Village", "Gerudo Valley", "Zora's Domain") for a, _, _, _ in mini_areas),
+          "an area not measured has dots (they would be in the wrong place)")
     draw = menu[menu.index("void draw_minimap_checks(ui::Ctx& c) {"):]
     draw = draw[:draw.index("\n}\n")]
-    check("cx + dx * scale, cy + dz * scale" in draw and "tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]" in draw,
-          "the dots are not the checks left, x across and z down on the minimap")
+    check("c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h" in draw and
+          "tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]" in draw and "<= 100) m = &kMiniRanch;" in draw,
+          "the dots are not the checks left on the measured minimap, or the ranch's picture not within 100 of it")
     check(menu.count("if (minimap) draw_minimap_checks(c);") == 2 and "next = now + 5000, tracker_load();" in menu,
           "the minimap's dots are not drawn on screen and on test pictures, or the seed's checks are never read with the menu shut")
     print("FAIL" if failed else "PASS: the Tracker's map")

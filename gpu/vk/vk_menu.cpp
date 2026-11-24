@@ -8022,22 +8022,30 @@ void draw_health(ui::Ctx& c) {
 
 /// (Willow Woods, asked 2026-11-23) The Minimap checks row: the checks left in the outdoor area Link is in (not collected, not
 /// junk) as dots on the game's own minimap, green in logic, a ring not yet. The game's minimap of a field area is the whole area,
-/// north up, fixed (Link's arrow moves on it): a square of kMiniSide of the window's height whose middle is kMiniRight and
-/// kMiniUp of the height from the bottom right corner (fitted 2026-11-23 to the owner's Kokiri Forest screenshots at
-/// 2560x1440: the exits' and the Deku Tree's marks, the shop by Link's arrow), showing the square of the world that the area's
-/// map picture was taken of (romfs Game/MapCaptureInfo: its camera's x and z and Height, by Game/MapMenuInfo's order). Hyrule
-/// Field's folder has three pictures: Lake Hylia's within 199 of its middle (its LocationArea, a sphere), Lon Lon Ranch's near
-/// its LocationArea, Hyrule Field's elsewhere. Dungeons (a picture a floor) and indoor maps have none here.
-struct MiniMapArea { const char* area; float x, z, height; };
+/// north up, fixed (Link's arrow moves on it). Where a world point (x, z) falls on it was MEASURED (2026-11-23, headless runs on
+/// a copy of the owner's finished save: Link teleported to known spots in each area and walking, his red arrow found in each
+/// picture, a least squares fit per area): x across = the window's right edge + (u + a*x) of its height, y down = (v + a*z) of
+/// its height, kMiniMaps (a fitted area's a is 1 / (2.245 * the Height of its map picture's capture, romfs
+/// Game/MapCaptureInfo), the size the data foretold; its middle is not that capture's). Areas not measured (Kakariko, Hyrule
+/// Castle, the crater, Zora's Domain and Fountain, Gerudo Valley and Fortress) have no dots, rather than wrong ones. Hyrule
+/// Field's folder has three pictures: Lake Hylia's within 199 of its LocationArea's middle (a sphere, there once the owl's
+/// lake scene is seen), Lon Lon Ranch's within 100 of (-90, 240) (where the measured spots changed picture), the field's
+/// elsewhere. Dungeons (a picture a floor) and indoor maps have none.
+struct MiniMapArea { const char* area; float u, v, a; };
 constexpr MiniMapArea kMiniMaps[] = {
-    {"Kokiri Forest", -5, -12, 300}, {"Kakariko Village", -50, 42, 246}, {"Market", 0, 3, 214}, {"Goron City", -5, 0, 156},
-    {"Zora's Domain", 30, -14, 151}, {"Gerudo's Fortress", 86, -22, 340}, {"Lost Woods", 6, -1, 400}, {"Sacred Forest Meadow", -12, -25, 317},
-    {"Hyrule Field", -23, 197, 736}, {"Hyrule Castle", 0, -80, 242}, {"Ganon's Castle (outside)", 0, -80, 242}, {"Graveyard", 18, 8, 148},
-    {"Death Mountain Trail", -21, -36, 390}, {"Death Mountain Crater", -12, 12, 188}, {"Zora's River", 20, -15, 265},
-    {"Zora's Fountain", 30, -13, 195}, {"Gerudo Valley", 0, -13, 240}, {"Haunted Wasteland", 6, -52, 645}, {"Desert Colossus", -88, 12, 305},
+    {"Kokiri Forest", -0.2379f, 0.8746f, 0.001478f},
+    {"Lost Woods", -0.1745f, 0.8303f, 0.001115f},
+    {"Market", -0.2048f, 0.8091f, 0.002085f},
+    {"Hyrule Field", -0.1866f, 0.7144f, 0.000605f},
+    {"Graveyard", -0.3044f, 0.8654f, 0.003004f},
+    {"Death Mountain Trail", -0.0803f, 0.8215f, 0.001596f},
+    {"Goron City", -0.1622f, 0.8249f, 0.002859f},
+    {"Zora's River", -0.2892f, 0.8790f, 0.001683f},
+    {"Desert Colossus", -0.0718f, 0.8116f, 0.001456f},
+    {"Haunted Wasteland", -0.1762f, 0.9031f, 0.001068f},
+    {"Sacred Forest Meadow", -0.1056f, 0.8728f, 0.001405f},
 };
-constexpr MiniMapArea kMiniLake = {"Hyrule Field", -200, 490, 422}, kMiniRanch = {"Hyrule Field", -86, 239, 276};
-constexpr float kMiniSide = 666.0f / 1440, kMiniRight = (2560.0f - 2201) / 1440, kMiniUp = (1440.0f - 1233) / 1440;
+constexpr MiniMapArea kMiniLake = {"Hyrule Field", -0.0001f, 0.3685f, 0.000948f}, kMiniRanch = {"Hyrule Field", -0.0625f, 0.4508f, 0.001602f};
 bool minimap_shows() {
     if (!opts.minimap_checks) return false;
     {   // (the seed's checks, read by the Tracker tab when it is opened: here every 5 s too, so they are there with the menu never
@@ -8058,17 +8066,15 @@ void draw_minimap_checks(ui::Ctx& c) {
     if (!m) return;   // (a dungeon)
     if (!strcmp(here, "Hyrule Field")) {   // (its three pictures, by where Link is)
         if (hypotf(lx + 205.4f, lz - 559.2f) <= 199) m = &kMiniLake;
-        else if (hypotf(lx + 83.9f, lz - 233.1f) <= 75) m = &kMiniRanch;
+        else if (hypotf(lx + 90.0f, lz - 240.0f) <= 100) m = &kMiniRanch;
     }
-    const float side = kMiniSide * c.h, cx = c.w - kMiniRight * c.h, cy = c.h - kMiniUp * c.h, scale = side / m->height;
     constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(230, 236, 248);
     const float r = std::max(2.5f, c.h / 1440.0f * 6);
     for (int i = 0; i < tracker_check_count; i++) {
         const TrackerCheck& k = tracker_checks[i];
         if (strcmp(k.area, here) || tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]) continue;
-        const float dx = k.pos[0] - m->x, dz = k.pos[2] - m->z;
-        if (fabsf(dx) > m->height * 0.5f || fabsf(dz) > m->height * 0.5f) continue;   // (off this picture: Lake Hylia's while on the field's)
-        const ImVec2 at(cx + dx * scale, cy + dz * scale);
+        const ImVec2 at(c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h);
+        if (at.x < c.w - 0.5f * c.h || at.y < 0.55f * c.h || at.y > c.h) continue;   // (off the minimap's corner: another picture's part)
         if (tracker_in_logic(k) > 0) {
             c.d->AddCircleFilled(at, r + 1.5f, ui::rgba(10, 30, 16, 230));
             c.d->AddCircleFilled(at, r, kIn);

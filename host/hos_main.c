@@ -2859,6 +2859,15 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
                 rx_option_set(OOT_LINK_Z, (int)lrintf(oot_link_place[2] * 100));
                 rx_option_set(OOT_LINK_YAW, (int)lrintf(yaw * 1000));
             }
+            static int log_place = -1;   /* (HOS_OOT_PLACE_LOG=1, test runs: where Link is, twice a second, for fitting the minimap) */
+            static int64_t next_log;
+            if (log_place < 0) log_place = env_on("HOS_OOT_PLACE_LOG");
+            if (log_place && now >= next_log) {
+                next_log = now + 500000000LL;
+                char banc[80] = "";
+                oot_gamedata_string(c, 0x1d6189dau, banc, sizeof banc);   /* Sequence_CurrentBanc */
+                hos_log("place: %.2f %.2f %.2f %s", oot_link_place[0], oot_link_place[1], oot_link_place[2], banc);
+            }
         }
     }
     if (now < next) return;
