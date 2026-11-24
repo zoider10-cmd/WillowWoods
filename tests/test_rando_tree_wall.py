@@ -3,10 +3,11 @@ FldObj_AirWall_Hookshot lies along the vines in both Links' Hyrule Field maps wh
 walked into (WaterTemple_Room07_00). Fixes 73 took it out (read as a wall that stops the Hookshot) and the vines still
 did not catch; from fixes 79 it is what the Hookshot catches, kept there always (water_wall_out with TREE_WALL, keep:
 its Presence taken away); that hid the marker, so fixes 82 takes it out again. The Longshot then reached the tree but
-did not pull: the two climbing boxes over its vines (AirwallForClimb) stand in front of them with no StickHookshot tag
-(Kokiri's catching ivy, one mesh, has it). From fixes 84 the boxes carry Wall_StickHookshot too (tree_climb_hook; 83
-had tagged the mesh's Wood, which changed nothing in play); 84 changed nothing either: the tree is placed Bakeable, its
-body the copy in Hyrule Field's static compound, so from fixes 85 it is placed without (tree_unbake). Checked on a made-up map file and pack and by source.
+did not pull. The tree's collision is baked into Hyrule Field's static compound (HyruleField_<age>_X7_Z10), and this build
+seems to read only a shape's first material there (the owner: the vines' hit makes no sound after a load, then the
+wood's). Tried and changed nothing: its own mesh's Wood (83), its climbing boxes (84), unbaked (85: drawn dark). From
+fixes 86 the baked Wood, the tree's first material, is tagged StickHookshot (baked_tree_hook). Checked on made-up files
+and by source. No game files.
 
 python -I -B tests/test_rando_tree_wall.py
 """
@@ -52,49 +53,40 @@ def main():
         check(len(out2[1]["Actors"][1]) == 2, "the Water Temple gate's wall is no longer taken out by default")
     except (ValueError, struct.error, KeyError) as e:
         check(False, "a made-up map: %s" % e)
-    # (the tree placed without Bakeable, its other keys and the other actors as they were)
-    def placed(gyaml, **more):
-        d = collections.OrderedDict(Gyaml=("string", gyaml))
-        d.update((k, ("string", v)) for k, v in more.items())
-        return ("dict", d)
-    field = ("dict", collections.OrderedDict(Actors=("array", [placed(seed.TREE_NAME, Bakeable="yes", Name="tree"), placed("Rock", Bakeable="yes")])))
+    # (a made-up static compound: the header's table bounds, another Wood, the tree's four, another entry after)
+    vines = [(2, 0x2B, 1 << 44), (2, 0x2B, 1 << 40), (2, 0x2B, 1 << 44)]
+    rows = [(14, 0, 0), (7, 0, 0), (14, 0, 1 << 3)] + vines + [(14, 0, 0)]
+    table = b"".join(struct.pack("<IIQ", *e) for e in rows)
+    head = bytearray(b"Phive" + bytes(0x40 - 5))
+    struct.pack_into("<II", head, 0x20, 0x40, 0x40 + len(table))
+    baked = bytes(head) + table + b"rest"
     try:
-        got, _ = seed.byml_parse(seed.tree_unbake(seed.byml_build(field, 7)))
-        check([sorted(a[1]) for a in got[1]["Actors"][1]] == [["Gyaml", "Name"], ["Bakeable", "Gyaml"]],
-              "the tree alone is not placed without Bakeable: %s" % [list(a[1]) for a in got[1]["Actors"][1]])
-    except (ValueError, KeyError, struct.error) as e:
-        check(False, "a made-up map for the tree: %s" % e)
-    check(seed.TREE_NAME == "Land_LakeHrl_Tree_A_01" and "changed[rel] = tree_unbake(water_wall_out(data, TREE_WALL))" in open(seed.__file__, encoding="utf-8").read(),
-          "the tree is not placed without Bakeable in both Hyrule Field maps")
-    # (a made-up pack: the climbing shape's two boxes, and another part left as it was)
-    def box(*presets):
-        return ("dict", collections.OrderedDict(MaterialPresets=("array", [("string", x) for x in presets])))
-    shape = ("dict", collections.OrderedDict(Box=("array", [box("AirWallForClimb"), box("AirWallForClimb", "Wall_StickHookshot")])))
-    try:
-        pack = seed.sarc_write({seed.TREE_CLIMB_SHAPE: seed.byml_build(shape, 7), "Actor/Other.bgyml": b"other"})
-        parts = seed.sarc_read(seed.tree_climb_hook(pack))
-        got, _ = seed.byml_parse(parts[seed.TREE_CLIMB_SHAPE])
-        check([[x[1] for x in b[1]["MaterialPresets"][1]] for b in got[1]["Box"][1]] ==
-              [["AirWallForClimb", "Wall_StickHookshot"], ["AirWallForClimb", "Wall_StickHookshot"]] and parts["Actor/Other.bgyml"] == b"other",
-              "the tree's climbing boxes are not each a Hookshot catch once, or another part changed")
-    except (ValueError, KeyError, struct.error) as e:
-        check(False, "a made-up pack: %s" % e)
-    try:
-        seed.tree_climb_hook(seed.sarc_write({"Actor/Other.bgyml": b"other"}))
-        check(False, "a pack without the climbing shape was changed")
-    except ValueError:
-        pass
-    check(seed.HOOK_PRESET == "Wall_StickHookshot" and "Land_LakeHrl_Tree_A_01" in seed.TREE_PACK and "AirwallForClimb" in seed.TREE_CLIMB_SHAPE
-          and not hasattr(seed, "tree_hook_wood"), "the preset, the tree's pack or shape changed, or its mesh is still changed")
+        got = seed.baked_tree_hook(baked)
+        want = rows[:2] + [(14, 0, (1 << 3) | (1 << 44))] + rows[3:]
+        check(len(got) == len(baked) and [struct.unpack_from("<IIQ", got, 0x40 + 16 * k) for k in range(len(rows))] == want and got[-4:] == b"rest",
+              "the tree's baked Wood alone (the one before its vines) is not tagged StickHookshot")
+    except (ValueError, struct.error) as e:
+        check(False, "a made-up static compound: %s" % e)
+    for bad in (baked.replace(b"Phive", b"Nope!", 1), baked[:0x40] + table[:16 * 3] + table[16 * 4:]):
+        try:
+            seed.baked_tree_hook(bad)
+            check(False, "a file that is no Phive file, or without the tree's four materials, was changed")
+        except ValueError:
+            pass
+    check(len(seed.BAKED_TREE_FILES) == 2 and all("HyruleField" in f and "_X7_Z10." in f and f.endswith(".bphsc.zs") for f in seed.BAKED_TREE_FILES)
+          and not any(hasattr(seed, n) for n in ("tree_hook_wood", "tree_climb_hook", "tree_unbake")),
+          "not both ages' baked squares of the tree, or an earlier try is still made")
     src = open(seed.__file__, encoding="utf-8").read()
     main_src = src[src.index("\ndef main():"):]
-    check("for rel in TREE_WALL_FILES:" in main_src and "changed[rel] = tree_unbake(water_wall_out(data, TREE_WALL))" in main_src and
+    check("for rel in TREE_WALL_FILES:" in main_src and "changed[rel] = water_wall_out(data, TREE_WALL)" in main_src and
           main_src.index("water_wall_out(data, TREE_WALL)") < main_src.index("    # ---- the size table ----"),
           "the tree's wall is not taken out of both maps before the size table")
-    check("pack_files[rel] = tree_climb_hook(was)" in main_src and main_src.index("tree_climb_hook(") < main_src.index("    # ---- the size table ----")
-          and "pack_parts.add(TREE_CLIMB_SHAPE)" in main_src, "the tree's climbing boxes are not changed before the size table, or their part's size not raised")
-    check(seed.FIXES_VERSION >= 85, "FIXES_VERSION not past 84")
-    print("FAIL" if failed else "PASS: Lake Hylia's dead tree without its hookshot-stopping wall, the vines' climbing boxes a Hookshot catch")
+    check("for rel in BAKED_TREE_FILES:" in main_src and "changed[rel] = baked_tree_hook(" in main_src and
+          main_src.index("baked_tree_hook(") < main_src.index("    # ---- the size table ----")
+          and "sizes[rel[:-3]] = len(changed[rel])" in main_src[main_src.index("baked_tree_hook("):][:200],
+          "the tree's baked wood is not tagged in both files before the size table, or their sizes not counted")
+    check(seed.FIXES_VERSION >= 86, "FIXES_VERSION not past 85")
+    print("FAIL" if failed else "PASS: Lake Hylia's dead tree without its hookshot-stopping wall, its baked wood a Hookshot catch")
     return 1 if failed else 0
 
 
