@@ -205,7 +205,7 @@ public static class SaveSlots {
     // (the randomizer's settings that move no item: changed on a save being played, its seed is written again as it was,
     // tools/rando/rando_seed.py QOL_STAMP and the stamp's second line; the others are the game's side's alone)
     static readonly HashSet<string> NoItemKeys = new HashSet<string> { "rando_skip_intro", "rando_skip_cutscenes", "rando_start_rupees",
-        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" };
+        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_archery_wins" };
     static bool MovesNoItem(string line) { int eq = line.IndexOf('='); return eq > 0 && NoItemKeys.Contains(line.Substring(0, eq).Trim()); }
 
     // (the seed there is now is not the one that save was last played on: settings that move no item aside. A line one
@@ -2075,7 +2075,7 @@ static class RandoLayout {
                                  Experimental = Color.FromArgb(240, 112, 86), SectionColor = Color.FromArgb(172, 214, 98);
     // (how far each is tested: Tested unless named here)
     static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_water_gate", "rando_magic", "rando_ageless_items", "rando_ageless_tunics",
-        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_fairy_prices" };
+        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_fairy_prices", "rando_archery_wins" };
     public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards" };
     public static Color Status(string key) {
         if (Array.IndexOf(NotYetKeys, key) >= 0) return Experimental;
@@ -2120,7 +2120,8 @@ static class RandoLayout {
             Rows = new[] { "rando_progressive", "+ageless", "rando_ageless_tunics" } },
         new RandoSection { Title = "QUALITY OF LIFE", Sub = "moves no item: can be changed for a seed being played", Accent = SectionColor,
             Rows = new[] { "+skips", "+rupees", "rando_ammo_pickups", "rando_infinite_ammo", "rando_hints", "rando_chest_size", "rando_epona_song",
-                           "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower" } },
+                           "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower",
+                           "rando_archery_wins" } },
     };
     public static RandoDuo Duo(string entry) {
         if (!entry.StartsWith("+")) return null;
@@ -2935,7 +2936,9 @@ class LauncherForm : Form {
         new object[] { "rando_skip_tower", "Skip the tower escape", new[] { "Off", "On" }, new[] { 0, 1 },
             "After Ganondorf falls, Link goes straight to the field below the tower, as if he had run out of the collapsing castle, and the Ganon fight follows. Not tried in play yet. Moves no item." },
         new object[] { "rando_fairy_prices", "Great Fairy prices", new[] { "As the shops", "The game's own", "Low prices", "Any price", "Affordable" }, new[] { 0, 1, 2, 3, 4 },
-            "What the Great Fairies ask as an offering for their gift. As the shops: rolled as the shops' prices are (the game's own when Shops is off). The game's own: 25 to 500 rupees, as the game has them. Low prices, Any price, Affordable: rolled as those shop prices are, whatever Shops is. A price asks for a wallet that holds it." }
+            "What the Great Fairies ask as an offering for their gift. As the shops: rolled as the shops' prices are (the game's own when Shops is off). The game's own: 25 to 500 rupees, as the game has them. Low prices, Any price, Affordable: rolled as those shop prices are, whatever Shops is. A price asks for a wallet that holds it." },
+        new object[] { "rando_archery_wins", "Archery games won", new[] { "Off", "On" }, new[] { 0, 1 },
+            "At the end of a round of the Market's and Kakariko's shooting galleries and of the Gerudo horseback archery, Link wins the prize whatever his score: the galleries' prize, and at the horseback archery the 1000 and 1500 points prizes (the Piece of Heart first, then the quiver's). Moves no item: it can be turned on for a seed being played." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and

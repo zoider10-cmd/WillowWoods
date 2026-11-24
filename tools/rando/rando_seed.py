@@ -4515,6 +4515,16 @@ FISH_FLOW = "Event/EventFlow/MiniGame_Fishing.bfevfl.zs"
 SKULL_KID_FLOW = "Event/EventFlow/Npc_SkullKid_Child_02.bfevfl.zs"
 GANON_FLOW = "Event/EventFlow/Defeat_Ganon.bfevfl.zs"
 TOWER_ANCHOR_FILE = "Banc/InsideGanonCastle/InsideGanonCastle_Dynamic.bcett.byml.zs"
+# Archery games won whatever the score (rando_archery_wins, asked 2026-11-23, share/todo.md). The shooting galleries
+# (MiniGame_HitTarget, the Market's young Link's and Kakariko's adult's) end a round in a talk chosen by MiniGame_Score
+# (EventQueryGameDataIntBranch, cases 0 to 10: under 8 the "try again", 8 and 9 the "so close", 10 the prize's way through
+# RewardTalk): every case goes the prize's way. The horseback archery (Minigame_HorsebackArchery) asks "MiniGame_Score
+# at least 1400" (ARCHERY_TOP, the remake's top prize's score; at least 750 its first) at a round's end: its "no" goes
+# the "yes" way, which gives the Piece of Heart first if not had (with the quiver after it, HourseBackArchery_
+# MakeQuiverLarger_DoubleGet), else the quiver's prize: both checks, the 1000 and 1500 points ones, on the first round.
+GALLERY_FLOW = "Event/EventFlow/MiniGame_HitTarget.bfevfl.zs"
+HORSE_ARCHERY_FLOW = "Event/EventFlow/Minigame_HorsebackArchery.bfevfl.zs"
+ARCHERY_TOP = 1400
 
 
 def qol_flow(raw, which):
@@ -4624,6 +4634,24 @@ def qol_flow(raw, which):
                      ("BootEventName", "InsideGanonCaslte_Dungeon_Escape"), ("EventStarterName", "FinalBattleField_Entrance")):
             if k in d:
                 d[k] = v
+    elif which == "gallery":   # (ARCHERY_WINS: the Market's and Kakariko's shooting galleries, one flow)
+        if fc.name != "MiniGame_HitTarget":
+            raise ValueError("not MiniGame_HitTarget")
+        hits = [e for e in fc.events if call(e) == "GameDataActor.EventQueryGameDataIntBranch" and p(e, "GameDataName") == "MiniGame_Score"
+                and all(k in e.data.cases for k in range(11)) and len({id(case(e, k)) for k in range(11)}) == 3]
+        if len(hits) != 1:
+            raise ValueError("%d result talks by the score (lose, almost, win), not 1" % len(hits))
+        win = case(hits[0], 10)
+        for k in range(10):
+            set_case(hits[0], k, win)
+    elif which == "horse":     # (ARCHERY_WINS: the Gerudo horseback archery)
+        if fc.name != "Minigame_HorsebackArchery":
+            raise ValueError("not Minigame_HorsebackArchery")
+        hits = [e for e in fc.events if call(e) == "GameDataActor.EventQueryIsGameDataInt" and p(e, "GameDataName") == "MiniGame_Score"
+                and p(e, "Value") == ARCHERY_TOP and 1 in e.data.cases and 0 in e.data.cases]
+        if len(hits) != 1:
+            raise ValueError("%d checks of the score at %d, not 1" % (len(hits), ARCHERY_TOP))
+        set_case(hits[0], 0, case(hits[0], 1))
     else:
         raise ValueError("no time saver " + which)
     out = io.BytesIO()
@@ -5510,7 +5538,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -7629,6 +7657,7 @@ def main():
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
+    a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
     a.any_fish = ini["rando_any_fish"] != 0             # (time savers, 2026-11-22: qol_flow; move no item)
     a.skull_kid_fast = ini["rando_skull_kid_fast"] != 0
     a.skip_tower = ini["rando_skip_tower"] != 0
@@ -7766,7 +7795,8 @@ def main():
         stamp = stamp[:-1] + " epona by song\n"
     if a.castle_guards:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " guards pass\n"
-    for saver_on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped")):
+    for saver_on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped"),
+                           (a.archery_wins, " archery won")):
         if saver_on:   # (the time savers: move no item either, the same line. Not `on`: that is the randomizer's own, below)
             stamp = stamp[:-1] + word + "\n"
     if a.free_scarecrow:   # (moves no item either: the same line)
@@ -9238,7 +9268,8 @@ def main():
                 sys.exit("Darunia's late gift, %s: %s. Nothing written." % (rel, e))
         print("Quest rewards: Darunia's gift is had after Dodongo's Cavern too")
     for saver_on, rel, saver in ((a.any_fish, FISH_FLOW, "fish"), (a.skull_kid_fast, SKULL_KID_FLOW, "skull kid"),
-                           (a.skip_tower, GANON_FLOW, "tower")):   # (the time savers: qol_flow, on what the gifts made)
+                           (a.skip_tower, GANON_FLOW, "tower"), (a.archery_wins, GALLERY_FLOW, "gallery"),
+                           (a.archery_wins, HORSE_ARCHERY_FLOW, "horse")):   # (the time savers: qol_flow, on what the gifts made)
         if not saver_on:
             continue
         try:
@@ -9254,7 +9285,9 @@ def main():
             sys.exit("a time saver (%s), %s: %s. Nothing written." % (saver, rel, e))
         print({"fish": "Any fish wins: the fishing pond's prizes for any fish",
                "skull kid": "Faster Skull Kid game: one turn of 6 notes",
-               "tower": "Skip the tower escape: Ganondorf's fall leads to the field below the tower"}[saver])
+               "tower": "Skip the tower escape: Ganondorf's fall leads to the field below the tower",
+               "gallery": "Archery games won: the shooting galleries' prize whatever the score",
+               "horse": "Archery games won: the horseback archery's prizes whatever the score"}[saver])
     if a.shops:   # (the Empty Bottle sold without a bottle: shop_bottle_flow, bug 113)
         try:
             was = gift_files[SHOP_FLOW] if SHOP_FLOW in gift_files else unpack(open(os.path.join(romfs, *SHOP_FLOW.split("/")), "rb").read(), zs, dicts)
