@@ -5,8 +5,12 @@ description: Check the other ports of the same game (HeyListen, ProjectReLink, L
 
 # Bringing the best of the other ports into this build
 
-The goal is the best build of the game for every kind of PC, never at the cost of the owner's (AMD RX 9070 XT,
-Windows 11). Read only from the other ports; port the ideas here, one change at a time, each measured.
+**The goal (the owner's, 2026-11-24): compatibility and performance across all PCs and platforms**: NVIDIA, Intel,
+AMD, low-VRAM GPUs, narrow PCIe links, Steam Deck and Linux, older CPUs. Rank and port for that, not for the 1% lows
+on the owner's own PC (the old goal). A change that helps other hardware must never break the owner's PC (AMD RX 9070
+XT, Windows 11): where it can't be measured here, it goes in behind detection or a switch, keeping today's behaviour
+as the default unless it is shown harmless. Read only from the other ports; port the ideas here, one change at a
+time, each measured where this PC can measure it.
 
 **Rules, before anything** (AGENTS.md and the owner's word):
 - **Their code is read, never run.** Clone without checkout (`git clone --no-checkout --filter=blob:none`) into the
