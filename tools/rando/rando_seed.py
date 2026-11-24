@@ -6381,6 +6381,16 @@ def fit_rule(need):
 # not by its place, so it is still marked when opened. Kokiri Forest's Song of Storms grotto: the owner's screenshot,
 # Link at its soft soil, measured on the minimap (Kokiri Forest's fit).
 CHECK_PLACE = {0xcda7447b91ab4dba: (-49.5, 103.6, -59.5)}
+# Where Go there puts Link for a Gold Skulltula whose own place is on a wall he can't be put in (bug 117, the owner's run
+# 2026-11-23: Link stuck behind a wall, or fallen out of the world). Each is a floor spot found without a window, Link put
+# at eight points 2.5 from the Skulltula and logged where he came to rest (2026-11-24): Dodongo's Cavern's room 2
+# (the Scarecrow's ledge: he stood at 103.5-104.1 on each side but one; the picture: on the floor, the web before him),
+# Zora's Fountain's night #2 (it hangs above a cave's mouth: the points that stayed at its height were in the rock above
+# the cave, dark pictures and a "Let Go"; those in front came down 8 to the open snow before the cave, both ages, where
+# the pictures show him standing), and the grotto by Lon Lon Ranch (its Skulltula is high on the grotto's wall: every
+# point came down to the floor at about 123.5).
+SKULL_GO = {0x0d53e429a1ef383d: (56.5, 104.0, -18.2), 0x845ba51dc18c855e: (82.7, 126.5, 9.5),
+            0xa6a4e87da18fa678: (-147.9, 124.0, 324.9)}
 
 
 def check_lines(chests, skulls, gifts=()):
@@ -9601,7 +9611,8 @@ def main():
         f.write("\n".join(check_lines([(spots[h][0], spots[h][5], CHEST_AGES.get(h) or check_ages(maps[h]), needs[h], named("Chest", h, spots[h][0], spots[h][5], MAGIC_JUNK if h == magic_chest else spots[h][1]), h, gives[h],
                                         CHEST_GO.get(h) or (chest_front(spots[h][5], about[h]["turned"]) if len(spots[h][5]) == 3 and "turned" in about.get(h, {}) else None))
                                        for h in gives if h not in gifts],
-                                      [(skulls[h][0], skulls[h][1], check_ages(maps[h]), skull_need(h), named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN)
+                                      [(skulls[h][0], skulls[h][1], check_ages(maps[h]), skull_need(h), named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN,
+                                        SKULL_GO.get(h))
                                        for h in took] +
                                       [(pieces[h][0], pieces[h][1], check_ages(maps[h]), heart_asks(h),
                                         "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
