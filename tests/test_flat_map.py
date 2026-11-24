@@ -36,7 +36,7 @@ enum VkImageViewType { VK_IMAGE_VIEW_TYPE_1D, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_VI
 enum VkFormat { VK_FORMAT_UNDEFINED = 0, VK_FORMAT_R8G8B8A8_UNORM = 37, VK_FORMAT_R32_UINT = 98 };
 #define VK_NULL_HANDLE nullptr
 enum class ViewUse { Sample, Attachment, Storage };
-struct Texture { int id; };
+struct Texture { uint32_t id; };   // (vk_texture.h's creation number)
 struct nvn_tex {
     struct { int target, format; uint32_t width, height, depth, levels; } d;
     uint64_t gpu;
@@ -57,6 +57,10 @@ uint32_t texture_slot_version(int id) { return versions[id & 4095]; }
 uint64_t texture_destroy_generation() { return destroy_gen; }
 uint32_t texture_epoch() { return epoch; }
 bool env_on(const char*) { return false; }
+bool env_value_off(const char*) { return false; }   // (no switch set: RX_VK_EXACT_STALE on)
+// (RX_VK_EXACT_STALE: every handle resolved before a texture went is stale, as the old one counter had it, so the trace
+// stays the counter's)
+bool texture_still_resolved(uint32_t, uint64_t, uint64_t) { return false; }
 void logf(const char*, ...) {}
 struct ParLock {};
 bool texture_touch_quick(Texture* t, bool sampling) {

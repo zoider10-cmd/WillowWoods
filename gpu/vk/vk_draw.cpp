@@ -3499,6 +3499,7 @@ struct HandleHit {
     uint32_t version; // (the slot's, when resolved)
     uint32_t tex_epoch;   // (the texture epoch it was last touched in)
     bool sampling;    // (its use reads the texture's contents)
+    uint32_t tex_id;  // (the texture's creation number, 0 for none: texture_still_resolved)
 };
 TLS_OBJECT(handle_hits, FlatMap<uint64_t, HandleHit>)
 // (hookshot) RX_VK_TRACE_TEX=<w>x<h>,...: each draw sampling a texture of that size is logged with its state, every 30th frame, 600 lines: a
@@ -3554,6 +3555,11 @@ VkImageView texture_view_of(uint32_t handle, VkImageViewType want, ViewUse use, 
         else if (it->second.destroy_gen != dgen) st_gen++;
         else st_hit++;
     }
+    // (RX_VK_EXACT_STALE=0: as before) a texture went since, but not this handle's: what it resolved to stands
+    static const bool exact = [] { const char* e = getenv("RX_VK_EXACT_STALE"); return !(e && env_value_off(e)); }();
+    if (exact && it != handle_hits().end() && it->second.version == version && it->second.destroy_gen != dgen &&
+        texture_still_resolved(it->second.tex_id, it->second.destroy_gen, dgen))
+        it->second.destroy_gen = dgen;
     if (it != handle_hits().end() && it->second.version == version && it->second.destroy_gen == dgen) {
         if (it->second.tex && it->second.tex_epoch != texture_epoch()) {   // (once a submission: its age and contents)
             if (!texture_touch_quick(it->second.tex, it->second.sampling)) {
@@ -3592,7 +3598,8 @@ VkImageView texture_view_of(uint32_t handle, VkImageViewType want, ViewUse use, 
                      has_view && v.set_format ? v.format : 0, has_view && v.set_target ? v.target : -1, (int)want, (int)use);
         }
     }
-    handle_hits()[key] = {view, tex, dgen, level, version, texture_epoch(), use == ViewUse::Sample || use == ViewUse::Storage};
+    handle_hits()[key] = {view, tex, dgen, level, version, texture_epoch(), use == ViewUse::Sample || use == ViewUse::Storage,
+                          tex && view ? tex->id : 0};
     if (tex_out) *tex_out = tex;
     if (level_out) *level_out = level;
     return view;

@@ -1698,17 +1698,50 @@ void reuse_released(const nvn_tex* t) {
         x->freed_listed = true;
     }
 }
-/// A new decoded ASTC texture's blocks hashed (its first upload, whole), and the image of a finalized one with the same blocks
-/// and shape copied into it: true when it was. One uploaded again keeps no hash, and is not listed when finalized
-bool reuse_upload(Texture& tex, uint64_t total) {
-    const auto t0 = std::chrono::steady_clock::now();
+// (RX_VK_HASH_MEMO) The hash remembered by the storage and the shape, with the memory generation it was taken at: the same
+// texture made again over storage no page of which was written since takes it without reading the storage again (a turn in
+// Kokiri hashed ~1.8 ms of it a frame, under the helpers' lock). The generation is taken before the hash, so a write during
+// it makes the memo older than the bytes, never newer. RX_VK_HASH_MEMO=0: off
+struct HashMemo { uint64_t hash, gen; };
+std::mutex hash_memo_mu;
+std::unordered_map<uint64_t, HashMemo> hash_memo;   // (hash_memo_mu)
+std::atomic<int64_t> hash_memo_hits{0}, hash_memo_hit_bytes{0}, hash_memo_misses{0};
+uint64_t blocks_hash_memoized(const Texture& tex, uint64_t total) {   // (the storage the CPU route reads, as submitted)
+    static const bool memo_on = [] { const char* e = getenv("RX_VK_HASH_MEMO"); return !(e && env_value_off(e)); }();
+    const uint64_t guest = memo_on && tex.gpu < (1ull << 40) ? tex.gpu : 0;
+    uint64_t key = 0, gen0 = 0;
+    if (guest) {
+        key = guest * 0x9E3779B97F4A7C15ull ^ total * 0xC2B2AE3D27D4EB4Full ^ ((uint64_t)tex.nvn_format << 48) ^
+              ((uint64_t)tex.width << 32) ^ ((uint64_t)tex.height << 16) ^ ((uint64_t)tex.layers << 8) ^ tex.levels;
+        gen0 = memory_generation();
+        std::lock_guard lk(hash_memo_mu);
+        auto it = hash_memo.find(key);
+        if (it != hash_memo.end() && !memory_written_since(guest, total, (uint32_t)it->second.gen)) {
+            hash_memo_hits.fetch_add(1, std::memory_order_relaxed);
+            hash_memo_hit_bytes.fetch_add((int64_t)total, std::memory_order_relaxed);
+            return it->second.hash;
+        }
+    }
     static thread_local std::vector<uint8_t> scratch;
     astc_reuse::Hasher h;
     for (uint64_t at = 0; at < total; at += 64ull << 20) {
         const uint64_t n = std::min<uint64_t>(64ull << 20, total - at);
         h.add(guest_bytes(tex.gpu + at, n, scratch), n);
     }
-    tex.blocks_hash = h.h | 1;
+    const uint64_t v = h.h | 1;
+    if (guest) {
+        hash_memo_misses.fetch_add(1, std::memory_order_relaxed);
+        std::lock_guard lk(hash_memo_mu);
+        if (hash_memo.size() > 200000) hash_memo.clear();   // (a bound)
+        hash_memo[key] = {v, gen0};
+    }
+    return v;
+}
+/// A new decoded ASTC texture's blocks hashed (its first upload, whole), and the image of a finalized one with the same blocks
+/// and shape copied into it: true when it was. One uploaded again keeps no hash, and is not listed when finalized
+bool reuse_upload(Texture& tex, uint64_t total) {
+    const auto t0 = std::chrono::steady_clock::now();
+    tex.blocks_hash = blocks_hash_memoized(tex, total);   // (the same bytes, the same Hasher, | 1: from the memo when it holds)
     st_reuse_hash_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - t0).count();
     st_reuse_hash_bytes += (int64_t)total;
     if (tex.sparse || tex.type != VK_IMAGE_TYPE_2D || !tex.image) return false;
@@ -1748,7 +1781,8 @@ bool reuse_upload(Texture& tex, uint64_t total) {
 /// would have made. The game's shadow map (12288 x 12288 D16, 288 MB, its storage fresh and zero) took 73 ms of the replay
 /// thread at a scene change; the check reads the storage once, on several threads, and stops at the first byte that is not 0.
 /// RX_VK_ZERO_UPLOAD=0: off
-bool upload_all_zero(Texture& tex, uint64_t total, const Ranges* dirty, bool widened_format) {
+bool upload_all_zero(Texture& tex, uint64_t total, const Ranges* dirty, bool widened_format, bool& checked) {
+    checked = false;
     static const bool off = getenv("RX_VK_ZERO_UPLOAD") && atoi(getenv("RX_VK_ZERO_UPLOAD")) == 0;
     if (off || total < (32ull << 20) || tex.astc || tex.bc || tex.sparse || widened_format || !tex.image ||
         tex.type == VK_IMAGE_TYPE_3D || is_bc(tex.format) || is_astc(tex.format))
@@ -1763,6 +1797,7 @@ bool upload_all_zero(Texture& tex, uint64_t total, const Ranges* dirty, bool wid
     uint64_t avail = 0;
     const uint8_t* p = host->gpu_ptr(tex.gpu, &avail);
     if (!p || avail < total) return false;
+    checked = true;
     const auto t0 = std::chrono::steady_clock::now();
     // (hookshot) only the parts of the storage that hold pages: a page of the guest window's memfd nothing wrote is a hole, zero,
     // and reading it made the kernel give it a page (guest_holes.h). The 12288 x 12288 D16 shadow map, 284 of its 288 MB outside
@@ -1902,7 +1937,45 @@ bool upload_inner(Texture& tex, const Ranges* dirty) {
     int widen_from = 0;
     const VkFormat src_vf = tex.d.format ? vk_format(tex.nvn_format).format : tex.format;
     widened(src_vf, &widen_from);
-    if (upload_all_zero(tex, total, dirty, widen_from != 0)) return true;
+    bool large_zero_checked = false;
+    if (upload_all_zero(tex, total, dirty, widen_from != 0, large_zero_checked)) return true;
+    {   // (RX_VK_DEPTH_ZERO) a depth buffer read before the GPU drew it, its storage all zero: cleared on the GPU, not
+        // unswizzled on the CPU (upload_all_zero takes only storage 32 MB and more; these are 1-9 MB in a virtual pool).
+        // In Kokiri 15 of 25 such reads were of zero storage: the shadow maps the game draws at one size (816 x 816) and
+        // samples at another (812, 813) over the same memory. The bytes checked are guest_bytes', as the CPU route reads
+        // them; a depth image cleared to 0 is what unswizzling zero storage makes. RX_VK_DEPTH_ZERO=0: off
+        static const bool dz_on = [] { const char* e = getenv("RX_VK_DEPTH_ZERO"); return !(e && env_value_off(e)); }();
+        static std::atomic<int64_t> dz_n{0}, dz_bytes{0}, dz_not{0};
+        if (dz_on && !large_zero_checked && !dirty && (tex.aspect & VK_IMAGE_ASPECT_DEPTH_BIT) && tex.image && !tex.sparse && tex.type != VK_IMAGE_TYPE_3D) {
+            static thread_local std::vector<uint8_t> zs;
+            bool zero = true;
+            for (uint64_t at = 0; at < total && zero; at += 16ull << 20) {
+                const uint64_t n = std::min<uint64_t>(16ull << 20, total - at);
+                const uint8_t* q = guest_bytes(tex.gpu + at, n, zs);
+                uint64_t acc = 0, i = 0;
+                for (; i + 8 <= n && !acc; i += 8) {
+                    uint64_t w;
+                    std::memcpy(&w, q + i, 8);
+                    acc |= w;
+                }
+                for (; i < n && !acc; i++) acc |= q[i];
+                zero = !acc;
+            }
+            if (zero) {
+                checkpoint_mark(upload_cmd(), tex.gpu, 'u');
+                const VkImageSubresourceRange range{tex.aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+                const VkClearDepthStencilValue z{0.0f, 0};
+                vkCmdClearDepthStencilImage(upload_cmd(), tex.image, VK_IMAGE_LAYOUT_GENERAL, &z, 1, &range);
+                const int64_t k = ++dz_n;
+                dz_bytes += (int64_t)total;
+                if (k <= 4 || k % 200 == 0)
+                    logf("vk: depth buffer %ux%u NVN %#x (%.1f MB) all zero: cleared on the GPU (%lld so far, %.0f MB; %lld were not zero)",
+                         tex.width, tex.height, tex.nvn_format, total / 1048576.0, (long long)k, dz_bytes.load() / 1048576.0, (long long)dz_not.load());
+                return true;
+            }
+            dz_not++;
+        }
+    }
     const int src_bpb = tex.bpb;
     const int out_bpb = tex.astc ? 4 : widen_from ? (widen_from == 3 ? 4 : widen_from == 6 ? 8 : 16) : src_bpb;
     const uint32_t copy_layers = tex.type == VK_IMAGE_TYPE_3D ? 1 : tex.layers;
@@ -2214,9 +2287,21 @@ bool texture_dirty(Texture& tex, uint32_t gen, Ranges& out) {
 }
 
 uint64_t destroy_gen = 1;   // (bumped when textures go: what was resolved to them goes stale)
+// (RX_VK_EXACT_STALE) Which texture went at each generation: its creation number (Texture::id), or kGoneAll where every
+// resolved view is stale. A handle resolved to another texture stands (texture_still_resolved): one counter for all made
+// every draw of the next frame look its textures up again and build its descriptors again whenever any texture went, 11 ms
+// of lookups and 12 ms of descriptors in the frame after the pause menu's own targets went, with the render thread 30-40 ms
+// behind for the frames after it. The slot is written before the generation that names it is, so a reader that saw the
+// generation sees the slot.
+constexpr uint32_t kGoneLog = 16384, kGoneAll = 0xFFFFFFFFu;   // (a power of two; a sweep takes ~1,400 at once at most)
+std::atomic<uint32_t> gone_log[kGoneLog];
+void gone_note(uint32_t id) {
+    gone_log[(destroy_gen + 1) & (kGoneLog - 1)].store(id, std::memory_order_release);
+    destroy_gen++;
+}
 
 void destroy_later(Texture& tex) {
-    destroy_gen++;
+    gone_note(tex.id);
     Dead d{tex.last_value, tex.image, tex.allocation, {}, {}};
     if (tex.pool_key && tex.allocation && tex.sparse_chunks.empty() && pool_cap()) {   // (a render target's: to the pool, its views too)
         d.pool_key = tex.pool_key, d.view_map = std::move(tex.views), d.bytes = tex.bytes + tex.pad;
@@ -2852,6 +2937,14 @@ Texture* texture_get(const nvn_tex* t, bool for_sampling) {
 
 uint64_t texture_destroy_generation() {
     return destroy_gen;
+}
+bool texture_still_resolved(uint32_t id, uint64_t since, uint64_t now) {   // (RX_VK_EXACT_STALE; the log by gone_note)
+    if (!id || now - since >= kGoneLog / 2) return false;   // (nothing resolved; or further back than the log holds)
+    for (uint64_t g = since + 1; g <= now; g++) {
+        const uint32_t went = gone_log[g & (kGoneLog - 1)].load(std::memory_order_acquire);
+        if (went == id || went == kGoneAll) return false;
+    }
+    return true;
 }
 
 uint32_t texture_epoch() {
@@ -4610,6 +4703,7 @@ void compact_step(uint64_t completed) {
         for (auto& kv : t->views)
             if (kv.second) compact.old_views.push_back(kv.second);
         t->views.clear();   // (made again when next asked for)
+        gone_note(t->id);   // (what was resolved to this texture's views is stale)
         t->image = image;
         t->last_value = std::max(t->last_value, rec_value);   // (its end, if it goes now, waits for the copy too)
         compact.moved++, compact.moved_bytes += t->bytes + t->pad;
@@ -4629,8 +4723,7 @@ void compact_step(uint64_t completed) {
         }
         return;
     }
-    full_barrier(cmd, "compaction: after the copies");
-    destroy_gen++;   // (what was resolved to the moved textures' views is stale)
+    full_barrier(cmd, "compaction: after the copies");   // (gone_note named each moved texture as it went: no whole-pass bump)
     compact.in_pass = true, compact.value = rec_value;
 }
 
@@ -4754,7 +4847,7 @@ void texture_frame(uint64_t completed) {
     if (const int64_t d = st_deferred_frame.exchange(0, std::memory_order_relaxed)) {
         // (the views and descriptor sets resolved to the placeholder this frame go stale, as when textures go: the next frame
         // looks those textures up again, and uploads them)
-        destroy_gen++;
+        gone_note(kGoneAll);   // (every view resolved to a placeholder goes stale)
         static int told;
         if (told++ < 40 || st_deferred.load(std::memory_order_relaxed) % 2000 < d)
             logf("vk: %lld new ASTC textures left for a later frame (this frame's uploads took their budget; %lld so far)", (long long)d,
@@ -5252,9 +5345,11 @@ void texture_frame(uint64_t completed) {
              (unsigned long long)(recent_b >> 20));
         if (reuse_on())
             logf("vk: decoded ASTC used again: %lld textures (%lld MB) copied from ones the game finalized, not decoded; %lld of "
-                 "those retired, %zu listed; %lld MB of blocks hashed in %lld ms", (long long)st_reused.load(),
+                 "those retired, %zu listed; %lld MB of blocks hashed in %lld ms; %lld MB of it not read again (%lld textures), "
+                 "%lld hashed", (long long)st_reused.load(),
                  (long long)(st_reused_bytes.load() >> 20), (long long)st_reuse_retired.load(), freed.size(),
-                 (long long)(st_reuse_hash_bytes.load() >> 20), (long long)(st_reuse_hash_ns.load() / 1000000));
+                 (long long)(st_reuse_hash_bytes.load() >> 20), (long long)(st_reuse_hash_ns.load() / 1000000),
+                 (long long)(hash_memo_hit_bytes.load() >> 20), (long long)hash_memo_hits.load(), (long long)hash_memo_misses.load());
         for (size_t i = 0; i < big.size() && i < 8; i++)
             logf("vk:   %llu MB: %#llx %ux%ux%u x%u levels %u NVN %#x%s%s, last used %llu presents ago",
                  (unsigned long long)(big[i]->bytes >> 20), (unsigned long long)big[i]->gpu, big[i]->width, big[i]->height,
