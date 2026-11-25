@@ -180,6 +180,9 @@
       "Off", "On") \
     X(FAST_PUSH, "Faster block pushing", "rando_fast_push", \
       "Link pushes and pulls the movable blocks twice as fast: the Forest Temple's, Dodongo's Cavern's, the Fire, Shadow and Spirit Temples' blocks, the Armos and Goron statues and the graveyard's tombstones. Not tried in play yet. Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
+    X(SOIL_BOTTLE, "Soil Skulltulas without bugs", "rando_soil_bottle", \
+      "With a bottle got (empty or full), the Gold Skulltula in each of the ten patches of bean soil is there without letting bugs out on the soil: walk up to it and it comes out. The rules ask for a bottle either way. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On")
 
 enum {

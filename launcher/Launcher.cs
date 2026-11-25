@@ -205,7 +205,7 @@ public static class SaveSlots {
     // (the randomizer's settings that move no item: changed on a save being played, its seed is written again as it was,
     // tools/rando/rando_seed.py QOL_STAMP and the stamp's second line; the others are the game's side's alone)
     static readonly HashSet<string> NoItemKeys = new HashSet<string> { "rando_skip_intro", "rando_skip_cutscenes", "rando_start_rupees",
-        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_archery_wins", "rando_fast_push" };
+        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_archery_wins", "rando_fast_push", "rando_soil_bottle" };
     static bool MovesNoItem(string line) { int eq = line.IndexOf('='); return eq > 0 && NoItemKeys.Contains(line.Substring(0, eq).Trim()); }
 
     // (the seed there is now is not the one that save was last played on: settings that move no item aside. A line one
@@ -2121,7 +2121,7 @@ static class RandoLayout {
         new RandoSection { Title = "QUALITY OF LIFE", Sub = "moves no item: can be changed for a seed being played", Accent = SectionColor,
             Rows = new[] { "+skips", "+rupees", "rando_ammo_pickups", "rando_infinite_ammo", "rando_hints", "rando_chest_size", "rando_epona_song",
                            "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower",
-                           "rando_archery_wins", "rando_fast_push" } },
+                           "rando_archery_wins", "rando_fast_push", "rando_soil_bottle" } },
     };
     public static RandoDuo Duo(string entry) {
         if (!entry.StartsWith("+")) return null;
@@ -2940,7 +2940,9 @@ class LauncherForm : Form {
         new object[] { "rando_archery_wins", "Archery games won", new[] { "Off", "On" }, new[] { 0, 1 },
             "At the end of a round of the Market's and Kakariko's shooting galleries and of the Gerudo horseback archery, Link wins the prize whatever his score: the galleries' prize, and at the horseback archery the 1000 and 1500 points prizes (the Piece of Heart first, then the quiver's). Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_fast_push", "Faster block pushing", new[] { "Off", "On" }, new[] { 0, 1 },
-            "Link pushes and pulls the movable blocks twice as fast: the Forest Temple's, Dodongo's Cavern's, the Fire, Shadow and Spirit Temples' blocks, the Armos and Goron statues and the graveyard's tombstones. Not tried in play yet. Moves no item: it can be turned on for a seed being played." }
+            "Link pushes and pulls the movable blocks twice as fast: the Forest Temple's, Dodongo's Cavern's, the Fire, Shadow and Spirit Temples' blocks, the Armos and Goron statues and the graveyard's tombstones. Not tried in play yet. Moves no item: it can be turned on for a seed being played." },
+        new object[] { "rando_soil_bottle", "Soil Skulltulas without bugs", new[] { "Off", "On" }, new[] { 0, 1 },
+            "With a bottle got (empty or full), the Gold Skulltula in each of the ten patches of bean soil is there without letting bugs out on the soil: walk up to it and it comes out. The rules ask for a bottle either way. Moves no item: it can be turned on for a seed being played." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and

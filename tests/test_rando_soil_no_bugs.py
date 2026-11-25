@@ -4,6 +4,7 @@ makes it wait for IsGet.Item_Bottle instead, in every seed (SOIL_FILES), and the
 Game-free: a made-up map file, and the seed tool's source."""
 import collections
 import os
+import re
 import sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -34,8 +35,21 @@ def main():
     assert S.SOIL_BOTTLE == "IsGet." + S.BOTTLE
     src = open(S.__file__, encoding="utf-8").read()
     main_src = src[src.index("\ndef main():"):]
-    assert "changed[rel], k = soil_by_bottle(data)" in main_src and "if soils != SOIL_COUNT:" in main_src and \
-        main_src.index("soil_by_bottle(data)") < main_src.index("    # ---- the size table ----"), "every seed does not make the soil Skulltulas wait for a bottle"
+    assert ("for rel in SOIL_FILES if a.soil_bottle else ():" in main_src and "changed[rel], k = soil_by_bottle(data)" in main_src and
+            "if a.soil_bottle and soils != SOIL_COUNT:" in main_src and
+            main_src.index("soil_by_bottle(data)") < main_src.index("    # ---- the size table ----")), "the soil Skulltulas do not wait for a bottle with the setting on"
+    # (a Quality of life setting, 2026-11-24: Soil Skulltulas without bugs, off by default, moves no item)
+    assert '"rando_soil_bottle": 0' in src and 'a.soil_bottle = ini["rando_soil_bottle"] != 0' in src, "not read from the options, off by default"
+    assert '(a.soil_bottle, " soil bottle")' in src, "it is not on the stamp's second line (moves no item)"
+    header = open(os.path.join(ROOT, "gpu", "vk", "oot_rando.h"), encoding="utf-8").read()
+    order = re.findall(r"^    X\(([A-Z_]+),", header, re.M)
+    assert order[-1] == "SOIL_BOTTLE" and order.index("SOIL_BOTTLE") > order.index("FAST_PUSH"), "the in-game menu's row is not after the ones before it"
+    launcher = open(os.path.join(ROOT, "launcher", "Launcher.cs"), encoding="utf-8").read()
+    assert 'new object[] { "rando_soil_bottle", "Soil Skulltulas without bugs", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher, "no launcher row"
+    no_item = launcher[launcher.index("NoItemKeys = new HashSet<string>"):launcher.index("static bool MovesNoItem")]
+    assert '"rando_soil_bottle"' in no_item, "the launcher does not count it as moving no item"
+    qol = launcher[launcher.index('Title = "QUALITY OF LIFE"'):]
+    assert '"rando_soil_bottle"' in qol[:qol.index("} },")], "it is not in the launcher's Quality of life section"
     print("PASS: the bean-soil Gold Skulltulas are there for a bottle, no bugs")
     return 0
 

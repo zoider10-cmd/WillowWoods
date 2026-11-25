@@ -2742,7 +2742,8 @@ BOTTLE_FROM = 13
 # (asked 2026-11-24) The owner: the soil Skulltulas without fetching bugs each time, when Link has a bottle. Each stands in
 # its area's child map only while Gimmick_MagicBeanSoil_<area> is set (its Presence), which the bugs let out on the soil set.
 # From fixes 89 each of the ten waits for IsGet.Item_Bottle instead (set once Link has had a bottle): it is there whenever a
-# bottle was got, no bugs. The rules ask for what they asked before (a bottle, soil_need), so no placement changes.
+# bottle was got, no bugs. The rules ask for what they asked before (a bottle, soil_need), so no placement changes. A Quality
+# of life setting from 2026-11-24 (the owner): Soil Skulltulas without bugs, rando_soil_bottle, off by default.
 SOIL_FILES = tuple("Banc/%s/%s_Child_Static.bcett.byml.zs" % (a, a) for a in (
     "DeathMountainCrater", "DeathMountainTrail", "DesertColossus", "GerudoValley", "Graveyard", "HyruleField", "KokiriForest",
     "LostWood", "ZoraRiver"))
@@ -5680,7 +5681,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -7809,6 +7810,7 @@ def main():
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
+    a.soil_bottle = ini["rando_soil_bottle"] != 0       # (SOIL_FILES, 2026-11-24: a Quality of life setting; moves no item)
     a.fast_push = ini["rando_fast_push"] != 0           # (FAST_PUSH, 2026-11-24: the blocks' curves; moves no item)
     a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
     a.any_fish = ini["rando_any_fish"] != 0             # (time savers, 2026-11-22: qol_flow; move no item)
@@ -7949,7 +7951,7 @@ def main():
     if a.castle_guards:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " guards pass\n"
     for saver_on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped"),
-                           (a.archery_wins, " archery won"), (a.fast_push, " fast push")):
+                           (a.archery_wins, " archery won"), (a.fast_push, " fast push"), (a.soil_bottle, " soil bottle")):
         if saver_on:   # (the time savers: move no item either, the same line. Not `on`: that is the randomizer's own, below)
             stamp = stamp[:-1] + word + "\n"
     if a.free_scarecrow:   # (moves no item either: the same line)
@@ -9225,18 +9227,19 @@ def main():
     except (OSError, ValueError, struct.error, IndexError) as e:
         sys.exit("the Water Temple's gate: %s. Nothing written." % e)
     print("the Water Temple's gate switch can be hit without the Ice Cavern done")
-    try:   # (every seed: the bean-soil Gold Skulltulas there for a bottle got, no bugs, SOIL_FILES)
-        soils = 0
-        for rel in SOIL_FILES:
+    soils = 0
+    try:   # (Soil Skulltulas without bugs, rando_soil_bottle: the bean-soil Gold Skulltulas there for a bottle got, SOIL_FILES)
+        for rel in SOIL_FILES if a.soil_bottle else ():
             data = changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
             changed[rel], k = soil_by_bottle(data)
             sizes[rel[:-3]] = len(changed[rel])
             soils += k
-        if soils != SOIL_COUNT:
+        if a.soil_bottle and soils != SOIL_COUNT:
             raise ValueError("%d bean-soil Gold Skulltulas found, not %d" % (soils, SOIL_COUNT))
     except (OSError, ValueError, struct.error, IndexError) as e:
         sys.exit("the bean-soil Gold Skulltulas: %s. Nothing written." % e)
-    print("the %d bean-soil Gold Skulltulas are there once Link has a bottle, no bugs" % soils)
+    if a.soil_bottle:
+        print("the %d bean-soil Gold Skulltulas are there once Link has a bottle, no bugs" % soils)
     try:   # (every seed: Lake Hylia's dead tree takes the Longshot before the Water Temple, TREE_WALL, bug 119)
         for rel in TREE_WALL_FILES:
             data = changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
