@@ -24,6 +24,7 @@
 
 #include "vk_api.h"
 #include "vk_draw.h"
+#include "thread_prio.h"   // (RX_VK_THREAD_PRIO: thread_prio_init)
 #include "vk_push_fix.h"
 #include "vk_framegen.h"
 #include "vk_internal.h"
@@ -2025,6 +2026,27 @@ __declspec(dllexport)
 #else
 __attribute__((visibility("default")))
 #endif
+namespace mkwvk {
+// ((HeyListen c81f500c) RX_VK_THREAD_PRIO, thread_prio.h) the background compile threads' processors, and the start line
+static void thread_prio_init() {
+#ifdef _WIN32
+    if (prio::mode() > 0) {
+        prio::Hooks& hk = prio::hooks();
+        DWORD_PTR proc = 0, sys = 0;
+        GetProcessAffinityMask(GetCurrentProcess(), &proc, &sys);
+        const uint64_t reserved = host->reserved_cpus ? host->reserved_cpus() : 0;
+        static uint64_t mask;
+        mask = prio::compile_mask((uint64_t)proc, reserved);
+        if (reserved && mask != (uint64_t)proc) {
+            hk.pinned_off = (uint64_t)proc & reserved;
+            hk.pin_compile = [] { SetThreadAffinityMask(GetCurrentThread(), (DWORD_PTR)mask); };
+        }
+    }
+#endif
+    logf("vk: thread priorities: %s", prio::describe().c_str());
+}
+} // namespace mkwvk
+
 const MkwVkRenderer* mkwvk_init(const MkwVkHost* h) {
     using namespace mkwvk;
     if (!h) return nullptr;
@@ -2064,6 +2086,7 @@ const MkwVkRenderer* mkwvk_init(const MkwVkHost* h) {
          dev.props.driverVersion, dev.mesh_shader ? "yes" : "no", dev.external_memory_host ? "yes" : "no",
          dev.graphics_pipeline_library ? "yes" : "no");
     logf("vk: driver: %s", driver_text().c_str());   // (the builders' Save my pipeline list reads it: nx2/pipeline_share.py)
+    thread_prio_init();   // (before the preparation's threads: RX_VK_THREAD_PRIO, thread_prio.h)
     // (the crash report's facts, as the bug report words them: host/hos_crash_dialog.h reads the last of each)
     logf("report: gpu %s", device_report_text().c_str());
     logf("report: cpu %s", mkwvk::bug_report::cpu_text().c_str());

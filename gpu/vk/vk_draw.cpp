@@ -48,6 +48,7 @@
 #include "vk_paths.h"
 #include "pipeline_cache_file.h"
 #include "vk_draw.h"
+#include "thread_prio.h"   // (RX_VK_THREAD_PRIO: the background compile threads off the replay's core)
 #include "vk_framegen.h"   // (Willow Woods, from ReLink: the gameplay upscale's output, for the item wheel's backdrop)
 #include "flat_map.h"
 #include "vk_menu.h"          // (opts.anisotropy: the Anisotropic filtering row; resolution_scale)
@@ -2220,6 +2221,7 @@ void state_list_prepare(void (*progress)(size_t done, size_t total), bool open_s
     remove((pipe_notes_path().substr(0, pipe_notes_path().find_last_of("\\/") + 1) + "hookshot_load_start.txt").c_str());
     remove((pipe_notes_path().substr(0, pipe_notes_path().find_last_of("\\/") + 1) + "hookshot_load_start.txt.waited").c_str());   // (a preparation: loads at create are tried again, load_default.h load_fallback_path)
     const auto t0 = std::chrono::steady_clock::now();
+    const bool pin = ::mkwvk::prio::pinned_here();   // (in play, behind the game: its workers off the replay's core, thread_prio.h)
     int shipped_version = 0;
     // (the shipped list's compute programs are not pipelines to note: precompile_run keeps them ready, computes_plan)
     std::vector<StateRec> recs = state_list_read(state_list_path("hookshot_pipeline_states_shipped.bin"), &shipped_version);
@@ -2262,6 +2264,7 @@ void state_list_prepare(void (*progress)(size_t done, size_t total), bool open_s
     const auto worker = [&] {
         ub_thread_off();   // (a background thread: see ub_thread_off; the pipeline state list's builds raced the replay's updates)
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+        if (pin) MKWVK_PIN_BACKGROUND();   // (RX_VK_THREAD_PRIO: off the replay's core, thread_prio.h)
         for (;;) {
             const size_t i = next++;
             if (i >= want.size()) return;
@@ -2313,6 +2316,7 @@ void state_list_prepare(void (*progress)(size_t done, size_t total), bool open_s
     next = 0;
     const auto variant_worker = [&] {
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+        if (pin) MKWVK_PIN_BACKGROUND();   // (RX_VK_THREAD_PRIO: off the replay's core, thread_prio.h)
         for (;;) {
             const size_t i = next++;
             if (i >= variant_of.size()) return;
@@ -9831,6 +9835,7 @@ bool pcache_saved_now() {
 }
 bool warm_libraries(void (*progress)(size_t done, size_t total)) {
     const auto t0 = std::chrono::steady_clock::now();
+    const bool pin = ::mkwvk::prio::pinned_here();   // (in play, behind the game: its workers off the replay's core, thread_prio.h)
     pcache_init();   // (before the workers: the libraries are built into it, and the start that only warms has not made it yet)
     // (a state list's programs are in memory by now, state_list_prepare read them in for the precompile: those as they are)
     std::vector<Program*> loaded;
@@ -9863,6 +9868,7 @@ bool warm_libraries(void (*progress)(size_t done, size_t total)) {
     const auto worker = [&] {
         ub_thread_off();   // (a background thread: see ub_thread_off)
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);   // (as prepare_run's, and half the CPUs)
+        if (pin) MKWVK_PIN_BACKGROUND();   // (RX_VK_THREAD_PRIO: off the replay's core, thread_prio.h)
         for (;;) {
             if (prepare_stopped()) return;
             const size_t i = next++;
@@ -10037,6 +10043,7 @@ bool prepare_run(void (*progress)(size_t done, size_t total), bool background, b
         ub_thread_off();   // (a background thread: see ub_thread_off)
         // (below normal, and half the CPUs, below: on all of them at High the driver's compiles froze the whole PC)
         SetThreadPriority(GetCurrentThread(), background ? THREAD_PRIORITY_IDLE : THREAD_PRIORITY_BELOW_NORMAL);
+        if (background) MKWVK_PIN_BACKGROUND();   // (RX_VK_THREAD_PRIO: off the replay's core, thread_prio.h)
         for (;;) {
             if (prepare_stopped()) return;
             at_work[t] = next.load();   // (before taking one: never above the item taken)
@@ -10138,6 +10145,7 @@ void state_list_run() {
 void prepare_background() {
     std::thread([] {
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+        MKWVK_PIN_BACKGROUND();   // (RX_VK_THREAD_PRIO: this thread and the workers it starts off the replay's core, thread_prio.h)
         Sleep(20000);   // (past the title screen's own loading)
         logf("vk: an update: the shaders not met yet are translated in play, behind the game");
         prepare_run(nullptr, true);
@@ -10742,6 +10750,7 @@ void predict_background() {
     logf("vk: the predicted pipelines are owed (%s): built behind the game in 30 s", predict_owed_path().c_str());
     std::thread([] {
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);
+        MKWVK_PIN_BACKGROUND();   // (RX_VK_THREAD_PRIO: this thread and the workers it starts off the replay's core, thread_prio.h)
         Sleep(30000);   // (past the title screen's own loading)
         logf("vk: building the predicted pipelines behind the game");
         predict_run(nullptr, true);
@@ -10872,6 +10881,7 @@ void predict_run(void (*progress)(size_t done, size_t total), bool background) {
         ub_thread_off();   // (a background thread: see ub_thread_off)
         driver_cache_only = true;
         if (background) SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE);   // (Mako: behind the game)
+        if (background) MKWVK_PIN_BACKGROUND();   // (RX_VK_THREAD_PRIO: off the replay's core, thread_prio.h)
         for (;;) {
             if (prepare_stopped() || pre->abandoned.load()) return;
             if (background && bg_game_in_play()) {   // (Triforce's idea, above: the game in play; looked at before each program)
