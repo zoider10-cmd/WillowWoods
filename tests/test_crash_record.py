@@ -96,6 +96,9 @@ def source_contract():
         "windows_stop.c": ["TerminateProcess(GetCurrentProcess(), 0);",
                            "TerminateProcess(GetCurrentProcess(), STOP_TIMEOUT_EXIT);"],
         "posix/win32_posix.c": ["_exit((int)code);", "ExitProcess(code);"],  # platform implementations
+        # (Willow Woods keeps its own updater, the Update button for its releases: the game's close for an update is a clean
+        # end; a forked child whose exec failed exits as the child it is, the parent's record untouched)
+        "hos_update.c": ["_exit(127);", "_exit(127);", "_exit(0);"],
     }
     observed = {}
     for path in (ROOT / "host").rglob("*.c"):
@@ -108,7 +111,7 @@ def source_contract():
                 continue
             calls.append(match.group())
             rel = path.relative_to(ROOT / "host").as_posix()
-            exempt = rel == "hos_thread.c" or rel == "posix/win32_posix.c" or (
+            exempt = rel == "hos_thread.c" or rel == "posix/win32_posix.c" or (rel == "hos_update.c" and match.group() == "_exit(127);") or (
                 rel == "windows_stop.c" and match.group() == "TerminateProcess(GetCurrentProcess(), STOP_TIMEOUT_EXIT);")
             if not exempt:
                 clean = "hos_close_finish();" if rel in ("control.c", "hos_relaunch.c", "windows_stop.c") else "hos_crash_clean_end();"
@@ -116,7 +119,7 @@ def source_contract():
         if calls:
             observed[path.relative_to(ROOT / "host").as_posix()] = calls
     assert observed == expected, (observed, expected)
-    assert not (ROOT / "host/hos_update.c").exists(), "the removed in-game updater must not return"
+    # (Mako took its in-game updater out; Willow Woods keeps its own, the Update button for its releases: its exits above)
     print("PASS: every remaining host process exit classified; normal exits mark, fatal exits do not")
     return glue, threads, main
 

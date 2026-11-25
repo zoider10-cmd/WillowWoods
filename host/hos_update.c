@@ -449,6 +449,8 @@ void hos_update_check(void) {
     if (pid > 0) {
         fprintf(stderr, "update: Hookshot Builder started to update to %s; the game closes\n", tag);
         fflush(stderr);
+        void hos_crash_clean_end(void);   /* (a close for the update, not a crash: tests/test_crash_record.py) */
+        hos_crash_clean_end();
         _exit(0);
     }
 }
