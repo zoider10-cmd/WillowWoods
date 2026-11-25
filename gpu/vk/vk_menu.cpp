@@ -2668,6 +2668,29 @@ constexpr LogicItem kLogicItems[] = {
 // (a rule's "T<N>": N Gold Skulltula tokens, by the Inventory page's count of them. tools/rando/rando_seed.py token_codes,
 // placement 12: the Skulltula house's rewards)
 constexpr const char* kTokenRow = "Gold Skulltula Tokens";
+// (Small keys and Boss Keys: Anywhere, 2026-11-24: a rule's "K<n>" all the moving small keys of dungeon n, "B<n>" its Boss
+// Key, tools/rando/rando_seed.py key_codes and DUNGEON_FOLDERS. Held when every check that gives one, by
+// mods/rando-seed/dungeon_items.txt (<hash>|<dungeon>|<item>), is collected: tracker_key_owner, read with the checks)
+constexpr const char* kKeyDungeons[] = {"InsideTheDekuTree", "DodongoCavern", "InsideJabuJabuBelly", "BottomOfTheWell", "ForestTemple",
+                                        "FireTemple", "IceCavern", "WaterTemple", "ShadowTemple", "SpiritTemple", "GerudoTrainingGround",
+                                        "InsideGanonCastle"};
+constexpr const char* kKeyDungeonNames[] = {"the Deku Tree's", "Dodongo's Cavern's", "Jabu-Jabu's", "the Bottom of the Well's",
+                                            "the Forest Temple's", "the Fire Temple's", "the Ice Cavern's", "the Water Temple's",
+                                            "the Shadow Temple's", "the Spirit Temple's", "the Training Ground's", "Ganon's Castle's"};
+constexpr int kKeyDungeonCount = (int)(sizeof kKeyDungeons / sizeof kKeyDungeons[0]);
+signed char tracker_key_owner[kTrackerChecks];   // (a check's key's dungeon, kKeyDungeons' index; -1 none)
+bool tracker_key_boss[kTrackerChecks];           // (and it is that dungeon's Boss Key, not a small key)
+/// A rule's key letter (boss: "B", else "K") of dungeon n: held when every check giving it is collected; missing: its words
+bool tracker_key_held(int n, bool boss, std::string* missing) {
+    int all = 0, got = 0;
+    for (int i = 0; i < tracker_check_count; i++)
+        if (tracker_key_owner[i] == n && tracker_key_boss[i] == boss) all++, got += tracker_done[i].load(std::memory_order_relaxed) == 1;
+    if (all && got >= all) return true;
+    if (missing && n >= 0 && n < kKeyDungeonCount)
+        *missing += (missing->empty() ? "" : ", ") + std::string(kKeyDungeonNames[n]) +
+                    (boss ? " Boss Key" : " small keys (" + std::to_string(got) + " of " + std::to_string(all) + ")");
+    return false;
+}
 int tracker_in_logic(const TrackerCheck& k, std::string* missing) {
     if (k.needs[0] == '?' || item_counts[0].load(std::memory_order_relaxed) < 0) return -1;
     // (a rule's ways, apart by "/": in logic when one of them is held; missing is said of the way with the fewest)
@@ -2692,6 +2715,11 @@ int tracker_way_held(const char* way, size_t len, std::string* missing) {
         const size_t n = std::min((size_t)(end - p), strcspn(p, ",/"));
         bool known = false, has = false;
         const char* name = "an item this menu does not know";
+        if (n >= 2 && (p[0] == 'K' || (p[0] == 'B' && p[1] >= '0' && p[1] <= '9')) && strspn(p + 1, "0123456789") >= n - 1) {   // ("K<n>"/"B<n>": a dungeon's keys)
+            if (tracker_key_held(atoi(p + 1), p[0] == 'B', missing)) continue;
+            in = 0;
+            continue;
+        }
         if (n >= 2 && p[0] == 'T' && strspn(p + 1, "0123456789") >= n - 1) {   // ("T<N>": N Gold Skulltula tokens, the Skulltula house's rewards)
             const int want = atoi(p + 1);
             for (int i = 0; i < kItems; i++)
@@ -3128,6 +3156,24 @@ void tracker_load() {
         fclose(f);
     }
     tracker_check_count = checks;
+    {   // (whose key each check gives: dungeon_items.txt, tracker_key_held. A seed without it has none)
+        for (int i = 0; i < checks; i++) tracker_key_owner[i] = -1, tracker_key_boss[i] = false;
+        const std::string items = path.substr(0, path.find_last_of("\\/") + 1) + "dungeon_items.txt";
+        if (FILE* f = on && checks ? fopen(items.c_str(), "r") : nullptr) {
+            char line[160], hash[32], owner[40], item[64];
+            while (fgets(line, sizeof line, f)) {
+                if (sscanf(line, "%31[^|]|%39[^|]|%63[^|\r\n]", hash, owner, item) != 3) continue;
+                const bool boss = !strcmp(item, "Item_Dungeon_BossKey");
+                if (!boss && strcmp(item, "Item_Dungeon_SmallKey")) continue;   // (maps and compasses gate nothing)
+                int n = -1;
+                for (int d = 0; d < kKeyDungeonCount; d++)
+                    if (!strcmp(owner, kKeyDungeons[d])) n = d;
+                for (int i = 0; n >= 0 && i < checks; i++)
+                    if (!strcmp(tracker_checks[i].hash, hash)) tracker_key_owner[i] = (signed char)n, tracker_key_boss[i] = boss;
+            }
+            fclose(f);
+        }
+    }
     {   // (the junk marks, read again when the seed is another: tracker_junk. Kept as they are in between, written at each change)
         static std::string junk_seen = "-";
         const std::string stamp = on && checks ? tracker_seed_stamp() : std::string();

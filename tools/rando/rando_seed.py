@@ -5894,6 +5894,66 @@ def check_ways(checks_path):
     return out
 
 
+# ---- What a check waits for in the story (the owner's to-do, 2026-11-23: the Nocturne's lesson and Zelda's Light Arrows
+# showed "in logic" before the Water, Shadow and Spirit Temples were done) ----
+# The rules count items only: MEDALS3 and the like stand for "those temples done" by the items they take. The game holds
+# some checks back until temples are really done (each temple's awakening scene played: HavePlayedEvent.Dm_Awake_<X>,
+# what AllSage's SageRoom_AllSage_LastSage asks of the Shadow and Spirit Temples before Zelda's Light Arrows). The seed
+# writes those checks to CHECK_AFTER, "<the check's hash, as checks.txt has it>|<the temples' folders, by commas>"; the
+# game's side tells the Tracker which temples are done (host/hos_main.c oot_tracker_refresh, OOT_TRACKER_TEMPLES) and the
+# Tracker says "in logic after ..." until they are (gpu/vk/vk_menu.cpp tracker_after). tests/test_rando_story_waits.py
+CHECK_AFTER = "check_after.txt"
+STORY_TEMPLES = ("ForestTemple", "FireTemple", "WaterTemple", "ShadowTemple", "SpiritTemple")   # (the menu's bits, in order)
+# (the gifts by key: the Nocturne's lesson as the original game, after the Forest, Fire and Water medallions (its rule
+#  MEDALS3); the Prelude's after the Forest's (its rule the Forest Temple's Bow); the Light Arrows after both sages' scenes)
+STORY_GIFTS = {"song_nocturne": ("ForestTemple", "FireTemple", "WaterTemple"), "song_prelude": ("ForestTemple",),
+               "light_arrows": ("ShadowTemple", "SpiritTemple")}
+# (checks by their actor's hash: Lake Hylia's chest there once the Water Temple is done, AFTER_WATER, and the sun's shot,
+#  whose rule is the Water Temple's ending's: the lake filled. Made in check_after: SUN_ARROWS is set below)
+STORY_HASH_TEMPLES = ("WaterTemple",)
+
+
+def check_after(lines):
+    """[(hash, (temple folders))] for the lines of a checks file (checks.txt's text, by lines) whose check the game holds
+    back until temples are done, in the file's order. Those of STORY_GIFTS (by name) and of AFTER_WATER and SUN_ARROWS; the Shadow Temple's
+    own checks, when no check gives the Nocturne (its lesson is then the only way in: DUNGEON_ENTRY's MEDALS3); and a
+    check every way of whose rule asks for an item that only checks that wait give, which waits for theirs too."""
+    names = {(g.name[:1].upper() + g.name[1:]).replace("|", "/")[:CHECK_NAME]: STORY_GIFTS[g.key]
+             for g in SONGS + GIFTS if g.key in STORY_GIFTS}
+    rows = [line.split("|") for line in lines if not line.startswith("#") and len(line.split("|")) >= 6]
+    hashes = {"%016x" % h: STORY_HASH_TEMPLES for h in AFTER_WATER + (SUN_ARROWS,)}
+    waits = {}
+    for i, r in enumerate(rows):
+        hash_ = r[6] if len(r) > 6 else "-"
+        wait = set(names.get(r[1], ())) | set(hashes.get(hash_, ()))
+        if wait:
+            waits[i] = wait
+    if not any(len(r) > 7 and r[7] == NOCTURNE for r in rows):
+        for i, r in enumerate(rows):
+            if r[2] == "ShadowTemple":
+                waits.setdefault(i, set()).update(STORY_GIFTS["song_nocturne"])
+    codes = dict(CHECK_CODES)
+    while True:   # (an item given only where the story waits: the checks that cannot be had without it wait as well)
+        givers = collections.defaultdict(list)
+        for i, r in enumerate(rows):
+            if len(r) > 7 and r[7] in codes:
+                givers[codes[r[7]]].append(waits.get(i, set()))
+        held = {code: set.intersection(*map(set, w)) for code, w in givers.items() if all(w)}
+        grew = False
+        for i, r in enumerate(rows):
+            ways = [set(way.split(",")) for way in r[5].split("/")]
+            if not ways or any(not way & set(held) for way in ways):
+                continue
+            more = set.intersection(*(set().union(*(held[c] for c in way & set(held))) for way in ways))
+            if not more <= waits.get(i, set()):
+                waits.setdefault(i, set()).update(more)
+                grew = True
+        if not grew:
+            break
+    return [(rows[i][6], tuple(t for t in STORY_TEMPLES if t in waits[i])) for i in sorted(waits)
+            if len(rows[i]) > 6 and rows[i][6] != "-"]
+
+
 CHECK_ROWS = 512   # (was 320: a seed with the shops and every gift on had 337, bug 85, the last areas cut off)
 CHECK_NAME = 79   # (a check's name: as many characters as the menu keeps of it)
 CHECK_CODES = collections.OrderedDict((
@@ -6620,9 +6680,22 @@ def gift_keys(gifts, chests):
 CHECK_NEED = 191   # (a check's rule in the tracker's file: the menu's needs[192] and the game's side's)
 
 
+def key_codes(way):
+    """the tracker's letters of the keys a way of a rule asks for (Small keys and Boss Keys: Anywhere, 2026-11-24):
+    "K<n>" all the moving small keys of DUNGEON_FOLDERS[n], "B<n>" its Boss Key. The Tracker tab holds one when every
+    check of dungeon_items.txt giving that dungeon's key is collected (gpu/vk/vk_menu.cpp tracker_key_held)"""
+    out = set()
+    for word in way:
+        if isinstance(word, str) and "@" in word:
+            item, owner = word.split("@")[0], word.split("@")[1].split("#")[0]
+            if owner in DUNGEON_FOLDERS and item in (SMALL_KEY, BOSS_KEY):
+                out.add(("K" if item == SMALL_KEY else "B") + str(DUNGEON_FOLDERS.index(owner)))
+    return sorted(out)
+
+
 def rule_text(way):
     """one way of a rule as the tracker's file writes it"""
-    return ",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way)) or "-"
+    return ",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way) + key_codes(way)) or "-"
 
 
 def fit_rule(need):
@@ -10155,26 +10228,36 @@ def main():
                                         collections.Counter(g.area for g in gifts.values()), collections.Counter(p[0] for p in pieces.values()))) + "\n")
     with open(os.path.join(mod, DUNGEON_ITEMS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: oot_dungeon_item)
         f.write("".join("%016x|%s|%s\n" % (h, owners[h], gives[h]) for h in sorted(owners)))
+    # (the Tracker's rules only: a boss's Heart Container and its ending ask for its Boss Key when it moved, key_codes. The
+    #  placement's rules never named it: boss_key_fits put it where the boss's rule reaches)
+    moved_boss = {d for d in set(owners.values()) if any(gives.get(h) == BOSS_KEY and owners.get(h) == d for h in owners)}
+    tracked = lambda h, n, d: fit_rule(each(lambda way: frozenset(way) | {boss_key_tag(d)}, n) if d in moved_boss and n is not None else n)   # (fit again: the keys' letters)
+    ending_of = {gift_hash(BOSS_HEARTS[d][0]): d for d in BOSS_HEARTS}
+    tneeds = {h: tracked(h, n, ending_of.get(h)) for h, n in needs.items()}
     with open(os.path.join(mod, CHECKS), "w", encoding="utf-8", newline="\n") as f:   # (for the Tracker tab's Go there)
         skull_need = skull_asks
         gift_key = gift_keys([h for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES], list(spots))
         named = lambda kind, h, area, pos, item="": check_name(kind, item, about.get(h, {}), pos, exits[area], sub_areas[area])
-        f.write("\n".join(check_lines([(spots[h][0], spots[h][5], CHEST_AGES.get(h) or check_ages(maps[h]), needs[h], named("Chest", h, spots[h][0], spots[h][5], MAGIC_JUNK if h == magic_chest else spots[h][1]), h, gives[h],
+        f.write("\n".join(check_lines([(spots[h][0], spots[h][5], CHEST_AGES.get(h) or check_ages(maps[h]), tneeds[h], named("Chest", h, spots[h][0], spots[h][5], MAGIC_JUNK if h == magic_chest else spots[h][1]), h, gives[h],
                                         CHEST_GO.get(h) or (chest_front(spots[h][5], about[h]["turned"]) if len(spots[h][5]) == 3 and "turned" in about.get(h, {}) else None))
                                        for h in gives if h not in gifts],
-                                      [(skulls[h][0], skulls[h][1], check_ages(maps[h]), skull_need(h), named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN,
+                                      [(skulls[h][0], skulls[h][1], check_ages(maps[h]), tneeds.get(h) or skull_need(h), named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN,
                                         SKULL_GO.get(h))
                                        for h in took] +
-                                      [(pieces[h][0], pieces[h][1], check_ages(maps[h]), heart_asks(h),
+                                      [(pieces[h][0], pieces[h][1], check_ages(maps[h]), tracked(h, needs.get(h) or heart_asks(h), bosses.get(h)),
                                         "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else SUN_NAME if h in suns else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
                                         heart_drops.get(h, piece_own(h))) for h in pieces],
-                                      [(g.area, gift_place(g.key)[1], gift_place(g.key)[0], needs[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
+                                      [(g.area, gift_place(g.key)[1], gift_place(g.key)[0], tneeds[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
                                        for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES] +
                                       [(shop.areas[0], shop.place, shop.ages, needs[h], gifts[h].name, None, gives[h])
                                        for h, (shop, _, _) in shelves.items() if h in gives])) + "\n")
     ways = check_ways(os.path.join(mod, CHECKS))   # (the Tracker tab's directions to a check: CHECK_WAYS)
     with open(os.path.join(mod, CHECK_WAYS), "w", encoding="utf-8", newline="\n") as f:
         f.write("".join("%s|%s\n" % w for w in ways))
+    with open(os.path.join(mod, CHECKS), encoding="utf-8") as f:   # (the Tracker's "in logic after ...": CHECK_AFTER)
+        after = check_after(f.read().splitlines())
+    with open(os.path.join(mod, CHECK_AFTER), "w", encoding="utf-8", newline="\n") as f:
+        f.write("".join("%s|%s\n" % (h, ",".join(temples)) for h, temples in after))
     if shelf_flag:   # (for the game's side: a shelf's name as the checks file has it, its flag's hash, the flag)
         with open(os.path.join(mod, SHELF_FLAGS), "w", encoding="utf-8", newline="\n") as f:
             f.write("".join("%s|%08x|%s\n" % ((gifts[h].name[:1].upper() + gifts[h].name[1:]).replace("|", "/")[:CHECK_NAME],

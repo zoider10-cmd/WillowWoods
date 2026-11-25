@@ -551,7 +551,7 @@ def main():
     check("if placement >= 5:   # (Zora's Domain by the river or by the lake, zora_ways)" in script and
           "needs = {h: n if h in story else forest(n, spots[h][0]) for h, n in needs.items()}" in script and "met(needs[h], have)" in script and
           seed.forest_open(seed.CHILD, "DodongoCavern") == frozenset({seed.BB}) and seed.forest_open(seed.CHILD | {seed.BB}, "DodongoCavern") == frozenset({seed.BB}) and
-          '",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way)) or "-"' in script and
+          '",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way) + key_codes(way)) or "-"' in script and
           '"/".join(rule_text(way) for way in (need if isinstance(need, Either) else (need,)))' in script,
           "the rules' ways are not made, read by the placement, or written for the tracker")
     check(seed.PLACEMENT >= 6 and set(seed.DEKU_STORY) == {"song_zelda", "song_saria", "zelda_letter", "fairy_ocarina"} and
