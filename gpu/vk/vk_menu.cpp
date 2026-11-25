@@ -2199,8 +2199,8 @@ Row rows[] = {
      "leaves, smooth instead of stair-stepped, for more video memory and a little GPU time. Applies at once.",
      hn_shadow_res},
     {TAB_GRAPHICS, "Volumetric fog", &opts.fog, 0, 1, 1, tx_onoff,   // ((HeyListen 5716afbf) fog_row.h, fog_runs)
-     "The haze in the distance and the mist of the forests. Off is lighter on weak GPUs (about 15% of the frame on integrated "
-     "graphics) and shows the distance crisper. Applies after a restart.", nullptr, true, true},
+     "The haze in the distance and the mist of the forests. Off is lighter on the GPU (about an eighth of the frame on integrated "
+     "graphics, a few percent on a graphics card) and shows the distance crisper. Applies after a restart.", nullptr, true, true},
     // (the rows to change when something is wrong, or on a card short of memory: last)
     {TAB_GRAPHICS, "GPU and memory", nullptr, 0, 0, 0, nullptr, nullptr, nullptr, false, true, -1, true},
     {TAB_GRAPHICS, "GPU device", &opts.gpu_device, 0, 8, 1, tx_gpu,

@@ -26,9 +26,10 @@ int main() {
                                    !std::strcmp(ur::dlss_mode_name(6), "Ultra Performance"));
     CHECK("no mode name for Auto, 100% or 75%", !ur::dlss_mode_name(0) && !ur::dlss_mode_name(1) && !ur::dlss_mode_name(2));
 
-    // the game's own: Auto, 100, 75, 67, 50, as before
-    CHECK("game: Right", ur::step(GAME, 0, 1) == 1 && ur::step(GAME, 1, 1) == 2 && ur::step(GAME, 3, 1) == 4 && ur::step(GAME, 4, 1) == 0);
-    CHECK("game: Left", ur::step(GAME, 0, -1) == 4 && ur::step(GAME, 1, -1) == 0 && ur::step(GAME, 4, -1) == 3);
+    // the game's own: Auto, 100, 75, 67, 50, and 33 ((HeyListen 45fd440e) as Off)
+    CHECK("game: Right", ur::step(GAME, 0, 1) == 1 && ur::step(GAME, 1, 1) == 2 && ur::step(GAME, 3, 1) == 4 && ur::step(GAME, 4, 1) == 6 &&
+                            ur::step(GAME, 6, 1) == 0);
+    CHECK("game: Left", ur::step(GAME, 0, -1) == 6 && ur::step(GAME, 1, -1) == 0 && ur::step(GAME, 4, -1) == 3 && ur::step(GAME, 6, -1) == 4);
     // DLSS: Auto, Quality 67, Balanced 58, Performance 50, Ultra Performance 33
     CHECK("dlss: Right", ur::step(DLSS, 0, 1) == 3 && ur::step(DLSS, 3, 1) == 5 && ur::step(DLSS, 5, 1) == 4 &&
                              ur::step(DLSS, 4, 1) == 6 && ur::step(DLSS, 6, 1) == 0);
@@ -43,7 +44,7 @@ int main() {
     // another upscaler: the nearest step (the larger on a tie), Auto stays Auto
     CHECK("snap to DLSS", ur::snap(DLSS, 0) == 0 && ur::snap(DLSS, 1) == 3 && ur::snap(DLSS, 2) == 3 && ur::snap(DLSS, 3) == 3 &&
                               ur::snap(DLSS, 4) == 4);
-    CHECK("snap to the game's", ur::snap(GAME, 5) == 4 && ur::snap(GAME, 6) == 4 && ur::snap(GAME, 3) == 3 && ur::snap(GAME, 1) == 1);
+    CHECK("snap to the game's", ur::snap(GAME, 5) == 4 && ur::snap(GAME, 6) == 6 && ur::snap(GAME, 3) == 3 && ur::snap(GAME, 1) == 1);
     CHECK("DLAA keeps the value", ur::snap(DLAA, 5) == 5 && ur::snap(DLAA, 1) == 1);
     CHECK("a value past the row snaps to Auto", ur::snap(GAME, 10) == 0 && ur::snap(DLSS, -3) == 0);
 
@@ -144,7 +145,7 @@ int main() {
         CHECK("off from 58%", ur::step(OFF, 5, 1) == 4 && ur::step(OFF, 5, -1) == 3);
         CHECK("snap to Off", ur::snap(OFF, 0) == 0 && ur::snap(OFF, 1) == 1 && ur::snap(OFF, 2) == 2 && ur::snap(OFF, 6) == 6 &&
                                  ur::snap(OFF, 5) == 4 && ur::snap(OFF, 9) == 1 && ur::snap(OFF, 12) == 0);
-        CHECK("DLSS's Ultra Performance kept by Off, the game's own takes 50%", ur::snap(OFF, 6) == 6 && ur::snap(GAME, 6) == 4);
+        CHECK("DLSS's Ultra Performance kept by Off and the game's own", ur::snap(OFF, 6) == 6 && ur::snap(GAME, 6) == 6);
         CHECK("Off's 33% to DLSS stays Ultra Performance", ur::snap(DLSS, ur::step(OFF, 4, 1)) == 6);
         // the row by engine (step_engine): Off after FSR 4, and back to the game's own; from DLAA (DLSS's Native) too
         CHECK("Off by engine", ur::step_engine(ur::FSR4, 1, every) == OFF && ur::step_engine(ur::FSR4_AA, 1, every) == OFF &&
