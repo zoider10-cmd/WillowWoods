@@ -205,7 +205,7 @@ public static class SaveSlots {
     // (the randomizer's settings that move no item: changed on a save being played, its seed is written again as it was,
     // tools/rando/rando_seed.py QOL_STAMP and the stamp's second line; the others are the game's side's alone)
     static readonly HashSet<string> NoItemKeys = new HashSet<string> { "rando_skip_intro", "rando_skip_cutscenes", "rando_start_rupees",
-        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_archery_wins", "rando_fast_push", "rando_soil_bottle", "rando_gerudo_guards" };
+        "rando_skulltulas_day", "rando_hints", "rando_water_gate", "rando_ageless", "rando_ageless_items", "rando_ageless_tunics", "rando_chest_size", "rando_bridge_medallions", "rando_ammo_pickups", "rando_rupee_fill", "rando_ganon_bridge", "rando_infinite_ammo", "rando_epona_song", "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_archery_wins", "rando_fast_push", "rando_soil_bottle", "rando_gerudo_guards", "rando_house_hints" };
     static bool MovesNoItem(string line) { int eq = line.IndexOf('='); return eq > 0 && NoItemKeys.Contains(line.Substring(0, eq).Trim()); }
 
     // (the seed there is now is not the one that save was last played on: settings that move no item aside. A line one
@@ -2121,7 +2121,7 @@ static class RandoLayout {
         new RandoSection { Title = "QUALITY OF LIFE", Sub = "moves no item: can be changed for a seed being played", Accent = SectionColor,
             Rows = new[] { "+skips", "+rupees", "rando_ammo_pickups", "rando_infinite_ammo", "rando_hints", "rando_chest_size", "rando_epona_song",
                            "rando_castle_guards", "rando_free_scarecrow", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower",
-                           "rando_archery_wins", "rando_fast_push", "rando_soil_bottle", "rando_gerudo_guards" } },
+                           "rando_archery_wins", "rando_fast_push", "rando_soil_bottle", "rando_gerudo_guards", "rando_house_hints" } },
     };
     public static RandoDuo Duo(string entry) {
         if (!entry.StartsWith("+")) return null;
@@ -2944,7 +2944,9 @@ class LauncherForm : Form {
         new object[] { "rando_soil_bottle", "Soil Skulltulas without bugs", new[] { "Off", "On" }, new[] { 0, 1 },
             "With a bottle got (empty or full), the Gold Skulltula in each of the ten patches of bean soil is there without letting bugs out on the soil: walk up to it and it comes out. The rules ask for a bottle either way. Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_gerudo_guards", "Gerudo guards don't jail Link", new[] { "Off", "On" }, new[] { 0, 1 },
-            "When a Gerudo guard at the fortress catches adult Link, she goes back to her post and Link stays where he is: no talk, no being thrown in the cell or out of the fortress. The fortress, its carpenters and its checks are as the game has them. Not tried in play yet. Moves no item: it can be turned on for a seed being played." }
+            "When a Gerudo guard at the fortress catches adult Link, she goes back to her post and Link stays where he is: no talk, no being thrown in the cell or out of the fortress. The fortress, its carpenters and its checks are as the game has them. Not tried in play yet. Moves no item: it can be turned on for a seed being played." },
+        new object[] { "rando_house_hints", "Skulltula House hints", new[] { "Off", "On" }, new[] { 0, 1 },
+            "Talking to the cursed man in Kakariko's House of Skulltula, his line about the next reward goes on with what each reward (10, 20, 30, 40 and 50 tokens) gives in this seed, so you know which are worth collecting for. Words in English in every language, as the Gossip Stones' hints. Not tried in play yet. Moves no item: it can be turned on for a seed being played." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and

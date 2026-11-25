@@ -5681,7 +5681,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0, "rando_house_hints": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6742,6 +6742,48 @@ def hint_line(data, label, words):
     while at + 7 <= len(old) and old[at] == 0x0e:
         at += 7 + struct.unpack_from("<H", old, at + 5)[0]
     return msbt_set(data, label, bytes(old[:at]) + hint_wrap(words).encode("utf-8"))
+
+
+# ---- Skulltula House hints (rando_house_hints, asked 2026-11-23) ----
+# The cursed man of Kakariko's House of Skulltula says what the next reward asks for ("If you collect a total of 20
+# tokens...", GatheringTokenGold's NextGoal: Talk_28 for 10, Talk_23 to _26 for 20 to 50; he says it at almost every
+# talk). With the setting each of those lines goes on, after a page of its own, with what each reward of 10 to 50
+# tokens gives in this seed (the rewards are gifts of Quest rewards: their items as the Gossip Stones name them,
+# hint_item; without Quest rewards the game's own). The 100 tokens' line (Talk_27, every reward had) is left: the list
+# is no use then. English in every language, as the stones' hints. Moves no item. NOT SEEN IN PLAY.
+HOUSE_HINT_TEXT = "EventFlowMsg/Npc_SkullDad.msbt"
+HOUSE_HINT_LABELS = ("Talk_28", "Talk_23", "Talk_24", "Talk_25", "Talk_26")
+HOUSE_HINT_PAGE = b"\x0e\x00\x00\x04\x00\x00\x00"   # (a new page of the box: the tag the man's own lines have between pages)
+HOUSE_HINT_ROWS, HOUSE_HINT_WIDTH = 3, 50   # (lines in a page of his box, characters in a line: as his own lines)
+HOUSE_HINT_HEAD = "My children will reward you so:"
+
+
+def house_hint_pages(rewards):
+    """the pages of the list, from {tokens: item}: the head and one line a reward ("10 tokens: the Giant's Wallet"),
+    no reward's line split between pages"""
+    def name(item):
+        w = hint_item(item)
+        return "a " + w if w.endswith(" rupee") and not w.startswith(("a ", "an ", "the ")) else w   # ("a purple rupee")
+    entries = [HOUSE_HINT_HEAD] + ["%d tokens: %s" % (n, name(rewards[n])) for n in sorted(rewards)]
+    pages = [[]]
+    for words in entries:
+        lines = hint_wrap(words, HOUSE_HINT_WIDTH).split("\n")
+        if pages[-1] and len(pages[-1]) + len(lines) > HOUSE_HINT_ROWS:
+            pages.append([])
+        pages[-1] += lines
+    return ["\n".join(p) for p in pages]
+
+
+def house_hint_line(data, label, pages):
+    """the text file with the line `label` going on with `pages` (house_hint_pages), each after a new page. ValueError:
+    no such line, or it has a list already"""
+    start, end = msbt_text(data, label)
+    old = bytes(data[start:end])
+    if old.endswith(b"\0"):
+        old = old[:-1]
+    if HOUSE_HINT_HEAD.encode() in old:
+        raise ValueError("%s has the rewards' list already" % label)
+    return msbt_set(data, label, old + b"".join(HOUSE_HINT_PAGE + p.encode("utf-8") for p in pages))
 
 
 # ---- Either age's items (rando_ageless, asked for 2026-11-18) ----
@@ -7869,6 +7911,7 @@ def main():
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
     a.gerudo_guards = ini["rando_gerudo_guards"] != 0   # (GERUDO_GUARDS_FLOW, 2026-11-24: a Quality of life setting; moves no item)
+    a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
     a.soil_bottle = ini["rando_soil_bottle"] != 0       # (SOIL_FILES, 2026-11-24: a Quality of life setting; moves no item)
     a.fast_push = ini["rando_fast_push"] != 0           # (FAST_PUSH, 2026-11-24: the blocks' curves; moves no item)
     a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
@@ -8011,7 +8054,7 @@ def main():
         stamp = stamp[:-1] + " guards pass\n"
     for saver_on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped"),
                            (a.archery_wins, " archery won"), (a.fast_push, " fast push"), (a.soil_bottle, " soil bottle"),
-                           (a.gerudo_guards, " gerudo guards pass")):
+                           (a.gerudo_guards, " gerudo guards pass"), (a.house_hints, " house hints")):
         if saver_on:   # (the time savers: move no item either, the same line. Not `on`: that is the randomizer's own, below)
             stamp = stamp[:-1] + word + "\n"
     if a.free_scarecrow:   # (moves no item either: the same line)
@@ -9126,6 +9169,35 @@ def main():
         except (OSError, KeyError, ValueError, struct.error, IndexError) as e:
             sys.exit("the Gossip Stones' hints: %s. Nothing written." % e)
         print("Hints: %d Gossip Stones give %d hints" % (len(hints), len(set(w for _, w in hints))))
+
+    # ---- Skulltula House hints (rando_house_hints): the cursed man's next-goal lines list the rewards, every language ----
+    if a.house_hints:
+        house = {}
+        for g in GIFTS:
+            if g.key in HOUSE_TOKENS:
+                h = gift_hash(g.key)
+                house[HOUSE_TOKENS[g.key]] = gives.get(h, g.item) if h in gifts else g.item
+        pages = house_hint_pages(house)
+        folder, said = os.path.join(romfs, "Mals"), 0
+        try:
+            for n in sorted(n for n in (os.listdir(folder) if os.path.isdir(folder) else []) if n.endswith(".sarc.zs")):
+                rel = "Mals/" + n
+                parts = sarc_read(gift_files[rel] if rel in gift_files else unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts))
+                text = parts.get(HOUSE_HINT_TEXT)
+                if text is None:
+                    continue
+                for label in HOUSE_HINT_LABELS:
+                    text = house_hint_line(text, label, pages)
+                parts[HOUSE_HINT_TEXT] = text
+                gift_files[rel] = sarc_write(parts)
+                shop_sizes[rel[:-3]] = len(gift_files[rel])
+                said += 1
+        except (OSError, KeyError, ValueError, struct.error, IndexError) as e:
+            sys.exit("the Skulltula House hints: %s. Nothing written." % e)
+        if not said:
+            sys.exit("the Skulltula House hints: no language has the cursed man's lines. Nothing written.")
+        print("Skulltula House hints: the cursed man lists the rewards (%s) in %d languages" % (
+            ", ".join("%d %s" % (k, hint_item(house[k])) for k in sorted(house)), said))
 
     # ---- the first bags' "You got" words (every seed, FIRST_BAG_WORDS) ----
     try:
