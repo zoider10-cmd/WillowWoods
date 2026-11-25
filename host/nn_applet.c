@@ -190,7 +190,9 @@ uint32_t hos_output_size(int height) {
    Keep at least 512 MB by default; larger scaled pools and an explicit HOS_RT_POOL_MB=<MB> still win. An output with more pixels
    than 3840 x 2160 (a size of the player's own, up to 5120 x 2880's pixels: hos_output_parse) keeps its pool to 900 MB:
    5120 x 2880 scales to 1220 MB, and 1220 and 1000 MB both failed the game's own reservation at boot; at 900 MB it boots and
-   plays with the 3D at the full size. */
+   plays with the 3D at the full size. ((Triforce 86170247, TEX-85) The cap is on the larger of the output's and the
+   widescreen picture's pixels: a 21:9 screen at the 4K output makes a 5120 x 2160 picture (hos_wide_max_px's default) whose
+   scaled pool, 915 MB, was over every pool known to pass the reservation; 900 MB is.) */
 uint64_t hos_rt_pool_size(uint64_t game) {
     const char *e = getenv("HOS_RT_POOL_MB");
     extern volatile uint64_t hos_wide_out;
@@ -199,7 +201,7 @@ uint64_t hos_rt_pool_size(uint64_t game) {
     if (wide_px > px) px = wide_px;
     const uint64_t scaled = px > 2560 * 1440 ? (game * px / (2560 * 1440) + 0xfffff) & ~0xfffffULL : game;
     const uint64_t minimum = 512ULL << 20, most = 900ULL << 20;
-    const int big = (uint64_t)hos_output_size(0) * hos_output_size(1) > 3840ULL * 2160;
+    const int big = px > 3840ULL * 2160;   /* ((Triforce 86170247) the output's or the picture's pixels, whichever is more) */
     const uint64_t v = e ? strtoull(e, NULL, 0) << 20 : scaled < minimum ? minimum : big && scaled > most ? most : scaled;
     static int logged;
     if (!logged++) hos_log("applet: render target pool %llu MB (the game's %llu MB)", (unsigned long long)(v >> 20), (unsigned long long)(game >> 20));

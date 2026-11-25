@@ -51,9 +51,14 @@ static const struct {
     {3840, 2160, 0, 305, NULL, 687},
     {2560, 1440, WIDE(3440, 1440), 305, NULL, 512},
     {2560, 1440, WIDE(5120, 1440), 305, NULL, 610},
-    {3840, 2160, WIDE(7680, 2160), 305, NULL, 1373},
-    {3840, 2160, WIDE(5120, 2160), 305, NULL, 915},   /* (a 21:9 screen's native picture at the 4K output: host/hos_wide_size.h) */
-    {3840, 2160, WIDE(7680, 1440), 305, NULL, 915},   /* (48:9 at the 4K output: kept to 7680 x 1440, as many pixels) */
+    /* ((Triforce 86170247, TEX-85) a picture of more pixels than 3840 x 2160's is kept to 900 MiB as such an output is:
+       1373 and 915 MiB were over every pool known to pass the game's reservation) */
+    {3840, 2160, WIDE(7680, 2160), 305, NULL, 900},
+    {3840, 2160, WIDE(5120, 2160), 305, NULL, 900},   /* (a 21:9 screen's native picture at the 4K output: host/hos_wide_size.h) */
+    {3840, 2160, WIDE(7680, 1440), 305, NULL, 900},   /* (48:9 at the 4K output: kept to 7680 x 1440, as many pixels) */
+    {3840, 2160, WIDE(5120, 2160), 305, "1000", 1000},   /* (an explicit HOS_RT_POOL_MB still wins) */
+    {2848, 1600, WIDE(3840, 1600), 305, NULL, 512},   /* (under 4K's pixels: the scaled pool, here the floor) */
+    {5120, 2880, WIDE(7224, 2032), 305, NULL, 900},
     {2560, 1440, WIDE(1920, 1080), 305, NULL, 512},
     {2560, 1440, 0, 305, "256", 256},
     {3840, 2160, WIDE(7680, 2160), 305, "768", 768},
@@ -90,7 +95,7 @@ int main(void) {
         source.write_text(fixture)
         subprocess.run([compiler, "-std=c11", "-O2", str(source), "-o", str(binary)], check=True)
         subprocess.run([str(binary)], check=True, timeout=5)
-    print("PASS: 512 MiB floor, 4K/ultrawide growth and explicit overrides, 900 MiB above 4K's pixels (17 cases)")
+    print("PASS: 512 MiB floor, 4K/ultrawide growth and explicit overrides, 900 MiB above 4K's pixels, output or picture (20 cases)")
 
 
 if __name__ == "__main__":
