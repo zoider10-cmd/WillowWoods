@@ -3577,10 +3577,27 @@ static int oot_banc_in_folder(const char *banc, const char *folder) {
    (Until 2026-11-25 it went by distance: a pot within 3 m of Link done with that item was "back". Seen in play in the
    Market's guard house, 22 pots in 8 m, four of them a Gold Skulltula token: a second token from the pot beside a
    collected one was refused, and a thrown pot's item lands far from it, so the record marked another pot.) */
+/* (FIXES 97, tools/rando/rando_seed.py POT_WORLD) A pot holding junk drops the game's own pick-up of it (no "You got"
+   scene): the seed's item of the check, by the pick-up's name; NULL for any other name */
+static const char *const oot_pot_world[][2] = {
+    {"Obj_DekuNut", "TBox_DekuNutBundle"}, {"Obj_DekuStick", "Item_DekuStickBundle_Small"}, {"Obj_DekuSeed", "Item_ScrubBusinessSeed"},
+    {"Obj_Bomb", "Item_BombBundle_Small"}, {"Obj_ArrowBundle_Medium", "TBox_ArrowBundle_Medium"},
+    {"Obj_ArrowBundle_Large", "TBox_ArrowBundle_Large"}, {"Obj_MagicJar_Large", "Tbox_MagicJar_Large"},
+};
+static const char *oot_pot_world_item(const char *name) {
+    for (unsigned k = 0; k < sizeof oot_pot_world / sizeof oot_pot_world[0]; k++)
+        if (!strcmp(name, oot_pot_world[k][0])) return oot_pot_world[k][1];
+    return NULL;
+}
+/* (a world pick-up marks a pot within this of Link only: grass and the game's own pots drop the same) */
+#define OOT_POT_WORLD_NEAR 20.0f
 /* (the pot of Link's map giving name, or its family's, that is broken now and not yet collected: its index, or -1;
-   broken: how many broken ones give it) */
+   broken: how many broken ones give it. A world pick-up's name (oot_pot_world_item) stands for its check's item, from a
+   pot within OOT_POT_WORLD_NEAR of Link) */
 static int oot_pot_open(Ctx *c, const char *name, int *broken) {
     int open = -1;
+    const char *world = oot_pot_world_item(name);
+    if (world) name = world;
     const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
     if (broken) *broken = 0;
     AcquireSRWLockShared(&oot_checks_lock);
@@ -3588,6 +3605,11 @@ static int oot_pot_open(Ctx *c, const char *name, int *broken) {
         int now = 0;
         if (!oot_checks[i].pot || !oot_checks[i].broken || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
         if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
+        if (world) {
+            const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
+                        dz = oot_checks[i].place[2] - oot_link_place[2];
+            if (dx * dx + dy * dy + dz * dz > OOT_POT_WORLD_NEAR * OOT_POT_WORLD_NEAR) continue;
+        }
         if (!oot_gamedata_keyed_bool(c, oot_checks[i].broken, &now) || !now) continue;
         if (broken) ++*broken;
         if (oot_checks[i].done != 1) open = i;
@@ -3599,7 +3621,7 @@ static int oot_pot_again(Ctx *c, const char *name) {
     int broken = 0;
     const int open = oot_pot_open(c, name, &broken);
     oot_pot_chosen = open;
-    if (open >= 0) return 0;
+    if (open >= 0 || oot_pot_world_item(name)) return 0;   /* (a world pick-up is grass's and the game's pots' too: never refused) */
     if (broken) hos_log("rando: %s from a pot whose check is collected already (%d broken pots give it): nothing is added", name, broken);
     return broken > 0;
 }

@@ -79,6 +79,13 @@ def main():
         "the pot does not drop by its own table"
     assert all(p_.startswith(("Drop/", "Component/")) and "Rando" in p_ for p_ in (S.POT_DROP_PARAM, S.POT_DROP_TABLE, S.POT_DROP_SUB)), \
         "a pot's drop files are under the game's own paths (the game keeps the first copy of a path)"
+    # (FIXES 97: a pot's junk is the game's own pick-up, no "You got" scene; the game's side knows the same pairs)
+    import re
+    pairs = dict((b, a) for a, b in re.findall(r'\{"(Obj_\w+)", "(\w+)"\}', host[host.index("static const char *const oot_pot_world[][2] = {"):
+                                                                                   host.index("static const char *oot_pot_world_item(")]))
+    assert pairs == S.POT_WORLD, (pairs, S.POT_WORLD)
+    assert 'ACTOR_REF % POT_WORLD.get(item, item)' in pack_src and all(i in S.POT_WORLD for i in S.POT_OWNS), "a pot's own junk has a scene"
+    assert "if (open >= 0 || oot_pot_world_item(name)) return 0;" in host, "a world pick-up (grass's too) can be refused"
     look = host[host.index("static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {"):]
     look = look[:look.index("\n}\n")]
     assert "oot_checks[i].broken == oot_pot_looks[k].hash && oot_checks[i].done == 1" in look and "mods/rando-seed/pot_looks.txt" in look, \
