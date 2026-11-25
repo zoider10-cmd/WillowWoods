@@ -77,10 +77,10 @@ def main():
     check('named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,' in script and "heart_drops.get(h, piece_own(h))) for h in pieces]," in script,
           "the pieces are not written with the checks")
     header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
-    check('X(HEART_PIECES, "Heart Pieces", "rando_heart_pieces", \\' in header and "The 14 Pieces of Heart lying in the world and the 8 Heart Containers the bosses leave take part as chests do: each can give any item of the shuffle but keys and songs. It still looks like a Piece of Heart or a Heart Container" in header,
+    check('X(HEART_PIECES, "Heart Pieces", "rando_heart_pieces", \\' in header and "The 14 Pieces of Heart lying in the world and the 8 Heart Containers the bosses leave take part as chests do: each can give any item of the shuffle but keys and songs. One that gives another item shows that item lying there" in header,
           "the setting's row does not say what it does")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
-    check('oot_checks[oot_check_count].piece = got >= 9 && !strncmp(kind, "Piece of Heart", 14) ? strtoull(hash, NULL, 16) : 0;' in host and
+    check('oot_checks[oot_check_count].piece = got >= 9 && (!strncmp(kind, "Piece of Heart", 14) || !strncmp(kind, OOT_SUN_CHECK, sizeof OOT_SUN_CHECK - 1))' in host and
           'named("Piece of Heart", h,' in script, "the game's side does not know which checks are pieces lying in the world")
     block = host[host.index("int hos_oot_pouch_add(Ctx *c) {"):]
     check('(oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY)) && c->x[30] != 0x828d50acULL &&' in block and
@@ -107,10 +107,10 @@ def main():
           "a boss's container does not ask for what its dungeon's reward asks for")
     check("heart_asks = lambda h: (skull_door if h in bosses else door)(" in script,
           "a boss's container's weapons are taken for the forest's way out (Gohma's asked for nothing with Open forest exit)")
-    check(not S.piece_holds(S.CONTAINER) and "piece_may | {CONTAINER} if h in bosses else piece_may" in script and
-          "any(not (piece_holds(i) or h in bosses and i == CONTAINER) for h, i in heart_drops.items())" in script,
+    check(not S.piece_holds(S.CONTAINER) and "piece_may | {CONTAINER} if h in bosses else piece_may | {SUN_ITEM} if h in suns else piece_may" in script and
+          "any(not (piece_holds(i) or h in bosses and i == CONTAINER or h in suns and i == SUN_ITEM) for h, i in heart_drops.items())" in script,
           "a piece may give a container, or a container's spot may not give its own")
-    check('"Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else named("Piece of Heart"' in script and
+    check('"Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else SUN_NAME if h in suns else named("Piece of Heart"' in script and
           'oot_checks[oot_check_count].boss = !strncmp(kind, "Heart Container, ", 17);' in host,
           "the containers' checks are not named so that the game's side knows them")
     check('} else if (oot_is_container(name) && c->x[30] != 0x828d50acULL && oot_piece_gives(gives, sizeof gives, 1)) {' in block and

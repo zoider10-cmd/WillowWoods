@@ -2167,6 +2167,7 @@ static uint32_t oot_flag_hash(const char *s) {
     return h;
 }
 
+#define OOT_SUN_CHECK "Fire Arrows, the sun's shot"   /* (tools/rando/rando_seed.py SUN_NAME's start) */
 /* (the lock held) the seed's checks with what each gives, and the record of that seed */
 static void oot_tracker_load(const char *stamp) {
     char path[MAX_PATH + 48], line[1100];
@@ -2185,7 +2186,8 @@ static void oot_tracker_load(const char *stamp) {
         snprintf(oot_checks[oot_check_count].item, sizeof oot_checks[0].item, "%s", got >= 10 ? item : "");
         snprintf(oot_checks[oot_check_count].ages, sizeof oot_checks[0].ages, "%s", ages);
         /* (tools/rando/rando_seed.py names such a check "Piece of Heart", and no other kind begins so) */
-        oot_checks[oot_check_count].piece = got >= 9 && !strncmp(kind, "Piece of Heart", 14) ? strtoull(hash, NULL, 16) : 0;
+        oot_checks[oot_check_count].piece = got >= 9 && (!strncmp(kind, "Piece of Heart", 14) || !strncmp(kind, OOT_SUN_CHECK, sizeof OOT_SUN_CHECK - 1))
+                                            ? strtoull(hash, NULL, 16) : 0;   /* (and Lake Hylia's Fire Arrows: oot_is_sun) */
         oot_checks[oot_check_count].boss = !strncmp(kind, "Heart Container, ", 17);   /* (the seed's name for a boss's) */
         oot_checks[oot_check_count].key = got >= 9 ? strtoull(hash, NULL, 16) : 0;   /* ("-": 0) */
         oot_checks[oot_check_count].opened = 0;
@@ -2427,6 +2429,12 @@ static int oot_is_piece(const char *name) {
 }
 #define OOT_CONTAINER "Obj_Heart_Container"
 /* (fixes 94, CONTAINER_LOOK: a boss's Heart Container that gives another item is an actor of its own, Obj_Heart_Container_R<nn>) */
+/* (placement 28, tools/rando/rando_seed.py SUN_ARROWS: Lake Hylia's Fire Arrows, lying on the island after the sun's
+   shot, take part as a lying piece does: the check's name begins OOT_SUN_CHECK, the pick-up's add is the actor's or the
+   item's name) */
+static int oot_is_sun(const char *name) {
+    return !strcmp(name, "Obj_Arrow_Fire") || !strcmp(name, "Item_Arrow_Fire");
+}
 static int oot_is_container(const char *name) {
     return !strcmp(name, OOT_CONTAINER) || !strncmp(name, OOT_CONTAINER "_R", sizeof OOT_CONTAINER "_R" - 1);
 }
@@ -4642,7 +4650,7 @@ void hos_oot_get_name(Ctx *c, uint64_t node, int kind) {
            spelling with "You got" words. Seen without a window 2026-11-20: Zora's River's piece of a Gold Skulltula
            token said "You got a Piece of Heart!" and "Four pieces form one container". The piece itself is still what
            Link holds up: it is the world's actor) */
-        if (oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY) || oot_is_container(name)) {
+        if (oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY) || oot_is_container(name) || oot_is_sun(name)) {
             char gives[64];
             if (!oot_piece_gives(gives, sizeof gives, oot_is_container(name))) return;
             const char *word = gives;
@@ -5114,6 +5122,11 @@ int hos_oot_pouch_add(Ctx *c) {
             __atomic_store_n(&oot_container_back, OOT_PIECE_WAIT, __ATOMIC_RELEASE);
             hos_log("rando: Link's max life %d quarters at the add%s: kept at %d", oot_max_now, recent ? " (it rose just now)" : "",
                     recent ? oot_max_was : oot_max_now);
+            view = oot_pouch_name(c, view, gives);
+            snprintf(name, sizeof name, "%s", gives);
+        } else if (oot_is_sun(name) && c->x[30] != 0x828d50acULL && oot_piece_gives(gives, sizeof gives, 0) && strcmp(gives, name)) {
+            /* (Lake Hylia's Fire Arrows that the seed made another item give that item, SUN_ARROWS) */
+            hos_log("rando: the Fire Arrows lying here are the seed's %s: that is given", gives);
             view = oot_pouch_name(c, view, gives);
             snprintf(name, sizeof name, "%s", gives);
         }

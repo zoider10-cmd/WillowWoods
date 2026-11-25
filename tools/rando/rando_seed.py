@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 27  # 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 28  # 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -5957,7 +5957,7 @@ def marks(data):
                     turned = struct.unpack_from("<3f", data, v + 8)
                 elif k == "Dynamic" and t == 0xC1:
                     dyn = v
-            if gyaml in MARKS or gyaml == SKULLTULA or gyaml.startswith("Obj_TBox") or gyaml in HEART_ACTORS or gyaml == CONTAINER:
+            if gyaml in MARKS or gyaml == SKULLTULA or gyaml.startswith("Obj_TBox") or gyaml in HEART_ACTORS or gyaml == CONTAINER or gyaml == SUN_ACTOR:
                 words = {}
                 for dk, dt, dv, _ in entries(data, dyn, keys) if dyn is not None else ():
                     words[dk] = (strings[dv] if dv < len(strings) else "") if dt == 0xA0 else dv
@@ -6455,6 +6455,26 @@ CONTAINERS_FROM = 12
 def boss_hearts(data):
     """The bosses' Heart Containers in a map file: [(hash, place)]."""
     return [(h, pos) for h, gyaml, pos, _, _ in marks(data) if gyaml == CONTAINER and h is not None]
+
+
+# ---- Lake Hylia's Fire Arrows (asked 2026-11-23, share/todo.md: the other randomizer's "LH Sun") ----
+# Shot at the sun from the lake's island, the Fire Arrows come down there (Dm_LakeHrl_0030) and lie on the island, an
+# actor of the adult's Hyrule Field map (Obj_Arrow_Fire, SUN_ARROWS). From placement SUN_FROM they take part as a lying
+# Piece of Heart does (whatever the Heart Pieces setting): their Fire Arrows in the pool, the spot giving what a piece
+# may give, the game's side giving the seed's item when they are picked up (host/hos_main.c, the check's name "Fire
+# Arrows, ..."). They keep their own look (the scene binds the actor by its name). Their rule is the other logic's,
+# asking for more: an adult with the Bow, the Water Temple done (its boss's rule; the distant Scarecrow's way left out).
+SUN_ARROWS = 0x3fd1b7093f47892e
+SUN_ACTOR = "Obj_Arrow_Fire"
+SUN_ITEM = "Item_Arrow_Fire"
+SUN_FOLDER = "HyruleField"
+SUN_NAME = "Fire Arrows, the sun's shot from the lake's island"
+SUN_FROM = 28
+
+
+def sun_arrows(data):
+    """Lake Hylia's Fire Arrows in a map file: [(hash, place)]"""
+    return [(h, pos) for h, gyaml, pos, _, _ in marks(data) if gyaml == SUN_ACTOR and h == SUN_ARROWS]
 
 
 def boss_need(folder):
@@ -8177,6 +8197,7 @@ def main():
     skulls = collections.OrderedDict()  # hash -> [area, position, can be given a drop (in every file it is in), a dungeon's, a child's map has it]
     pieces = collections.OrderedDict()  # a Piece of Heart lying in the world: hash -> [area, position]
     bosses = {}                          # the same of a boss's Heart Container in pieces (placement 12): hash -> its dungeon
+    suns = set()                         # the same of Lake Hylia's Fire Arrows in pieces (SUN_FROM)
     every_skull = collections.OrderedDict()   # every Gold Skulltula, the setting's or not: hash -> [area, position]
     paths = []
     for top, dirs, names in os.walk(os.path.join(romfs, "Banc")):
@@ -8227,6 +8248,14 @@ def main():
                         bosses[h] = folder
                 except (ValueError, struct.error, IndexError):
                     pass
+        if placement >= SUN_FROM and folder == SUN_FOLDER:   # (Lake Hylia's Fire Arrows, whatever the Heart Pieces setting)
+            try:
+                for h, pos in sun_arrows(data):
+                    maps[h].add(rel.split("/")[-1])
+                    pieces.setdefault(h, [folder, pos])
+                    suns.add(h)
+            except (ValueError, struct.error, IndexError):
+                pass
         try:   # (every Gold Skulltula, whatever the setting: its token is counted for the Skulltula house, placement 12)
             here = skulltulas(data)
         except (ValueError, struct.error, IndexError):
@@ -8506,8 +8535,9 @@ def main():
     #  Seen 2026-11-18: Gohma's asked for nothing)
     heart_asks = lambda h: (skull_door if h in bosses else door)(step((lambda n: each(song_need, n, pieces[h][0]) if a.songs else n)(
         (lambda n: each(quest_need, n, pieces[h][0], placement >= 12, deep) if a.quests else n)(
-            own_rule(h, pieces[h][0], lambda: boss_need(bosses[h]) if h in bosses else TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0]))))), h, pieces[h][0])
-    piece_own = lambda h: CONTAINER if h in bosses else HEART   # (what a piece's or a container's spot holds of its own)
+            own_rule(h, pieces[h][0], lambda: boss_need(bosses[h]) if h in bosses else (boss_need("WaterTemple") | {BOW}) if h in suns else
+                     TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0]))))), h, pieces[h][0])
+    piece_own = lambda h: CONTAINER if h in bosses else SUN_ITEM if h in suns else HEART   # (what a piece's, a container's or the sun's spot holds of its own)
     if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: a Skulltula's and a piece's rule too, wherever it is written: hook_asks)
         skull_plain, heart_plain = skull_asks, heart_asks
         skull_asks = lambda h, at=None: (lambda n, area: each(hook_need, n, HOOK_OR.get(h)) if hook_asks(area, h=h) else n)(
@@ -8577,15 +8607,14 @@ def main():
     holds = {}
     if placement >= SHUFFLED_FROM:
         joined.update((h, [skulls[h][0], TOKEN, None, None, "skulltula", skulls[h][1], ""]) for h in able)
-        if a.heart_pieces:
-            joined.update((h, [pieces[h][0], piece_own(h), None, None, "piece", pieces[h][1], ""]) for h in pieces)
+        joined.update((h, [pieces[h][0], piece_own(h), None, None, "piece", pieces[h][1], ""]) for h in pieces if a.heart_pieces or h in suns)
         kinds = {s[1] for s in spots.values()} | {s[1] for s in joined.values()}
         skull_may = frozenset(i for i in kinds if skulltula_holds(i, PROGRESSION))
         piece_may = frozenset(i for i in kinds if piece_holds(i))
         for h, s in joined.items():
             spots[h] = s
             needs[h] = skull_asks(h) if s[4] == "skulltula" else heart_asks(h)
-            holds[h] = skull_may if s[4] == "skulltula" else piece_may | {CONTAINER} if h in bosses else piece_may
+            holds[h] = skull_may if s[4] == "skulltula" else piece_may | {CONTAINER} if h in bosses else piece_may | {SUN_ITEM} if h in suns else piece_may
     if a.master_sword:   # (the pedestal: what the pouch takes by name; the sword on no shelf, no scrub's sale and no Skulltula)
         every = {s[1] for s in spots.values()}
         holds[gift_hash(MASTER_GIFT.key)] = frozenset(i for i in every if pedestal_holds(i))
@@ -8655,7 +8684,7 @@ def main():
             skull_drops[h] = item
         elif s[4] == "piece" and item != piece_own(h):
             heart_drops[h] = item
-    if joined and any(not skulltula_holds(i, PROGRESSION) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER) for h, i in heart_drops.items()):
+    if joined and any(not skulltula_holds(i, PROGRESSION) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER or h in suns and i == SUN_ITEM) for h, i in heart_drops.items()):
         sys.exit("a Gold Skulltula or a Piece of Heart was given what it may not hold: nothing written")
 
     # ---- the Gold Skulltulas: their tokens and the chests' rupees and supplies change places ----
@@ -8702,7 +8731,9 @@ def main():
                 len(pieces), len(heart_drops)))
         else:
             print("Heart Pieces: %d lying in the world and %d bosses' Heart Containers take part as chests do, %d now give another item (%d a gating item)" % (
-                len(pieces) - len(bosses), len(bosses), len(heart_drops), sum(1 for i in heart_drops.values() if i in PROGRESSION)))
+                len(pieces) - len(bosses) - len(suns), len(bosses), len(heart_drops), sum(1 for i in heart_drops.values() if i in PROGRESSION)))
+    if suns:
+        print("Lake Hylia's Fire Arrows: a check, giving %s" % next((heart_drops.get(h, SUN_ITEM) for h in suns)))
 
     if test_chests:   # (a test: these chests give what the file says)
         strangers = sorted(h for h in test_chests if h not in gives)
@@ -9654,7 +9685,7 @@ def main():
                 return pack_files[rel] if rel in pack_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
             folder = os.path.join(romfs, "RSDB")
             for base, look, of_boss in ((HEART, PIECE_LOOK, False), (CONTAINER, CONTAINER_LOOK, True)):
-                given = sorted({i for h, i in heart_drops.items() if (h in bosses) == of_boss and i != base})
+                given = sorted({i for h, i in heart_drops.items() if (h in bosses) == of_boss and h not in suns and i != base})
                 made = {}
                 for k, item in enumerate(given):
                     name = look % k
@@ -9674,7 +9705,7 @@ def main():
                         table = piece_rows(table, kind, item, name, base)
                     shop_files["RSDB/" + n] = table
                     shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
-                renamed = {h: made[i] for h, i in heart_drops.items() if i in made and (h in bosses) == of_boss}
+                renamed = {h: made[i] for h, i in heart_drops.items() if i in made and (h in bosses) == of_boss and h not in suns}
                 shown = 0
                 for h in renamed:
                     for file in maps.get(h, ()):
@@ -9786,7 +9817,7 @@ def main():
             "  %d. %s" % (k + 1, ", ".join("%s (%s)" % (i, next(spots[h][0] for h in gives if gives[h] == i) if i in gives.values() else
                                                       next(skulls[h][0] for h in skull_drops if skull_drops[h] == i) + ", a Gold Skulltula"
                                                       if i in skull_drops.values() else
-                                                      next(pieces[h][0] + (", the boss's Heart Container" if h in bosses else ", where a Piece of Heart lay") for h in heart_drops if heart_drops[h] == i)
+                                                      next(pieces[h][0] + (", the boss's Heart Container" if h in bosses else ", where Lake Hylia's Fire Arrows lay" if h in suns else ", where a Piece of Heart lay") for h in heart_drops if heart_drops[h] == i)
                                                       if i in heart_drops.values() else "its own chest")
                                            for i in sphere)) for k, sphere in enumerate(spheres)]
     area_now = None
@@ -9806,7 +9837,9 @@ def main():
     if a.heart_pieces:
         spoiler += ["", "Pieces of Heart lying in the world and the bosses' Heart Containers (area, position -> what it gives)"]
         for h in sorted(pieces, key=lambda q: (pieces[q][0], str(pieces[q][1]), q)):
-            spoiler.append("  %-22s %-26s -> %s" % (pieces[h][0], str(pieces[h][1]), heart_drops.get(h, "(its container)" if h in bosses else "(its piece)")))
+            spoiler.append("  %-22s %-26s -> %s" % (pieces[h][0], str(pieces[h][1]), heart_drops.get(h, "(its container)" if h in bosses else "(its Fire Arrows)" if h in suns else "(its piece)")))
+    elif suns:
+        spoiler += ["", "Lake Hylia's Fire Arrows -> %s" % next(heart_drops.get(h, "(its Fire Arrows)") for h in suns)]
     if a.dry_run:
         print("\n".join(spoiler[:50]))
         print("(dry run: nothing written)")
@@ -9965,7 +9998,7 @@ def main():
                                         SKULL_GO.get(h))
                                        for h in took] +
                                       [(pieces[h][0], pieces[h][1], check_ages(maps[h]), heart_asks(h),
-                                        "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
+                                        "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else SUN_NAME if h in suns else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
                                         heart_drops.get(h, piece_own(h))) for h in pieces],
                                       [(g.area, gift_place(g.key)[1], gift_place(g.key)[0], needs[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
                                        for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES] +
