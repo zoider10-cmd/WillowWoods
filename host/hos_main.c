@@ -2407,6 +2407,12 @@ static void oot_tracker_item(const char *name, int shop, int price) {
 #define OOT_PIECE_NEAR 12.0f
 #define OOT_PIECE "Obj_Heart_Piece"
 #define OOT_PIECE_VALLEY "Obj_GerudoValley_Heart_Piece"
+/* (fixes 93, tools/rando/rando_seed.py PIECE_LOOK: a piece that gives another item is an actor of its own with that item's
+   model, Obj_Heart_Piece_R<nn>; the pouch's add is named by it (seen without a window 2026-11-24: "pouch add
+   Obj_Heart_Piece_R01"), so it is a piece as Obj_Heart_Piece is) */
+static int oot_is_piece(const char *name) {
+    return !strcmp(name, OOT_PIECE) || !strncmp(name, OOT_PIECE "_R", sizeof OOT_PIECE "_R" - 1);
+}
 #define OOT_CONTAINER "Obj_Heart_Container"
 #define OOT_PIECE_WAIT 600   /* (the player's updates a piece counted late is waited for: some seconds) */
 static int oot_piece_back;   /* (a piece to take back out of the pouch: the updates it is still waited for) */
@@ -4620,7 +4626,7 @@ void hos_oot_get_name(Ctx *c, uint64_t node, int kind) {
            spelling with "You got" words. Seen without a window 2026-11-20: Zora's River's piece of a Gold Skulltula
            token said "You got a Piece of Heart!" and "Four pieces form one container". The piece itself is still what
            Link holds up: it is the world's actor) */
-        if (!strcmp(name, OOT_PIECE) || !strcmp(name, OOT_PIECE_VALLEY) || !strcmp(name, OOT_CONTAINER)) {
+        if (oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY) || !strcmp(name, OOT_CONTAINER)) {
             char gives[64];
             if (!oot_piece_gives(gives, sizeof gives, !strcmp(name, OOT_CONTAINER))) return;
             const char *word = gives;
@@ -5063,7 +5069,7 @@ int hos_oot_pouch_add(Ctx *c) {
         ((uint32_t)c->x[4] != 9 || debug_counts)) {
         /* (Heart Pieces: a piece lying in the world that the seed made another item gives that item) */
         char gives[64];
-        if ((!strcmp(name, OOT_PIECE) || !strcmp(name, OOT_PIECE_VALLEY)) && c->x[30] != 0x828d50acULL &&
+        if ((oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY)) && c->x[30] != 0x828d50acULL &&
             oot_piece_gives(gives, sizeof gives, 0)) {
             hos_log("rando: the Piece of Heart lying here is the seed's %s: that is given", gives);
             /* (and the piece's heal is not: bug 4, oot_piece_heal) */

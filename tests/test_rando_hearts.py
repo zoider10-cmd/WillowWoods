@@ -69,7 +69,7 @@ def main():
     check('"rando_heart_pieces": 0' in script and '(" hearts 2" if a.heart_pieces else "")' in script and
           'a.heart_pieces = a.heart_pieces or ini["rando_heart_pieces"] != 0' in script,
           "the script does not read the setting, or does not name it in the seed's stamp")
-    check("regyaml" not in script and "pack(HEART)" not in script and "set(heart_drops.values())" not in script,
+    check("regyaml" not in script and "pack(HEART)" not in script.replace("actor_pack(HEART)", "") and "set(heart_drops.values())" not in script,  # (fixes 93 keeps the piece's actor, its model the item's: piece_variant_pack)
           "the item is put in the map or made a pick-up again: lying there it was there again each time its map was entered")
     check("{h: heart_asks(h) for h in pieces}, fixed, token=HEART," in script and
           "(skull_asks(h), item) for h, item in skull_drops.items() if item in PROGRESSION]" in script,
@@ -83,7 +83,7 @@ def main():
     check('oot_checks[oot_check_count].piece = got >= 9 && !strncmp(kind, "Piece of Heart", 14) ? strtoull(hash, NULL, 16) : 0;' in host and
           'named("Piece of Heart", h,' in script, "the game's side does not know which checks are pieces lying in the world")
     block = host[host.index("int hos_oot_pouch_add(Ctx *c) {"):]
-    check('(!strcmp(name, OOT_PIECE) || !strcmp(name, OOT_PIECE_VALLEY)) && c->x[30] != 0x828d50acULL &&' in block and
+    check('(oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY)) && c->x[30] != 0x828d50acULL &&' in block and
           "view = oot_pouch_name(c, view, gives);" in block and 'snprintf(name, sizeof name, "%s", gives);' in block and
           block.index("view = oot_pouch_name(c, view, gives);") < block.index("oot_tracker_item(name, shop, price);") < block.index("hos_rando_progressive()"),
           "a piece lying in the world does not give its check's item, a chest's piece does, or the record and Progressive items see the piece")
