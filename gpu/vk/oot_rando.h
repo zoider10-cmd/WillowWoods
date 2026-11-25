@@ -183,12 +183,12 @@
       "Off", "On") \
     X(SOIL_BOTTLE, "Soil Skulltulas without bugs", "rando_soil_bottle", \
       "With a bottle got (empty or full), the Gold Skulltula in each of the ten patches of bean soil is there without letting bugs out on the soil: walk up to it and it comes out. The rules ask for a bottle either way. Moves no item: it can be turned on for a seed being played.", \
-      "Off", "On") \r
-    X(GERUDO_GUARDS, "Gerudo guards don't jail Link", "rando_gerudo_guards", \r
-      "When a Gerudo guard at the fortress catches adult Link, she goes back to her post and Link stays where he is: no talk, no being thrown in the cell or out of the fortress. The fortress, its carpenters and its checks are as the game has them. Not tried in play yet. Moves no item: it can be turned on for a seed being played.", \r
-      "Off", "On") \r
-    X(HOUSE_HINTS, "Skulltula House hints", "rando_house_hints", \r
-      "Talking to the cursed man in Kakariko's House of Skulltula, his line about the next reward goes on with what each reward (10, 20, 30, 40 and 50 tokens) gives in this seed, so you know which are worth collecting for. Words in English in every language, as the Gossip Stones' hints. Not tried in play yet. Moves no item: it can be turned on for a seed being played.", \r
+      "Off", "On") \
+    X(GERUDO_GUARDS, "Gerudo guards don't jail Link", "rando_gerudo_guards", \
+      "When a Gerudo guard at the fortress catches adult Link, she goes back to her post and Link stays where he is: no talk, no being thrown in the cell or out of the fortress. The fortress, its carpenters and its checks are as the game has them. Not tried in play yet. Moves no item: it can be turned on for a seed being played.", \
+      "Off", "On") \
+    X(HOUSE_HINTS, "Skulltula House hints", "rando_house_hints", \
+      "Talking to the cursed man in Kakariko's House of Skulltula, his line about the next reward goes on with what each reward (10, 20, 30, 40 and 50 tokens) gives in this seed, so you know which are worth collecting for. Words in English in every language, as the Gossip Stones' hints. Not tried in play yet. Moves no item: it can be turned on for a seed being played.", \
       "Off", "On")
 
 enum {
