@@ -6,11 +6,12 @@ python -I -B tests/test_movie_shape.py [--cc gcc] [--movie-module /path/to/oot_w
 import argparse
 import importlib.util
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
 
-RUN_ALL_ARGS = ["--cc", "{cc}"]
+RUN_ALL_ARGS = ["--cc", "gcc"]   # (run_all knows no {cc}: the first of gcc, clang found, as test_oot_heap_retry.py)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -91,7 +92,11 @@ def main():
         source = Path(tmp) / "movie_shape.c"
         exe = source.with_suffix(".exe" if os.name == "nt" else "")
         source.write_text(FIXTURE.replace("@MOVIE@", module.MOVIE), encoding="utf-8")
-        subprocess.run([args.cc, "-std=c11", "-Wall", "-Wextra", "-Werror", str(source), "-o", str(exe)], check=True)
+        cc = shutil.which(args.cc) or shutil.which("gcc") or shutil.which("clang")
+        if not cc:
+            print("SKIP: no C compiler")
+            return 0
+        subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", str(source), "-o", str(exe)], check=True)
         return subprocess.run([str(exe)]).returncode
 
 
