@@ -2153,7 +2153,7 @@ bool shipped_list_install() {
     static std::once_flag once;
     bool wrote = false;
     std::call_once(once, [&wrote] {
-        if (getenv("RX_VK_NO_SHIPPED_EMBED")) return;
+        if (env_on("RX_VK_NO_SHIPPED_EMBED")) return;
         const std::string path = state_list_path("hookshot_pipeline_states_shipped.bin");
         unsigned long long have = 0;
         bool v2 = false;
@@ -7291,7 +7291,7 @@ void StatsQuery::gpu_dump(VkCommandBuffer cmd, const NvnState& s, uint64_t prog,
     VkDependencyInfo di{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
     di.memoryBarrierCount = 1, di.pMemoryBarriers = &mb;
     vkCmdPipelineBarrier2(cmd, &di);
-    static const bool ubos = getenv("RX_VK_GPU_DUMP_UBO") != nullptr;   // (the uniform buffers too, as index 100 + slot)
+    static const bool ubos = env_on("RX_VK_GPU_DUMP_UBO");   // (the uniform buffers too, as index 100 + slot)
     for (const int stage : {7, 6, 5})
         for (int j = 0; j < (ubos ? 32 : 16); j++) {
             const int i = j < 16 ? j : 100 + (j - 16);

@@ -1498,7 +1498,7 @@ void CollectStorageBuffers(IR::Block& block, IR::Inst& inst, StorageInfo& info, 
         // 51183fe750d5d0c8...) took float constants for a buffer address ("storage buffer NOT bound (reads zeros)", c5+0x60),
         // read zeros and drew the plants without colour (white/sky-blue "mirror" ferns, glowing flowers). Left to the run-time
         // search. RX_VK_NO_CBUF_LOAD_RULE=1: off
-        static const bool cbuf_load_rule{std::getenv("RX_VK_NO_CBUF_LOAD_RULE") == nullptr};
+        static const bool cbuf_load_rule{!env_on("RX_VK_NO_CBUF_LOAD_RULE")};
         if (cbuf_load_rule && storage_buffer && storage_buffer->index != 0 && g_graphics_stage && Origins(inst.Arg(0)).load) {
             storage_buffer.reset();
         }

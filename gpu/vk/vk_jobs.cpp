@@ -140,7 +140,7 @@ std::shared_ptr<JobClaim> jobs_push_claim(std::function<void()> fn, bool urgent)
     return c;
 }
 bool jobs_claim_run(const std::shared_ptr<JobClaim>& c) {
-    static const bool off = getenv("RX_VK_NO_CLAIM") != nullptr;   // (RX_VK_NO_CLAIM=1: waited for behind the queue, as before)
+    static const bool off = env_on("RX_VK_NO_CLAIM");   // (RX_VK_NO_CLAIM=1: waited for behind the queue, as before)
     if (off || !c || c->taken.exchange(true, std::memory_order_acq_rel)) return false;
     c->fn();
     jobs_notify();

@@ -32,6 +32,7 @@
 #include <windows.h>
 #include "../gpu/vk/vk_api.h"   /* (HOS_SW_*, HOS_PAD_*, HOS_BIND_PAD) */
 #include "zstd.h"   /* (third_party/zstd: a mod's size table) */
+#include "../gpu/vk/compat/hookshot_env.h"   /* (env_on: the switches' one rule) */
 
 int hos_binding(int set, int button, int slot);   /* nn_hid.c */
 int hos_sdl_pads(uint64_t *buttons, int32_t stick[4]);   /* pad_sdl.c */
@@ -118,7 +119,7 @@ static int contains(const char *text, const char *word) {   /* (any case) */
 /* the face of a controller by its name (SDL's), HOS_PROMPT_*: "" no controller, the Switch's (the keyboard, the game's own
    icons; or XInput without SDL) */
 static int face_of_name(const char *name) {
-    if (!name[0] && getenv("HOS_NO_SDL")) return HOS_PROMPT_XBOX;   /* (Mako: without SDL only XInput pads work: Xbox-style) */
+    if (!name[0] && env_on("HOS_NO_SDL")) return HOS_PROMPT_XBOX;   /* (Mako: without SDL only XInput pads work: Xbox-style) */
     if (!name[0]) return HOS_PROMPT_SWITCH;
     if (contains(name, "dualsense") || contains(name, "ps5")) return HOS_PROMPT_PS5;
     if (contains(name, "dualshock") || contains(name, "ps4") || contains(name, "playstation")) return HOS_PROMPT_PS4;

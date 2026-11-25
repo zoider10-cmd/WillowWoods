@@ -516,7 +516,7 @@ bool wheel_update(bool* changed) {
             now = copy;
             shown = copy.open && copy.count > 0;
             // (HOS_WHEEL_TRACE: how long after the host opened the row the wheel is first drawn, and with how many items)
-            static const bool trace = getenv("HOS_WHEEL_TRACE") != nullptr;
+            static const bool trace = env_on("HOS_WHEEL_TRACE");
             static std::chrono::steady_clock::time_point open_seen{};
             static bool told = false;
             if (trace) {
@@ -703,7 +703,7 @@ bool wheel_picture(uint32_t pw, uint32_t ph, WheelPicture* out) {
         canvas.reset(w, h);
         draw(canvas, mx - left, my - top, u, (float)pw);
         static int traced = 0;   // (HOS_WHEEL_TRACE: the first drawings' cost on the present's thread)
-        if (traced < 6 && getenv("HOS_WHEEL_TRACE"))
+        if (traced < 6 && env_on("HOS_WHEEL_TRACE"))
             traced++, logf("wheel: picture %dx%d drawn in %d ms", w, h,
                            (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count());
         out8.resize((size_t)w * h * 4);

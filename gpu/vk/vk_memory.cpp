@@ -1130,7 +1130,7 @@ constexpr size_t kKeep = 24;
 // multiplicative hash, top bits folded in. RX_VK_POOL_HASH_OFF=1: the identity, as before
 struct AlignedKeyHash {
     size_t operator()(uint64_t k) const noexcept {
-        static const bool off = getenv("RX_VK_POOL_HASH_OFF") != nullptr;
+        static const bool off = env_on("RX_VK_POOL_HASH_OFF");
         if (off) return (size_t)k;
         k *= 0x9E3779B97F4A7C15ull;
         return (size_t)(k ^ (k >> 32));
@@ -1730,7 +1730,7 @@ const uint8_t* memory_as_submitted(uint64_t guest, const uint8_t* live, uint64_t
             const uint64_t a = std::max(p << 12, guest), b = std::min((p + 1) << 12, guest + n);
             st_overlaid++;
             // (Mako stutters: the compare that counted st_differed, a statistic, only with RX_VK_SHADOW_STATS=1: it read every page twice)
-            static const bool stats = getenv("RX_VK_SHADOW_STATS") != nullptr;
+            static const bool stats = env_on("RX_VK_SHADOW_STATS");
             if (stats && std::memcmp(scratch.data() + (a - guest), it->second.b.get() + (a - (p << 12)), b - a)) st_differed++;
             std::memcpy(scratch.data() + (a - guest), it->second.b.get() + (a - (p << 12)), b - a);
         }

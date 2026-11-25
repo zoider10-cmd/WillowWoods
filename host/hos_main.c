@@ -2556,7 +2556,7 @@ static void oot_piece_heal(Ctx *c, int64_t now, uint64_t actor) {
         }
     }
     static int told;
-    if (!told && getenv("HOS_OOT_PIECES")) told = 1, hos_log("rando: Link's life read: %u quarters (at 0x%llx)", life, (unsigned long long)life_at);
+    if (!told && env_on("HOS_OOT_PIECES")) told = 1, hos_log("rando: Link's life read: %u quarters (at 0x%llx)", life, (unsigned long long)life_at);
     if (now >= __atomic_load_n(&oot_no_heal_until, __ATOMIC_ACQUIRE)) {
         __atomic_store_n(&oot_life_seen, life, __ATOMIC_RELAXED);
         return;
@@ -3142,7 +3142,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
         }
     }
 #endif
-    if (getenv("HOS_OOT_WHERE"))   /* (a test's: HOS_OOT_WHERE=1 says where Link is each second) */
+    if (env_on("HOS_OOT_WHERE"))   /* (a test's: HOS_OOT_WHERE=1 says where Link is each second) */
         hos_log("test: Link is at %.2f %.2f %.2f", oot_link_place[0], oot_link_place[1], oot_link_place[2]);
     {   /* (a test's: HOS_OOT_WATCHFLAG="<hash in hex>,..." says each of those truth values of the game's list when it
            is first read and each time it changes: to see which flag an item given sets) */
@@ -3907,7 +3907,7 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
             }
         }
     }
-    if (getenv("HOS_OOT_PIECES")) {   /* (a test's: the count as it changes) */
+    if (env_on("HOS_OOT_PIECES")) {   /* (a test's: the count as it changes) */
         static int last = -2, turn;
         if (!(turn++ % 4)) {
             const int now = oot_pouch_count(c, OOT_PIECE);
@@ -4651,7 +4651,7 @@ static int oot_hook_tip_at(Ctx *c, uint64_t sensor) {
 int hos_oot_ring_post(Ctx *c) {
     static int keep = -1;
     static volatile LONG dropped;
-    if (keep < 0) keep = getenv("HOS_OOT_RING_ABORT") != NULL;
+    if (keep < 0) keep = env_on("HOS_OOT_RING_ABORT");
     if (keep) return 0;
     const LONG n = InterlockedIncrement(&dropped);
     if (n <= 16 || n % 1000 == 0)
@@ -4663,7 +4663,7 @@ void hos_oot_hook_switch(Ctx *c, int any) {
     static int off = -1;
     static uint64_t held;           /* (the damage calculator given the hit) */
     static long long held_until;
-    if (off < 0) off = getenv("HOS_OOT_NO_HOOK_HIT") != NULL;
+    if (off < 0) off = env_on("HOS_OOT_NO_HOOK_HIT");
     if (off) return;
     const uint64_t node = c->x[0], actor = recomp_load64(c, recomp_load64(c, node + 8) + 8);
     const uint64_t parts = recomp_load64(c, recomp_load64(c, actor + 0x1f0) + 0x270);
@@ -4867,7 +4867,7 @@ void hos_oot_get_name(Ctx *c, uint64_t node, int kind) {
         }
     } else {
         const uint64_t a = recomp_load64(c, node + 0x28) & ~3ULL, b = recomp_load64(c, node + 0x30) & ~3ULL;
-        if (getenv("HOS_OOT_SHOW_LOG")) {   /* (a test's: every show item asked for, before the checks below) */
+        if (env_on("HOS_OOT_SHOW_LOG")) {   /* (a test's: every show item asked for, before the checks below) */
             const uint64_t s = recomp_load64(c, node + 0x38) & ~3ULL;
             char seen[96] = "";
             if (s) oot_guest_string(c, recomp_load64(c, s), seen, sizeof seen);
@@ -6012,7 +6012,7 @@ static int game_main(int argc, char **argv) {
     recover_writes();   /* (what a write of a setting that a kill cut left: before anything reads the settings) */
     CreateDirectoryA(hos_user_dir, NULL);
 #ifdef _WIN32
-    if (beside_user[0] && hos_user_dir == beside_user && !getenv("HOS_NO_SAVE_FOLDER")) {   /* (sharkiix version) */
+    if (beside_user[0] && hos_user_dir == beside_user && !env_on("HOS_NO_SAVE_FOLDER")) {   /* (sharkiix version) */
         char game_dir[MAX_PATH];
         snprintf(game_dir, sizeof game_dir, "%s", beside_user);
         char *slash = strrchr(game_dir, SEP);

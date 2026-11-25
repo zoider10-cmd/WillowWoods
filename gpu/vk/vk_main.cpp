@@ -233,7 +233,7 @@ VKAPI_ATTR VkResult VKAPI_CALL fixing_create_shader_module(VkDevice d, const VkS
     return unfixed_create_shader_module(d, &with, a, m);
 }
 void fix_fallback_modules() {
-    if (!dev.mesh_fallback || getenv("RX_VK_NO_PUSH_FIX") || !vkx::vkCreateShaderModule) return;
+    if (!dev.mesh_fallback || env_on("RX_VK_NO_PUSH_FIX") || !vkx::vkCreateShaderModule) return;
     unfixed_create_shader_module = vkx::vkCreateShaderModule;   // (the guard's, or the driver's)
     vkx::vkCreateShaderModule = fixing_create_shader_module;
 }
@@ -273,7 +273,7 @@ void module_fault(const VkShaderModuleCreateInfo* ci) {
     if (n <= 8 || (n & (n - 1)) == 0)
         logf("vk: THE GRAPHICS DRIVER CRASHED reading a shader (vkCreateShaderModule, %zu bytes of SPIR-V%s%s): it is left out "
              "(%d so far)", ci ? (size_t)ci->codeSize : 0, saved[0] ? ", kept as " : "", saved, n);
-    if (n != 1 || dev.offscreen || getenv("HOS_HEADLESS")) return;
+    if (n != 1 || dev.offscreen || env_on("HOS_HEADLESS")) return;
     std::thread([name = std::string(dev.props.deviceName), old = !dev.mesh_shader] {
         std::string text = "The graphics driver of your " + name + " crashed while ReLink handed it one of the game's shaders. "
             "ReLink leaves such shaders out and goes on, but parts of the picture may be missing, and the driver may fail again.";
@@ -297,7 +297,7 @@ VKAPI_ATTR VkResult VKAPI_CALL guarded_create_shader_module(VkDevice d, const Vk
     return r;
 }
 void guard_shader_modules() {
-    if (getenv("RX_VK_NO_MODULE_GUARD") || !vkx::vkCreateShaderModule) return;
+    if (env_on("RX_VK_NO_MODULE_GUARD") || !vkx::vkCreateShaderModule) return;
     driver_create_shader_module = vkx::vkCreateShaderModule;
     vkx::vkCreateShaderModule = guarded_create_shader_module;
 }

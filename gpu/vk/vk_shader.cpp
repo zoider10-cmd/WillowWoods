@@ -175,7 +175,7 @@ Code read_code(const nvn_stage_data& sd) {
     if (!sd.control || !sd.data || !host->gpu_read(sd.control, ctl, sizeof ctl) || !control_end(ctl, &end)) return Code{};
     std::vector<uint8_t> area(end);
     if (!host->gpu_read(sd.data, area.data(), end)) return Code{};
-    static const bool no_cache = getenv("RX_VK_NO_CODE_CACHE") != nullptr;
+    static const bool no_cache = env_on("RX_VK_NO_CODE_CACHE");
     uint64_t key = 0;
     if (!no_cache) {
         key = code_key(ctl, area.data(), end);

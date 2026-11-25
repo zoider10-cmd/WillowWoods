@@ -3052,7 +3052,7 @@ bool upload_defer(Texture& tex) {
     static const int64_t budget_ns = (int64_t)(getenv("RX_VK_UPLOAD_BUDGET_MS") ? atof(getenv("RX_VK_UPLOAD_BUDGET_MS")) : 10.0) * 1000000;
     if (!budget_ns || !upload_defer_ok || tex.uploaded || !tex.astc || tex.gpu_written) return false;
     if (frame_upload_ns.load(std::memory_order_relaxed) < budget_ns) return false;
-    static const bool again = getenv("RX_VK_DEFER_AGAIN") != nullptr;
+    static const bool again = env_on("RX_VK_DEFER_AGAIN");
     // (Mako §74) Left for later for at most RX_VK_DEFER_FRAMES (3) frames after the first time, not once: with "once", every
     // texture a burst frame left came in the very next frame whatever its budget, so an area's load still made one 100-200 ms
     // frame (Castle Town: 346 left, the next frame's uploads 101 ms). Now the burst spreads over up to 4 frames of ~40 ms, and
