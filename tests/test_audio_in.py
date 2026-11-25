@@ -444,7 +444,13 @@ def main():
     # (the menu's row reaches the host: hos_mic_select, in the table it is given)
     check('"Microphone", &opts.mic, 0,' in (ROOT / 'gpu' / 'vk' / 'vk_menu.cpp').read_text(encoding='utf-8'),
           'the Insert menu has no Microphone row')
-    check(re.search(r'hos_mic_count,\s*hos_mic_name,\s*hos_mic_select', (ROOT / 'host' / 'rx_backend.c').read_text(encoding='utf-8')),
+    # (the names through host_mic_name since the item wheel (5a5f1167): its query index is the wheel's, every other the
+    # microphone's, hos_mic_name)
+    backend = (ROOT / 'host' / 'rx_backend.c').read_text(encoding='utf-8')
+    check(re.search(r'hos_mic_count,\s*host_mic_name,\s*hos_mic_select', backend) and
+          re.search(r'static const char \*host_mic_name\(int index\) \{\n'
+                    r'    if \(index == MKWVK_WHEEL_QUERY\) return [^;]*;\n'
+                    r'    return hos_mic_name\(index\);\n\}', backend),
           'the menu is not given the microphones')
     check('mic_want = mic_key(eq + 1);' in (ROOT / 'gpu' / 'vk' / 'vk_menu.cpp').read_text(encoding='utf-8'),
           'the saved microphone is not read through mic_key')

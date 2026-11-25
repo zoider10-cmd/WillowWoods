@@ -75,7 +75,7 @@ PARSER = r'''
 #include "audio_output_devices.h"
 #include "gpu/vk/vk_api.h"
 _Static_assert(MKWVK_API_VERSION >= 26, "performance info needs a new ABI version");
-_Static_assert(MKWVK_API_VERSION == 29, "fullscreen monitor selection extends the out-of-memory ABI");
+_Static_assert(MKWVK_API_VERSION == 30, "fullscreen monitor selection extends the out-of-memory ABI (29), Mako 4.2 program_set 30");
 _Static_assert(offsetof(MkwVkHost, options_path) == offsetof(MkwVkHost, take_text) + sizeof(((MkwVkHost *)0)->take_text),
                "keep the version-23 settings path after text input");
 _Static_assert(offsetof(MkwVkHost, audio_output_count) == offsetof(MkwVkHost, options_path) + sizeof(((MkwVkHost *)0)->options_path),

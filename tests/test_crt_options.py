@@ -47,6 +47,8 @@ FIXTURE = r'''
 #include "upscaler_rows.h"
 #include "auto_settings.h"
 #include "menu_restart.h"
+#include "monitor_choice.h"   // (the Fullscreen monitor's saved id: menu_init's read)
+namespace monitor_choice = mkwvk::monitor_choice;
 #include <algorithm>
 #include <atomic>
 #include <cctype>
@@ -60,6 +62,16 @@ FIXTURE = r'''
 #include <mutex>
 #include <string>
 #include <vector>
+#include <cerrno>   // (save(): what failed, the options file's mode, its move)
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "FAIL %d: %s\n", __LINE__, #x); std::exit(1); } } while (0)
 /* OPTIONS */
@@ -97,11 +109,9 @@ const char* dlss_preset_env() { return nullptr; }
 bool framegen_by_fixed() { return false; }   // (vk_menu.cpp: Frame generation by with nothing to choose)
 /* ROW_FIXED */
 /* STOPS */
-/* BUDGETS */
-/* SYNC_BUDGETS */
 /* AUTO_STATE */
 /* ENV_HELPERS */
-void apply_auto(bool keep_own);
+void apply_auto();   // (keep_own went in Longshot's merge, a62ba9e8)
 /* APPLY_PRESET */
 /* APPLY_AUTO */
 
@@ -116,9 +126,23 @@ namespace i18n { int game_lang_index() { return 0; } }   // no external language
 constexpr int HOS_KEY_N = 1, HOS_SW_N = 1, HOS_SW_PLUS = 10, HOS_SW_MINUS = 11, HOS_BIND_PAD = 0, HOS_BIND_KEY = 1;
 constexpr int HOS_KEY_OC_NOTE_L = 1, HOS_KEY_OC_NOTE_X = 1;
 const char* const bind_names[HOS_KEY_N] = {"a"};
-struct Host { int (*binding)(int, int, int); float (*aspect_ratio)(); };
+struct Host { int (*binding)(int, int, int); float (*aspect_ratio)(); void (*audio_output_select)(const char*);
+              void (*monitor_select)(const char*); };
 Host host_value{}, *host = &host_value;
 bool can_bind() { return false; }
+// (save() writes the Fullscreen monitor's, the playback device's and the GPU device row's choices: none chosen here)
+int monitor_pick, output_pick;
+std::string monitor_want, monitor_saved_name, output_want, output_saved_name;
+#include "gpu_choice.h"
+namespace gpu_choice = mkwvk::gpu_choice;
+std::vector<gpu_choice::Card> gpu_device_cards;
+std::string output_id_key(const char* text) { return text; }
+std::string output_name_key(const char* text) { return text; }
+bool output_forced() { return false; }
+bool can_outputs() { return false; }   // (no playback-device or fullscreen-monitor list: the host is not told)
+void refresh_outputs() {}
+bool can_monitors() { return false; }
+void refresh_monitors() {}
 /* INI_KEY */
 /* SAVE */
 
@@ -153,6 +177,12 @@ void samplers_changed() { CHECK(false); }
 void temporal_reset_failure() { CHECK(false); }
 void menu_debug_rows(int, int) { CHECK(false); }
 void prompts_at_once(const Row& r) { CHECK(r.value != &opts.prompts); }
+bool debug_warning = false, menu_refresh = false;
+int debug_warning_choice = 0;
+bool framegen_by_dlss_offered() { return true; }
+void sync_transition_autosave() { CHECK(false); }
+void output_chosen() { CHECK(false); }
+void monitor_chosen() { CHECK(false); }
 /* SET_ROW */
 
 void write_ini(const char* text) {
@@ -291,7 +321,7 @@ void test_presets_and_live_changes() {
                 apply_preset(kAutoPreset);   // The production Auto path, not a no-op stand-in.
                 CHECK(opts.preset == kAutoPreset && opts.crt_filter == filter && opts.crt_lines == lines);
                 CHECK(opts.output_res == 1);
-                apply_auto(true);           // Choosing again after the hardware changes also preserves CRT.
+                apply_auto();               // Choosing again after the hardware changes also preserves CRT.
                 CHECK(opts.crt_filter == filter && opts.crt_lines == lines);
                 CHECK(opts.output_res == 1);
             }
@@ -354,9 +384,9 @@ def fixture(source):
         "/* CRT_LINES_ROW */": rows["CRT lines"],
         "/* ROW_FIXED */": definition(menu, "bool row_fixed"),
         "/* STOPS */": definition(menu, "bool stops_at_ends"),
-        "/* BUDGETS */": menu[menu.index("constexpr int kVramBudgets ="):menu.index("const char* tx_vram_budget(")],
-        "/* SYNC_BUDGETS */": definition(menu, "void sync_preset_budgets"),
-        "/* AUTO_STATE */": menu[menu.index("::auto_settings::Choice auto_choice;"):menu.index("void apply_auto(bool keep_own);")],
+        # (no BUDGETS, SYNC_BUDGETS: the VRAM budget row, kVramBudgets and sync_preset_budgets went in Longshot's merge,
+        # a62ba9e8: one rule by the card, texture_budget.h and mirror_budget.h)
+        "/* AUTO_STATE */": menu[menu.index("::auto_settings::Choice auto_choice;"):menu.index("void apply_auto();")],
         "/* ENV_HELPERS */": menu[menu.index("struct EnvOverride {"):menu.index("std::string ini_path() {")],
         "/* APPLY_PRESET */": definition(menu, "void apply_preset"),
         "/* APPLY_AUTO */": definition(menu, "void apply_auto"),

@@ -54,7 +54,9 @@ int main(int argc, char **argv) {
     mapicons = pane_at(MAP, 12, "N_MapIcon_00", 60, 60, 0);
     mapframe = pane_at(MAP, 13, "P_Frame_00", 400, 1500, 1);
     droot = pane_at(DIALOG, 14, "RootPane", 0, 0, 0);
-    dchoice = pane_at(DIALOG, 15, "N_BtnIn_00", 300, 100, 1);
+    dchoice = pane_at(DIALOG, 15, "Pa_Btn_00", 940, 226, 1);   /* (the text box's panes as tests/test_hud_layout.py's) */
+    dcol = pane_at(DIALOG, 18, "N_BtnNum_00", 90, 120, 0);
+    dbox = pane_at(DIALOG, 19, "P_MessageBase_00", 2200, 600, 1);
     lroot = pane_at(GUIDE, 16, "RootPane", 0, 0, 0);
     lguide = pane_at(GUIDE, 17, "A_GuideAll_00", 300, 80, 1);
     /* the row at argv[2] from the start, then at argv[3] (a change in play: -1, none) */

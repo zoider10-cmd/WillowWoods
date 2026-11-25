@@ -101,7 +101,9 @@ struct {int framegen=2;} opts;
 bool scene_tonemap_on(){return tone;}
 int env_switch(const char*){return enabled?1:0;}
 bool fsr3_wanted(){return false;}
-namespace fsr3fi {unsigned frames_wanted(){return fg;}}
+namespace fsr3fi {unsigned frames_wanted(){return fg;}
+// (FSR 3.1's frames or the built-in FG's motion want the scene's motion: bc47ce4f. fg stands for either)
+unsigned motion_wanted(){return fg?1u:0u;}}
 uint64_t texture_frame_no(){return frame;}
 uint64_t texture_destroy_generation(){return 1;}
 bool memory_read_as_submitted(uint64_t,float* c,size_t n){

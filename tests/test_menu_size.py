@@ -43,8 +43,11 @@ def main():
     banner = banner[:banner.index("\n    }\n")]
     check("ui::fit_px(px, opts.menu_size == 3 ? px : kVersionMinPt * s, 0.5f * s, room, width)" in banner and "if (fit > 0)" in banner,
           "the banner's version is not shrunk to fit at Small and Medium (and kept at its size at Large)")
-    check('std::string("Hookshot ") + version_text(HOOKSHOT_VERSION)' in banner and "(source" not in banner.split("ui::fit_px(")[0].split("version_text")[1],
-          "the banner's version is not shown as players see it (version_text: no source fingerprint)")
+    # (Hookshot showed version_text, with no source fingerprint; Mako replaced it on purpose (db36c42a, "the version shown as
+    # Mako 3.3") by the whole HOOKSHOT_VERSION under the project's name, which Willow Woods (c6bdf4aa) keeps)
+    check('std::string ver = HOOKSHOT_VERSION;' in banner and
+          'ver = ver.rfind("mako-", 0) == 0 ? "Willow Woods " + ver.substr(5) : "Willow Woods " + ver;' in banner,
+          "the banner's version is not HOOKSHOT_VERSION under the project's name (Willow Woods)")
     check("constexpr float kVersionMinPt = 10;" in menu, "the version's smallest size is not 10 points")
 
     src = "#include <cmath>\n#include <cstdio>\n#include <cstring>\n" + block(ui, "inline float unit(") + "\n" + \

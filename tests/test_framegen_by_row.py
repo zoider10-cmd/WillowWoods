@@ -5,8 +5,8 @@ give DLSS Frame Generation no Upscaler picture to make frames from, so the built
 Insert menu there read that Auto had picked the built-in one, with DLSS FG nowhere in the row's choices. Now the row names
 the choice itself: DLSS FG, offered only where it runs (NGX asked once a run, before a present needs it: dlss_fg_probe),
 and Built-in FG; then (#1103) FSR 3.1 FG, AMD FSR 3.1's frame interpolation, as 2 so an options file's 1 stays Built-in
-FG. Where DLSS FG cannot run, the row has FSR 3.1 FG (0, the default; a 2 the same) and Built-in FG, and its line at FSR
-3.1 FG says why not DLSS FG. At DLSS FG on a temporal
+FG. Where DLSS FG cannot run, the row has Built-in FG (1, and the default 0 the same: Mako 4.2, 5822801b, as FSR 3.1's
+frames smeared the HUD) and FSR 3.1 FG (2), and its line at FSR 3.1 FG says why not DLSS FG. At DLSS FG on a temporal
 Upscaler, a set with no picture from it (the game's own menus, movies, loading screens) is the game's frame alone, not the
 built-in one's (dlss_fg_holds; tests/present_source_crop_test.cpp runs framegen_record so), and the row's line and the FPS
 counter say DLSS FG is paused.
@@ -15,9 +15,9 @@ Checked here, with the menu's own functions compiled (tx_framegen_by, hn_framege
 framegen_maker_name, the options file's loading loop and ini_key) and vk_dlss.cpp's fg_asked and dlss_fg_holds:
 - the row has three choices, DLSS FG (0, the default), Built-in FG (1) and FSR 3.1 FG (2), and no value reads Auto;
 - an options file's frame_generation_by=0 from before (Auto) loads as the default: DLSS FG, DLSS-G asked for, where it
-  runs; FSR 3.1 FG where it does not; 1 stays Built-in FG, 2 FSR 3.1 FG; a hand-edited value out of range is clamped;
+  runs; Built-in FG where it does not; 1 stays Built-in FG, 2 FSR 3.1 FG; a hand-edited value out of range is clamped;
 - where DLSS FG cannot run, its line at FSR 3.1 FG says why, DLSS's own reason when DLSS does not run, and at Built-in FG
-  is Built-in FG's own; with RX_VK_DLSS_FG=1 it is fixed at DLSS FG (row_fixed) and says the switch chooses;
+  (1, or the default 0) is Built-in FG's own; with RX_VK_DLSS_FG=1 it is fixed at DLSS FG (row_fixed) and says the switch chooses;
 - at DLSS FG: the line says why another makes the frames, and that DLSS FG is paused where the sets are the game's alone;
 - the sets are the game's alone only at DLSS FG, on a temporal Upscaler, for a set without its picture;
 - every line the row can show is among the variants measure_help makes room for;
@@ -131,9 +131,9 @@ int main() {
     // (an options file from before: 0 was Auto, the default)
     struct Load { const char* line; int unavailable; int value; const char* text; bool asked; } loads[] = {
         {"frame_generation_by=0", FG_SKIP_NONE, 0, "DLSS FG", true},              // (Auto from before: DLSS FG where it runs)
-        {"frame_generation_by=0", FG_SKIP_DEVICE, 0, "FSR 3.1 FG", true},         // (an AMD or Intel GPU: FSR 3.1 FG; kept)
-        {"frame_generation_by=0", FG_SKIP_START, 0, "FSR 3.1 FG", true},          // (an RTX 30, no runtime: the same)
-        {"frame_generation_by=0", FG_SKIP_NOT_BUILT, 0, "FSR 3.1 FG", true},      // (a build without NVIDIA's SDK)
+        {"frame_generation_by=0", FG_SKIP_DEVICE, 0, "Built-in FG", true},        // (an AMD or Intel GPU: Built-in FG; kept)
+        {"frame_generation_by=0", FG_SKIP_START, 0, "Built-in FG", true},         // (an RTX 30, no runtime: the same)
+        {"frame_generation_by=0", FG_SKIP_NOT_BUILT, 0, "Built-in FG", true},     // (a build without NVIDIA's SDK)
         {"frame_generation_by=1", FG_SKIP_NONE, 1, "Built-in FG", false},         // (Built-in FG chosen: kept)
         {"frame_generation_by=1", FG_SKIP_DEVICE, 1, "Built-in FG", false},
         {"frame_generation_by=2", FG_SKIP_NONE, 2, "FSR 3.1 FG", false},          // (FSR 3.1 FG chosen: no DLSS-G)
@@ -191,7 +191,7 @@ int main() {
         CHECK(std::strcmp(r.text(v), "DLSS FG") == 0, "RX_VK_DLSS_FG=1: the row does not read DLSS FG");
         CHECK(starts(line(v), "RX_VK_DLSS_FG=1 is set: it chooses for this run."), "RX_VK_DLSS_FG=1 is not said");
     }
-    // (DLSS FG cannot run: FSR 3.1 FG (0 or 2) says why, DLSS's own reason for DLSS; Built-in FG chosen its own line)
+    // (DLSS FG cannot run: FSR 3.1 FG (2) says why, DLSS's own reason for DLSS; Built-in FG (1, or the default 0) its own line)
     struct Cannot { int why; DlssWhy dlss; const char* text; } cannot[] = {
         {FG_SKIP_OFF, DLSS_OK, "DLSS FG cannot run: DLSS Frame Generation is turned off for this run (RX_VK_DLSS_FG=0)."},
         {FG_SKIP_DEVICE, DLSS_ENV_OFF, "DLSS FG cannot run: DLSS and DLAA: off for this run (RX_VK_DLSS=0)."},
@@ -208,8 +208,8 @@ int main() {
             for (int v = r.lo; v <= r.hi; v++) {
                 reset_run();
                 unavailable = c.why, why_dlss = c.dlss, forced = f, maker = FgMaker::BuiltIn;
-                CHECK(starts(line(v), v == 1 && !f ? "The renderer's own" : c.text), c.text);
-                CHECK(std::strcmp(r.text(v), v == 1 ? "Built-in FG" : "FSR 3.1 FG") == 0, c.text);
+                CHECK(starts(line(v), v != 2 && !f ? "The renderer's own" : c.text), c.text);
+                CHECK(std::strcmp(r.text(v), v != 2 ? "Built-in FG" : "FSR 3.1 FG") == 0, c.text);
             }
     // (the sets are the game's alone: at DLSS FG, on a temporal Upscaler, for a set without its picture)
     reset_run();

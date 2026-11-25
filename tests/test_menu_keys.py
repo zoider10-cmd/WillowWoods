@@ -306,8 +306,9 @@ def main():
     tick = menu[menu.index("void menu_tick() {"):]
     key_poll = tick[tick.index("    enum { K_N ="):tick.index("    // (hookshot) the gamepads")]
     esc_at = tick.index("    const bool esc_opens")
-    # (the Esc block ends where the keys' branches begin: the text field's first, as the Insert menu's text fields have it)
-    esc_block = tick[esc_at:tick.index("    if (open_now.load() && debug_warning) {", esc_at)]
+    # (the Esc block ends where the keys' branches begin: Mako's preview end (page 6) first since Mako 4.2, then the debug
+    # warning's)
+    esc_block = tick[esc_at:tick.index("    if (open_now.load() && page == 6) {", esc_at)]
     tx_at = menu.index("const char* tx_menu_shortcut(int v) {")
     tx = menu[tx_at:menu.index("\n}\n", tx_at) + 3]
     header = (ROOT / "gpu/vk/vk_menu.h").read_text(encoding="utf-8")
@@ -341,7 +342,7 @@ def main():
         cpp, exe = Path(tmp) / "fixture.cpp", Path(tmp) / "fixture"
         cpp.write_text(fixture, encoding="utf-8")
         # (_CRT_SECURE_NO_WARNINGS: the MSVC CRT's fopen deprecation, as the game's own Windows build passes)
-        subprocess.run([a.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-D_CRT_SECURE_NO_WARNINGS", "-I" + str(ROOT), str(cpp),
+        subprocess.run([a.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-D_CRT_SECURE_NO_WARNINGS", "-idirafter", str(ROOT), str(cpp),
                         "-o", str(exe)], check=True)
         subprocess.run([str(exe), str(Path(tmp) / "hookshot_options.ini")], check=True)
 
@@ -368,7 +369,8 @@ def main():
     # (the page links on the tabs: confirm opens them)
     need(tick, r"else if \(r\.cheat >= 0\) cheat_press\(r\.cheat, press, changed\)", "the debug tools' rows do not act on the Debug tab")
     need(tick, r"press\[7\] && is_motion_row\(r\)\) cur_tab = TAB_MOTION", "Motion does not open on confirm")
-    need(tick, r"press\[7\] && !r\.value && can_bind\(\)\) page = 1", "Controls does not open on confirm")
+    # (not on a Tracker row: the randomizer fork's Tracker tab rows have no value either)
+    need(tick, r"press\[7\] && !r\.value && r\.tracker < 0 && can_bind\(\)\) page = 1", "Controls does not open on confirm")
     need(tick, r"press\[5\] && cur_tab == TAB_MOTION\) cur_tab = TAB_CONTROLS", "back does not leave the Motion page")
     # (a click on a link row is confirm)
     need(tick, r"else if \(!d\.value\) press\[7\] = true;", "a click on a page row does not open it")

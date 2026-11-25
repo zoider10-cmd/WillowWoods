@@ -35,12 +35,15 @@ def main():
     args = parser.parse_args()
     menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
     # the picture's way, top to bottom: the output, what fills it, the 3D's size and its sharpening (Resolution and
-    # upscaling); then the frame rows, Reflex with them (Frame generation and latency); then the window (Screen)
+    # upscaling); then the frame rows, Reflex with them (Frame generation and latency); then the window (Screen). Frame
+    # pacing is a Developer row since Longshot's merge (a62ba9e8, "Developer: Frame pacing"), not one of these
     order = ['"Output resolution", &opts.output_res', '"Upscaler", &opts.dlss', '"DLSS model", &opts.dlss_model',
              '"Render resolution", &opts.resolution', '"Sharpness", &opts.sharpness',
              '"Frame generation", &opts.framegen', '"Frame generation by", &opts.framegen_by',
-             '"Frame pacing", &opts.pace', '"NVIDIA Reflex", &opts.reflex',
+             '"NVIDIA Reflex", &opts.reflex',
              '"Window scaling filter", &opts.upscale']
+    if '{TAB_DEBUG, "Frame pacing", &opts.pace' not in menu:
+        raise SystemExit("vk_menu.cpp: the Frame pacing row is not on the Developer (Debug) tab")
     at = [menu.find(row) for row in order]
     if -1 in at:
         raise SystemExit("vk_menu.cpp: a scaling row is missing: " + order[at.index(-1)])
@@ -191,7 +194,8 @@ def main():
     if "!temporal_wanted() && !temporal_off()" not in function(temporal, "void temporal_note_scene_draw("):
         raise SystemExit("temporal_note_scene_draw: no scene camera with Off, so the fixed shares' networks are never stretched")
     draw = (ROOT / "gpu" / "vk" / "vk_draw.cpp").read_text(encoding="utf-8")
-    if "(!temporal_wanted() && !temporal_off())" not in function(draw, "bool temporal_stand_in("):
+    # (and with no engine, frame generation's inputs alone: temporal_fg_inputs, Longshot's merge)
+    if "(!temporal_wanted() && !temporal_off() && !temporal_fg_inputs())" not in function(draw, "bool temporal_stand_in("):
         raise SystemExit("temporal_stand_in: the game's network runs with Off")
     if "(temporal_wanted() || temporal_off() || fsr3_inputs::wanted()) && temporal_rejected_network(" not in function(draw, "bool upscale_stub("):
         raise SystemExit("upscale_stub: a network that did not translate is not stretched with Off, or not offered to FSR 3.1")

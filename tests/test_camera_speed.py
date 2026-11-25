@@ -119,10 +119,17 @@ def source_checks():
           "the scale is not set from the menu's row at each present (100% without the renderer's menu)")
     replay = (ROOT / "gpu" / "vk" / "vk_replay.cpp").read_text(encoding="utf-8")
     api = (ROOT / "gpu" / "vk" / "vk_api.h").read_text(encoding="utf-8")
-    value = {}   # (every HOS_OPT_* enum)
-    for first, start, rest in re.findall(r"enum \{ (HOS_OPT_\w+) = (\d+)(?:, ([^}]*))? \}", api):
-        names = [first] + [n.strip() for n in (rest or "").split(",") if n.strip()]
-        value.update({n: int(start) + i for i, n in enumerate(names)})
+    value = {}   # (every HOS_OPT_* enum: vk_api.h's, and those of a header of their own, as oot_wheel_state.h's)
+    for header in sorted((ROOT / "gpu" / "vk").glob("*.h")):
+        text = api if header.name == "vk_api.h" else header.read_text(encoding="utf-8", errors="replace")
+        for body in re.findall(r"enum \{ (HOS_OPT_\w+ = \d+[^}]*)\}", text):
+            n = -1
+            for item in (x.strip() for x in body.split(",") if x.strip()):
+                name, _, start = (x.strip() for x in item.partition("="))
+                n = int(start) if start else n + 1
+                value[name] = n
+        for name, number in re.findall(r"^#define (\w+) (\d+)\b", text, re.M):   # (and #defined ids: OOT_CHEAT_AGE_ID)
+            value.setdefault(name, int(number))
     check("HOS_OPT_CAMERA_SPEED" in value, "vk_api.h has no HOS_OPT_CAMERA_SPEED")
     table = block(replay, "t.option = [](int id) -> int {")
     ids = [int(n) if n.isdigit() else value[n] for n in re.findall(r"\bid == (\w+)", table)]

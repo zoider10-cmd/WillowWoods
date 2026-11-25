@@ -64,6 +64,12 @@ static bool vkCmdPushDescriptorSetKHR=true;
 struct ImageInfo { VkImageView imageView; };
 static struct DrawWork { std::vector<ImageInfo> imgs; } draw_work;
 static DrawWork& dw() { return draw_work; }   // (vk_draw.cpp's dw is a TLS_OBJECT: the calling thread's, by a call)
+// (vk_draw.cpp's desc_stand_in_views over the pushed image infos: the textures' first and the images' first, both made)
+static bool desc_stand_in_views(size_t ntex, VkImageView* in, VkImageView* out) {
+    if (dw().imgs.size() <= ntex || !dw().imgs[0].imageView || !dw().imgs[ntex].imageView) return false;
+    *in = dw().imgs[0].imageView, *out = dw().imgs[ntex].imageView;
+    return true;
+}
 static unsigned handle_value=5;
 static bool resolve_image=true, upscale_result=true;
 static int upscale_calls, view_calls, handle_calls;

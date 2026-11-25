@@ -26,6 +26,7 @@ def main():
     source = (args.root / 'gpu/vk/vk_temporal.cpp').read_text(encoding='utf-8')
     fixture = r'''
 #include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <cstdint>
 #include <mutex>
@@ -52,6 +53,8 @@ struct State {
 };
 State state;
 State& st() { return state; }
+// (temporal_note_scene_draw's quick check of the noted camera, which stretch forgets with the camera: 4ee16c1b)
+std::atomic<uint64_t> cam_fast_frame{UINT64_MAX};
 int mode=ur::OFF, enabled=-1;
 bool tone=true, pipelines=true, rgba_pipeline=true;
 int temporal_mode() { return mode==ur::OFF ? ur::GAME : mode; }

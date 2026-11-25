@@ -43,7 +43,9 @@ int mode=ur::GAME,fg=0;
 int temporal_mode(){return mode;}
 bool temporal_off(){return mode==ur::OFF;}
 int env_switch(const char* name){const char* s=std::getenv(name);return s && *s?std::atoi(s):-1;}
-namespace fsr3fi {int frames_wanted(){return fg;}}
+namespace fsr3fi {int frames_wanted(){return fg;}
+// (FSR 3.1's frames or the built-in FG's motion want the scene's motion: bc47ce4f. fg stands for either)
+unsigned motion_wanted(){return fg?1u:0u;}}
 /* TONE */
 /* HDR_CALLBACK */
 /* TEMPORAL */

@@ -17,7 +17,8 @@ enum NVSDK_NGX_PerfQuality_Value {
     NVSDK_NGX_PerfQuality_Value_DLAA = 5
 };
 constexpr int NVSDK_NGX_DLSS_Hint_Render_Preset_K = 11, NVSDK_NGX_DLSS_Hint_Render_Preset_L = 12,
-              NVSDK_NGX_DLSS_Hint_Render_Preset_M = 13, NVSDK_NGX_DLSS_Hint_Render_Preset_Default = 0;
+              NVSDK_NGX_DLSS_Hint_Render_Preset_M = 13, NVSDK_NGX_DLSS_Hint_Render_Preset_Default = 0,
+              NVSDK_NGX_DLSS_Hint_Render_Preset_E = 5;   // (the CNN's, for small cards: upscaler_rows::kPresetE)
 constexpr int NVSDK_NGX_DLSS_Feature_Flags_MVLowRes = 1, NVSDK_NGX_DLSS_Feature_Flags_IsHDR = 2,
               NVSDK_NGX_DLSS_Feature_Flags_AutoExposure = 4;
 constexpr const char* NVSDK_NGX_Parameter_DLSS_Hint_Render_Preset_DLAA = "aa";
@@ -59,6 +60,10 @@ void temporal_later(std::function<void()> f) { f(); }
 void NVSDK_NGX_VULKAN_ReleaseFeature(NVSDK_NGX_Handle*) {}
 void NVSDK_NGX_Parameter_SetUI(void*, const char*, unsigned) {}
 namespace mkwvk::rec { enum { B_DIRECT }; void boundary(int) {} }
+// (a feature made again in play is a stall the performance report counts: vk_fps.cpp's perf_event)
+namespace perf_report { enum { kDlssRecreated = 4 }; }
+unsigned recreated_events = 0;
+void perf_event(int event) { if (event == perf_report::kDlssRecreated) recreated_events++; }
 struct Settings { unsigned w, h, min_w, min_h, max_w, max_h; bool fails = false; };
 Settings settings[6];
 unsigned queries = 0, creations = 0;

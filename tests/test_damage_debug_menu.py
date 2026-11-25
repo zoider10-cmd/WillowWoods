@@ -43,8 +43,14 @@ def main():
     source += 'const char* hn_robust(int, int) { return nullptr; }\n'
     source += 'const char* hn_astc_rgba8(int, int) { return nullptr; }\n'
     source += 'const char* hn_intel_compiles(int, int) { return nullptr; }\n'
+    source += 'const char* hn_pace(int, int) { return nullptr; }\n'
+    source += 'const char* hn_threaded(int, int) { return nullptr; }\n'
+    source += 'const char* tx_vsync(int) { return ""; }\n'
     source += 'Row rows[] = {' + ',\n'.join(entries) + '};\n'
     source += 'constexpr int kRows = sizeof rows / sizeof rows[0];\n'
+    # (Mako 4.2: row_shown hides the Bug report, none here, and Save my pipeline list, is_share_row's)
+    source += 'constexpr int kBugReportRow = -1;\n'
+    source += re.search(r"bool is_share_row\(const Row& r\) \{[^\n]*\}", menu).group() + '\n'
     source += '''
 bool cheats_env = false;
 bool quick_debug = false;
@@ -114,7 +120,8 @@ int main() {
     assert(!debug_warning && opts.debug_tools == 1 && opts.transition_autosave == 0);
     assert(menu_transition_autosave() == 0 && saves == 1);
     int order[64], dev, heading;
-    const char* expected[] = {"Debug tools", "Autosave:", "Heart protection", "Damage taken", "No-clip flight",
+    // (Infinite magic after Damage taken: 913d4d56)
+    const char* expected[] = {"Debug tools", "Autosave:", "Heart protection", "Damage taken", "Infinite magic", "No-clip flight",
         "Movement speed", "Switch age", "Inventory", "Teleport", "Mark position", "Return to mark",
         "Free camera", "Set time"};
     for (int env = 0; env < 2; ++env) for (int enabled = 0; enabled < 2; ++enabled) {
@@ -129,7 +136,9 @@ int main() {
         const int n = debug_rows(order, &dev, &heading);
         assert(heading >= 0);
         assert(dev == (env || enabled ? (int)std::size(expected) : kDebugGeneralRows));
-        assert(n == dev + 7); // Only the existing Developer rows follow (Frame pacing and Threaded rendering among them).
+        // Only the existing Developer rows follow: Frame pacing, Threaded rendering, Descriptor reuse, Sampler cache, Robust
+        // buffers, ASTC as RGBA8 (Save my pipeline list hidden since Mako 4.2; the Intel and laptop rows off in this fixture).
+        assert(n == dev + 6);
         for (int i = 0; i < dev; ++i) {
             const Row& row = rows[tab_row_to_global(TAB_DEBUG, order[i])];
             assert(!std::strcmp(row.name, expected[i]));
@@ -148,11 +157,11 @@ int main() {
         assert(opts.damage_taken == 3); // Hiding the tools must not reset the saved option.
         assert(menu_damage_taken() == (env || enabled ? 3 : 1)); // Hidden means Normal for the host.
     }
-    assert(kDebugGroups == 3 && kDebugTools == 11);
+    assert(kDebugGroups == 3 && kDebugTools == 12);
     assert(!std::strcmp(debug_groups[0].title, "Player"));
-    assert(debug_groups[0].from == 0 && debug_groups[0].to == 6);
-    assert(debug_groups[1].from == 6 && debug_groups[1].to == 9);
-    assert(debug_groups[2].from == 9 && debug_groups[2].to == 11);
+    assert(debug_groups[0].from == 0 && debug_groups[0].to == 7);
+    assert(debug_groups[1].from == 7 && debug_groups[1].to == 10);
+    assert(debug_groups[2].from == 10 && debug_groups[2].to == 12);
 }
 '''
     with tempfile.TemporaryDirectory(prefix="damage-debug-menu-") as tmp:

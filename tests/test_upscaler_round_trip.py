@@ -92,6 +92,8 @@ int output_choice(int v) { return v; }
 int parse_output(const char*) { return 0; }
 int step_output_choice(int v, int dir) { return v + dir; }
 int output_for_aspect(int) { return opts.output_res; }
+// (set_row's Frame generation by row where DLSS FG cannot run: not what this checks)
+bool framegen_by_dlss_offered() { return true; }
 int aspect_for_choice(int) { return opts.ultrawide; }
 int ultrawide_read = 0, aspect_started = 0;
 bool aspect_follows_host(int) { return false; }

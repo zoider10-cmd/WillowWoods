@@ -31,7 +31,7 @@ def main():
 #include <string>
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "FAIL:%d %s\n", __LINE__, #x); std::exit(1); } } while (0)
 using VkCommandBuffer = int;
-struct { bool show_fps = false; } opts;
+struct { bool show_fps = false; bool resource_monitor = false; } opts;
 std::atomic<bool> open_now{false}, startup_on{false};
 std::string calls;
 bool can_draw = true;
@@ -54,6 +54,17 @@ bool prebake_needed(uint32_t, uint32_t) { return resized; }
 void draw_startup(ui::Ctx&) { calls += "s"; }
 void draw_menu(ui::Ctx&) { calls += "m"; }
 void draw_fps(ui::Ctx&, bool under_banner) { calls += under_banner ? "F" : "f"; }
+// (Mako's resource monitor and the Willow Woods overlays, the In-game clock, Damage numbers, Health bars and Minimap checks
+// rows: off here, so the frame is the start-up screen's, the menu's and the counter's alone; any of them drawn fails)
+bool clock_shows() { return false; }
+bool damage_shows() { return false; }
+bool health_shows() { return false; }
+bool minimap_shows() { return false; }
+void draw_perf(ui::Ctx&) { calls += "P"; }
+void draw_clock(ui::Ctx&) { calls += "C"; }
+void draw_minimap_checks(ui::Ctx&) { calls += "M"; }
+void draw_health(ui::Ctx&) { calls += "H"; }
+void draw_damage(ui::Ctx&) { calls += "D"; }
 ''' + fn + r'''
 int main() {
     for (bool startup : {false, true}) for (bool fps : {false, true}) for (bool menu : {false, true}) for (bool can : {true, false}) {

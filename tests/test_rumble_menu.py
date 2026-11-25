@@ -13,6 +13,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
+RUN_ALL_ARGS = ["--cxx", "g++"]
 
 ROOT = Path(__file__).resolve().parents[1]
 MENU = ROOT / "gpu" / "vk" / "vk_menu.cpp"
@@ -110,6 +111,8 @@ void menu_debug_rows(bool, bool) {}
 int step_output_choice(int id, int dir) { return id + dir; }
 // (the Aspect ratio row moves the Output resolution to one of its shape's sizes, output_for_aspect: not what this checks)
 int output_for_aspect(int) { return opts.output_res; }
+// (set_row's Frame generation by row where DLSS FG cannot run: not what this checks)
+bool framegen_by_dlss_offered() { return true; }
 %(set_row)s
 /* (menu_tick's arrows: Left, Right, and Enter as Right; a click on the value's left or right half presses them) */
 void arrow(Row& r, bool right) { %(arrow)s }
@@ -200,9 +203,16 @@ def option_ids():
     """option 9 is the menu's Rumble strength, and no other option has its id"""
     replay, api = read("gpu", "vk", "vk_replay.cpp"), read("gpu", "vk", "vk_api.h")
     value = {}   # (every HOS_OPT_* enum: the cheats', the motion rows', DLSS's jitter and one-name ones as Text size's)
-    for first, start, rest in re.findall(r"enum \{ (HOS_OPT_\w+) = (\d+)([^}]*)\}", api):
-        names = [first] + [n.strip() for n in rest.split(",") if n.strip()]
-        value.update({n: int(start) + i for i, n in enumerate(names)})
+    for header in sorted((ROOT / "gpu" / "vk").glob("*.h")):   # (and a header of their own's, as oot_wheel_state.h's)
+        text = api if header.name == "vk_api.h" else header.read_text(encoding="utf-8", errors="replace")
+        for body in re.findall(r"enum \{ (HOS_OPT_\w+ = \d+[^}]*)\}", text):
+            n = -1
+            for item in (x.strip() for x in body.split(",") if x.strip()):
+                name, _, start = (x.strip() for x in item.partition("="))
+                n = int(start) if start else n + 1
+                value[name] = n
+        for name, number in re.findall(r"^#define (\w+) (\d+)\b", text, re.M):   # (and #defined ids: OOT_CHEAT_AGE_ID)
+            value.setdefault(name, int(number))
     table = block(replay, replay.index("t.option = [](int id) -> int {"))
     ids = []
     for name in re.findall(r"\bid == (\w+)", table):

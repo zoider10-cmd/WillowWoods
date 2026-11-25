@@ -3,6 +3,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 #include "gpu/vk/dlss_math.h"
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
@@ -11,6 +12,9 @@
 #include <limits>
 
 namespace dlss_math = mkwvk::dlss_math;
+// (vk_temporal.cpp's switch reader (-1 unset) and log, for the camera cut's reset (f5f6298f, RX_VK_UPSCALER_CUT_RESET))
+static int env_switch(const char* name) { const char* v = std::getenv(name); return v && *v ? std::atoi(v) : -1; }
+static void logf(const char*, ...) {}
 struct State {
     uint64_t last_frame = 99;
     int last_format = 122; bool last_psycho = false;
