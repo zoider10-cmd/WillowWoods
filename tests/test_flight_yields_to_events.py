@@ -31,7 +31,7 @@ def main():
     read = cheats.index("int flying = rx_option(HOS_OPT_CHEAT_FLIGHT, 0) > 0;")
     yields = cheats.index("if (flying && oot_event_playing(c)) flying = 0;")
     forgets = cheats.index("if (!flying) flying_actor = 0;")
-    moves = cheats.index("change_position(c);")
+    moves = cheats.rindex("change_position(c);")   # (the flight's own: the Debug tab's Fly has one of its own before it)
     need(read < yields < forgets < moves, "the flight moves Link before it has asked whether an event plays")
     # (flying_actor cleared: the flight's own position is taken from Link again when it resumes, not the one from before)
     need("flying_actor != actor" in cheats[forgets:moves], "a flight that resumes does not start from where Link stands")

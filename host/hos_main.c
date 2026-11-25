@@ -3923,6 +3923,28 @@ static void oot_infinite_ammo(Ctx *c) {
     }
 }
 
+/* (Willow Woods, asked 2026-11-25, share/todo.md) The Debug tab's Fly (HOS_OPT_CHEAT_FLY, on with the debug tools only:
+   gpu/vk/vk_menu.cpp menu_fly; HOS_OOT_FLY=1/0 over the row for a test): while Jump is held (host/nn_hid.c hos_fly_jump_held)
+   Link rises OOT_FLY_RISE a second, by the same change of place as no-clip flight but in height alone: where he goes
+   sideways stays the game's, walls and all, and he falls as himself when Jump is let go. His height is kept here and
+   raised each frame, never more than OOT_FLY_LEAD above where he is (a ceiling that holds him back does not store a
+   jump). Not while no-clip flight, an event or a go-to has him. */
+#define OOT_FLY_RISE 4.0f
+#define OOT_FLY_LEAD 0.5f
+int hos_oot_fly(void) {
+    static int env = -2;
+    if (env == -2) { const char *e = getenv("HOS_OOT_FLY"); env = e && *e ? *e == '1' : -1; }
+    return env >= 0 ? env : rx_option(HOS_OPT_CHEAT_FLY, 0) > 0;
+}
+/* The height Link is put at this frame (fly_y: the height kept; *last: the time of the last frame lifted, 0 none) */
+static float oot_fly_height(float *fly_y, int64_t *last, float here, int64_t now) {
+    if (!*last || now - *last > 250000000LL || now < *last) *fly_y = here;   /* (a new hold: from where he is) */
+    const float dt = *last && now > *last ? fminf((float)(now - *last) * 1e-9f, 0.05f) : 0.0f;
+    *last = now;
+    *fly_y = fmaxf(*fly_y + OOT_FLY_RISE * dt, here);   /* (a jump of his own higher: followed) */
+    *fly_y = fminf(*fly_y, here + OOT_FLY_LEAD);
+    return *fly_y;
+}
 static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components) {
     int rx_option(int id, int otherwise);
     oot_skip_cutscene(c);
@@ -4226,7 +4248,12 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
             }
         }
     }
-    if (!flying && action != 2 && action != 3 && !go && now >= hold_until) return;
+    int hos_fly_jump_held(void);
+    const int fly = !flying && hos_oot_fly() && hos_fly_jump_held() && !oot_event_playing(c);   /* (the Debug tab's Fly) */
+    static float fly_y;
+    static int64_t fly_last;
+    if (!fly) fly_last = 0;
+    if (!flying && !fly && action != 2 && action != 3 && !go && now >= hold_until) return;
 
     // Follow OneShotPhysicsCctChangePosition to Link's controller.
     const uint64_t controller = oot_player_controller(c, components);
@@ -4284,6 +4311,25 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
     if (action == 2 || marked_controller != controller) hold_until = 0;
     const int returning = (action == 3 || go || now < hold_until) && marked_controller == controller;
     if (action == 3 && !returning) hos_log("cheats: no mark for this player controller");
+    if (!flying && !returning && fly) {   /* (Fly: his own place, a little higher) */
+        float place[3];
+        for (unsigned i = 0; i < 3; i++) place[i] = oot_load_float(c, actor + 796 + i * 4);
+        place[1] = oot_fly_height(&fly_y, &fly_last, place[1], now);
+        const Ctx saved = *c;
+        const uint64_t arg = c->x[31] - 16;
+        for (unsigned i = 0; i < 3; i++) {
+            uint32_t bits;
+            memcpy(&bits, &place[i], sizeof bits);
+            recomp_store32_sp(c, arg + i * 4, bits);
+        }
+        recomp_store32_sp(c, arg + 12, 0);
+        c->x[31] = arg;
+        c->x[0] = controller;
+        c->x[1] = arg;
+        change_position(c);
+        *c = saved;
+        return;
+    }
     if (!flying && !returning) return;
     const int64_t elapsed = now - last_tick;
     if (flying_actor != actor)
@@ -5204,12 +5250,39 @@ static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
     ReleaseSRWLockExclusive(&lock);
     return answer;
 }
+/* (POT_BAGGED, asked 2026-11-25) A pot read as its bag-giving actor (no bag when its area was read) drops the bundle's own
+   falling actor (POT_FALL_AS, "<bundle>_Fall") as it breaks. Once Link holds the bag, that actor is answered with the game's
+   own pick-up (POT_WORLD's pair): plain nuts or sticks with no "You got" scene, from the first pot broken after the bag, not
+   from the next time the area is read. 0: not such an actor, or the bag not held. */
+static uint64_t oot_pot_fall_answer(Ctx *c, uint64_t name_at) {
+    static const struct { const char *fall, *bundle, *plain; } falls[] = {
+        {"TBox_DekuNutBundle_Fall", "TBox_DekuNutBundle", "Obj_DekuNut"},
+        {"Item_DekuStickBundle_Small_Fall", "Item_DekuStickBundle_Small", "Obj_DekuStick"},
+    };
+    static uint64_t slots[2];
+    const char first = (char)recomp_load8(c, name_at);
+    if (first != 'T' && first != 'I') return 0;
+    for (int f = 0; f < 2; f++) {
+        int same = 1;
+        for (int i = 0; same && (i == 0 || falls[f].fall[i - 1]); i++) same = (char)recomp_load8(c, name_at + i) == falls[f].fall[i];
+        if (!same) continue;
+        const char *const *sizes = NULL;
+        if (oot_bundle_holder(falls[f].bundle, &sizes) != 1 || !oot_pot_bag_held(c, sizes)) return 0;
+        if (!slots[f] && (slots[f] = hos_sys_alloc(32, 16)) != 0) snprintf((char *)A64_PTR(slots[f]), 32, "%s", falls[f].plain);
+        static int told;
+        if (slots[f] && told++ < 20) hos_log("rando: pots: %s made with the bag held: answered as %s", falls[f].fall, falls[f].plain);
+        return slots[f];
+    }
+    return 0;
+}
 uint64_t hos_oot_shelf_actor(Ctx *c, uint64_t name_at) {
 #if defined(_WIN32) || defined(__linux__)
     static const char head[] = "Shop_Rando_";
     if (name_at && hos_rando_on()) {   /* (Pots: a collected pot's actor read as the game's pot) */
         const uint64_t pot = oot_pot_look_answer(c, name_at);
         if (pot) return pot;
+        const uint64_t fall = oot_pot_fall_answer(c, name_at);   /* (a bag-giving pot's bundle, the bag held since) */
+        if (fall) return fall;
     }
     {   /* (the Door of Time by the Song of Time: its name answered with a stand-in once open, oot_time_door; a test's
            HOS_OOT_DOOR_AS=<actor> answers it with that actor's whatever the setting) */

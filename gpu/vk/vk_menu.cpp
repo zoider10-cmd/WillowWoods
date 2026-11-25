@@ -2419,6 +2419,11 @@ Row rows[] = {
     {TAB_DEBUG, "Infinite magic", nullptr, 0, 0, 0, nullptr,
      "Keeps Link's magic meter full: spells, magic arrows and the Lens of Truth use none. Only once Link has a magic meter.",
      nullptr, false, true, 12},
+    // (Willow Woods, asked 2026-11-25: the game side lifts Link while Jump is held, host/hos_main.c oot_fly_height)
+    {TAB_DEBUG, "Fly", nullptr, 0, 0, 0, nullptr,
+     "Hold Jump to keep rising. Unlike no-clip flight, walls still stop him as he moves, and he falls when you let go "
+     "(a long fall can hurt: Heart protection keeps him safe).",
+     nullptr, false, true, 13},
     {TAB_DEBUG, "Developer", nullptr, 0, 0, 0, nullptr, nullptr, nullptr, false, true, -1, true},
     // (hookshot, first under the heading: debug_rows lists only those) the zip for the "Submit your pipelines" issue: share_pipeline_list, pipeline_share.h
     {TAB_DEBUG, "Save my pipeline list", nullptr, 0, 0, 0, nullptr,
@@ -2537,6 +2542,7 @@ std::atomic<int> protect_hearts{-1};
 std::atomic<int> player_flight{-1};
 std::atomic<int> free_camera{0};
 std::atomic<int> infinite_magic{0};   // (the Debug tab's Infinite magic: HOS_OPT_CHEAT_MAGIC)
+std::atomic<int> fly_hold{0};   // (the Debug tab's Fly: HOS_OPT_CHEAT_FLY)
 std::atomic<int> cheat_action{0};
 std::atomic<int> link_age{-1};
 // (Movement speed: the choice, an index of link_speeds; the game side reads it in percent, HOS_OPT_CHEAT_SPEED)
@@ -2804,7 +2810,7 @@ void choose_inventory_filter(int filter) {
     inventory_amount = false;
     inventory_reveal();
 }
-constexpr int kCheatRows = 13;   // (the debug tools' rows: Row::cheat 0 to 12)
+constexpr int kCheatRows = 14;   // (the debug tools' rows: Row::cheat 0 to 13)
 /// A debug tool's value as its row shows it ("" an action: confirm does it)
 std::string cheat_value(int i) {
     char t[16];
@@ -2817,6 +2823,7 @@ std::string cheat_value(int i) {
     case 7: return tx_onoff(free_camera.load());
     case 11: return link_speed_names[std::clamp(link_speed.load(), 0, kLinkSpeeds - 1)];
     case 12: return tx_onoff(infinite_magic.load());
+    case 13: return tx_onoff(fly_hold.load());
     default: return "";
     }
 }
@@ -2828,12 +2835,12 @@ bool age_shown(int i) { return i == 9 && link_age.load(std::memory_order_relaxed
 /// What confirm does on a tool's row, for its prompt (nullptr: nothing)
 const char* cheat_confirm(int i) {
     static const char* const says[kCheatRows] = {"Toggle", "Toggle", "Apply", "Apply", "Set", nullptr, "Apply", "Toggle", "Open list",
-                                                 "Switch", "Open", nullptr, "Toggle"};
+                                                 "Switch", "Open", nullptr, "Toggle", "Toggle"};
     return i >= 0 && i < kCheatRows ? says[i] : nullptr;
 }
 /// The button label on an action tool's row ("": not a button action)
 const char* cheat_button_text(int i) {
-    static const char* const buttons[kCheatRows] = {"", "", "Mark", "Return", "", "", "", "", "Choose map", "Switch", "Edit items", "", ""};
+    static const char* const buttons[kCheatRows] = {"", "", "Mark", "Return", "", "", "", "", "Choose map", "Switch", "Edit items", "", "", ""};
     return i >= 0 && i < kCheatRows ? buttons[i] : "";
 }
 constexpr int kRows = sizeof rows / sizeof rows[0];
@@ -4796,7 +4803,7 @@ void draw_debug_rows(ui::Ctx& c, float cx0, float cx1, float top, float bottom, 
             for (int v = r.lo; v <= r.hi; v += r.step) w = std::max(w, ui::size_of(c.f.strong, px, r.text(v)).x);
             return w + (tight ? 56 : 68) * s;
         }
-        if (r.cheat == 0 || r.cheat == 1 || r.cheat == 7 || r.cheat == 12 || r.value) return halves_w + pad;
+        if (r.cheat == 0 || r.cheat == 1 || r.cheat == 7 || r.cheat == 12 || r.cheat == 13 || r.value) return halves_w + pad;
         if (is_share_row(r)) return ui::size_of(c.f.strong, px, "Not saved").x + (tight ? 56 : 60) * s;   // (Save, Saved, Not saved)
         if (is_laptop_row(r)) return ui::size_of(c.f.strong, px, "Applied").x + (tight ? 56 : 60) * s;   // (Apply, Applied)
         const std::string v = r.cheat == 11 ? "1.25x" : cheat_value(r.cheat);   // (Movement speed: its widest, the cell kept still)
@@ -4874,7 +4881,7 @@ void draw_debug_rows(ui::Ctx& c, float cx0, float cx1, float top, float bottom, 
             choice_cell(c, va, vb, share_value.empty() ? "Save" : share_value, selected, false, false);
         } else if (is_laptop_row(r)) {
             choice_cell(c, va, vb, laptop_applied ? "Applied" : "Apply", selected, false, false);
-        } else if (r.cheat == 0 || r.cheat == 1 || r.cheat == 7 || r.cheat == 12) {
+        } else if (r.cheat == 0 || r.cheat == 1 || r.cheat == 7 || r.cheat == 12 || r.cheat == 13) {
             halves_cell(c, va, vb, "Off", "On", cheat_value(r.cheat) == "On", selected, false);
         } else if (age_shown(r.cheat)) {   // (Link's age now: the other half switches)
             halves_cell(c, va, vb, "Kid", "Adult", link_age.load(std::memory_order_relaxed) == 1, selected, false);
@@ -5128,7 +5135,7 @@ void draw_options(ui::Ctx& c) {
     } else {
         if (field) {
             prompt_list[prompts_n++] = {ui::kConfirm, "Edit"};
-        } else if (selr.value || (selr.cheat >= 0 && (selr.cheat <= 1 || selr.cheat == 7 || selr.cheat == 12 || cheat_chooses(selr.cheat) || age_shown(selr.cheat)))) {
+        } else if (selr.value || (selr.cheat >= 0 && (selr.cheat <= 1 || selr.cheat == 7 || selr.cheat == 12 || selr.cheat == 13 || cheat_chooses(selr.cheat) || age_shown(selr.cheat)))) {
             prompt_list[prompts_n++] = {ui::kLeftRight, "Change"};
             if (selr.cheat >= 0) if (const char* says = cheat_confirm(selr.cheat)) prompt_list[prompts_n++] = {ui::kConfirm, says};
             prompt_list[prompts_n++] = {ui::kCompact, "Compact", compact_key_name};
@@ -6761,6 +6768,7 @@ int menu_heart_protection() {
 int menu_player_flight() { return cheats_on() ? player_flight.load(std::memory_order_relaxed) : -1; }
 int menu_free_camera() { return cheats_on() ? free_camera.load(std::memory_order_relaxed) : 0; }
 int menu_infinite_magic() { return cheats_on() ? infinite_magic.load(std::memory_order_relaxed) : 0; }
+int menu_fly() { return cheats_on() ? fly_hold.load(std::memory_order_relaxed) : 0; }
 int menu_link_speed() { return cheats_on() ? link_speeds[std::clamp(link_speed.load(std::memory_order_relaxed), 0, kLinkSpeeds - 1)] : 100; }
 /// The size the host draws the sun's cascades at (HOS_OPT_SHADOW_RES: 0 the game's 1600, 1 2200, 2 3072): the row's, or for
 /// Auto the one for the card's memory tier, the preset's (opts.budget) or else Auto's own for this PC (auto_choice): the
@@ -7292,6 +7300,10 @@ void cheat_press(int i, const bool* press, bool& changed) {
     }
     if ((press[3] || press[4] || press[7]) && i == 12) {   // (Infinite magic: as Free camera)
         infinite_magic.store(press[7] ? !infinite_magic.load() : press[4] ? 1 : 0);
+        changed = true;
+    }
+    if ((press[3] || press[4] || press[7]) && i == 13) {   // (Fly: as Free camera)
+        fly_hold.store(press[7] ? !fly_hold.load() : press[4] ? 1 : 0);
         changed = true;
     }
     if (press[7] && i == 8) page = 3, teleport_follow = true, changed = true;
@@ -7870,7 +7882,7 @@ void menu_tick() {
                     changed = true;
                 } else if (hit.part == menu_hit::kRow) {
                     Row& d = rows[tab_row_to_global(cur_tab, hit.index)];
-                    if (!d.value && d.cheat >= 0 && (cheat_chooses(d.cheat) || age_shown(d.cheat) || d.cheat <= 1 || d.cheat == 7 || d.cheat == 12) &&
+                    if (!d.value && d.cheat >= 0 && (cheat_chooses(d.cheat) || age_shown(d.cheat) || d.cheat <= 1 || d.cheat == 7 || d.cheat == 12 || d.cheat == 13) &&
                         hit.side != 0)
                         press[hit.side < 0 ? 3 : 4] = true;   // (a tool's choice: its halves as Left and Right)
                     else if (d.tracker >= 0) {   // (a Tracker row: its value's halves step its checks, its name goes to the one shown)

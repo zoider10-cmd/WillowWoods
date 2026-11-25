@@ -71,7 +71,7 @@ def main():
     script = block(hid, "static void scripted_input(")
     end = hid.index(script) + len(script)
     cheat_state = re.search(r"^static uint64_t flight_input;\nstatic uint64_t free_camera_axes;\nstatic int free_camera_height;\n"
-                            r"static int move_stick_held;", hid, re.M).group(0)
+                            r"static int move_stick_held;.*\nstatic int fly_jump_held;", hid, re.M).group(0)
     cheat_spies = """
 volatile int hos_oot_live_action;
 int hos_oot_flight_shortcut_ready(void) { CHECK(!"unexpected cheat readiness query"); return 0; }
