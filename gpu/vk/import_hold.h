@@ -26,6 +26,10 @@ struct ImportHolds {
             if (r.lo == lo && r.hi == hi) return false;
         return true;
     }
+    // ((HeyListen bc74bce9) a range whose failure no longer holds: something was given back for it)
+    void forget(uint64_t lo, uint64_t hi) {
+        rows.erase(std::remove_if(rows.begin(), rows.end(), [&](const Row& r) { return r.lo == lo && r.hi == hi; }), rows.end());
+    }
     void deny_for(uint64_t lo, uint64_t hi, int64_t now_ms) {
         drop_expired(now_ms);
         for (Row& r : rows)

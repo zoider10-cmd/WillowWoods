@@ -145,6 +145,9 @@ Pool* last_pool = nullptr;            // (the last pool_of hit: draws in a row b
 extern Pool* pool_cache[4096];
 void retire_pool(std::map<uint64_t, Pool>::iterator it);
 Pool* pool_lookup(uint64_t guest, uint64_t size);
+uint64_t retired_emergency_free(uint64_t need);   // ((HeyListen bc74bce9) a refused import: idle retired ones given back first, below)
+int64_t st_emergency_runs = 0, st_emergency_freed = 0, st_emergency_ok = 0;
+uint64_t st_emergency_bytes = 0;
 // (hookshot) The spans of the imports in `imported`, for the scans down the table by start (import_reach.h): how far below an
 // address one that reaches it may start. Kept by imported_add and imported_take, the only ways in and out (pools_mu held)
 import_reach::Reach live_reach;
@@ -173,6 +176,11 @@ ImportHolds import_holds;          // (issue 218: a failed import is not tried a
 std::mutex import_holds_mu;
 thread_local bool import_cooling = false;
 thread_local VkResult import_result = VK_SUCCESS;
+// ((HeyListen b2b74712, test hook) RX_VK_IMPORT_REFUSE_MB=<n>: an import that would take what is imported past n MB is refused as
+// the driver refuses it (VK_ERROR_INVALID_EXTERNAL_HANDLE), so that the give-back of a refused import (retired_emergency_free) runs
+// where the driver's own limit is out of reach. st_pinned counts the bytes of the host-pointer imports made and not yet freed
+std::atomic<int64_t> st_pinned{0};
+inline void pinned_sub(uint64_t bytes) { st_pinned.fetch_sub((int64_t)bytes, std::memory_order_relaxed); }
 
 int64_t import_now_ms() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -185,6 +193,10 @@ bool import_on_hold(uint64_t lo, uint64_t hi) {
 void import_remember_failure(uint64_t lo, uint64_t hi) {
     std::lock_guard lk(import_holds_mu);
     import_holds.deny_for(lo, hi, import_now_ms());
+}
+void import_forget_failure(uint64_t lo, uint64_t hi) {   // ((HeyListen bc74bce9) something was given back for it: try again now)
+    std::lock_guard lk(import_holds_mu);
+    import_holds.forget(lo, hi);
 }
 
 constexpr VkBufferUsageFlags kUsage =
@@ -414,6 +426,14 @@ bool import_pool(uint64_t lo, uint64_t hi, Pool& p) {
     }
     p.lo = lo;
     p.hi = hi;
+    {   // ((HeyListen b2b74712) the test hook above)
+        static const uint64_t refuse = getenv("RX_VK_IMPORT_REFUSE_MB") ? strtoull(getenv("RX_VK_IMPORT_REFUSE_MB"), nullptr, 10) << 20 : 0;
+        if (refuse && (uint64_t)std::max<int64_t>(0, st_pinned.load(std::memory_order_relaxed)) + (hi - lo) > refuse) {
+            import_result = VK_ERROR_INVALID_EXTERNAL_HANDLE;
+            import_remember_failure(lo, hi);
+            return false;
+        }
+    }
     uint8_t* ptr = host->guest_base() + lo;
     const uint64_t bytes = hi - lo;
     using clk = std::chrono::steady_clock;
@@ -521,6 +541,7 @@ bool import_pool(uint64_t lo, uint64_t hi, Pool& p) {
         logf("vk: addr import %#llx..%#llx at gpu %#llx..%#llx", (unsigned long long)lo, (unsigned long long)hi,
              (unsigned long long)p.address, (unsigned long long)(p.address + (hi - lo)));
     t4 = clk::now();
+    st_pinned.fetch_add((int64_t)bytes, std::memory_order_relaxed);   // ((HeyListen b2b74712))
     return true;
 }
 
@@ -3592,6 +3613,7 @@ void bg_drain() {
             deferred_once.erase(lo);
             destroy_import_buffer(p.buffer);
             vkFreeMemory(dev.device, p.memory, nullptr);
+            pinned_sub(p.hi - p.lo);
             for (VkDeviceMemory m : p.pieces) vkFreeMemory(dev.device, m, nullptr);
             continue;
         }
@@ -3625,6 +3647,7 @@ void bg_drain() {
             if (deferred_once.count(lo)) st_defer_dropped++;   // (kept in the set: the next miss imports it on demand)
             destroy_import_buffer(p.buffer);
             vkFreeMemory(dev.device, p.memory, nullptr);
+            pinned_sub(p.hi - p.lo);
             for (VkDeviceMemory m : p.pieces) vkFreeMemory(dev.device, m, nullptr);
             continue;
         }
@@ -3866,6 +3889,14 @@ Pool* pool_lookup(uint64_t guest, uint64_t size) {
             }
             const auto t0 = std::chrono::steady_clock::now();
             ok = import_pool(lo, hi, p);
+            if (!ok && (import_result == VK_ERROR_INVALID_EXTERNAL_HANDLE || import_result == VK_ERROR_OUT_OF_HOST_MEMORY ||
+                        import_result == VK_ERROR_OUT_OF_DEVICE_MEMORY) && retired_emergency_free(hi - lo)) {
+                // ((HeyListen bc74bce9, their issues 131, 121) the driver's limit on what is imported: the idle retired imports
+                // go back at once and the import is tried again, instead of the draws being left out. RX_VK_IMPORT_EMERGENCY=0: not)
+                import_forget_failure(lo, hi);
+                ok = import_pool(lo, hi, p);
+                if (ok) st_emergency_ok++;
+            }
             const double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
             static double total_ms;
             static int n, logged;
@@ -5127,6 +5158,7 @@ void reap_mirrors() {   // (pools_mu held)
     while (!dead_imports.empty() && dead_imports.front().value <= mem_completed) {
         destroy_import_buffer(dead_imports.front().buffer);
         vkFreeMemory(dev.device, dead_imports.front().memory, nullptr);
+        pinned_sub(dead_imports.front().bytes);
         for (VkDeviceMemory m : dead_imports.front().pieces) vkFreeMemory(dev.device, m, nullptr);
         st_retired_imports_freed++, st_retired_import_bytes_freed += dead_imports.front().bytes;
         dead_import_bytes -= std::min(dead_import_bytes, dead_imports.front().bytes);
@@ -5154,6 +5186,46 @@ retired_give_back::Mode retired_mode() {
         return retired_give_back::mode(v && *v, env_on("RX_VK_KEEP_RETIRED"), windows, dev.props.vendorID == 0x10DE);
     }();
     return m;
+}
+/// ((HeyListen bc74bce9, their issues 131, 121; pools_mu held) An import was refused (the driver's limit on what is imported, seen
+/// after 4 h on an RX 9060 XT: every import refused, draws left out): the retired imports nothing needs (no mirror, the GPU past
+/// them) go back now, oldest first, until `need` bytes and 256 MB more are free or none is left; the dead imports the GPU is past
+/// too. Returns the bytes freed. RX_VK_IMPORT_EMERGENCY=0, or retired imports kept for the session (RX_VK_KEEP_RETIRED=1): nothing
+uint64_t retired_emergency_free(uint64_t need) {
+    static const bool on = [] {
+        const char* e = getenv("RX_VK_IMPORT_EMERGENCY");
+        return (!e || !env_value_off(e)) && retired_mode() != retired_give_back::Mode::KEEP;
+    }();
+    if (!on) return 0;
+    uint64_t freed = 0;
+    int n = 0;
+    for (const DeadImport& d : dead_imports)
+        if (d.value <= mem_completed) freed += d.bytes;
+    reap_mirrors();   // (the dead imports the GPU is past, now)
+    for (auto& nh : retired_pools) {   // (in the order they were retired: the oldest first)
+        Pool& p = nh.mapped();
+        if (!p.memory || !(p.mstate == Pool::MIRROR_NONE || p.mstate == Pool::MIRROR_REFUSED) || p.inherit_pending ||
+            p.retired_value > mem_completed || p.last_value > mem_completed)
+            continue;
+        if (freed >= need + (256ull << 20)) break;
+        destroy_import_buffer(p.buffer);
+        vkFreeMemory(dev.device, p.memory, nullptr);
+        pinned_sub(p.hi - p.lo);
+        for (VkDeviceMemory m : p.pieces) vkFreeMemory(dev.device, m, nullptr);
+        p.pieces.clear();
+        p.buffer = VK_NULL_HANDLE, p.memory = VK_NULL_HANDLE, p.address = 0;
+        freed += p.hi - p.lo, n++;
+        st_emergency_freed++, st_emergency_bytes += p.hi - p.lo;
+        st_retired_imports_freed++, st_retired_import_bytes_freed += p.hi - p.lo;
+        pools_gen++;
+    }
+    st_emergency_runs++;
+    static int logged;
+    if (logged++ < 16)
+        logf("vk: an import of %llu MB was refused: %d idle retired imports given back at once (%llu MB with the ones waiting), "
+             "%zu retired pools kept (RX_VK_IMPORT_EMERGENCY=0: not)", (unsigned long long)(need >> 20), n,
+             (unsigned long long)(freed >> 20), retired_pools.size());
+    return freed;
 }
 void retired_imports_give_back() {   // (pools_mu held)
     using retired_give_back::Mode;
@@ -5209,6 +5281,10 @@ void retired_imports_give_back() {   // (pools_mu held)
         logf("vk: imports: %zu live (%llu MB), %zu retired still imported (%llu MB), %llu retired given back (%llu MB)",
              imported.size(), (unsigned long long)(live_bytes >> 20), retired_alive, (unsigned long long)(retired_bytes >> 20),
              (unsigned long long)st_retired_imports_freed, (unsigned long long)(st_retired_import_bytes_freed >> 20));
+        if (st_emergency_runs)   // ((HeyListen bc74bce9))
+            logf("vk: refused imports helped by giving idle retired ones back first: %lld times, %lld imports (%llu MB), %lld retried "
+                 "and made", (long long)st_emergency_runs, (long long)st_emergency_freed, (unsigned long long)(st_emergency_bytes >> 20),
+                 (long long)st_emergency_ok);
     }
 }
 void mirror_free(Pool& p) {
@@ -5338,6 +5414,7 @@ void imports_give_back() {   // (pools_mu held)
         evicted_import_bytes -= std::min(evicted_import_bytes, p.hi - p.lo);
         destroy_import_buffer(p.buffer);
         vkFreeMemory(dev.device, p.memory, nullptr);
+        pinned_sub(p.hi - p.lo);
         for (VkDeviceMemory m : p.pieces) vkFreeMemory(dev.device, m, nullptr);   // (a pool imported as several dma-bufs)
         evicted_pools.pop_front();
     }
@@ -5525,6 +5602,7 @@ bool mirrors_trim() {   // (pools_mu held; true when one was trimmed: its parts 
             for (Pool& m : made) {
                 destroy_import_buffer(m.buffer);
                 vkFreeMemory(dev.device, m.memory, nullptr);
+                pinned_sub(m.hi - m.lo);
                 for (VkDeviceMemory piece : m.pieces) vkFreeMemory(dev.device, piece, nullptr);
             }
             pick->dead_since = mirror_epoch;   // (not again for a while)
