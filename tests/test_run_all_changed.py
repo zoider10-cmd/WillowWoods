@@ -24,13 +24,14 @@ class ChangedTests(unittest.TestCase):
         self.assertFalse(everything)
         self.assertIn("tests/test_chunk_split.py", picked)
         self.assertIn("tests/test_parallel_emit.py", picked)
-        self.assertNotIn("tests/test_team_chat.py", picked)
+        self.assertNotIn("tests/test_hookshot_ctl_finite.py", picked)
         self.assertLess(len(picked), len(TESTS) // 4)
 
     def test_by_name_too_and_not_inside_a_longer_name(self):
-        picked, _ = run_all.reads_changed(TESTS, ["scripts/team_chat.py"])
-        self.assertIn("tests/test_team_chat.py", picked)
-        self.assertFalse(any("team_chat_x" in p for p in picked))
+        # (scripts/team_chat.py, the example this used, moved to MagicBeanDev/Tooling with its test)
+        picked, _ = run_all.reads_changed(TESTS, ["scripts/hookshot_ctl.py"])
+        self.assertIn("tests/test_hookshot_ctl_finite.py", picked)
+        self.assertFalse(any("hookshot_ctl_x" in p for p in picked))
 
     def test_a_changed_test_runs_itself(self):
         self.assertEqual(run_all.reads_changed(TESTS, ["tests/test_run_all_changed.py"])[0], ["tests/test_run_all_changed.py"])

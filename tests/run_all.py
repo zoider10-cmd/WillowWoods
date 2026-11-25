@@ -22,9 +22,10 @@ no arguments and its own defaults.
     RUN_ALL_MODULES = ["zstandard"]                                       # Python packages it imports
     RUN_ALL_SKIP = {"windows": "needs spirv-val: checked on Linux"}       # OS ("linux", "windows") -> why it is skipped
 
-{name} in an argument is a tool or folder find_tools looks for (cxx, vulkan_headers, spirv_headers, spirv_val, glslang,
-dotnet, dav1d); a check whose tool, compiler (the word after --cc or --cxx) or module is missing here is skipped, or fails
-with --strict. A check skipped on both OSes (a GPU, the game) names both. A declaration that is not a plain literal of
+{name} in an argument is a tool or folder find_tools looks for (cxx, cc, vulkan_headers, spirv_headers, spirv_val,
+glslang, dotnet, dav1d); a check whose tool, compiler (the word after --cc or --cxx) or module is missing here is skipped,
+or fails with --strict. A compiler named by its name (--cxx g++, --cc gcc) that is not on PATH is replaced by the one
+find_tools found for that language (cxx, cc), so a PC with clang alone (llvm-mingw has no g++) still runs the check. A check skipped on both OSes (a GPU, the game) names both. A declaration that is not a plain literal of
 that shape, names an unknown placeholder or OS, or any other RUN_ALL_ name, stops the run with the file and line; so
 does one set or changed anywhere but its own top-level line (inside an if or a try, .append(...), +=, a subscript).
 Only the tests a run picks (by name) are read: a bad declaration elsewhere does not stop it. A test that does not parse
@@ -120,6 +121,7 @@ def find_tools():
         "glslang": which("glslangValidator", "glslang"),
         "dotnet": which("dotnet"),
         "cxx": which(os.environ.get("CXX", ""), "clang++", "g++", "c++"),
+        "cc": which(os.environ.get("CC", ""), "clang", "gcc", "cc"),
     }
 
 
@@ -244,10 +246,16 @@ def python_check(rel, decl, tools, timeout):
             args.append(v or "")
         else:
             args.append(a)
-    # (a compiler named by the arguments, or the test's own default one, must be on PATH)
+    # (a compiler named by the arguments must be on PATH. One named by its name (g++, gcc) that this PC lacks is replaced
+    # by the one find_tools found for that language (clang++, clang: llvm-mingw has no g++), so a check is not skipped for
+    # want of one compiler's name; with neither, it is missing)
     for i, a in enumerate(args[:-1]):
         if a in ("--cc", "--cxx") and not which(args[i + 1]):
-            missing.append(args[i + 1])
+            stand_in = tools.get(a[2:]) if args[i + 1] else None
+            if stand_in:
+                args[i + 1] = stand_in
+            elif args[i + 1]:
+                missing.append(args[i + 1])
     missing += [m for m in decl["modules"] if importlib.util.find_spec(m) is None]
 
     def run():

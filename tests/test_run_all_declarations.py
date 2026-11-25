@@ -20,7 +20,7 @@ spec = importlib.util.spec_from_file_location("run_all", ROOT / "tests" / "run_a
 run_all = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(run_all)
 
-TOOLS = {"cxx": None, "vulkan_headers": None, "spirv_headers": None, "spirv_val": None, "glslang": None, "dotnet": None,
+TOOLS = {"cxx": None, "cc": None, "vulkan_headers": None, "spirv_headers": None, "spirv_val": None, "glslang": None, "dotnet": None,
          "dav1d": None}
 
 
@@ -121,6 +121,21 @@ class Reader(unittest.TestCase):
     def test_placeholders_are_find_tools(self):
         # (the reader is checked against what find_tools looks for: TOOLS above must be that set)
         self.assertEqual(set(run_all.find_tools()), set(TOOLS))
+
+    def test_a_named_compiler_this_pc_lacks_is_replaced(self):
+        # (--cxx g++ on a PC with clang++ alone runs with the clang++ find_tools found; with no compiler for that
+        # language at all the check is missing one, as before)
+        tools = dict(TOOLS, cxx="/bin/clang++", cc="/bin/clang")
+        decl = {"args": ["--cxx", "g++", "--cc", "gcc", "--x", "g++"], "modules": []}
+        seen = []
+        with mock.patch.object(run_all, "which", lambda *names: None),                 mock.patch.object(run_all.subprocess, "run", lambda cmd, **kw: seen.append(cmd)):
+            run, missing = run_all.python_check("tests/test_x.py", decl, tools, 1)
+            run()
+        self.assertEqual(missing, [])
+        self.assertEqual(seen[0][-6:], ["--cxx", "/bin/clang++", "--cc", "/bin/clang", "--x", "g++"])
+        with mock.patch.object(run_all, "which", lambda *names: None):
+            _, missing = run_all.python_check("tests/test_x.py", decl, dict(TOOLS), 1)
+        self.assertEqual(missing, ["g++", "gcc"])
 
     def test_unknown_os(self):
         self.bad('RUN_ALL_SKIP = {"win32": "why"}\n', "unknown OS 'win32'", "linux, windows")
