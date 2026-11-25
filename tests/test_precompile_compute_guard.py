@@ -31,7 +31,7 @@ HEAD = r'''
 #include <thread>
 #include <vector>
 using VkResult=int; using VkPipeline=uintptr_t; using VkPipelineCache=uintptr_t;
-constexpr VkResult VK_SUCCESS=0; constexpr uintptr_t VK_NULL_HANDLE=0;
+constexpr VkResult VK_SUCCESS=0,VK_ERROR_INITIALIZATION_FAILED=-3; constexpr uintptr_t VK_NULL_HANDLE=0;
 constexpr int VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO=10;
 constexpr int VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO=11;
 constexpr int VK_SHADER_STAGE_COMPUTE_BIT=12;
@@ -45,6 +45,7 @@ struct VkComputePipelineCreateInfo {
 struct {uintptr_t device=0x1234;struct{bool pipelineCreationCacheControl=false;}vk13;}dev;
 VkPipelineCache pcache=0x5678;
 struct Program {struct Stage{uintptr_t module;};std::vector<Stage>stages{{0x2468}};unsigned workgroup[3]{32,1,1};uintptr_t layout=0x1357;VkPipeline compute_pipeline=0xbeef;std::atomic<bool> optimize_owed{false};};
+bool program_modules(const Program&){return true;}   // (Mako: modules made again once let go after the start: never let go here)
 bool serial_builds_on(){return false;} bool intel_quick_compute(){return false;}   // (not Intel's one-at-a-time builds)
 struct Pre {std::mutex mu;bool abandoned=false;std::atomic<size_t> computes_cached{0},computes_compiled{0},computes_failed{0};};
 constexpr int VK_PIPELINE_CREATE_DISABLE_OPTIMIZATION_BIT=0x1;

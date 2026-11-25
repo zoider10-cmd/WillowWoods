@@ -73,8 +73,10 @@ def main():
     draw = (ROOT / "gpu/vk/vk_draw.cpp").read_text(encoding="utf-8")
     run = draw[draw.index("bool prepare_run(void (*progress)(size_t done, size_t total), bool background, bool refresh_states) {"):]
     run = run[:run.index("\n}\n")]
-    pool = run[run.index("const unsigned quarter"):run.index("threads.emplace_back(worker)")]
-    assert "background ? std::min(quarter, cpus) : prepare_cpus()" in pool, \
+    pool = run[run.index("const unsigned cpus = usable_cpus();"):run.index("threads.emplace_back(worker")]
+    # (in play a quarter of the CPUs, two to four, at most the usable ones)
+    assert "background ? std::min(std::clamp(std::max(1u, std::thread::hardware_concurrency()) / 4, 2u, 4u), cpus)" \
+           " : prepare_cpus()" in pool, \
         "prepare_run sizes its pool before the game with prepare_cpus, in play with its quarter"
     cache = (ROOT / "gpu/vk/vk_progcache.cpp").read_text(encoding="utf-8")
     body = cache[cache.index("unsigned prepare_cpus() {"):]

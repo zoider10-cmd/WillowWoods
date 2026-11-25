@@ -30,6 +30,7 @@ using VkShaderModule = uintptr_t;
 using VkDescriptorSetLayout = uintptr_t;
 using VkPipelineLayout = uintptr_t;
 using VkPipeline = uintptr_t;
+using VkDescriptorUpdateTemplate = uintptr_t;   // (Program::desc_template, vk_shader.h)
 using VkDescriptorType = uint32_t;
 using VkShaderStageFlagBits = uint32_t;
 using VkShaderStageFlags = uint32_t;
@@ -123,6 +124,8 @@ static size_t counted_fread(void* to, size_t size, size_t n, FILE* f) {
     return got;
 }
 #define fread counted_fread
+// (vk_shader.cpp: where a program's record is, for its modules made again once let go on 16 GB PCs: none let go here)
+void program_record_of(const Program*, uint64_t, uint64_t) {}
 #include "cache_functions.inc"
 #undef fread
 

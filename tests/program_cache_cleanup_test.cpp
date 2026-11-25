@@ -31,6 +31,7 @@ using VkShaderModule = uintptr_t;
 using VkDescriptorSetLayout = uintptr_t;
 using VkPipelineLayout = uintptr_t;
 using VkPipeline = uintptr_t;
+using VkDescriptorUpdateTemplate = uintptr_t;   // (Program::desc_template, vk_shader.h)
 using VkDescriptorType = uint32_t;
 using VkShaderStageFlagBits = uint32_t;
 using VkShaderStageFlags = uint32_t;
@@ -130,6 +131,8 @@ struct { int64_t play_loads = 0, play_load_ns = 0; } census;
 std::atomic<bool> programs_in_play{false};
 void programs_load_wait(uint64_t) {}   // (the load at a program's create call, gpu/vk/vk_programs.cpp: none here)
 void module_id_learned(uint64_t, uint64_t, VkShaderModule) {}   // (shader module identifiers, vk_programs.cpp: none here)
+// (vk_shader.cpp: where a program's record is, for its modules made again once let go on 16 GB PCs: none let go here)
+void program_record_of(const Program*, uint64_t, uint64_t) {}
 #include "cache_functions.inc"
 
 void save(uint64_t key, bool empty_second = false, int bad_answer = 0) {

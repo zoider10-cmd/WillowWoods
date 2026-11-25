@@ -74,6 +74,8 @@ POOL_FIXTURE = r'''
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <chrono>
+#include <thread>
 #include "vram_compact.h"
 constexpr int VK_SUCCESS = 0, VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO = 1;
 constexpr int VK_IMAGE_TYPE_2D = 1, VK_FORMAT_R8G8B8A8_UNORM = 1, VK_SAMPLE_COUNT_1_BIT = 1;
@@ -87,14 +89,23 @@ struct VkImageCreateInfo {
     struct { uint32_t width, height, depth; } extent{};
     uint32_t mipLevels{}, arrayLayers{}, samples{}, usage{};
 };
-struct VmaAllocationCreateInfo { int usage{}, requiredFlags{}; };
 struct VmaPoolCreateInfo { uint32_t memoryTypeIndex{}; uint64_t blockSize{}; size_t minBlockCount{}; };
 struct Pool { VmaPoolCreateInfo info; };
 using VmaPool = Pool*;
+struct VmaAllocationCreateInfo { int usage{}, requiredFlags{}, flags{}; VmaPool pool{}; };
+// (textures_pool's next block made ahead on a thread of its own, RX_VK_BLOCK_AHEAD: off here, test_getenv below; it compiles)
+constexpr int VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT = 1;
+struct VmaStatistics { uint64_t blockBytes{}, allocationBytes{}; };
+struct VkMemoryRequirements { uint64_t size{}, alignment{}; uint32_t memoryTypeBits{}; };
+using VmaAllocation = void*;
+void vmaGetPoolStatistics(int, VmaPool, VmaStatistics*) {}
+int vmaAllocateMemory(int, const VkMemoryRequirements*, const VmaAllocationCreateInfo*, VmaAllocation*, void*) { return -2; }
+void vmaFreeMemory(int, VmaAllocation) {}
+bool image_compact_active() { return false; }
 struct { struct {
     uint32_t memoryHeapCount = 1;
     struct { uint64_t size = 8ull << 30; int flags = VK_MEMORY_HEAP_DEVICE_LOCAL_BIT; } memoryHeaps[1];
-} memory; struct { int deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU; } props; } dev;
+} memory; struct { int deviceType = VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU; } props; bool memory_budget = false; } dev;
 int vma, calls, successes;
 bool fail_prealloc, fail_all;
 size_t requested[8]{};
@@ -108,6 +119,7 @@ const char* prealloc_env;
 const char* test_getenv(const char* name) {
     if (!std::strcmp(name, "RX_VK_COMPACT")) return compact_env;
     if (!std::strcmp(name, "RX_VK_IMAGE_PREALLOC")) return prealloc_env;
+    if (!std::strcmp(name, "RX_VK_BLOCK_AHEAD")) return "0";   // (no thread making blocks ahead: the constructors alone)
     return nullptr;
 }
 #define getenv test_getenv

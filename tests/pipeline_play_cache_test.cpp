@@ -51,7 +51,9 @@ struct {
     int device = 1;
     struct { bool pipelineCreationCacheControl = true; } vk13;
     struct { unsigned vendorID = 0; } props;   // (not Intel: the fetch lock only with RX_VK_PCACHE_FETCH_LOCK=1)
+    int driver_id = 0;   // (not NVIDIA's own driver: pcache_load_off reads the file unless RX_VK_PCACHE_LOAD=0)
 } dev;
+[[maybe_unused]] constexpr int VK_DRIVER_ID_NVIDIA_PROPRIETARY = 4;   // (read on Linux alone)
 VkPipelineCache pcache = nullptr;
 bool pcache_no_save = false;   // (pcache_init sets this in the renderer)
 bool pcache_file_rejected = false;   // (pcache_init: the cache's file was another driver's)
@@ -62,6 +64,8 @@ std::string pcache_dir, pcache_path;
 std::atomic<int64_t> pcache_built_since_save{0};
 thread_local bool pcache_save_between = false;   // (vk_draw.cpp: a save run between two serial builds, Intel; not here)
 std::atomic<bool> pcache_save_owed{false};
+#include "precompile_save.h"   // (what the last forced save on this thread did, in words: vk_draw.cpp's pcache_save_outcome)
+thread_local precompile_save::Outcome pcache_save_outcome;
 std::atomic<int> creates{0}, destroys{0}, merges{0}, compiles{0}, failed_moves{0};
 std::atomic<int> fail_moves{0};   // (the next moves into place that fail)
 FakePipeline the_pipeline;
@@ -237,6 +241,7 @@ using mkwvk::PipelineCacheFile;
 struct { std::atomic<int64_t> play_from_driver{0}, play_from_start{0}, play_compiled{0}; } census;
 thread_local struct { uint8_t made_how = 0; } use_counters;
 #include "pipeline_play_cache.inc"
+void helper_thread_start() {}   // (vk_texture.h: a helper thread's setup in the renderer; the save's thread here needs none)
 #include "pipeline_cache_save.inc"
 
 std::string cache_path(const char*) { return pcache_dir; }
@@ -245,6 +250,9 @@ namespace pcache_stamp {
 struct Dropped { size_t files; uint64_t bytes; };
 Dropped check(const std::string&, uint64_t) { return {0, 0}; }
 }
+// (pcache_load_off: whether the file is read, pcache_load.h's choice. Programs are not loaded at their create calls here)
+bool programs_load_at_create() { return false; }
+#include "pcache_load.h"
 // (init's conditional read uses the read-result stub; play writes keep the real mapped-file writer)
 #define PipelineCacheFile ReadPart
 #include "pcache_init.inc"
@@ -306,12 +314,8 @@ CacheFiles cache_files() {
     }
     return files;
 }
-// (vk_draw.cpp's forced save as far as pcache_saved_now sees it: nothing under RX_VK_PCACHE_LOAD=0, else the whole cache in
-// the file. The real one is not extracted)
-void pipeline_cache_save(bool) {
-    if (!pcache || pcache_no_save) return;
-    write_file(pcache_path, "FAKE", keys_of(pcache));
-}
+// (pcache_saved_now's forced save is vk_draw.cpp's own pipeline_cache_save, extracted above for the no-save-periodic case:
+// nothing under RX_VK_PCACHE_LOAD=0, else the whole cache in the file)
 #include "pcache_saved_now.inc"
 
 int run(const std::string& name) {

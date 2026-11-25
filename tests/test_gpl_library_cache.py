@@ -29,7 +29,10 @@ def main():
             # (graphics_with: pcache through the play caches, tests/test_pipeline_play_cache.py)
             ("VkResult r = graphics_with(cache, &ci, &pl);", "pipeline creation bypasses the chosen cache"),
             ("pcache_built_since_save += lib_cached && !cold;", "a compiled library does not count towards a save"),
-            ("pcache_built_since_save += !driver_cache_only && !quick_build;", "a quick pipeline counts towards a save")):
+            # (Mako: and one the cache answered is not counted as made)
+            ("if (!driver_cache_only && !quick_build) {   // (Mako: a pipeline the cache answered is not counted as made)",
+             "a quick pipeline counts towards a save"),
+            ("pcache_built_since_save += !known;", "a pipeline compiled for the full cache does not count towards a save")):
         if line not in build:
             raise SystemExit(why)
     if "thread_local VkPipelineCache driver_ask_cache = VK_NULL_HANDLE;" not in draw:

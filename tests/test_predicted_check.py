@@ -30,7 +30,7 @@ def body(text, marker):
 def main():
     draw = (ROOT / "gpu/vk/vk_draw.cpp").read_text(encoding="utf-8")
     main_cpp = (ROOT / "gpu/vk/vk_main.cpp").read_text(encoding="utf-8")
-    predict = body(draw, "void predict_run(void (*progress)(size_t done, size_t total)) {")
+    predict = body(draw, "void predict_run(void (*progress)(size_t done, size_t total), bool background) {")
     at = predict.find("predicted_sample_write(pre->predicted)")
     if at < 0 or "!prepare_stopped()" not in predict[at - 80:at] or "!gone_on" not in predict[at - 80:at]:
         raise SystemExit("FAIL: predict_run does not keep a sample of what it built (or keeps one when it was stopped or gave up)")

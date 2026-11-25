@@ -296,7 +296,10 @@ def main():
         "@HASH_BYTES@": block(shader, "uint64_t hash_bytes("),
         "@CODE@": block(shader, "struct Code {") + ";",
         "@CODE_KEY@": block(shader, "uint64_t code_key("),
-        "@PARSE_CODE@": block(shader, "Code parse_code(const uint8_t* ctl, const std::vector<uint8_t>& area) {"),
+        # (Mako: parse_code takes parse_mu and calls parse_code_locked, the parse itself)
+        "@PARSE_CODE@": "Code parse_code_locked(const uint8_t* ctl, const std::vector<uint8_t>& area);\nstd::mutex parse_mu;\n"
+        + block(shader, "Code parse_code(const uint8_t* ctl, const std::vector<uint8_t>& area) {") + "\n"
+        + block(shader, "Code parse_code_locked(const uint8_t* ctl, const std::vector<uint8_t>& area) {"),
     }
     code = CODE
     for name, text in parts.items():

@@ -61,6 +61,7 @@ bool reuse_seed(void(*progress)(size_t,size_t),bool background,bool refresh_stat
  PreparedFor prepared_for=already;
  const int warmed=already.warmed;
  const bool libraries=false;
+ const bool new_list=false;   // (prepare_run: no new built-in state list installed at this start)
  const std::string warming="warming",path="prepared";
  """+already_prepared+r"""
 }
@@ -70,6 +71,12 @@ bool prepare_run(void(*progress)(size_t,size_t),bool background=false,bool refre
  return fresh_seed || reuse_seed(progress,background,refresh_states);
 }
 void predict_run(void(*)(size_t,size_t)){calls.push_back(5);}
+// (Mako: RX_VK_PREDICT_BG=1 builds the predicted pipelines in play, unset they are not built ahead. Here =2: all of them in the
+// Builder's run, the scheduling checked)
+bool predict_deferred(){return false;}
+bool predict_skipped(){return false;}
+void predict_defer(){std::exit(13);}
+void predict_skip_log(){std::exit(14);}
 bool pending=false;
 bool predict_pending(){return pending;}
 bool all_mode=true;

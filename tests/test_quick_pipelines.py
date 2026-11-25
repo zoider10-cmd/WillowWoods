@@ -50,12 +50,11 @@ def check_source(draw):
     slow = build.index("if (slow_full_build && test_slow_ms() > 0) std::this_thread::sleep_for(")
     if not build.index("fault_quarantine().begin(") < slow < build.index("graphics_with("):
         raise SystemExit("RX_VK_TEST_SLOW_MS does not hold the full build inside the driver-fault gate")
-    if "if (!quick_build) {   // (hookshot: quick builds are counted apart" not in build or \
-            build.index("st_pipelines++;") < build.index("if (!quick_build) {   // (hookshot: quick builds are counted apart"):
+    if build.count("st_pipelines++") != 1 or "if (!quick_build) st_pipelines++, st_pipeline_us += built_us;" not in build:
         raise SystemExit("a quick build is counted in st_pipelines")
     if "const VkPipelineCache cache = quick_build ? VK_NULL_HANDLE" not in build:
         raise SystemExit("a quick build goes into a pipeline cache")
-    if "pcache_built_since_save += !driver_cache_only && !quick_build;" not in build:
+    if "if (!driver_cache_only && !quick_build) {   // (Mako: a pipeline the cache answered is not counted as made)" not in build:
         raise SystemExit("a quick build counts towards saving the pipeline cache")
     job = between(draw, "    jobs_push([job] {\n        // (over a linked one", "}, false, &e->ready,")
     if "if (full) {\n            job->e->pipeline = full;" not in job:

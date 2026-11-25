@@ -32,7 +32,7 @@ def body(text, marker):
 def main():
     draw = (ROOT / "gpu/vk/vk_draw.cpp").read_text(encoding="utf-8")
     main_cpp = (ROOT / "gpu/vk/vk_main.cpp").read_text(encoding="utf-8")
-    run = body(draw, "void predict_run(void (*progress)(size_t done, size_t total)) {")
+    run = body(draw, "void predict_run(void (*progress)(size_t done, size_t total), bool background) {")
     begin = "crash_markers::begin(predict_pending_path(), began + 1, began);"
     if begin not in run:
         raise SystemExit("FAIL: the marker is not begun with this start counted, and the count before it for a close to put "

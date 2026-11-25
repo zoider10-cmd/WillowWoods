@@ -43,6 +43,8 @@ static SIZE_T tracked_query(LPCVOID p, PMEMORY_BASIC_INFORMATION info, SIZE_T n)
 #define VirtualAlloc tracked_alloc
 #define VirtualQuery tracked_query
 static void commit(uint8_t* ptr, uint64_t bytes) {
+    const bool split = false;          // (Mako: a range made a region of its own after the commit: not one here)
+    auto make_own_region = [] { std::abort(); };
 COMMIT
 }
 #undef VirtualAlloc

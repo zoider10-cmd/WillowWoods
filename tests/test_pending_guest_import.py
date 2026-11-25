@@ -23,9 +23,11 @@ def main():
 #include <map>
 #include <mutex>
 #include <vector>
+#include "import_reach.h"
 
 struct Pool { uint64_t lo, hi, memory; };
 std::map<uint64_t, Pool> imported;
+import_reach::Reach live_reach;   // (vk_memory.cpp: the imports' spans, kept by imported_add and imported_take)
 std::deque<decltype(imported)::node_type> retired_pools, evicted_pools;
 std::mutex pools_mu, bg_mu;
 std::map<uint64_t, uint64_t> bg_inflight;
@@ -59,7 +61,7 @@ int main() {
         cpp = Path(tmp) / "check.cpp"
         exe = Path(tmp) / "check.exe"
         cpp.write_text(fixture, encoding="utf-8")
-        subprocess.run([args.cxx, "-std=c++17", str(cpp), "-o", str(exe)], check=True)
+        subprocess.run([args.cxx, "-std=c++20", "-I", str(ROOT / "gpu/vk"), str(cpp), "-o", str(exe)], check=True)
         subprocess.run([str(exe)], cwd=tmp, check=True)
 
 

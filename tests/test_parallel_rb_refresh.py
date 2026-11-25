@@ -61,6 +61,7 @@ def main():
 
     inc = {
         "rb_bufferref.inc": block(internal, "struct BufferRef {") + ";\n",
+        "rb_bindsite.inc": block(internal, "struct BindSite {") + ";\n",   # (what bound a range, for an import's log line)
         "rb_pool.inc": block(memory, "struct Pool {") + ";\n",
         # (the table's only ways in and out, which keep the live imports' reach memory_note_gpu_write's scan stops at)
         "rb_table.inc": cut(memory, "import_reach::Reach live_reach;", "\n") + "\n"

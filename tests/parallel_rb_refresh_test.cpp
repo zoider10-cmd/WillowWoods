@@ -120,6 +120,15 @@ thread_local bool up_used = false;
 thread_local uint64_t tl_seg = 0;
 uint32_t epoch = 0;
 #include "rb_texture.inc"
+thread_local int tl_import_defer = 0;
+thread_local const char* tl_bind_site = nullptr;
+#include "rb_bindsite.inc"
+// (Mako: the recording's stream, where a small read-only range is copied for the draw while its chunk is imported. Every
+// range here is imported, so nothing is copied: no recording)
+struct StreamRecording { uint8_t* mapped; VkBuffer stream; };
+StreamRecording* cur = nullptr;
+uint64_t stream_alloc(uint64_t, uint64_t) { return UINT64_MAX; }
+bool memory_read_as_submitted(uint64_t, void*, uint64_t) { return false; }
 
 /// A storage descriptor bound as vk_draw.cpp binds it (its actual code: the bare entries' guess, then the binding)
 struct Desc {

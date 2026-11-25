@@ -7,8 +7,8 @@ showing the last line written ("vertex format NVN 0xe -> vk 17"). In one log the
 
 - predict_run (gpu/vk/vk_draw.cpp): builds every predicted pipeline, its first one alone. Once nothing has finished for
   RX_VK_PREDICT_STALL_S it goes on, leaving the stuck workers in the driver: anywhere in the run after a fault in the driver, and
-  otherwise only once every program was handed out (the last stragglers). A slow driver that still finishes pipelines, or one
-  stuck early with no fault, is waited for (that is the watchdog's).
+  otherwise once every program was handed out (the last stragglers), or after twice that limit (Mako 4.2: one stuck early with
+  no fault). A slow driver that still finishes pipelines is waited for.
 - the --prepare-shaders run's watchdog (gpu/vk/vk_main.cpp prepare_watchdog): while nothing moves, what it waits on, even with
   the pipeline steps' own progress lines (#2186) coming every 10 s; the shader programs' count after a quiet spell, and nothing of
   its own while the pipeline steps move (their lines say it); once nothing has moved for RX_VK_PREPARE_STALL_S, the reason,
@@ -80,6 +80,17 @@ std::string predict_pending_path() {
                                      ("hookshot-prepare-stall-" + std::to_string((uintptr_t)&path) + ".predicting")).string();
     return path;
 }
+// (Mako: what is owed to a run behind the game, <notes>.predict, gone once all are built; a file never made here)
+std::string predict_owed_path() { return predict_pending_path() + ".predict"; }
+// (Mako: the run behind the game, background: its idle priority, its core and its rests while the game is in play. Not this
+// run, the preparation's)
+#define THREAD_PRIORITY_IDLE (-15)
+static void* GetCurrentThread() { return nullptr; }
+static int SetThreadPriority(void*, int) { std::abort(); }
+#define MKWVK_PIN_BACKGROUND() std::abort()
+static bool bg_game_in_play() { std::abort(); }
+static int64_t bg_now_ms() { std::abort(); }
+std::atomic<int64_t> bg_rested_ms{0};
 void predicted_sample_write(const std::vector<std::unique_ptr<PipeNote>>&) {}
 void predicted_keys_write(std::vector<uint64_t>) {}
 void driver_cache_log(const char*) {}
@@ -165,11 +176,17 @@ int main(int argc, char** argv) {
     if (mode == 2) programs_n = 6, per_program = 5;   // (each program 1.5 s, past the 1 s stall: only per pipeline counts)
     if (mode >= 3) programs_n = 400;   // (more programs than workers: the run is stuck before every one is handed out)
     const auto t0 = std::chrono::steady_clock::now();
-    predict_run(progress);
+    predict_run(progress, false);
     const double secs = std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count();
     const int all = programs_n * per_program;
     std::printf("%s", logged.c_str());
-    CHECK(mode != 4);   // (no fault and stuck early: waited for, the watchdog's to end; the test stops it)
+    if (mode == 4) {   // (no fault and stuck early: Mako 4.2 (Project ReLink a7bfee5) goes on after twice the stall, not before)
+        CHECK(secs >= 2 && secs < 20);
+        CHECK(logged.find("gone on without the pipelines the driver did not finish") != std::string::npos);
+        CHECK(left_noted && built < all);
+        std::fflush(stdout);
+        std::_Exit(0);   // (its workers are still in the "driver")
+    }
     CHECK(last_total == (size_t)all + 1 && last_done == last_total);   // (the bar full, what was given up included)
     CHECK(first_was_alone);
     if (mode == 1 || mode == 3) {
@@ -292,13 +309,13 @@ def check_predict(cxx, tmp):
         if r.returncode:
             raise SystemExit("predict_run, %s: exit %d\n%s%s" % (what, r.returncode, r.stdout, r.stderr))
         print("PASS predict_run:", what, flush=True)
-    # (stuck early with no fault: the bulk is not given up here; it waits, as before, and the watchdog ends a real hang)
-    try:
-        r = subprocess.run([str(exe), "4"], env=env, capture_output=True, text=True, timeout=6)
-        raise SystemExit("predict_run gave up the bulk of the run with no fault in the driver: exit %d\n%s%s"
+    # (stuck early with no fault: the bulk is not given up at the stall alone. Mako 4.2, from Project ReLink a7bfee5 (its issue
+    # 80): every worker in the driver for twice the stall gives it up too; before, it waited, and the watchdog ended a real hang)
+    r = subprocess.run([str(exe), "4"], env=env, capture_output=True, text=True, timeout=60)
+    if r.returncode:
+        raise SystemExit("predict_run, stuck early with no fault: not gone on after twice the stall, or gone on before it: exit %d\n%s%s"
                          % (r.returncode, r.stdout, r.stderr))
-    except subprocess.TimeoutExpired:
-        print("PASS predict_run: stuck early with no fault: waited for", flush=True)
+    print("PASS predict_run: stuck early with no fault: gone on after twice the stall", flush=True)
 
 
 def check_watchdog(cxx, tmp):

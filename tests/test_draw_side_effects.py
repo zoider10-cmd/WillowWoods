@@ -24,6 +24,8 @@ FIXTURE = r"""
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
+#include <thread>
 #include <vector>
 @TRANSLATE_WAIT_H@
 @QUICK_PIPE_H@
@@ -110,6 +112,10 @@ bool quick_pipeline(PipeEntry& e, const Program&, const NvnState&, const Targets
 }
 double pipe_wait_budget_ms() { return brief_ms; }
 bool jobs_hurry(const std::atomic<bool>&) { return ++hurries, true; }
+// (draw's brief_wait, Mako's build run ahead of the queue and waited for: defined in the block, called nowhere in it)
+struct JobClaim {};
+bool jobs_claim_run(const std::shared_ptr<JobClaim>&) { std::abort(); }
+bool jobs_steal(const std::atomic<bool>&) { std::abort(); }
 bool jobs_wait_for(const std::atomic<bool>& ready, double) {
     if (&ready == &pipe_entry.ready) {
         ++brief_waits;

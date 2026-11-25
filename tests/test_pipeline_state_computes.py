@@ -591,6 +591,8 @@ static bool serial = false, quick_row = false;
 static bool serial_builds_on() { return serial; }
 static bool intel_quick_compute() { return quick_row; }
 static void pin_subgroup(decltype(VkComputePipelineCreateInfo::stage)&, unsigned) {}
+// (Mako: a program's modules made again when they were let go after the start: never let go here)
+static bool program_modules(const Program&) { return true; }
 static VkResult cached_compute(const VkComputePipelineCreateInfo* ci, VkPipeline* pl) {
     CHECK(ci->stage.module == 0x2468 && ci->layout == 0x1357);
     if (ci->flags & VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT) {
