@@ -4,7 +4,8 @@ Every RX_ name the source reads from the environment has a row, every row is rea
 is read nowhere: a switch added without a row, a row left behind by a deleted read and a removal that left a read all
 fail here. A read is a whole string literal "RX_..." in code under gpu/, host/ or nx2/ (not in a comment, not part of a
 longer string): the reads go through getenv, env_on and helpers that are handed the name, so the literal is what they
-share. PREFIXES are the literals that are no switch themselves: the start of a family, matched against the names the
+share. The host's switches (HOS_, HOOKSHOT_) have rows in the same table: each must be well formed, in order and read
+somewhere, though not every host name read has a row yet (switches::report says the renderer's alone). A name nx2/build.py hands a C file as a macro (-DNAME="RX_...") is a read too. PREFIXES are the literals that are no switch themselves: the start of a family, matched against the names the
 environment holds.
 
 Then switches.h itself, compiled alone: find() on the sorted table, and report() on made-up environments (a switch set,
@@ -33,9 +34,11 @@ PREFIXES = {
 }
 SKIP_DIRS = {"third_party", "tests", "build-linux", "build-windows"}
 
-ROW = re.compile(r'^SW\((RX_[A-Z0-9_]+), (\w+), (\w+), "((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\)$')
+HOST = ("HOS_", "HOOKSHOT_")
+ROW = re.compile(r'^SW\(((?:RX|HOS|HOOKSHOT)_[A-Z0-9_]+), (\w+), (\w+), "((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\)$')
 GONE = re.compile(r'^GONE\((RX_[A-Z0-9_]+), "(\d{4}-\d{2}-\d{2})", "((?:[^"\\]|\\.)*)"\)$')
-LITERAL = re.compile(r'"(RX_[A-Z0-9_]+)"')
+LITERAL = re.compile(r'"((?:RX|HOS|HOOKSHOT)_[A-Z0-9_]+)"')
+BUILD_DEFINE = re.compile(r'-D[A-Z0-9_]+="(RX_[A-Z0-9_]+)"')
 
 
 def code_of(line):
@@ -77,17 +80,23 @@ def literals():
             if path.suffix not in (".c", ".cpp", ".h", ".inc") or SKIP_DIRS & set(path.relative_to(ROOT).parts):
                 continue
             for n, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-                if '"RX_' not in line:
+                if '"RX_' not in line and '"HOS_' not in line and '"HOOKSHOT_' not in line:
                     continue
                 if line.lstrip().startswith(("//", "*", "/*")):
                     continue
                 for m in LITERAL.finditer(code_of(line)):
                     found.setdefault(m.group(1), []).append("%s:%d" % (path.relative_to(ROOT).as_posix(), n))
+    # (a name the build hands a C file as a macro is read there: -DPGO_ENV="RX_VK_PGO_FILE" for the renderer's copy of
+    #  host/pgo_rt.c, whose getenv(PGO_ENV) holds no literal of its own)
+    for n, line in enumerate((ROOT / "nx2" / "build.py").read_text(encoding="utf-8").splitlines(), 1):
+        for m in BUILD_DEFINE.finditer(line.split("#")[0]):
+            found.setdefault(m.group(1), []).append("nx2/build.py:%d" % n)
     return found
 
 
 FIXTURE = r"""
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 #include "switches.h"
@@ -107,7 +116,10 @@ int main() {
     int strangers = -1;
     auto lines = run({"PATH=/usr/bin", "HOS_FPS_MAX=240", "RXVK=1"}, &strangers);
     need(lines.size() == 1 && lines[0] == "vk: switches set: none" && strangers == 0, "nothing set");
-    const std::string first = rows[0].name, kind = kind_name(rows[0].kind);
+    size_t r0 = 0;   // (the first of the renderer's rows: report() says those alone; the host's come before them)
+    while (r0 < row_count && !ours(rows[r0].name, std::strlen(rows[r0].name))) r0++;
+    need(r0 < row_count, "the table has a renderer switch");
+    const std::string first = rows[r0].name, kind = kind_name(rows[r0].kind);
     const std::string a = first + "=1", b = "RX_VK_NO_SUCH_SWITCH=1", c = first + "=" + std::string(60, 'x');
     lines = run({"PATH=/usr/bin", a.c_str(), b.c_str()}, &strangers);
     need(strangers == 1 && lines.size() == 2, "a switch and a stranger: two lines");
@@ -159,7 +171,7 @@ def main():
             bad.append("%s is both a switch and a removed one" % name)
     read = literals()
     for name in sorted(read):
-        if name in PREFIXES:
+        if name in PREFIXES or (name.startswith(HOST) and name not in gone_names):   # (a host name: its row is not required yet)
             continue
         if name in gone_names:
             bad.append("%s was removed (GONE) and is still read: %s" % (name, ", ".join(read[name][:4])))
