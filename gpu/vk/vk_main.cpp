@@ -631,9 +631,9 @@ bool create_device() {
     // family (NVIDIA's has 16), else a queue of a compute-only family (RADV: one graphics queue), its family's next free one. A
     // device without either presents on the game's thread, as before
     const char* pt_env = getenv("RX_VK_PRESENT_THREAD");
-    // (hookshot) NVIDIA Optimus: enable dedicated presentation thread/queue by default on NVIDIA dGPUs (0x10DE)
-    // to decouple swapchain presentation over PCIe from the replay render loop.
-    const bool presenter_wanted = pt_env ? (atoi(pt_env) != 0) : (dev.props.vendorID == 0x10DE);
+    // (as the thread itself, vk_replay.cpp present_thread_on: off unless RX_VK_PRESENT_THREAD=1. A merge had the queue made by
+    // default on NVIDIA (0x10DE) while the thread stays off there too: a queue reserved that nothing presented on)
+    const bool presenter_wanted = pt_env && atoi(pt_env) != 0;
     uint32_t presenter_family = UINT32_MAX, presenter_index = 0;
     if (presenter_wanted) {   // (presenter_queue.h: never a queue another part of the renderer takes)
         std::vector<QueueFamilyInfo> qf(n);
