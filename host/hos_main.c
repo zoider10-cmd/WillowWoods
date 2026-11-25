@@ -2109,6 +2109,7 @@ static struct {
     uint32_t opened;  /* (a chest: the hash of the game's own flag IsTreasureBoxOpen.<key in decimal>, set when it is opened, bug 70; 0: none) */
     char owner[24];   /* (a chest holding a dungeon item of another place: the dungeon it belongs to, dungeon_items.txt; "": none) */
     signed char pot;  /* (a pot of Pots, rando_pots: tools/rando/rando_seed.py names it "Pot", "Pot #2"...: oot_pot_again) */
+    uint64_t broken;  /* (a pot's hash: the game's truth value by it is "broken", oot_pot_again) */
 } oot_checks[OOT_TRACKER_MAX];
 static int oot_check_count = -1;
 static char oot_checks_seed[1024];   /* (the stamp the checks and the record are of: its whole first line. 200 cut a
@@ -2222,6 +2223,7 @@ static void oot_tracker_load(const char *stamp) {
         oot_checks[oot_check_count].pot = !strncmp(kind, "Pot", 3) && (!kind[3] || kind[3] == ' ');
         /* (a pot's own truth value in the save is "broken", put back when it is back after a day: its check is the item
            picked up, the record's, not that value. Seen without a window 2026-11-24: breaking the pot marked it) */
+        oot_checks[oot_check_count].broken = oot_checks[oot_check_count].pot ? oot_checks[oot_check_count].key : 0;
         if (oot_checks[oot_check_count].pot) oot_checks[oot_check_count].key = 0, oot_checks[oot_check_count].opened = 0;
         {   /* (a shelf's price: tools/rando/rando_seed.py names it "<shop>: shelf <k>, <n> rupees") */
             const char *r = strstr(kind, " rupees");
@@ -2376,6 +2378,8 @@ static int oot_tracker_shop_on = 1;
    one item in a shop, the first in the list was marked and hidden, not the one bought; and the adult rolling Goron's
    Heart Container marked the Goron shop's Heart Container shelf (the nearer), which then vanished. price: the game's
    Shop_SelectItemPrice at the sale (-1: not read), which tells the shelves of one item apart. */
+/* (the pot a pick-up came from, oot_pot_again, for the record that follows on the same thread; -1: none) */
+static _Thread_local int oot_pot_chosen = -1;
 static void oot_tracker_item(const char *name, int shop, int price) {
     static int read;
     if (!read) {
@@ -2416,6 +2420,11 @@ static void oot_tracker_item(const char *name, int shop, int price) {
         if (best >= 0 && pass) hos_log("rando: tracker: %s: the check is in the map Link just left (%s)", name, map);
     }
     if (best < 0 && others == 1 && nearest > 1e29f) best = elsewhere;   /* (the one check left that gives it, in another map's file) */
+    if (oot_pot_chosen >= 0 && oot_pot_chosen < oot_check_count && oot_checks[oot_pot_chosen].done != 1) {
+        best = oot_pot_chosen;   /* (the broken pot it came from: oot_pot_again) */
+        hos_log("rando: tracker: %s came from the pot just broken (check %d)", name, best);
+    }
+    oot_pot_chosen = -1;
     if (best < 0) {
         /* (a shop's shelf gives its item by the name the pouch has it by, which is not always the seed's: seen without
            a window, the Lens of Truth bought was Armor_Child_GlassTruth and a purple rupee Obj_Rupee_Purple, and
@@ -3560,23 +3569,34 @@ static int oot_banc_in_folder(const char *banc, const char *folder) {
    .IsGetBossKey, .SmallKeyNum. One from a chest of dungeon_items.txt (the chest Link just opened: the nearest of them
    within OOT_DUNGEON_NEAR metres of him, in his map, holding that item) in another place than its dungeon: its dungeon's
    flag is set (a small key: its count raised) and the add is taken away (1). 0: the add goes on as it is. */
-/* (Pots, rando_pots) A pot is back after about a day (bug 96) and drops its item again: the item picked up by a pot whose
-   check is collected already (within OOT_POT_NEAR metres of Link, in his map, giving that item) is nothing (1), so a
-   pot's item is had once. 0: the add goes on. */
-#define OOT_POT_NEAR 3.0f
-static int oot_pot_again(const char *name) {
-    int again = 0;
+/* (Pots, rando_pots) Which pot an item picked up came from: the game's truth value by a pot's hash is "broken", set when it
+   breaks and put back when it is back after about a day (bug 96). So the pots of Link's map giving that item (or its
+   family's) that are broken now are the ones it can be from: one not yet collected is the one (oot_pot_chosen, which the
+   record marks: oot_tracker_item), and with every such pot collected already, the pot is one back after a day and its
+   item is nothing (1). 0: the add goes on; with no such pot broken (none read), the record finds its check as it does.
+   (Until 2026-11-25 it went by distance: a pot within 3 m of Link done with that item was "back". Seen in play in the
+   Market's guard house, 22 pots in 8 m, four of them a Gold Skulltula token: a second token from the pot beside a
+   collected one was refused, and a thrown pot's item lands far from it, so the record marked another pot.) */
+static int oot_pot_again(Ctx *c, const char *name) {
+    int broken = 0, open = -1;
+    const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
+    oot_pot_chosen = -1;
     AcquireSRWLockShared(&oot_checks_lock);
-    for (int i = 0; i < oot_check_count && !again; i++) {
-        if (!oot_checks[i].pot || oot_checks[i].done != 1 || strcmp(oot_checks[i].item, name) ||
-            !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
-        const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
-                    dz = oot_checks[i].place[2] - oot_link_place[2];
-        again = dx * dx + dy * dy + dz * dz < OOT_POT_NEAR * OOT_POT_NEAR;
+    for (int i = 0; i < oot_check_count && open < 0; i++) {
+        int now = 0;
+        if (!oot_checks[i].pot || !oot_checks[i].broken || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
+        if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
+        if (!oot_gamedata_keyed_bool(c, oot_checks[i].broken, &now) || !now) continue;
+        broken++;
+        if (oot_checks[i].done != 1) open = i;
     }
     ReleaseSRWLockShared(&oot_checks_lock);
-    if (again) hos_log("rando: %s from a pot whose check is collected already: nothing is added", name);
-    return again;
+    if (open >= 0) {
+        oot_pot_chosen = open;
+        return 0;
+    }
+    if (broken) hos_log("rando: %s from a pot whose check is collected already (%d broken pots give it): nothing is added", name, broken);
+    return broken > 0;
 }
 #define OOT_DUNGEON_NEAR 4.0f
 static int oot_dungeon_item(Ctx *c, const char *name) {
@@ -5239,7 +5259,8 @@ int hos_oot_pouch_add(Ctx *c) {
             view = oot_pouch_name(c, view, gives);
             snprintf(name, sizeof name, "%s", gives);
         }
-        if (c->x[30] != 0x828d50acULL && oot_pot_again(name)) return 1;   /* (Pots: a pot back after a day gives nothing again; before the record) */
+        oot_pot_chosen = -1;
+        if (c->x[30] != 0x828d50acULL && oot_pot_again(c, name)) return 1;   /* (Pots: a pot back after a day gives nothing again; before the record) */
         if (!oot_holder_giving) {   /* (a holder given for a Skulltula's bundle is no check's: bug 87) */
             const int shop = c->x[30] == 0x828d50acULL && (uint32_t)c->x[4] == 5;   /* (a shop's sale: oot_tracker_item) */
             int32_t price = -1;
