@@ -123,7 +123,8 @@ def main():
     check(given[1:] == ["Market|Chest (red rupee)|Market|C|1.0 2.0 3.0|-|86f700bfe72c18fc|Item_Hammer", "Market|The dog lady|Market|C|7.0 8.0 9.0|-|-|TBox_Rupee_Blue",
                         "Market|The gallery|Market|C|7.0 8.0 9.5|-"], "a line does not end with the item it gives, after its hash or a dash: %r" % given[1:])
     check('named("Chest", h, spots[h][0], spots[h][5], MAGIC_JUNK if h == magic_chest else spots[h][1]), h, gives[h],' in script and
-          'named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN)' in script and
+          'named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN,\n'
+          '                                        SKULL_GO.get(h))' in script and
           "needs[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))" in script and "needs[h], gifts[h].name, None, gives[h])" in script,
           "what the chests, the Gold Skulltulas, the gifts and the shelves give is not written with the checks")
     items = (ROOT / "gpu" / "vk" / "oot_cheat_items.h").read_text(encoding="utf-8")
