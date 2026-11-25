@@ -2288,11 +2288,25 @@ static void oot_tracker_load(const char *stamp) {
    save's: reported from play, a quiver bought was not for sale again in a save from before it was bought, nor in a
    new game of the same seed.) Each second. Returns how many flags or marks were changed. */
 static int oot_pot_junk(const char *item);
+/* (Pots, asked 2026-11-25) A broken pot comes back when Link has left its area: its "broken" truth value is put back
+   once he is in a map of another folder, so it is there the next time its area is entered, as in the original game. The
+   game's own wait was about a day of play (bug 96), the Sun's Song not counting. The pots of the area he is in stay
+   broken. The map last seen, to tell a move: */
+static char oot_pots_map[80];
 static int oot_shelf_flags(Ctx *c) {
-    int changed = 0, marks = 0;
+    int changed = 0, marks = 0, back = 0;
+    const int moved = oot_link_map[0] && strcmp(oot_pots_map, oot_link_map);
+    if (moved) snprintf(oot_pots_map, sizeof oot_pots_map, "%s", oot_link_map);
     AcquireSRWLockExclusive(&oot_checks_lock);
     for (int i = 0; i < oot_check_count; i++) {
         int now = 0;
+        if (oot_checks[i].pot && oot_checks[i].broken && moved && !oot_banc_in_folder(oot_link_map, oot_checks[i].folder) &&
+            oot_gamedata_keyed_bool(c, oot_checks[i].broken, &now) && now) {
+            if (oot_checks[i].done != 1 && oot_pot_junk(oot_checks[i].item)) oot_checks[i].done = 1, marks++;   /* (broken: collected) */
+            if (oot_gamedata_keyed_set_bool(c, oot_checks[i].broken, 0)) back++;
+            continue;
+        }
+        now = 0;
         /* (Pots, FIXES 98: a pot holding junk is collected once it is broken, whatever it dropped: the game drops a supply
            only where Link has use for it, else a green rupee or nothing, by its own rules; seen in play 2026-11-25, every
            junk pot of the guard house a green rupee with full bags, and its check left. oot_pot_junk) */
@@ -2332,7 +2346,8 @@ static int oot_shelf_flags(Ctx *c) {
     }
     if (marks) oot_tracker_save();
     ReleaseSRWLockExclusive(&oot_checks_lock);
-    return changed + marks;
+    if (back) hos_log("rando: pots: %d broken pots of other areas are back (Link is in %s)", back, oot_link_map);
+    return changed + marks + back;
 }
 
 /* (the randomizer's fork) Progressive items: the families, smallest first; a tier may have a second spelling (the
