@@ -43,7 +43,7 @@ def main():
     assert '(a.soil_bottle, " soil bottle")' in src, "it is not on the stamp's second line (moves no item)"
     header = open(os.path.join(ROOT, "gpu", "vk", "oot_rando.h"), encoding="utf-8").read()
     order = re.findall(r"^    X\(([A-Z_]+),", header, re.M)
-    assert order[-1] == "SOIL_BOTTLE" and order.index("SOIL_BOTTLE") > order.index("FAST_PUSH"), "the in-game menu's row is not after the ones before it"
+    assert order.index("SOIL_BOTTLE") == order.index("FAST_PUSH") + 1, "the in-game menu's row is not after the ones before it"
     launcher = open(os.path.join(ROOT, "launcher", "Launcher.cs"), encoding="utf-8").read()
     assert 'new object[] { "rando_soil_bottle", "Soil Skulltulas without bugs", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher, "no launcher row"
     no_item = launcher[launcher.index("NoItemKeys = new HashSet<string>"):launcher.index("static bool MovesNoItem")]

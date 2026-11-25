@@ -5681,7 +5681,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -7343,6 +7343,64 @@ def castle_guards_pass(data):
     return out.getvalue()
 
 
+# ---- Gerudo guards don't jail Link (rando_gerudo_guards, asked 2026-11-23) ----
+# A Gerudo guard at the fortress who catches adult Link starts SageOfSpirit's GerudoFortress_GotoPrison_Alert (or
+# _Suprise: the same steps; GotoPrison, _sub, _004 and the _Pair entries reach them as sub-flows): her talk, the screen
+# goes dark, Link is put in the cell (EventPlayerWarpToStarterLinkAnchor, Dm_Gerudo_0010) or, the first time with the
+# Hookshot, out of the fortress (GerudoFortress_RunFromFortress). With the setting both entries only send the guard who
+# caught him back to her post (Npc_EventStarter's EventWarpToHomeMatrix, a step of our own: the castle's guards' way
+# home, castle_guards_pass) and lift the alert (the flow's own EventAIScheduleNPCForceSecurityLifted), and the event
+# ends there: Link stays where he is. The rules never use the cell (GerudoFortress is reached by its own items).
+# Moves no item. NOT SEEN IN PLAY.
+GERUDO_GUARDS_FLOW = "Event/EventFlow/SageOfSpirit.bfevfl.zs"
+GERUDO_GUARDS_ENTRIES = ("GerudoFortress_GotoPrison_Alert", "GerudoFortress_GotoPrison_Suprise")
+
+
+def gerudo_guards_pass(data):
+    """SageOfSpirit's flow with each of GERUDO_GUARDS_ENTRIES the guard's way home and the lifted alert alone (see above).
+    The new bytes; ValueError: not the flow known, or changed already."""
+    import copy
+    import io
+    evfl = evfl_module()
+    flow = evfl.EventFlow()
+    flow.read(data)
+    fc = flow.flowchart
+    entries = {e.name: e for e in fc.entry_points}
+    if any(n not in entries for n in GERUDO_GUARDS_ENTRIES) or any(e.name.startswith("WillowGerudo") for e in fc.events):
+        raise ValueError("not the fortress guards' flow, or changed already")
+    lifts = [e for e in fc.events if isinstance(e.data, evfl.ActionEvent)
+             and e.data.actor_action.v.v == "EventAIScheduleNPCForceSecurityLifted"]
+    starter = [a for a in fc.actors if a.identifier.name == "Npc_EventStarter" and not a.identifier.sub_name]
+    if not lifts or len(starter) != 1:
+        raise ValueError("no lifted alert, or not one Npc_EventStarter")
+    actor = starter[0]
+    got = [h for h in actor.actions if h.v == "EventWarpToHomeMatrix"]
+    if got:
+        act = got[0]
+    else:
+        act = evfl.common.StringHolder("EventWarpToHomeMatrix")
+        actor.actions.append(act)
+    lift = evfl.Event()
+    lift.name = "WillowGerudoLift"
+    lift.data = evfl.ActionEvent()
+    lift.data.actor.v, lift.data.actor_action.v = lifts[0].data.actor.v, lifts[0].data.actor_action.v
+    lift.data.params = copy.deepcopy(lifts[0].data.params)
+    lift.data.nxt.v = None
+    home = evfl.Event()
+    home.name = "WillowGerudoHome"
+    home.data = evfl.ActionEvent()
+    home.data.actor.v, home.data.actor_action.v = actor, act
+    home.data.params = evfl.Container()
+    home.data.params.data["IsWaitEnd"] = True   # (as the castle's own step has it)
+    home.data.nxt.v = lift
+    fc.events += [home, lift]
+    for name in GERUDO_GUARDS_ENTRIES:
+        entries[name].main_event.v = home
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
+
+
 # ---- Free Scarecrow's Song (rando_free_scarecrow, asked 2026-11-21) ----
 # The Scarecrow's Song is the player's own: young Link plays notes to Bonooru at Lake Hylia, the adult plays them back,
 # and Pierre answers them at his spots. Its notes are kept in the save (a Binary, empty in a new game: the list of flags
@@ -7810,6 +7868,7 @@ def main():
     a.chest_size = a.chest_size or ini["rando_chest_size"] != 0
     a.epona_song = a.epona_song or ini["rando_epona_song"] != 0
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
+    a.gerudo_guards = ini["rando_gerudo_guards"] != 0   # (GERUDO_GUARDS_FLOW, 2026-11-24: a Quality of life setting; moves no item)
     a.soil_bottle = ini["rando_soil_bottle"] != 0       # (SOIL_FILES, 2026-11-24: a Quality of life setting; moves no item)
     a.fast_push = ini["rando_fast_push"] != 0           # (FAST_PUSH, 2026-11-24: the blocks' curves; moves no item)
     a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
@@ -7951,7 +8010,8 @@ def main():
     if a.castle_guards:   # (moves no item either: the same line)
         stamp = stamp[:-1] + " guards pass\n"
     for saver_on, word in ((a.any_fish, " any fish"), (a.skull_kid_fast, " skull kid fast"), (a.skip_tower, " tower skipped"),
-                           (a.archery_wins, " archery won"), (a.fast_push, " fast push"), (a.soil_bottle, " soil bottle")):
+                           (a.archery_wins, " archery won"), (a.fast_push, " fast push"), (a.soil_bottle, " soil bottle"),
+                           (a.gerudo_guards, " gerudo guards pass")):
         if saver_on:   # (the time savers: move no item either, the same line. Not `on`: that is the randomizer's own, below)
             stamp = stamp[:-1] + word + "\n"
     if a.free_scarecrow:   # (moves no item either: the same line)
@@ -8768,6 +8828,14 @@ def main():
         except (OSError, ValueError, struct.error, ImportError) as e:
             sys.exit("Castle guards let Link pass: %s. Nothing written." % e)
         print("the castle guards: one who spots young Link goes back to his post, and Link carries on")
+    if a.gerudo_guards:   # (Gerudo guards don't jail Link: gerudo_guards_pass, after the gifts' changes to the same flow)
+        try:
+            was = gift_files[GERUDO_GUARDS_FLOW] if GERUDO_GUARDS_FLOW in gift_files else unpack(open(os.path.join(romfs, *GERUDO_GUARDS_FLOW.split("/")), "rb").read(), zs, dicts)
+            gift_files[GERUDO_GUARDS_FLOW] = gerudo_guards_pass(was)
+            gift_sizes[GERUDO_GUARDS_FLOW[:-3]] = len(gift_files[GERUDO_GUARDS_FLOW])
+        except (OSError, ValueError, struct.error, ImportError) as e:
+            sys.exit("Gerudo guards don't jail Link: %s. Nothing written." % e)
+        print("the Gerudo guards: one who catches adult Link goes back to her post, and Link stays where he is")
     if a.epona_song:   # (Epona by Epona's Song: epona_song_flows, epona_event_rows)
         try:
             was = gift_files[EPONA_SONG_FLOW] if EPONA_SONG_FLOW in gift_files else unpack(open(os.path.join(romfs, *EPONA_SONG_FLOW.split("/")), "rb").read(), zs, dicts)
