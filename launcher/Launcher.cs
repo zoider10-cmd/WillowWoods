@@ -1023,7 +1023,8 @@ class RandoSeedForm : Form {
             int choices = LauncherForm.RandoChoices(key, names.Length);
             if (choices <= 1) { box.Items.Add(Selector.NotYet); box.Enabled = false; }
             else for (int k = 0; k < choices; k++) box.Items.Add(names[k]);
-            int at = has.ContainsKey(key) ? Array.IndexOf(values, has[key]) : 0;
+            // (not set: the first choice, or the 0 one when the list starts below it: Frame rate cap's 30 is -1, its default 60)
+            int at = has.ContainsKey(key) ? Array.IndexOf(values, has[key]) : values[0] < 0 ? Math.Max(0, Array.IndexOf(values, 0)) : 0;
             box.SelectedIndex = Math.Max(0, Math.Min(box.Items.Count - 1, at));
             box.SelectedIndexChanged += (o, e) => { if (!presetting) preset.SelectedIndex = 0; };
             boxes.Add(box); rows.Add(row);
@@ -2800,8 +2801,8 @@ class LauncherForm : Form {
             "Sharpens the picture on its way to the screen. Too much shows halos around edges." },
         new object[] { "frame_generation", "Frame generation", new[] { "Off", "2x", "3x", "4x", "5x", "6x", "7x", "8x", "AMD Redstone 2x" }, new[] { 0, 2, 3, 4, 5, 6, 7, 8, 2 },
             "Shows extra in-between frames for smoother motion. AMD Redstone 2x: AMD's AI frame generation instead of Willow Woods's, for RX 9000 cards with AMD's files (More > AMD FSR) and FSR 4. Best with 12 GB+." },
-        new object[] { "frame_rate_cap", "Frame rate cap", new[] { "60 (the console's)", "90", "120", "144", "165", "240" }, new[] { 0, 1, 2, 3, 4, 5 },
-            "The most frames per second the game runs at. Above 60 needs a screen that shows them." },
+        new object[] { "frame_rate_cap", "Frame rate cap", new[] { "30", "60 (the console's)", "90", "120", "144", "165", "240", "Uncapped" }, new[] { -1, 0, 1, 2, 3, 4, 5, 6 },
+            "The most frames per second the game runs at. 30: steadier on a slow PC, at the game's normal speed. Above 60 needs a screen that shows them." },
         new object[] { "amd_anti-lag_2", "AMD Anti-Lag 2", new[] { "Off", "On" }, new[] { 0, 1 },
             "AMD graphics cards: less delay between your button and the screen. Has no effect while frame generation is on." },
         new object[] { "frame_pacing", "Frame pacing", new[] { "Off", "On" }, new[] { 0, 1 },
@@ -4708,6 +4709,8 @@ class LauncherForm : Form {
     // ---- (Mako 4.0) Test my PC: the game run by itself on a copy of the player's last save, measured, the advice fitted ----
     static readonly int[] OutBySize = { 2, 1, 0, 3, 5, 6 };   // (output_res values, largest first)
     static readonly int[] CapFps = { 60, 90, 120, 144, 165, 240 };
+    // (the frame_rate_cap value's frames per second: -1 is 30, 6 Uncapped, taken as 240 for the bench's aim)
+    static int CapRate(int v) { return v < 0 ? 30 : CapFps[Math.Min(CapFps.Length - 1, v)]; }
 
     int Now(string key) { Selector s; return settings.TryGetValue(key, out s) ? s.Value : 0; }
     RecRow Row(string key) { return recGraphics.Find(r => r.Key == key); }
@@ -4724,7 +4727,7 @@ class LauncherForm : Form {
             return;
         }
         int v = pc.VramGB;
-        int fg = Now("frame_generation"), cap = CapFps[Math.Max(0, Math.Min(CapFps.Length - 1, Now("frame_rate_cap")))];
+        int fg = Now("frame_generation"), cap = CapRate(Now("frame_rate_cap"));
         int target = Math.Max(30, Math.Min(60, fg >= 2 ? cap / fg : cap));   // (the game's own frames: 60 at most, as the console)
         double vramShare = b.VramTotal > 0 ? b.VramUsed / b.VramTotal : 0;
         bool full = vramShare >= 0.9, veryHeavy = b.Fps < target * 0.6, heavy = b.Fps < target * 0.8;
