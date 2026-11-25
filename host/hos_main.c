@@ -812,6 +812,14 @@ static volatile uint32_t oot_hit_count;   /* (how many were ever kept: the newes
 
 static void oot_health_hit(Ctx *c, uint64_t actor, uint64_t life, uint32_t old, uint32_t next, const char *name);
 
+/* Only enemies and bosses get a number and a health bar (bug 134, the owner 2026-11-24: a pot hit and a rock blown up with a
+   bomb showed one, as every actor with a life loses it at the same write). Every enemy and boss of the game is an Enemy_ actor
+   (Enemy_Stalfos, Enemy_DungeonBoss_Gohma, Enemy_MiddleBoss_DarkLink, the Gold Skulltulas' Enemy_Skulltula_Gold); pots,
+   rocks, grass, signs and animals are Obj_, Land_, FldObj_, Animal_ and the like. */
+static int oot_hit_is_enemy(const char *name) {
+    return strncmp(name, "Enemy_", 6) == 0;
+}
+
 void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t hit, uint64_t life) {
     if (!actor || hos_oot_is_player(c, actor)) return;
     /* (the name: the actor's resource record's, at its +88, as hos_oot_is_player reads "Player"; +0x260 named no Deku Baba) */
@@ -821,13 +829,17 @@ void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t h
         text[i] = (char)recomp_load8(c, resource + 88 + (unsigned)i);
         if (!text[i]) break;
     }
+    static int log = -1;
+    if (log < 0) log = env_on("HOS_OOT_DAMAGE_LOG");
+    if (!oot_hit_is_enemy(text)) {
+        if (log) hos_log("damage: %s took %u (%u -> %u), not an enemy: no number", text[0] ? text : "?", hit, old, next);
+        return;
+    }
     const uint32_t n = __atomic_load_n(&oot_hit_count, __ATOMIC_RELAXED);
     __typeof__(oot_hits[0]) *h = &oot_hits[n % OOT_HITS];
     h->actor = actor, h->at_ns = hos_now_ns(), h->hit = hit, h->old = old, h->next = next;
     memcpy(h->name, text, sizeof h->name);
     __atomic_store_n(&oot_hit_count, n + 1, __ATOMIC_RELEASE);
-    static int log = -1;
-    if (log < 0) log = env_on("HOS_OOT_DAMAGE_LOG");
     if (log) hos_log("damage: %s took %u (%u -> %u)", text[0] ? text : "?", hit, old, next);
     /* (where on the screen: the actor's place, a little above it, through the gameplay camera, oot_damage_screen) */
     float place[3];
