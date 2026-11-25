@@ -343,7 +343,29 @@ bool create_image(const VkImageCreateInfo& ci, VkImage& image, VmaAllocation& al
 // after the other as it presented: in ReLink's Market camera turns, 2.4 ms of each frame over 25 ms, and fewer such frames
 // with it. Every caller destroys an image the GPU is done with, so only the time its memory goes back changes. Each
 // destruction under compact_mu: never beside a compaction pass's start or end. RX_VK_REAP=0: on the caller's thread, as before
+// (ProjectReLink 88e38c0) The driver keeps one lock for a device's object creations and destructions, its memory frees and
+// the queue's submits and presents (seen as a submit that waits while another thread destroys): a destruction made while the
+// replay submits or the frame is presented holds that submit up for the destruction's millisecond or more. The reaper waits
+// for those to end, 3 ms at most, before each driver call of its own. RX_VK_REAP_TURNS=0: it does not wait
+std::atomic<int> driver_turns{0};
 namespace {
+void reap_wait_turn() {
+    static const bool on = !(getenv("RX_VK_REAP_TURNS") && atoi(getenv("RX_VK_REAP_TURNS")) == 0);
+    if (!on || driver_turns.load(std::memory_order_acquire) == 0) return;
+    static std::atomic<int64_t> waits{0}, gave_up{0};
+    const auto t0 = std::chrono::steady_clock::now();
+    while (driver_turns.load(std::memory_order_acquire) > 0) {
+        if (std::chrono::steady_clock::now() - t0 > std::chrono::milliseconds(3)) {
+            gave_up++;
+            break;
+        }
+        std::this_thread::yield();
+    }
+    const int64_t n = ++waits;
+    if (!(n & (n - 1)) && n >= 64)
+        logf("vk: the reaper let %lld submits or presents go first (%lld waits of 3 ms given up)", (long long)n,
+             (long long)gave_up.load());
+}
 std::mutex reap_mu;
 std::condition_variable reap_cv;
 std::vector<std::function<void()>> reap_queue;   // (in order: a texture's views before its image)
@@ -360,7 +382,7 @@ bool reap_on() {
                     reap_cv.wait(lk, [] { return !reap_queue.empty(); });
                     batch.swap(reap_queue);
                 }
-                for (auto& fn : batch) fn();
+                for (auto& fn : batch) reap_wait_turn(), fn();   // ((ProjectReLink 88e38c0) the driver's submits and presents first)
                 batch.clear();
             }
         }).detach();

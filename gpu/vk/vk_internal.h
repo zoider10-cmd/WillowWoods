@@ -457,6 +457,15 @@ bool image_compact_pass_end(uint64_t* freed_bytes, uint32_t* freed_blocks);
 void destroy_image(VkImage image, VmaAllocation allocation);
 /// (Mako 4.2) fn on the thread that destroys images, in order (vk_vma.cpp): a driver call the render thread need not wait for
 void reap(std::function<void()> fn);
+/// (ProjectReLink 88e38c0) A submit or a present under way (vk_vma.cpp): the reaper lets the driver have it first. DriverTurn t;
+/// around each vkQueueSubmit2 / vkQueuePresentKHR of the frame's path. RX_VK_REAP_TURNS=0: the reaper does not wait
+extern std::atomic<int> driver_turns;
+struct DriverTurn {
+    DriverTurn() { driver_turns.fetch_add(1, std::memory_order_relaxed); }
+    ~DriverTurn() { driver_turns.fetch_sub(1, std::memory_order_release); }
+    DriverTurn(const DriverTurn&) = delete;
+    DriverTurn& operator=(const DriverTurn&) = delete;
+};
 /// (ProjectReLink 88e38c0) the indirect mesh draws of a stretch between two of the game's barriers, converted at its start
 /// (vk_draw.cpp, RX_VK_INDIRECT_AHEAD)
 struct MeshDraw {

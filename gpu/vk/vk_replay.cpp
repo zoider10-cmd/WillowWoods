@@ -268,7 +268,8 @@ void queue_flush_locked() {   // (dev.present_mu held)
     si.pNext = reflex_submit_id(nullptr, pend.reflex);   // (NVIDIA Reflex: the game frame of the batch's first command buffer)
     VkSemaphoreSubmitInfo sparse_wait;   // (hookshot: after the sparse mirrors' binds, RX_VK_MIRROR_SPARSE)
     if (memory_sparse_wait(&sparse_wait)) si.waitSemaphoreInfoCount = 1, si.pWaitSemaphoreInfos = &sparse_wait;
-    const VkResult res = vkQueueSubmit2(dev.queue, 1, &si, VK_NULL_HANDLE);
+    VkResult res;
+    { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, VK_NULL_HANDLE); }   // ((ProjectReLink 88e38c0) the reaper waits for it)
     static int failures;
     if (res != VK_SUCCESS && failures++ < 8) logf("vk: batched submit %llu failed (%d)", (unsigned long long)batch_next, (int)res);
     if (res == VK_ERROR_DEVICE_LOST) device_lost();
@@ -1000,7 +1001,8 @@ void submit_recording(Recording& r, bool signal_value = true, uint64_t signal_at
     si.pNext = reflex_submit_id(nullptr);   // (NVIDIA Reflex: the frame being made)
     VkSemaphoreSubmitInfo sparse_wait;   // (hookshot: after the sparse mirrors' binds, RX_VK_MIRROR_SPARSE)
     if (memory_sparse_wait(&sparse_wait)) si.waitSemaphoreInfoCount = 1, si.pWaitSemaphoreInfos = &sparse_wait;
-    const VkResult res = vkQueueSubmit2(dev.queue, 1, &si, r.fence);
+    VkResult res;
+    { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, r.fence); }   // ((ProjectReLink 88e38c0) the reaper waits for it)
     r.submitted = res == VK_SUCCESS;
     static int failures;
     if (res != VK_SUCCESS && failures++ < 8) logf("vk: submit %llu failed (%d)", (unsigned long long)r.value, (int)res);
@@ -2639,7 +2641,8 @@ const uint8_t* replay_handle(VkCommandBuffer& cmd, const uint8_t* h, bool may_st
         si.pNext = reflex_submit_id(nullptr);   // (NVIDIA Reflex: the frame being made; after the flush, which tags its own)
         VkSemaphoreSubmitInfo sparse_wait;   // (hookshot: after the sparse mirrors' binds, RX_VK_MIRROR_SPARSE)
         if (memory_sparse_wait(&sparse_wait)) si.waitSemaphoreInfoCount = 1, si.pWaitSemaphoreInfos = &sparse_wait;
-        const VkResult res = vkQueueSubmit2(dev.queue, 1, &si, j->r->fence);
+        VkResult res;
+        { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, j->r->fence); }   // ((ProjectReLink 88e38c0))
         j->r->submitted = res == VK_SUCCESS;
         if (res != VK_SUCCESS) logf("vk: segment submit %llu failed (%d)", (unsigned long long)j->r->value, (int)res);
         if (res == VK_ERROR_DEVICE_LOST) device_lost();
@@ -6254,7 +6257,7 @@ void present_image(VkImage src, uint32_t sw, uint32_t sh, const int crop[4], VkI
     reflex_submit_ends();
     // (NVIDIA Reflex: the frame this present shows; with frame generation the set's game frame, none for a made frame)
     si.pNext = reflex_submit_id(nullptr, reflex_present_frame);
-    res = vkQueueSubmit2(dev.queue, 1, &si, f.done);
+    { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, f.done); }   // ((ProjectReLink 88e38c0) the reaper waits for it)
     if (res == VK_ERROR_DEVICE_LOST) device_lost();
     if (present_defer_into) {   // (present ahead: the copy is queued; present_commit shows it at its time)
         present_defer_into->used = true;
@@ -6371,8 +6374,10 @@ static bool present_out(uint32_t index, std::unique_lock<std::mutex>& qk) {
     if (dev.present_queue_supported) {
         qk.unlock();
         std::lock_guard pq(dev.present_queue_mu);
+        DriverTurn turn;   // ((ProjectReLink 88e38c0) the reaper waits for it)
         res = vkQueuePresentKHR(dev.present_queue, &pi);
     } else {
+        DriverTurn turn;
         res = vkQueuePresentKHR(dev.queue, &pi);
     }
     if (present_t0) {
@@ -6492,6 +6497,7 @@ void presenter_loop() {
             pi.pImageIndices = &index;
             {
                 std::lock_guard pq(dev.presenter_queue_mu);
+                DriverTurn turn;   // ((ProjectReLink 88e38c0) the reaper waits for it)
                 res = vkQueuePresentKHR(dev.presenter_queue, &pi);
             }
             if (res == VK_ERROR_DEVICE_LOST) device_lost();

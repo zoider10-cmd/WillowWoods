@@ -1147,6 +1147,10 @@ bool cap_spare_fit() {
     static const bool v = [] { const char* e = getenv("RX_VK_CAP_SPARE_FIT"); return !e || !env_value_off(e); }();
     return v;
 }
+bool cap_free_reaped() {   // ((ProjectReLink 88e38c0) RX_VK_CAP_FREE_HERE)
+    static const bool here = getenv("RX_VK_CAP_FREE_HERE") && atoi(getenv("RX_VK_CAP_FREE_HERE")) != 0;
+    return !here;
+}
 void cap_buf_free(VkBuffer buffer, VmaAllocation alloc, void* map, uint64_t size, bool from_worker = false) {
     bool keep;
     {
@@ -1161,9 +1165,13 @@ void cap_buf_free(VkBuffer buffer, VmaAllocation alloc, void* map, uint64_t size
             cap_free.push_back({buffer, alloc, map, size});
             cap_free_bytes += size;
         }
-        if (!keep && !cap_spare_fit()) destroy_buffer(buffer, alloc);   // (as before: inside the lock)
+        if (!keep && !cap_spare_fit() && !cap_free_reaped()) destroy_buffer(buffer, alloc);   // (as before: inside the lock)
     }
-    if (!keep && cap_spare_fit()) destroy_buffer(buffer, alloc);   // (Triforce: with the lock let go)
+    // ((ProjectReLink 88e38c0) on the reaper, as the images: a vmaDestroyBuffer of a capture buffer is a driver call of a
+    // millisecond and more, here at an arrival's burst of captures. The GPU is done with it already. RX_VK_CAP_FREE_HERE=1:
+    // on this thread, as before)
+    if (!keep && cap_free_reaped()) reap([buffer, alloc] { destroy_buffer(buffer, alloc); });
+    else if (!keep && cap_spare_fit()) destroy_buffer(buffer, alloc);   // (Triforce: with the lock let go)
 }
 void cap_buf_retire(std::map<uint32_t, CapBuf>::iterator it) {
     cap_bytes -= it->second.size;
