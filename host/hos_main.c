@@ -2109,6 +2109,8 @@ static struct {
     uint32_t opened;  /* (a chest: the hash of the game's own flag IsTreasureBoxOpen.<key in decimal>, set when it is opened, bug 70; 0: none) */
     char owner[24];   /* (a chest holding a dungeon item of another place: the dungeon it belongs to, dungeon_items.txt; "": none) */
     signed char pot;  /* (a pot of Pots, rando_pots: tools/rando/rando_seed.py names it "Pot", "Pot #2"...: oot_pot_again) */
+    signed char pot_kept;   /* (a pot: in the record, collected in some game of the seed: oot_pot_progress) */
+    int pot_at;             /* (a pot: the save's progress it was collected at, oot_pot_progress; -1 not known) */
     uint64_t broken;  /* (a pot's hash: the game's truth value by it is "broken", oot_pot_again) */
 } oot_checks[OOT_TRACKER_MAX];
 static int oot_check_count = -1;
@@ -2151,7 +2153,8 @@ static void oot_tracker_save(void) {
     if (!f) return;
     fprintf(f, "seed %s\n", oot_checks_seed);
     for (int i = 0; i < oot_check_count; i++)
-        if (oot_checks[i].done == 1) fprintf(f, "%d\n", i);
+        if (oot_checks[i].pot && oot_checks[i].pot_kept) fprintf(f, "%d:%d\n", i, oot_checks[i].pot_at);   /* (oot_pot_progress) */
+        else if (!oot_checks[i].pot && oot_checks[i].done == 1) fprintf(f, "%d\n", i);
     fclose(f);
 }
 
@@ -2224,6 +2227,7 @@ static void oot_tracker_load(const char *stamp) {
         /* (a pot's own truth value in the save is "broken", put back when it is back after a day: its check is the item
            picked up, the record's, not that value. Seen without a window 2026-11-24: breaking the pot marked it) */
         oot_checks[oot_check_count].broken = oot_checks[oot_check_count].pot ? oot_checks[oot_check_count].key : 0;
+        oot_checks[oot_check_count].pot_kept = 0, oot_checks[oot_check_count].pot_at = -1;
         if (oot_checks[oot_check_count].pot) oot_checks[oot_check_count].key = 0, oot_checks[oot_check_count].opened = 0;
         {   /* (a shelf's price: tools/rando/rando_seed.py names it "<shop>: shelf <k>, <n> rupees") */
             const char *r = strstr(kind, " rupees");
@@ -2273,7 +2277,13 @@ static void oot_tracker_load(const char *stamp) {
         if (!strncmp(line, "seed ", 5) && !strcmp(line + 5, oot_checks_seed))   /* (this seed's record) */
             while (fgets(line, sizeof line, f)) {
                 const int i = atoi(line);
-                if (line[0] >= '0' && line[0] <= '9' && i < oot_check_count && oot_checks[i].done != 1) oot_checks[i].done = 1, collected++;
+                if (line[0] >= '0' && line[0] <= '9' && i < oot_check_count && oot_checks[i].done != 1) {
+                    oot_checks[i].done = 1, collected++;
+                    if (oot_checks[i].pot) {   /* ("<index>:<progress>", or an older record's "<index>": not known) */
+                        const char *at = strchr(line, ':');
+                        oot_checks[i].pot_kept = 1, oot_checks[i].pot_at = at ? atoi(at + 1) : -1;
+                    }
+                }
             }
     }
     if (f) fclose(f);
@@ -2288,6 +2298,47 @@ static void oot_tracker_load(const char *stamp) {
    save's: reported from play, a quiver bought was not for sale again in a save from before it was bought, nor in a
    new game of the same seed.) Each second. Returns how many flags or marks were changed. */
 static int oot_pot_junk(const char *item);
+/* (Pots, reported 2026-11-25: a new game of a seed showed the pots collected in the last one, red and empty) A pot has no
+   mark of its own in the save: its truth value by its hash is "broken", put back when it comes back (oot_shelf_flags below).
+   The record is the folder's. So each pot in it carries the save's progress it was collected at: how many of the checks
+   the save itself marks (a chest's, a Gold Skulltula's, a piece's by its hash, a shelf's flag) were collected then, a number
+   a save only ever raises. A pot is collected in the save loaded when that save's progress is at least its own: a new game
+   (0) has none of them, a save from before some has only the earlier ones, the game being played all of them. A pot not
+   collected in the save loaded is dropped from the record: kept, a new game would reach its progress and show it again. A
+   pot just collected takes the progress of now. An older record's pot (no progress written) takes the first one above 0 it
+   meets, and is dropped in a new game. Left: a pot collected before any check the save marks (progress 0) stays collected
+   in a new game. The lock held; returns how many marks changed. */
+static int oot_pot_progress(Ctx *c) {
+    int progress = 0, read = 0, changed = 0;
+    for (int i = 0; i < oot_check_count; i++) {
+        if (oot_checks[i].pot || (!oot_checks[i].key && !oot_checks[i].shelf)) continue;
+        int now = 0;
+        if (oot_checks[i].key && oot_gamedata_keyed_bool(c, oot_checks[i].key, &now)) read++;
+        if (oot_checks[i].done == 1) progress++;
+    }
+    /* (judged only in a game being played, its progress the same five seconds running: the title's and a load's values are
+       the defaults, progress 0, and would drop every pot) */
+    static int last = -1, steady;
+    steady = read && oot_link_map[0] && progress == last ? steady + 1 : 0;
+    last = progress;
+    for (int i = 0; i < oot_check_count; i++) {
+        if (!oot_checks[i].pot) continue;
+        if (oot_checks[i].done == 1 && !oot_checks[i].pot_kept && read)   /* (collected just now: the progress of now) */
+            oot_checks[i].pot_kept = 1, oot_checks[i].pot_at = progress, changed++;
+        if (!oot_checks[i].pot_kept || steady < 5) continue;
+        if (oot_checks[i].pot_at < 0 && progress > 0) {   /* (an older record's: this game's) */
+            oot_checks[i].pot_at = progress, changed++;
+            continue;
+        }
+        if (oot_checks[i].pot_at < 0 || oot_checks[i].pot_at > progress) {   /* (another game's, or later than this save: dropped) */
+            static int told;
+            if (told++ < 20) hos_log("rando: tracker: check %d, a pot collected at progress %d, is not collected in this save (progress %d): "
+                                     "dropped from the record", i, oot_checks[i].pot_at, progress);
+            oot_checks[i].pot_kept = 0, oot_checks[i].pot_at = -1, oot_checks[i].done = 0, changed++;
+        }
+    }
+    return changed;
+}
 /* (Pots, asked 2026-11-25) A broken pot comes back when Link has left its area: its "broken" truth value is put back
    once he is in a map of another folder, so it is there the next time its area is entered, as in the original game. The
    game's own wait was about a day of play (bug 96), the Sun's Song not counting. The pots of the area he is in stay
@@ -2344,6 +2395,7 @@ static int oot_shelf_flags(Ctx *c) {
             }
         }
     }
+    marks += oot_pot_progress(c);
     if (marks) oot_tracker_save();
     ReleaseSRWLockExclusive(&oot_checks_lock);
     if (back) hos_log("rando: pots: %d broken pots of other areas are back (Link is in %s)", back, oot_link_map);
@@ -2687,7 +2739,7 @@ static int oot_piece_gives(char *out, size_t size, int boss) {   /* (boss: a bos
 /* The record forgotten (the Tracker tab's first row: a new game of the same seed) */
 static void oot_tracker_forget(void) {
     AcquireSRWLockExclusive(&oot_checks_lock);
-    for (int i = 0; i < oot_check_count; i++) oot_checks[i].done = 0;
+    for (int i = 0; i < oot_check_count; i++) oot_checks[i].done = 0, oot_checks[i].pot_kept = 0, oot_checks[i].pot_at = -1;
     oot_tracker_save();
     ReleaseSRWLockExclusive(&oot_checks_lock);
     hos_log("rando: tracker: the record of what is collected is forgotten");

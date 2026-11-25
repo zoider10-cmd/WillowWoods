@@ -95,6 +95,17 @@ def main():
     assert "if (open >= 0 || oot_pot_world_item(name) || oot_pot_junk(name)) return 0;" in host, "a junk pot's bundle is refused after its pot is collected"
     assert "? -2 : -1;" in host and "if (oot_pot_chosen == -2) {" in track[:track.index("\n}\n")], \
         "a junk pot's item got after its pot was collected marks another check"
+    # (reported 2026-11-25: a new game of a seed showed the last game's pots collected) a pot is collected in a save by the
+    #  save's progress it was collected at, not the folder's record alone
+    prog = host[host.index("static int oot_pot_progress(Ctx *c) {"):]
+    prog = prog[:prog.index("\n}\n")]
+    assert "if (oot_checks[i].pot_at < 0 || oot_checks[i].pot_at > progress) {" in prog and \
+        "oot_checks[i].pot_kept = 0, oot_checks[i].pot_at = -1, oot_checks[i].done = 0, changed++;" in prog, \
+        "a pot's mark is not the save's (a new game keeps the last one's pots)"
+    assert "steady = read && oot_link_map[0] && progress == last ? steady + 1 : 0;" in prog and "steady < 5" in prog, \
+        "pots are dropped on the title's defaults (progress 0), not in a game being played"
+    assert 'fprintf(f, "%d:%d\\n", i, oot_checks[i].pot_at);' in host and "marks += oot_pot_progress(c);" in host, \
+        "the record keeps no pot's progress, or it is never read against the save"
     look = host[host.index("static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {"):]
     look = look[:look.index("\n}\n")]
     assert "if (oot_checks[i].pot && oot_checks[i].broken == oot_pot_looks[k].hash)" in look and "if (done && !answer) {" in look and "oot_pot_looks[k].bagged[0] && oot_bundle_holder(item, &sizes) == 1" in look and "mods/rando-seed/pot_looks.txt" in look, \
