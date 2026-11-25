@@ -22,7 +22,8 @@ def main():
     replay = (ROOT / "gpu/vk/vk_replay.cpp").read_text(encoding="utf-8")
     draw = (ROOT / "gpu/vk/vk_draw.cpp").read_text(encoding="utf-8")
     # (a clear in the dry pass marks its pass's targets, colour and depth-stencil clears both)
-    for op, nxt in (("case NOP_CLEAR_COLOR:", "case NOP_CLEAR_DS:"), ("case NOP_CLEAR_DS:", "case NOP_DRAW:")):
+    # (each marker ends its line: NOP_BARRIER's scan of the ops after it names them too, several on a line, RX_VK_INDIRECT_AHEAD)
+    for op, nxt in (("case NOP_CLEAR_COLOR:\n", "case NOP_CLEAR_DS:\n"), ("case NOP_CLEAR_DS:\n", "case NOP_DRAW: {")):
         part = body(replay, op, nxt)
         if "dry && dry_clears_on()) dry_mark_written(s, false, true);" not in part:
             raise SystemExit("vk_replay.cpp: the dry pass no longer marks the targets of " + op)

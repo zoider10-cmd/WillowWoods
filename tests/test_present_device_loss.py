@@ -60,6 +60,7 @@ int bi=0, si=0, pi=0, index=0;
 uint64_t acquire_timeout=UINT64_MAX;
 int result=VK_SUCCESS, calls=0, reports=0, continued=0;
 struct Lost {};
+struct DriverTurn { DriverTurn() {} ~DriverTurn() {} };   // ((ProjectReLink 88e38c0) the reaper's turn: vk_internal.h)
 [[noreturn]] void device_lost() { ++reports; throw Lost{}; }
 '''
     for call in CALLS:
