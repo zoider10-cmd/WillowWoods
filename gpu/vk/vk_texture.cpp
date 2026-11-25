@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "vk_texture.h"
+#include "astc_cpu_policy.h"   // ((HeyListen d834350d, 8f5ca506) who decodes ASTC on the CPU by default)
 #include "vk_menu.h"
 #include "vk_draw.h"
 #include "vk_programs.h"
@@ -625,15 +626,24 @@ VkPipeline astc_pipe = VK_NULL_HANDLE;
 /// terrain's two 1365 x 1365 x 90 ASTC arrays, decoded and re-encoded as BC3 in one upload submission (some 2000
 /// dispatches), held it for 4-6 s before Windows reset it. Decoded on the CPU, about 6 s an array on the replay thread
 /// (a pause as the area loads), it loaded Kokiri Forest 4 times of 4. The textures are then RGBA8 (no BC3), in the
-/// system memory an integrated GPU draws from anyway. Ryzen 9000's was not tried
+/// system memory an integrated GPU draws from anyway. Ryzen 9000's was not tried.
+/// (HeyListen d834350d, 8f5ca506, their issue 127) Now every AMD integrated GPU on Windows (device type INTEGRATED_GPU, and the
+/// two Ryzen ids whatever type the driver reports): an Xbox Ally X (Radeon 890M, driver 26.10.1) lost the device while a save
+/// loaded, in a burst of GPU ASTC decodes (491 ms of uploads in one frame), and RX_VK_ASTC_CPU=1 fixed it. But not the
+/// Vega-generation APUs (Ryzen 2000 to 5000 U/H/G, astc_cpu_policy::vega_apu): a Ryzen 7 5700U never reset on the GPU decode
+/// and ran 1.3 fps with the CPU one while the camera turned, 14.2 with the GPU one. AMD's discrete cards (the owner's) and
+/// every other vendor are unchanged. gpu/vk/astc_cpu_policy.h, tests/test_astc_cpu_policy.py
 bool astc_on_cpu() {
     static const bool on = [] {
-        bool v = false;
 #ifdef _WIN32
-        v = dev.props.vendorID == 0x1002 && (dev.props.deviceID == 0x164E || dev.props.deviceID == 0x13C0);
+        const bool windows = true;
+#else
+        const bool windows = false;
 #endif
+        bool v = astc_cpu_policy::by_default(windows, dev.props.vendorID, dev.props.deviceID,
+                                             dev.props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
         if (const char* e = getenv("RX_VK_ASTC_CPU")) v = !env_value_off(e);
-        if (v) logf("vk: ASTC decoded on the CPU (RX_VK_ASTC_CPU=0: by the GPU; on by default for the graphics in AMD's Ryzen 7000 and 9000 desktop CPUs on Windows)");
+        if (v) logf("vk: ASTC decoded on the CPU (RX_VK_ASTC_CPU=0: by the GPU; on by default for AMD's integrated GPUs on Windows, but the Vega-generation APUs)");
         return v;
     }();
     return on;
