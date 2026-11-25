@@ -5667,10 +5667,90 @@ void trims_settle() {
     }
 }
 
+// ---- (HeyListen 2b141867 + e65826e3, their #121) chunks of the game's ended pools: RX_VK_ACCUM_RETIRE (=0 off), RX_VK_ACCUM_DIAG=1 ----
+// Players' logs after an hour of play: the replay's and the GPU's time per frame grew with the session and a restart brought them
+// back. What grows is the pool table: a chunk (an import around a binding, with its VRAM mirror) left it only when a larger import
+// took it in. Every zone visited left its chunks for good (HeyListen: 59 imports, 1.7 GB, after 10,000 frames; 233, 6.8 GB, at
+// 155,000, all pinned). Every kAccumEvery submissions the chunks in which no live game pool is left (guest_pools, the host's list of
+// the game's mapped pools) and that no recording has bound for RX_VK_ACCUM_IDLE recordings (1200) are retired: their table entries
+// gone, the mirror and the import given back once the GPU is past them (retired_imports_give_back, mirrors_give_back), nothing to
+// inherit. A pool made there later is imported at its first binding. Nothing a game pool holds is touched: a chunk with a live pool
+// in it stays. HeyListen's owner's 55-minute session gave back 843 MB with no picture problem; on by default there and here
+namespace {
+struct LivePoolIndex {   // (guest_pools sorted by start, with the furthest end at or below each: "any live pool in [lo, hi)" by search)
+    std::vector<uint64_t> furthest_end;
+    void make() {
+        furthest_end.clear();
+        uint64_t e = 0;
+        for (const GuestPool& g : guest_pools) furthest_end.push_back(e = std::max(e, g.hi));
+    }
+    bool reaches(uint64_t lo, uint64_t hi) const {
+        const size_t k = (size_t)(std::lower_bound(guest_pools.begin(), guest_pools.end(), hi,
+                                                   [](const GuestPool& g, uint64_t v) { return g.lo < v; }) - guest_pools.begin());
+        return k && furthest_end[k - 1] > lo;
+    }
+};
+bool accum_retire_on() {
+    static const bool v = [] {
+        const char* e = getenv("RX_VK_ACCUM_RETIRE");
+        const bool on = !e || !env_value_off(e);
+        logf("vk: chunks with no live game pool left, idle, retired by a sweep: %s (RX_VK_ACCUM_RETIRE)", on ? "on" : "off");
+        return on;
+    }();
+    return v;
+}
+constexpr uint64_t kAccumEvery = 1200;   // (submissions between two sweeps)
+int64_t st_acc_retired = 0, st_acc_swept = 0;
+uint64_t st_acc_bytes = 0, st_acc_mirror_bytes = 0, st_acc_import_bytes = 0;
+void accum_sweep() {   // (pools_mu held, at a submission's start)
+    static uint64_t at = 0;
+    if (mirror_epoch - at < kAccumEvery) return;
+    at = mirror_epoch;
+    static const bool diag = env_on("RX_VK_ACCUM_DIAG");
+    const bool retire = accum_retire_on();
+    if ((!retire && !diag) || guest_pools.empty()) return;   // (no list of the game's pools: every chunk would look ended)
+    LivePoolIndex live;
+    live.make();
+    static const uint64_t idle_for = getenv("RX_VK_ACCUM_IDLE") ? strtoull(getenv("RX_VK_ACCUM_IDLE"), nullptr, 10) : 1200;
+    size_t all = 0, no_live = 0, idle_dead = 0;
+    uint64_t all_bytes = 0, no_live_bytes = 0, idle_dead_bytes = 0;
+    std::vector<std::map<uint64_t, Pool>::iterator> dead;
+    for (auto it = imported.begin(); it != imported.end(); ++it) {
+        const Pool& p = it->second;
+        const uint64_t b = p.hi - p.lo;
+        const bool has_live = live.reaches(p.lo, p.hi);
+        const bool idle = mem_rec_value > p.last_value + idle_for;
+        all++, all_bytes += b;
+        if (!has_live) no_live++, no_live_bytes += b;
+        if (!has_live && idle) idle_dead++, idle_dead_bytes += b;
+        // (not bound by the recording under way or one the GPU still runs: the next sweep. Not one imported ahead and not bound yet)
+        if (retire && !has_live && idle && p.last_value <= mem_completed && !p.prefetched) dead.push_back(it);
+    }
+    for (auto it : dead) {
+        Pool& p = it->second;
+        st_acc_retired++, st_acc_bytes += p.hi - p.lo;
+        if (p.mstate == Pool::MIRROR_ON) st_acc_mirror_bytes += p.hi - p.lo;
+        if (p.memory) st_acc_import_bytes += p.hi - p.lo;
+        retire_pool(it);
+        p.inherit_pending = false;   // (the node lives on in retired_pools: p is still it; the game's pool ended, nothing inherits it)
+    }
+    st_acc_swept++;
+    static int logged;
+    if (diag || (!dead.empty() && logged++ < 8))
+        logf("vk: accum: the table %zu chunks (%llu MB), with no live game pool %zu (%llu MB), of them not bound for %llu recordings "
+             "%zu (%llu MB); retired by sweeps %lld (%llu MB: mirrors %llu, imports %llu), this one %zu (RX_VK_ACCUM_RETIRE=0: none)",
+             all, (unsigned long long)(all_bytes >> 20), no_live, (unsigned long long)(no_live_bytes >> 20),
+             (unsigned long long)idle_for, idle_dead, (unsigned long long)(idle_dead_bytes >> 20), (long long)st_acc_retired,
+             (unsigned long long)(st_acc_bytes >> 20), (unsigned long long)(st_acc_mirror_bytes >> 20),
+             (unsigned long long)(st_acc_import_bytes >> 20), dead.size());
+}
+}  // namespace
+
 void memory_begin_submission() {
     std::lock_guard lk(pools_mu);
     reap_mirrors();
     sparse_reap();   // (hookshot, RX_VK_MIRROR_SPARSE: released blocks and freed sparse mirrors the GPU is past)
+    accum_sweep();   // ((HeyListen 2b141867) chunks of the game's ended pools, every 1200 submissions)
     retired_imports_give_back();
     mirror_epoch++;
     mirror_upload = true;
