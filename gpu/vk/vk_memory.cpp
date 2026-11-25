@@ -5187,6 +5187,7 @@ retired_give_back::Mode retired_mode() {
     }();
     return m;
 }
+namespace {   // (declared in the namespace at the top)
 /// ((HeyListen bc74bce9, their issues 131, 121; pools_mu held) An import was refused (the driver's limit on what is imported, seen
 /// after 4 h on an RX 9060 XT: every import refused, draws left out): the retired imports nothing needs (no mirror, the GPU past
 /// them) go back now, oldest first, until `need` bytes and 256 MB more are free or none is left; the dead imports the GPU is past
@@ -5227,6 +5228,7 @@ uint64_t retired_emergency_free(uint64_t need) {
              (unsigned long long)(freed >> 20), retired_pools.size());
     return freed;
 }
+}  // namespace
 void retired_imports_give_back() {   // (pools_mu held)
     using retired_give_back::Mode;
     const Mode mode = retired_mode();
