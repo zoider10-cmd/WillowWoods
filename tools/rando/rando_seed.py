@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 28  # 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 29  # 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -470,6 +470,36 @@ MAPS_START = {"DungeonInfo.%s.%s" % (d, f): True for d in DUNGEON_FOLDERS for f 
 MAPS_START_JUNK = {MAP: "TBox_Rupee_Red", COMPASS: "TBox_Rupee_Blue"}
 MAPS_LOOSE = frozenset((MAP, COMPASS))
 DUNGEON_ITEMS_FILE = "dungeon_items.txt"
+# ---- Boss Keys (rando_boss_keys, asked 2026-11-23; share/dungeon-items-plan.md stage 2) ----
+# 0 with the keys (as before), 1 Anywhere: a dungeon's Boss Key can be in any chest of the game, told its dungeon in
+# DUNGEON_ITEMS_FILE as a map is (the game's side sets DungeonInfo.<folder>.IsGetBossKey). The rules stand for "a
+# dungeon done" by the items it takes (MEDALS3 and the like), not by its Boss Key: so a Boss Key goes only to a chest
+# whose rule its own boss's rule already covers (boss_key_fits: one of the chest's ways within what the dungeon's ending
+# asks for, boss_need), and never a dungeon's own key behind another dungeon done. Ganon's Castle's asks for everything:
+# it may be anywhere. While the shuffle places them each is an item of its own, BOSS_KEY "@" its dungeon (boss_key_tag);
+# the tag is taken off before anything else reads the items. The Tracker's rules do not name them (no letters).
+BOSS_KEY = "Item_Dungeon_BossKey"
+# (found 2026-11-24 with Boss Keys: Anywhere: the Water Temple's own Boss Key went to the chest below, there only once
+#  that temple is done.) Lake Hylia's "Chest (red rupee) #1" is a remake change, there once the Water Temple is beaten
+# and the lake filled (overworld_own.json: is_adult and 'Water Temple Clear'); the overworld table's run gave it no
+# item at all (the engine's event counted as had). From placement AFTER_WATER_FROM it asks for the Water Temple's
+# ending's rule too (boss_need), so nothing it needs to get there lies in it.
+AFTER_WATER = (0xec3f782c547551a1,)
+AFTER_WATER_FROM = 29
+
+
+def boss_key_tag(folder):
+    """the shuffle's own name for a dungeon's Boss Key"""
+    return "%s@%s" % (BOSS_KEY, folder)
+
+
+def boss_key_fits(need, cap):
+    """whether a chest of this rule may hold a Boss Key whose boss asks for cap (a frozenset; None: anything)"""
+    if cap is None:
+        return True
+    if need is None:
+        return False
+    return any(isinstance(way, frozenset) and way <= cap for way in (need if isinstance(need, Either) else (need,)))
 
 
 def dungeon_owners(rng, spots, gives, loose):
@@ -5713,7 +5743,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0, "rando_house_hints": 0, "rando_maps": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0, "rando_house_hints": 0, "rando_maps": 0, "rando_boss_keys": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -8045,6 +8075,7 @@ def main():
     a.gerudo_guards = ini["rando_gerudo_guards"] != 0   # (GERUDO_GUARDS_FLOW, 2026-11-24: a Quality of life setting; moves no item)
     a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
     a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0   # (Maps and compasses: MAPS_START, MAPS_LOOSE)
+    a.boss_keys = ini["rando_boss_keys"] == 1   # (Boss Keys: Anywhere, boss_key_tag)
     a.soil_bottle = ini["rando_soil_bottle"] != 0       # (SOIL_FILES, 2026-11-24: a Quality of life setting; moves no item)
     a.fast_push = ini["rando_fast_push"] != 0           # (FAST_PUSH, 2026-11-24: the blocks' curves; moves no item)
     a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
@@ -8148,7 +8179,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -8667,6 +8698,11 @@ def main():
         for h, s in spots.items():
             if hook_asks(s[0], s[6] if len(s) > 6 else "", gifts[h].key if h in gifts else None, h):
                 needs[h] = each(hook_need, needs[h], HOOK_OR.get(h))
+    if placement >= AFTER_WATER_FROM:   # (Lake Hylia's chest there once the Water Temple is done: AFTER_WATER)
+        water = frozenset(boss_need("WaterTemple"))
+        for h in AFTER_WATER:
+            if h in needs:
+                needs[h] = each(lambda way: frozenset(way) | water, needs[h])
     if sticks:   # (Deku Sticks for the Kokiri Sword, stick_need)
         needs = {h: each(stick_need, n, a.letter, bolero) for h, n in needs.items()}
     if dungeon_on:   # (no more ways than the tracker reads: fit_rule)
@@ -8686,12 +8722,23 @@ def main():
             if spots[h][1] in MAPS_START_JUNK and spots[h][4].startswith("Obj_TBox"):
                 spots[h][1] = MAPS_START_JUNK[spots[h][1]]
     loose = MAPS_LOOSE if a.maps == 1 else frozenset()
-    if loose:   # (Anywhere: chests only, MAPS_LOOSE)
+    boss_tags = {}   # (Boss Keys: Anywhere: a chest that held one -> its own name for the shuffle, boss_key_tag)
+    if a.boss_keys:
+        for h, s in spots.items():
+            if s[1] == BOSS_KEY and str(s[4]).startswith("Obj_TBox") and s[0] in DUNGEON_FOLDERS:
+                s[1] = boss_tags[h] = boss_key_tag(s[0])
+        loose = loose | frozenset(boss_tags.values())
+    if loose:   # (Anywhere: chests only, MAPS_LOOSE; a Boss Key to a chest its boss's rule covers, boss_key_fits)
         every = {s[1] for s in spots.values()}
         holds = dict(holds or {})
+        caps = {t: (frozenset(boss_need(t.split("@")[1])) if t.split("@")[1] in BOSS_HEARTS else None) for t in set(boss_tags.values())}
         for h, s in spots.items():
             if not str(s[4]).startswith("Obj_TBox"):
                 holds[h] = frozenset(holds.get(h, every)) - loose
+            elif caps and logic:
+                unfit = frozenset(t for t, cap in caps.items() if not boss_key_fits(needs.get(h), cap))
+                if unfit:
+                    holds[h] = frozenset(holds.get(h, every)) - unfit
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,
@@ -8717,7 +8764,12 @@ def main():
             gives[h], gives[mate] = gives[mate], gives[h]
 
     # (Maps and compasses: Anywhere: the dungeon each now belongs to, DUNGEON_ITEMS_FILE)
-    owners = dungeon_owners(random.Random("dungeon items:%d" % seed), spots, gives, loose) if loose else {}
+    owners = dungeon_owners(random.Random("dungeon items:%d" % seed), spots, gives, loose & MAPS_LOOSE) if loose & MAPS_LOOSE else {}
+    for h in [h for h in gives if "@" in gives[h]]:   # (Boss Keys: Anywhere: each chest's, and the tags taken off)
+        owners[h] = gives[h].split("@")[1]
+        gives[h] = BOSS_KEY
+    for h in boss_tags:
+        spots[h][1] = BOSS_KEY
     if any(not str(spots[h][4]).startswith("Obj_TBox") for h in owners):
         sys.exit("a dungeon's map or compass is somewhere else than a chest: nothing written")
     # (the game's own count of each item is kept: every item given was some chest's)

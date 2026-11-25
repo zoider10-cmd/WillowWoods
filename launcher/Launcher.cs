@@ -2075,7 +2075,7 @@ static class RandoLayout {
                                  Experimental = Color.FromArgb(240, 112, 86), SectionColor = Color.FromArgb(172, 214, 98);
     // (how far each is tested: Tested unless named here)
     static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_water_gate", "rando_magic", "rando_ageless_items", "rando_ageless_tunics",
-        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_fairy_prices", "rando_archery_wins", "rando_fast_push", "rando_maps" };
+        "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_fairy_prices", "rando_archery_wins", "rando_fast_push", "rando_maps", "rando_boss_keys" };
     public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards" };
     public static Color Status(string key) {
         if (Array.IndexOf(NotYetKeys, key) >= 0) return Experimental;
@@ -2113,7 +2113,7 @@ static class RandoLayout {
     public static readonly RandoSection[] Sections = {
         new RandoSection { Title = "WHAT'S SHUFFLED", Sub = "where items can be", Accent = SectionColor,
             Rows = new[] { "rando_on", "rando_chests", "+skulltulas", "+quests", "+songs", "+shops", "rando_fairy_prices", "rando_heart_pieces", "rando_scrubs",
-                           "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_maps", "rando_dungeon_rewards" } },
+                           "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_boss_keys", "rando_maps", "rando_dungeon_rewards" } },
         new RandoSection { Title = "OPEN WORLD", Sub = "what's open from a new game's start", Accent = SectionColor,
             Rows = new[] { "+forest", "rando_open_door", "rando_letter", "+bridge", "rando_water_gate" } },
         new RandoSection { Title = "ITEMS", Sub = "how items work", Accent = SectionColor,
@@ -2948,7 +2948,9 @@ class LauncherForm : Form {
         new object[] { "rando_house_hints", "Skulltula House hints", new[] { "Off", "On" }, new[] { 0, 1 },
             "Talking to the cursed man in Kakariko's House of Skulltula, his line about the next reward goes on with what each reward (10, 20, 30, 40 and 50 tokens) gives in this seed, so you know which are worth collecting for. Words in English in every language, as the Gossip Stones' hints. Not tried in play yet. Moves no item: it can be turned on for a seed being played." },
         new object[] { "rando_maps", "Maps and compasses", new[] { "With the keys", "Anywhere", "From the start" }, new[] { 0, 1, 2 },
-            "With the keys: as Dungeon keys has them. Anywhere: each dungeon's map and compass can be in any chest of the game; found in another place, it still counts for its own dungeon. From the start: every dungeon's map and compass are had from a new game's start, and the chests that held them hold rupees instead. Maps and compasses open no way: no rule asks for them. Not tried in play yet." }
+            "With the keys: as Dungeon keys has them. Anywhere: each dungeon's map and compass can be in any chest of the game; found in another place, it still counts for its own dungeon. From the start: every dungeon's map and compass are had from a new game's start, and the chests that held them hold rupees instead. Maps and compasses open no way: no rule asks for them. Not tried in play yet." },
+        new object[] { "rando_boss_keys", "Boss Keys", new[] { "With the keys", "Anywhere" }, new[] { 0, 1 },
+            "With the keys: as Dungeon keys has them. Anywhere: each dungeon's Boss Key can be in any chest of the game, but only one you can reach with what its boss already asks for (so it is never behind another dungeon it waits on). Found in another place, it still opens its own dungeon's boss door. The Tracker's rules don't name the Boss Keys. Not tried in play yet." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and
