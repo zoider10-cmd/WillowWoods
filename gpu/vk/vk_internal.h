@@ -457,6 +457,8 @@ bool image_compact_pass_end(uint64_t* freed_bytes, uint32_t* freed_blocks);
 void destroy_image(VkImage image, VmaAllocation allocation);
 /// (Mako 4.2) fn on the thread that destroys images, in order (vk_vma.cpp): a driver call the render thread need not wait for
 void reap(std::function<void()> fn);
+/// (ProjectReLink 88e38c0) an image over the memory of another's allocation (vk_vma.cpp)
+bool create_aliasing_image(VmaAllocation over, const VkImageCreateInfo& ci, VkImage& image);
 /// (ProjectReLink 88e38c0) A submit or a present under way (vk_vma.cpp): the reaper lets the driver have it first. DriverTurn t;
 /// around each vkQueueSubmit2 / vkQueuePresentKHR of the frame's path. RX_VK_REAP_TURNS=0: the reaper does not wait
 extern std::atomic<int> driver_turns;

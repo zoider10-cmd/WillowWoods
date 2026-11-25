@@ -64,7 +64,9 @@ def main():
     layout = block(tex, "bool bc_scratch_layout(")
     need(layout.count("0, 1, 0, bc_layers()};") == 2 and "kBcLayers" not in layout, "a scratch's first layout names layers it does not have")
     upload = block(tex, "bool upload_astc_gpu(Texture& tex, uint64_t total, const Ranges* dirty) {")
-    need("const uint32_t run = bc_layers();" in upload and "k1 - k0 < run" in upload, "an upload's run is not the scratch's layers")
+    # ((ProjectReLink 88e38c0) or the small scratch's 4 layers, RX_VK_BC_SMALL_RUNS: tests/test_bc_small_runs.py)
+    need("const uint32_t run = small ? kBcSmallLayers : bc_layers();" in upload and "k1 - k0 < run" in upload,
+         "an upload's run is not the scratch's layers")
     copy = block(tex, "bool texture_copy_into_bc(")
     need("l0 += bc_layers()" in copy and "std::min(bc_layers(), layers - l0)" in copy and "kBcLayers" not in copy,
          "a copy into a BC3 texture writes scratch layers that are not there")

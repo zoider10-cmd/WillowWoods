@@ -779,6 +779,16 @@ VkImage bc_scratch2 = VK_NULL_HANDLE;
 VmaAllocation bc_scratch2_alloc = nullptr;
 VkImageView bc_scratch2_view = VK_NULL_HANDLE;
 bool bc_scratch2_fresh = false;
+// (ProjectReLink 88e38c0) The scratch's memory seen as 1024 x 1024 x 4 layers (the same 16 MB as its 2048 x 2048 x 1, and the
+// encoder's buffer holds 4 such layers' blocks): the levels of 1024 and less of a texture array decode and re-encode 4 layers a
+// run, not one, with no more VRAM. An array of 90 terrain layers is 90 runs of three full barriers each for each such level
+// otherwise (ReLink: -21 % GPU a decode on NVIDIA). On NVIDIA's driver by default: runs of layers gave AMD's Windows driver dark
+// lines on Hyrule Field's ground (upload_astc_gpu, bc_layers), and no NVIDIA card was there to test it here.
+// RX_VK_BC_SMALL_RUNS=0 off, =1 on any GPU. Not with RX_VK_BC_IDLE_S (the scratch given back) or RX_VK_BC_LAYERS
+constexpr uint32_t kBcSmallDim = 1024, kBcSmallLayers = 4;
+VkImage bc_small = VK_NULL_HANDLE;
+VkImageView bc_small_view = VK_NULL_HANDLE;
+bool bc_small_fresh = false;
 // (the scratch and its buffer, 20 MB a layer, are made when an upload first needs them and given back after RX_VK_BC_IDLE_S seconds
 // (20) without one: a title or a load decodes hundreds of textures through them, steady gameplay few (the "given back" line says
 // whether it did).
@@ -795,6 +805,14 @@ uint32_t bc_idle_s() {
     // decode (160-288 while the scratch had 8 layers). RX_VK_BC_IDLE_S=<seconds>: given back as before
     static const uint32_t v = getenv("RX_VK_BC_IDLE_S") ? (uint32_t)atoi(getenv("RX_VK_BC_IDLE_S")) : 0;
     return v;
+}
+bool bc_small_wanted() {
+    static const bool on = [] {
+        const char* e = getenv("RX_VK_BC_SMALL_RUNS");
+        const bool v = e ? atoi(e) != 0 : dev.props.vendorID == 0x10DE;
+        return v && !getenv("RX_VK_BC_LAYERS") && !bc_idle_s();
+    }();
+    return on;
 }
 bool bc_scratch_make() {   // (bc_mu held)
     VkImageCreateInfo ii{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
@@ -832,6 +850,27 @@ bool bc_scratch_make() {   // (bc_mu held)
     }
     bc_scratch_fresh = true;
     bc_have = true;
+    if (bc_small_wanted() && !bc_small) {   // ((ProjectReLink 88e38c0) the same memory as 1024 x 1024 x 4, when it fits there)
+        VkImageCreateInfo si = ii;
+        si.extent = {kBcSmallDim, kBcSmallDim, 1};
+        si.arrayLayers = kBcSmallLayers;
+        VkImageViewCreateInfo sv = vi;
+        if (create_aliasing_image(bc_scratch_alloc, si, bc_small)) {
+            sv.image = bc_small;
+            sv.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, kBcSmallLayers};
+            if (vkCreateImageView(dev.device, &sv, nullptr, &bc_small_view) == VK_SUCCESS) {
+                bc_small_fresh = true;
+                logf("vk: the BC3 scratch also decodes 4 layers of 1024 x 1024 a run (RX_VK_BC_SMALL_RUNS=0: one layer)");
+            } else {
+                bc_small_view = VK_NULL_HANDLE;
+                vkDestroyImage(dev.device, bc_small, nullptr);
+                bc_small = VK_NULL_HANDLE;
+            }
+        } else {
+            bc_small = VK_NULL_HANDLE;
+            logf("vk: the BC3 scratch's memory does not take 4 layers of 1024 x 1024: one layer a run");
+        }
+    }
     return true;
 }
 
@@ -995,8 +1034,23 @@ bool bc_scratch_layout(VkCommandBuffer cmd, bool resized = false) {
         bc_last_value = rec_value;
     }
     // (a segment's worker: a fresh scratch's layout change in queue order, as a new image's)
-    InitRedirect redirect((bc_scratch2_fresh && bc_scratch2) || bc_scratch_fresh);
+    InitRedirect redirect((bc_scratch2_fresh && bc_scratch2) || bc_scratch_fresh || (bc_small_fresh && bc_small));
     if (redirect.to) cmd = upload_cmd();
+    if (bc_small_fresh && bc_small) {   // ((ProjectReLink 88e38c0) the small scratch, once made)
+        bc_small_fresh = false;
+        VkImageMemoryBarrier2 b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+        b.srcStageMask = b.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        b.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+        b.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        b.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        b.srcQueueFamilyIndex = b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        b.image = bc_small;
+        b.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, kBcSmallLayers};
+        VkDependencyInfo di{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+        di.imageMemoryBarrierCount = 1;
+        di.pImageMemoryBarriers = &b;
+        vkCmdPipelineBarrier2(cmd, &di);
+    }
     if (bc_scratch2_fresh && bc_scratch2) {   // (hookshot-amd: the second scratch, once made)
         bc_scratch2_fresh = false;
         VkImageMemoryBarrier2 b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
@@ -1241,13 +1295,29 @@ bool upload_astc_gpu(Texture& tex, uint64_t total, const Ranges* dirty) {
                 // smaller levels, and Hyrule Field's ground, which samples the terrain's material arrays (1365 x 1365 x 90, ASTC
                 // 8x8) at those levels from a distance, had its tiles outlined in dark lines (RX 6600: none with one layer a run,
                 // nor with the arrays kept as RGBA8). RX_VK_BC_LAYERS=<n>: up to n a run, the scratch's layers: bc_layers)
-                const uint32_t run = bc_layers();
+                // ((ProjectReLink 88e38c0) a level of 1024 and less goes 4 layers a run through the small scratch, bc_small)
+                const bool small = bc_small_view && !tex.bc_resized && g.w <= kBcSmallDim && g.h <= kBcSmallDim;
+                const uint32_t run = small ? kBcSmallLayers : bc_layers();
                 while (k1 < layers.size() && k1 - k0 < run && layers[k1] == layers[k1 - 1] + 1) k1++;
                 const uint32_t n = (uint32_t)(k1 - k0);
+                if (bc_small_view) {   // (two images over one memory: the one used now starts from UNDEFINED, as Vulkan asks of an
+                    // alias after the other was written; its old contents are not wanted, the run overwrites what it reads)
+                    VkImageMemoryBarrier2 ab{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+                    ab.srcStageMask = ab.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+                    ab.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+                    ab.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+                    ab.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED, ab.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+                    ab.srcQueueFamilyIndex = ab.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    ab.image = small ? bc_small : bc_scratch;
+                    ab.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, small ? kBcSmallLayers : bc_layers()};
+                    VkDependencyInfo adi{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+                    adi.imageMemoryBarrierCount = 1, adi.pImageMemoryBarriers = &ab;
+                    vkCmdPipelineBarrier2(cmd, &adi);
+                }
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, astc_pipe);
                 const uint64_t from = k0 * tail + off;
                 VkDescriptorBufferInfo bi{s.buffer, s.offset + from, staged - from};
-                VkDescriptorImageInfo ii{VK_NULL_HANDLE, bc_scratch_view, VK_IMAGE_LAYOUT_GENERAL};
+                VkDescriptorImageInfo ii{VK_NULL_HANDLE, small ? bc_small_view : bc_scratch_view, VK_IMAGE_LAYOUT_GENERAL};
                 VkWriteDescriptorSet w[2]{{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET}, {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET}};
                 w[0].dstBinding = 0, w[0].descriptorCount = 1, w[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                 w[0].pBufferInfo = &bi;
@@ -1259,7 +1329,7 @@ bool upload_astc_gpu(Texture& tex, uint64_t total, const Ranges* dirty) {
                 if (tex.bc_resized)
                     bc_encode_resized(cmd, g.w, g.h, iw, ih, n, tex, level, layers[k0]);
                 else
-                    bc_encode_into(cmd, iw, ih, n, tex, level, layers[k0], 0, 0);
+                    bc_encode_into(cmd, iw, ih, n, tex, level, layers[k0], 0, 0, small ? bc_small_view : VK_NULL_HANDLE);
                 k0 = k1;
             }
         }

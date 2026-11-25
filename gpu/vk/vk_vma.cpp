@@ -473,6 +473,11 @@ bool flush_mapped_checked(VmaAllocation allocation, uint64_t size) {
 bool invalidate_mapped_checked(VmaAllocation allocation, uint64_t size) {
     return !size || vmaInvalidateAllocation(vma, allocation, 0, size) == VK_SUCCESS;
 }
+/// (ProjectReLink 88e38c0) an image over the memory of another's allocation (vk_texture.cpp's small BC3 scratch); false when it
+/// does not fit there
+bool create_aliasing_image(VmaAllocation over, const VkImageCreateInfo& ci, VkImage& image) {
+    return vmaCreateAliasingImage(vma, over, &ci, &image) == VK_SUCCESS;
+}
 void destroy_buffer(VkBuffer buffer, VmaAllocation allocation) {
     vmaDestroyBuffer(vma, buffer, allocation);
 }

@@ -35,6 +35,11 @@ static uint32_t capacity = 1;
 uint32_t bc_layers() { return capacity; }
 static int dummy;
 static VkImage bc_scratch = &dummy;
+// ((ProjectReLink 88e38c0) the small scratch, RX_VK_BC_SMALL_RUNS: 4 layers of 1024 x 1024 a run; none unless a check makes one)
+constexpr uint32_t kBcSmallDim = 1024, kBcSmallLayers = 4;
+static void* bc_small_view = nullptr;
+static Texture tex;
+static struct { uint32_t w = 2048, h = 2048; } g;
 bool bc_ready() { return true; }
 bool bc_scratch_layout(VkCommandBuffer, bool) { return true; }
 void full_barrier(VkCommandBuffer) {}
@@ -122,6 +127,14 @@ int main() {
     check(upload_runs(dirty) == Runs{{0, 3}, {3, 2}, {5, 1}}, "into an 8-layer scratch: the gaps alone end the runs");
     capacity = 4;
     check(upload_runs({7, 8, 9, 10, 11, 12, 13, 14, 15}) == Runs{{0, 4}, {4, 4}, {8, 1}}, "9 layers in a row into a 4-layer scratch: 4, 4 and 1");
+    capacity = 1, bc_small_view = &dummy, g.w = g.h = 1024;
+    check(upload_runs({7, 8, 9, 10, 11, 12, 13, 14, 15}) == Runs{{0, 4}, {4, 4}, {8, 1}},
+          "a level of 1024 with the small scratch: 4 layers a run (RX_VK_BC_SMALL_RUNS)");
+    g.w = 1365;
+    check(upload_runs({7, 8, 9}) == Runs{{0, 1}, {1, 1}, {2, 1}}, "a level wider than 1024: the one-layer scratch's runs");
+    g.w = 1024, tex.bc_resized = true;
+    check(upload_runs({7, 8, 9}) == Runs{{0, 1}, {1, 1}, {2, 1}}, "a resized texture: never the small scratch");
+    bc_small_view = nullptr, tex.bc_resized = false;
     if (failures) return 1;
     std::printf("PASS: no run is larger than the scratch, and a larger request comes out whole\n");
     return 0;
