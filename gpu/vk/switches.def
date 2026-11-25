@@ -222,6 +222,7 @@ SW(HOS_WINDOW_SIZE, tune, string, "1280x720", "Sets the window's client size as 
 SW(HOS_WINDOW_TITLE, tune, string, "'Hookshot'", "The window's title on Linux (SDL).")
 SW(HOS_WM_CLASS, tune, string, "HOS_APP_ID", "The window's WM class / app id on Linux (SDL).")
 SW(HOS_XINPUT, attempt, bool, "XInput polled only while SDL has no controller open", "Polls XInput as well as SDL even when SDL has controllers open.")
+SW(HOS_XINPUT_INLINE, kill, bool, "off: XInput's slots are asked on a thread of their own (connected every 2 ms, empty once a second) while it is polled", "=1 asks them on the game's thread at its reads, as before (ProjectReLink 550bde6).")
 SW(HOS_ZERO_ALL_PAGES, kill, bool, "above 4 GB only pages not already in use are zeroed", "=1 zeroes the whole range of every page allocation, as before.")
 SW(HOOKSHOT_BUILDER_HOME, player, string, "not read by the game", "The Builder's own folder; the game only refuses it from hookshot_env.txt.")
 SW(HOOKSHOT_DRIVER_ENV_SET, diag, string, "not set", "Set by the game itself before it restarts, naming the driver variable it took out; not for a run to set.")
