@@ -228,6 +228,34 @@ int tracker_in_logic(const TrackerCheck& k, std::string* missing = nullptr);
 int tracker_way_held(const char* way, size_t len, std::string* missing);   // (one way of a check's rule: tracker_in_logic)
 TrackerCheck tracker_checks[kTrackerChecks];
 int tracker_check_count = 0;
+// (Willow Woods, 2026-11-24) What a check waits for in the story: the rules count items only, and the game holds some checks
+// back until temples are done (the Nocturne's lesson after the Forest, Fire and Water Temples, Zelda's Light Arrows after
+// the Shadow and Spirit Temples). tools/rando/rando_seed.py check_after writes them to check_after.txt beside checks.txt,
+// "<hash>|<the temples' folders, by commas>"; the game's side says which temples are done (OOT_TRACKER_TEMPLES, their
+// awakening scenes played). Such a check is "in logic after ..." until they are: tracker_in_logic holds it out.
+// tests/test_rando_story_waits.py
+constexpr const char* kStoryTemples[] = {"ForestTemple", "FireTemple", "WaterTemple", "ShadowTemple", "SpiritTemple"};
+unsigned char tracker_after_mask[kTrackerChecks];   // (a bit each of kStoryTemples: what the check waits for; read with the checks)
+std::atomic<int> tracker_temples{-1};               // (the temples done, the game side's bits; -1 not known)
+/// The temples of wait not in done, in words ("the Forest, Fire and Water Temples"); "" none, or done not known (-1)
+std::string tracker_after_words(int wait, int done) {
+    static const char* const names[] = {"Forest", "Fire", "Water", "Shadow", "Spirit"};
+    if (done < 0) return "";
+    std::string words;
+    int n = 0, left = wait & ~done;
+    for (int i = 0; i < 5; i++) n += (left >> i) & 1;
+    for (int i = 0, k = 0; i < 5; i++) {
+        if (!((left >> i) & 1)) continue;
+        words += std::string(k == 0 ? "the " : k == n - 1 ? " and " : ", ") + names[i];
+        k++;
+    }
+    return n ? words + (n == 1 ? " Temple" : " Temples") : "";
+}
+/// The temples a check still waits for, in words ("" none)
+std::string tracker_after(const TrackerCheck& k) {
+    const int i = (int)(&k - tracker_checks);
+    return i >= 0 && i < kTrackerChecks ? tracker_after_words(tracker_after_mask[i], tracker_temples.load(std::memory_order_relaxed)) : "";
+}
 // What the game's side says of each check, in the file's order (host/hos_main.c oot_tracker_refresh, each second): 1
 // collected (its item was given near it: the randomizer's own record, rando\collected.txt), 0 not, -1 not known (no game
 // loaded yet).
@@ -418,12 +446,17 @@ std::string tracker_says(int row) {
     }
     const bool collected = tracker_done[k - tracker_checks].load(std::memory_order_relaxed) == 1;
     const bool junk = !collected && tracker_junk[k - tracker_checks];
-    const int state = collected || junk ? -1 : tracker_in_logic(*k);
+    std::string missing;
+    const int state = collected || junk ? -1 : tracker_in_logic(*k, &missing);
+    // (the story holds it back, tracker_after: "in logic after ..." when Link carries all it asks for, else said after)
+    const std::string after = state == 0 ? tracker_after(*k) : std::string();
+    const std::string logic = !after.empty() && missing.empty() ? ": in logic after " + after
+                              : !after.empty() ? ": not in logic, and after " + after : state == 0 ? ": not in logic" : "";
     char text[232], place[48] = "";   // (a check without a name of its own, from a file made before them: its place tells it from the next)
     if (!strcmp(k->kind, "Chest") || !strcmp(k->kind, "Gold Skulltula")) snprintf(place, sizeof place, " at %.0f %.0f %.0f", k->pos[0], k->pos[1], k->pos[2]);
     snprintf(text, sizeof text, "%d of %d: %s%s%s%s%s", tracker_pick[row], tracker_row_checks(row), k->kind,
              !strcmp(k->ages, "C") ? ", child's," : !strcmp(k->ages, "A") ? ", adult's," : "", place,
-             collected ? ": done" : state > 0 ? ": in logic" : state == 0 ? ": not in logic" : "", junk ? ": junk" : "");
+             collected ? ": done" : state > 0 ? ": in logic" : logic.c_str(), junk ? ": junk" : "");
     return text;
 }
 /// The help's panel for an area's row: every check of the area that the tab lists, one a line, each with its mark (collected,
@@ -678,6 +711,10 @@ std::string tracker_hint(int row) {
     if (k && tracker_junk[k - tracker_checks]) return "Junk: not counted among the checks left. Mark it again to count it.";
     const int state = k ? tracker_in_logic(*k, &missing) : -1;
     std::string says = state > 0 ? "In logic: Link carries all the seed's rules ask for here." : state == 0 ? "Not in logic. Still asked for: " + missing + "." : "";
+    if (const std::string after = k ? tracker_after(*k) : std::string(); !after.empty() && state == 0)   // (tracker_after)
+        says = missing.empty() ? "In logic after " + after + ": Link carries all the seed's rules ask for, and the game gives it once " +
+                                     (after.find(" and ") == std::string::npos ? "that temple is" : "those temples are") + " done."
+                               : says + " And the game gives it only after " + after + ".";
     // (Ocarina Atlas's ways, tracker_ways, are read but no longer said: the owner, 2026-11-23, a long way made the panel's
     // list and its map small)
     return says;
@@ -2699,7 +2736,7 @@ int tracker_in_logic(const TrackerCheck& k, std::string* missing) {
     for (const char* way = k.needs; *way; way += strcspn(way, "/"), way += *way == '/') {
         std::string left;
         const int held = tracker_way_held(way, strcspn(way, "/"), &left);
-        if (held) return 1;
+        if (held) return tracker_after(k).empty() ? 1 : 0;   // (all held, but the story holds it back: tracker_after)
         const int count = (int)std::count(left.begin(), left.end(), ',') + 1;
         if (best_left < 0 || count < best_left) best_left = count, best = left;
     }
@@ -3170,6 +3207,23 @@ void tracker_load() {
                     if (!strcmp(owner, kKeyDungeons[d])) n = d;
                 for (int i = 0; n >= 0 && i < checks; i++)
                     if (!strcmp(tracker_checks[i].hash, hash)) tracker_key_owner[i] = (signed char)n, tracker_key_boss[i] = boss;
+            }
+            fclose(f);
+        }
+    }
+    {   // (what each check waits for in the story: check_after.txt, tracker_after. A seed without it has none)
+        for (int i = 0; i < kTrackerChecks; i++) tracker_after_mask[i] = 0;
+        const std::string after = path.substr(0, path.find_last_of("\\/") + 1) + "check_after.txt";
+        if (FILE* f = on && checks ? fopen(after.c_str(), "r") : nullptr) {
+            char line[256], hash[32], temples[200];
+            while (fgets(line, sizeof line, f)) {
+                if (sscanf(line, "%31[^|]|%199[^|\r\n]", hash, temples) != 2) continue;
+                int mask = 0;
+                for (int t = 0; t < 5; t++)
+                    for (const char* w = temples; *w; w += strcspn(w, ","), w += *w == ',')
+                        if (strcspn(w, ",") == strlen(kStoryTemples[t]) && !strncmp(w, kStoryTemples[t], strlen(kStoryTemples[t]))) mask |= 1 << t;
+                for (int i = 0; i < checks; i++)
+                    if (!strcmp(tracker_checks[i].hash, hash)) tracker_after_mask[i] = (unsigned char)mask;
             }
             fclose(f);
         }
@@ -6876,6 +6930,10 @@ void menu_option_set(int id, int value) {
     }
     if (id == OOT_TRACKER_ON) {   // (the randomizer's game is the one played)
         if (tracker_on.exchange(value != 0, std::memory_order_relaxed) != (value != 0) && page == 0 && cur_tab == TAB_TRACKER) menu_refresh = true;
+        return;
+    }
+    if (id == OOT_TRACKER_TEMPLES) {   // (the temples done: a check waiting for one is "in logic after ...", tracker_after)
+        if (tracker_temples.exchange(value, std::memory_order_relaxed) != value && page == 0 && cur_tab == TAB_TRACKER) menu_refresh = true;
         return;
     }
     if (id == OOT_TRACKER_HERE) {   // (a check of the map Link is in: its area's row comes first)

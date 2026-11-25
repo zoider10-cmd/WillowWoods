@@ -159,7 +159,7 @@ def main():
     check("TEMP-" not in host_text and "oot_flag64" not in host_text and "if (!hos_rando_on()) return;" in host_text,
           "a search for the game's flags is still in the game, or the checks are reported with the randomizer off")
     check("if (id >= OOT_TRACKER_BASE && id < OOT_TRACKER_BASE + kTrackerChecks) {" in menu and
-          'collected ? ": done" : state > 0 ? ": in logic" : state == 0 ? ": not in logic" : ""' in menu and
+          'collected ? ": done" : state > 0 ? ": in logic" : logic.c_str()' in menu and 'state == 0 ? ": not in logic" : ""' in menu and
           "if (done == 1) continue;   // (a check collected is not one to go for)" in menu and '(n == 1 ? " check" : " checks")' in menu and
           "for (auto& done : tracker_done) done.store(-1, std::memory_order_relaxed);" in menu,
           "the tab does not say a check is done, counts one collected among those in logic, or takes a check for collected before the game says so")
@@ -214,7 +214,7 @@ def main():
     rows_named = set(re.findall(r'"([^"]+)"', "".join(re.findall(r", \{([^}]+)\}\},", block))))
     check(rows_named and rows_named <= names, "a gating item's row is not a row of the Inventory page: %r" % sorted(rows_named - names))
     check("if (k.needs[0] == '?' || item_counts[0].load(std::memory_order_relaxed) < 0) return -1;" in menu and
-          'state > 0 ? ": in logic" : state == 0 ? ": not in logic" : ""' in menu and 'words += ", " + std::to_string(in) + " in logic";' in menu and
+          'state > 0 ? ": in logic" : logic.c_str()' in menu and 'state == 0 ? ": not in logic" : ""' in menu and 'words += ", " + std::to_string(in) + " in logic";' in menu and
           "if (selr.tracker >= 0 && !(tracker_line = tracker_hint(selr.tracker)).empty()) hint = tracker_line.c_str();" in menu,
           "the tab does not say whether a check is in logic, or says so of a check it knows nothing of")
     check(all(line.split("|")[0] in {t.split("|")[0] for t in seed.tracker_lines({"KokiriForest": 2, "ZoraRiver": 1}, {"KokiriForest": 1})}

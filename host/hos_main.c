@@ -2947,6 +2947,19 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     next = now + 1000000000LL;
     if (!hos_rando_on()) return;
     rx_option_set(OOT_TRACKER_ON, 1);   /* (the Tracker tab reads the seed only then: vk_menu.cpp tracker_load) */
+    {   /* (the temples done, a bit each: their awakening scenes played, what the game's AllSage asks before Zelda's Light Arrows.
+           The Tracker says "in logic after ..." of a check that waits for one: tools/rando/rando_seed.py check_after) */
+        static const char *const oot_story_scenes[] = {"HavePlayedEvent.Dm_Awake_Forest", "HavePlayedEvent.Dm_Awake_Fire",
+                                                       "HavePlayedEvent.Dm_Awake_Water", "HavePlayedEvent.Dm_Awake_Shadow",
+                                                       "HavePlayedEvent.Dm_Awake_Spirit"};
+        int temples = 0;
+        for (unsigned i = 0; temples >= 0 && i < sizeof oot_story_scenes / sizeof oot_story_scenes[0]; i++) {
+            int played = 0;
+            if (!oot_gamedata_bool(c, oot_flag_hash(oot_story_scenes[i]), &played)) temples = -1;   /* (no save's list yet) */
+            else if (played) temples |= 1 << i;
+        }
+        rx_option_set(OOT_TRACKER_TEMPLES, temples);
+    }
     {
         const int changed = oot_shelf_flags(c);
         if (changed) hos_log("rando: tracker: %d shop shelves put out, or marked as the save says", changed);

@@ -566,7 +566,7 @@ def main():
           "skull_asks = lambda h, at=None: (lambda area: skull_door(step(" in script,
           "Open forest exit still lightens the Gold Skulltulas' rules in new seeds (a Deku Tree Skulltula could hold the sword)")
     menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
-    check("const int held = tracker_way_held(way, strcspn(way, \"/\"), &left);" in menu and "if (held) return 1;" in menu,
+    check("const int held = tracker_way_held(way, strcspn(way, \"/\"), &left);" in menu and "if (held) return tracker_after(k).empty() ? 1 : 0;" in menu,   # (unless the story holds it back: test_rando_story_waits.py)
           "the menu's tracker does not take a check with one of its rule's ways held as in logic")
     print("PASS: Shops")
 

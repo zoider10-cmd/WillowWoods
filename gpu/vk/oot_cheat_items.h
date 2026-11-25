@@ -138,6 +138,10 @@
    or -1 not on it), then rx_option_set(OOT_HEALTH_LIFE + k, life | max << 16, or 0 the slot is free) and rx_option_set(
    OOT_HEALTH_KIND + k, 0 an enemy, or 1 + a boss's place in OOT_BOSS_NAMES: its bar at the foot of the screen, named) */
 #define OOT_HEALTH_SLOTS 8
+/* (Willow Woods, 2026-11-24) the temples done, for the Tracker's "in logic after ...": rx_option_set(OOT_TRACKER_TEMPLES, a
+   bit each, the Forest, Fire, Water, Shadow and Spirit Temples' in that order (tools/rando/rando_seed.py STORY_TEMPLES), set
+   once its awakening scene has played) each second from the game side (host/hos_main.c oot_tracker_refresh); -1 not known */
+#define OOT_TRACKER_TEMPLES 4043
 /* (Willow Woods, asked 2026-11-23) the Tracker's map: where Link is, ten times a second from the game side (host/hos_main.c
    oot_tracker_refresh), in the map files' coordinates as the checks' places: rx_option_set(OOT_LINK_X, x * 100),
    OOT_LINK_Z the same of z, then OOT_LINK_YAW, the way he faces in thousandths of a radian (atan2 of x over z) */
