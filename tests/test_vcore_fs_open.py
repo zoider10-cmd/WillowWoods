@@ -78,6 +78,8 @@ static int host_path(const char *g, char *out, size_t cap, int *writable) {
 int hos_ultrawide_redirect(const char *guest, char *out, size_t cap) { (void)guest, (void)out, (void)cap; return 0; }
 static int hos_blank_cached_icon(const char *guest, const char *host) { (void)guest, (void)host; return blank; }
 static DWORD GetFileAttributesA(const char *p) { (void)p; return INVALID_FILE_ATTRIBUTES; }
+static DWORD GetLastError(void) { return 5; }
+static void *hos_xcalloc(size_t n, size_t size, const char *what) { (void)what; return calloc(n, size); }   /* (host/mkw_glue.c) */
 static HANDLE CreateFileA(const char *p, DWORD a, DWORD s, void *sa, DWORD d, DWORD f, HANDLE t) {
     (void)p, (void)a, (void)s, (void)sa, (void)d, (void)f, (void)t;
     held_in_create = held;

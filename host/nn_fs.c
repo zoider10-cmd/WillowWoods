@@ -427,13 +427,24 @@ HLE(_ZN2nn2fs8OpenFileEPNS0_10FileHandleEPKci) {
     }
     HANDLE h = CreateFileA(path, GENERIC_READ | (want_write ? GENERIC_WRITE : 0), FILE_SHARE_READ | FILE_SHARE_WRITE,
                            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    const DWORD open_err = h == INVALID_HANDLE_VALUE ? GetLastError() : 0;   /* (before the core is taken back) */
     if (away) hos_vcore_back();
     if (h == INVALID_HANDLE_VALUE) {
+        /* ((Triforce 86170247) a file of a writable mount (the save's) that is there but would not open answers "not found"
+           all the same: on Linux the game's save manager then looped with no file select, and nothing said which file or
+           why. Said for the first 8 such files */
+        static int there_said;
+        if (writable && GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES && __atomic_add_fetch(&there_said, 1, __ATOMIC_RELAXED) <= 8)
+            hos_log("fs: OpenFile(%s): %s is there but could not be opened for %s (error %lu): the game is told it is not there",
+                    g, path, want_write ? "writing" : "reading", (unsigned long)open_err);
         if (hos_trace || fs_trace()) hos_log("fs: OpenFile(%s): not found", g);
         RET(R_PATH_NOT_FOUND);
         return;
     }
-    Handle *fh = (Handle *)calloc(1, sizeof *fh);
+    /* ((Triforce 86170247) at Windows' commit limit a bare calloc answered NULL and the write below ended the game as
+       "write 0" inside OpenFile, with no word of the memory: hos_xcalloc waits at the commit limit as the host's other
+       tables do and, still refused, ends the game saying why (host/mkw_glue.c) */
+    Handle *fh = (Handle *)hos_xcalloc(1, sizeof *fh, "fs: an OpenFile handle");
     fh->h = h;
     fh->writable = want_write;
     if (want_write) __atomic_add_fetch(&writes_open, 1, __ATOMIC_RELAXED);
@@ -671,7 +682,8 @@ HLE(_ZN2nn2fs12GetEntryTypeEPNS0_18DirectoryEntryTypeEPKc) {
 /* ---- directories: DirectoryEntry = { char name[0x301]; pad[3]; s8 type at 0x304 (0 directory, 1 file); pad[3]; s64 size at 0x308 } ---- */
 static void add_extra(void *arg, const char *name, int is_dir, uint64_t size) {
     Handle *dh = (Handle *)arg;
-    if (!(dh->nextras & 15)) dh->extras = (ExtraEntry *)realloc(dh->extras, sizeof *dh->extras * (size_t)(dh->nextras + 16));
+    if (!(dh->nextras & 15))   /* ((Triforce 86170247) as OpenFile's handle: waits at the commit limit, else ends the game saying why) */
+        dh->extras = (ExtraEntry *)hos_xrealloc(dh->extras, sizeof *dh->extras * (size_t)(dh->nextras + 16), "fs: an OpenDirectory's mod entries");
     ExtraEntry *e = &dh->extras[dh->nextras++];
     snprintf(e->name, sizeof e->name, "%s", name);
     e->is_dir = is_dir, e->size = size;
@@ -680,7 +692,7 @@ HLE(_ZN2nn2fs13OpenDirectoryEPNS0_15DirectoryHandleEPKci) {
     char path[HOS_FS_PATH], pat[HOS_FS_PATH];
     if (!host_path(gstr(ARG(1)), path, sizeof path, NULL)) { RET(R_PATH_NOT_FOUND); return; }
     snprintf(pat, sizeof pat, "%s\\*", path);
-    Handle *dh = (Handle *)calloc(1, sizeof *dh);
+    Handle *dh = (Handle *)hos_xcalloc(1, sizeof *dh, "fs: an OpenDirectory handle");   /* ((Triforce 86170247) as OpenFile's) */
     dh->is_dir = (int)ARG(2);   /* mode: 1 directories, 2 files, 3 both */
     snprintf(dh->path, sizeof dh->path, "%s", pat);   /* (for GetDirectoryEntryCount) */
     dh->find = FindFirstFileA(pat, &dh->fd);
