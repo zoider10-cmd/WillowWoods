@@ -93,6 +93,11 @@ bool FoldWhenAllImmediates(IR::Inst& inst, Func&& func) {
     return true;
 }
 
+/// (HeyListen 46e5a0a7) offset + count <= 32 of a bit-field extract of immediates (the range SPIR-V defines)
+inline bool BitFieldRangeDefined(const IR::Inst& inst) {
+    return static_cast<u64>(inst.Arg(1).U32()) + inst.Arg(2).U32() <= 32;
+}
+
 /// Return true when all values in a range are equal
 template <typename Range>
 bool AreEqual(const Range& range) {
@@ -1129,23 +1134,29 @@ void ConstantPropagation(Environment& env, IR::Block& block, IR::Inst& inst) {
         FoldWhenAllImmediates(inst, [](u32 a, u32 b) { return a ^ b; });
         return;
     case IR::Opcode::BitFieldUExtract:
+        // (HeyListen 46e5a0a7) offset + count over 32 is undefined in SPIR-V: the instruction stays for the back end (it threw
+        // here before, and the program failed to translate); count 32 is defined (the base), and 1U << 32 was not (0 on x86)
+        if (inst.AreAllArgsImmediates() && !BitFieldRangeDefined(inst)) {
+            return;
+        }
         FoldWhenAllImmediates(inst, [](u32 base, u32 shift, u32 count) {
-            if (static_cast<size_t>(shift) + static_cast<size_t>(count) > 32) {
-                throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldUExtract,
-                                 base, shift, count);
+            if (count == 0 || shift >= 32) {
+                return 0U;
             }
-            return (base >> shift) & ((1U << count) - 1);
+            const u32 mask{count >= 32 ? ~0U : (1U << count) - 1};
+            return (base >> shift) & mask;
         });
         return;
     case IR::Opcode::BitFieldSExtract:
+        if (inst.AreAllArgsImmediates() && !BitFieldRangeDefined(inst)) {   // (HeyListen 46e5a0a7, as above)
+            return;
+        }
         FoldWhenAllImmediates(inst, [](s32 base, u32 shift, u32 count) {
-            const size_t back_shift{static_cast<size_t>(shift) + static_cast<size_t>(count)};
-            const size_t left_shift{32 - back_shift};
-            const size_t right_shift{static_cast<size_t>(32 - count)};
-            if (back_shift > 32 || left_shift >= 32 || right_shift >= 32) {
-                throw LogicError("Undefined result in {}({}, {}, {})", IR::Opcode::BitFieldSExtract,
-                                 base, shift, count);
+            if (count == 0) {
+                return 0U;   // (SPIR-V: a count of 0 gives 0; it threw here before)
             }
+            const u32 left_shift{32 - (shift + count)};
+            const u32 right_shift{32 - count};
             return static_cast<u32>((base << left_shift) >> right_shift);
         });
         return;
