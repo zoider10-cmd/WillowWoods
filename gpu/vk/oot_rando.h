@@ -173,8 +173,8 @@
       "After Ganondorf falls, Link goes straight to the field below the tower, as if he had run out of the collapsing castle, and the Ganon fight follows. Not tried in play yet. Moves no item.", \
       "Off", "On") \
     X(FAIRY_PRICES, "Great Fairy prices", "rando_fairy_prices", \
-      "What the Great Fairies ask as an offering for their gift. As the shops: rolled as the shops' prices are (the game's own when Shops is off). The game's own: 25 to 500 rupees, as the game has them. Low prices, Any price, Affordable: rolled as those shop prices are, whatever Shops is. A price asks for a wallet that holds it.", \
-      "As the shops", "The game's own", "Low prices", "Any price", "Affordable") \
+      "What the Great Fairies ask as an offering for their gift. As the shops: rolled as the shops' prices are (the game's own when Shops is off). The game's own: 25 to 500 rupees, as the game has them. Low prices, Affordable: rolled as those shop prices are, whatever Shops is. A price asks for a wallet that holds it.", \
+      "As the shops", "The game's own", "Low prices", "Affordable") \
     X(ARCHERY_WINS, "Archery games won", "rando_archery_wins", \
       "At the end of a round of the Market's and Kakariko's shooting galleries and of the Gerudo horseback archery, Link wins the prize whatever his score: the galleries' prize, and at the horseback archery the 1000 and 1500 points prizes (the Piece of Heart first, then the quiver's). Moves no item: it can be turned on for a seed being played.", \
       "Off", "On") \

@@ -26,7 +26,8 @@ def check(ok, what):
 def main():
     m = seed.fairy_price_mode
     check(m(0, 2) == 2 and m(0, 0) == 0, "As the shops does not follow Shops")
-    check(m(1, 2) == 0 and m(2, 0) == 1 and m(3, 0) == 2 and m(4, 0) == 3, "a choice is not shop_price's mode")
+    check(m(1, 2) == 0 and m(2, 0) == 1 and m(3, 0) == 3 and m(4, 0) == 0, "a choice is not shop_price's mode")
+    check(seed.FAIRY_PRICE_OLD == {4: 3}, "an old Affordable (4, before Any price was taken out) is not read as Affordable")
     check(set(seed.fairy_prices(7, 3).values()) == {seed.SHOP_AFFORDABLE}, "Affordable is not every fairy's")
     src = open(seed.__file__, encoding="utf-8").read()
     check('"rando_fairy_prices": 0' in src and "fairy_cost = fairy_prices(seed, fairy_mode) if fairy_mode and placement >= FAIRY_PRICES_FROM else {}" in src,

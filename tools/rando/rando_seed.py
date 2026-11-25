@@ -1023,9 +1023,11 @@ FAIRY_PRICE_TEXT = "EventFlowMsg/Dm_FairyFountain_Din.msbt"
 
 
 # The Great Fairy prices setting (rando_fairy_prices, asked 2026-11-23: a setting of their own, with the shops' choices):
-# 0 as the shops (the way before it, the default), 1 the game's own, 2 to 4 rolled as Shops' Low prices, Any price,
-# Affordable (shop_price's modes 1 to 3), whatever Shops is.
-FAIRY_PRICE_MODES = {1: 0, 2: 1, 3: 2, 4: 3}
+# 0 as the shops (the way before it, the default), 1 the game's own, 2 and 3 rolled as Shops' Low prices and Affordable
+# (shop_price's modes 1 and 3), whatever Shops is. (2026-11-25: "Any price" taken out, a seed ID holds 4 choices a setting;
+# Affordable was 4 then, and a 4 still read is Affordable: FAIRY_PRICE_OLD.)
+FAIRY_PRICE_MODES = {1: 0, 2: 1, 3: 3}
+FAIRY_PRICE_OLD = {4: 3}
 
 
 def fairy_price_mode(setting, shops):
@@ -8222,7 +8224,8 @@ def main():
     a.any_fish = ini["rando_any_fish"] != 0             # (time savers, 2026-11-22: qol_flow; move no item)
     a.skull_kid_fast = ini["rando_skull_kid_fast"] != 0
     a.skip_tower = ini["rando_skip_tower"] != 0
-    a.fairy_prices = ini["rando_fairy_prices"] if 0 <= ini["rando_fairy_prices"] <= 4 else 0   # (FAIRY_PRICE_MODES)
+    a.fairy_prices = FAIRY_PRICE_OLD.get(ini["rando_fairy_prices"], ini["rando_fairy_prices"])
+    a.fairy_prices = a.fairy_prices if 0 <= a.fairy_prices <= 3 else 0   # (FAIRY_PRICE_MODES)
     a.free_scarecrow = a.free_scarecrow or ini["rando_free_scarecrow"] != 0
     a.start = start_codes(a.start if a.start is not None else start_option(game))   # (Starting items: START_ITEMS)
     a.gate_open = ini["rando_letter"] == 2   # (Kakariko gate Open: the overworld's rules by it, placement 23, OVERWORLD_RULES)
