@@ -87,12 +87,20 @@ def main():
     check("void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {" in host and "static const char *oot_progressive_give(Ctx *c, const char *name) {" in host and
           "(family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)" in host,
           "the host does not name a chest's content by the family's next, or the tracker does not take the family's other names")
-    # (bug 114: a Gold Skulltula's drop keeps the seed's item, the family's next given by the pouch's add)
+    # (bug 114: a Gold Skulltula's drop is renamed to the family's next only when the seed made that tier a pick-up, as it
+    #  names in skull_tiers.txt (the owner's run 2026-11-24: the gauntlets shown, the bracelet given); else the seed's item)
     drop = host[host.index("void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {"):]
     drop = drop[:drop.index("\n}\n")]
-    check('if (!strncmp(who, "Enemy_Skulltula", 15)) return;' in drop and "recomp_load64(c, owner + 0x260)" in drop and
-          drop.index('"Enemy_Skulltula", 15)) return;') < drop.index('static const char key[] = "Drop__DropActor";'),
-          "a Gold Skulltula's drop is still renamed to the family's next (a name no pick-up has)")
+    check('skull = !strncmp(who, "Enemy_Skulltula", 15);' in drop and "recomp_load64(c, owner + 0x260)" in drop and
+          '"mods/rando-seed/skull_tiers.txt"' in drop and "if (!made_one) return;" in drop and
+          drop.index("if (!made_one) return;") < drop.index("for (size_t i = 0; i < sizeof oot_show_as"),
+          "a Gold Skulltula's drop is renamed to a tier the seed did not make a pick-up, or never to the family's next")
+    tiers = seed.skull_tiers(["Item_Gauntlet_Gold", "Item_Range_Bow", "Item_Boomerang"])
+    check(tiers == ["Item_Gauntlet_Gold", "Item_Gauntlet_Goron", "Item_Gauntlet_Silver"] and seed.SKULL_TIERS == "skull_tiers.txt",
+          "a Skulltula's drop's family tiers are not all made pick-ups, or the Bow's are: %s" % tiers)
+    check("skull_tier_list = skull_tiers(skull_drops.values()) if a.progressive else []" in script and
+          "pickups = sorted(set(pickups) | set(skull_drops.values()) | set(skull_tier_list))" in script and "os.path.join(mod, SKULL_TIERS)" in script and "for t in skull_tier_list))" in script,
+          "the seed does not make the drops' family tiers pick-ups and name them beside it")
 
     # ---- the game's side ----
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")

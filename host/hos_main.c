@@ -4473,6 +4473,7 @@ void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {
     static int skull_too = -1;
     if (skull_too < 0) { const char *e = getenv("HOS_OOT_DROP_SKULLTULA"); skull_too = e && *e == '1'; }
     const uint64_t owner = recomp_load64(c, made + 0x40);
+    int skull = 0;   /* (a Skulltula's drop: renamed only to a tier the seed made a pick-up, below) */
     if (owner && !skull_too) {
         const uint64_t at = recomp_load64(c, owner + 0x260);
         char who[24] = {0};
@@ -4482,7 +4483,7 @@ void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {
         }
         static int said;
         if (said < 12) said++, hos_log("rando: progressive: a drop's actor is %s", who[0] ? who : "(no name read)");
-        if (!strncmp(who, "Enemy_Skulltula", 15)) return;   /* (Enemy_Skulltula_Gold and its kin: the seed's item stays) */
+        skull = !strncmp(who, "Enemy_Skulltula", 15);   /* (Enemy_Skulltula_Gold and its kin) */
     }
     /* (the list, as f_80bf1c00 finds it) */
     uint64_t list = owner;
@@ -4518,6 +4519,33 @@ void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {
     const char *give = oot_progressive_give(c, name);
     memcpy(c->x, saved, sizeof saved);
     if (!give) return;
+    /* (the owner's run 2026-11-24: a Skulltula's Golden Gauntlets showed the gauntlets and gave the Goron Bracelet. A
+       Skulltula's drop is shown as the family's next only when the seed made that a pick-up: it names those tiers in
+       mods/rando-seed/skull_tiers.txt (tools/rando/rando_seed.py SKULL_TIERS); else the seed's item stays, as bug 114 left
+       every one: a tier that is no pick-up could not be taken) */
+    if (skull) {
+        char path[MAX_PATH + 48], line[96];
+        int made_one = 0;
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/skull_tiers.txt") ? fopen(path, "r") : NULL;
+        while (f && !made_one && fgets(line, sizeof line, f)) {
+            line[strcspn(line, "\r\n")] = 0;
+            made_one = line[0] != '#' && !strcmp(line, give);
+        }
+        if (f) fclose(f);
+        if (!made_one) return;
+        if (!strcmp(give, name)) return;
+        const uint64_t kept = oot_kept_name(give);
+        if (!kept) return;
+        recomp_store64(c, value_at + 8ULL * found, kept);
+        const uint64_t text = recomp_load64(c, self + 0x48);
+        const int size = (int)recomp_load32(c, self + 0x50);
+        if (text && size > (int)strlen(give) && size <= 4096) {
+            const size_t n = strlen(give);
+            for (size_t i = 0; i <= n; i++) recomp_store8(c, text + i, (uint8_t)give[i]);
+        }
+        hos_log("rando: progressive: a Gold Skulltula's %s shows and gives %s", name, give);
+        return;
+    }
     for (size_t i = 0; i < sizeof oot_show_as / sizeof oot_show_as[0]; i++)
         if (!strcmp(give, oot_show_as[i][0])) give = oot_show_as[i][1];
     for (size_t i = 0; i < sizeof oot_no_show / sizeof oot_no_show[0]; i++)
