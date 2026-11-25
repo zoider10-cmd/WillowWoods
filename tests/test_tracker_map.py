@@ -56,7 +56,7 @@ def main():
     check(len(mini_areas) >= 11 and all(a in names for a, _, _, _ in mini_areas) and
           all(-0.5 < float(u) < 0 and 0.3 < float(v) < 1 and 0.0003 < float(a) < 0.005 for _, u, v, a in mini_areas),
           "the minimaps' areas are not the field areas the map has, or a measured fit is off the corner")
-    check(not any(a in ("Hyrule Castle", "Death Mountain Crater", "Gerudo's Fortress") for a, _, _, _ in mini_areas),
+    check(not any(a in ("Hyrule Castle", "Gerudo's Fortress") for a, _, _, _ in mini_areas),
           "an area not measured has dots (they would be in the wrong place)")
     draw = menu[menu.index("void draw_minimap_checks(ui::Ctx& c) {"):]
     draw = draw[:draw.index("\n}\n")]

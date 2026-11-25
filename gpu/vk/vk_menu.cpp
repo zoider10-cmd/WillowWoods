@@ -8149,9 +8149,11 @@ void draw_health(ui::Ctx& c) {
 /// a copy of the owner's finished save: Link teleported to known spots in each area and walking, his red arrow found in each
 /// picture, a least squares fit per area): x across = the window's right edge + (u + a*x) of its height, y down = (v + a*z) of
 /// its height, kMiniMaps (a fitted area's a is 1 / (2.245 * the Height of its map picture's capture, romfs
-/// Game/MapCaptureInfo), the size the data foretold; its middle is not that capture's). Areas not measured (Hyrule Castle, the
-/// crater, Gerudo's Fortress: no minimap, or one spot, in the runs; Sacred Forest Meadow, whose tall minimap scrolls with Link) have no dots, rather than wrong ones; Kakariko, Zora's
-/// Domain and Fountain and Gerudo Valley were measured once the game's side marked them visited (hos_main.c IsVisitLocation). Hyrule
+/// Game/MapCaptureInfo), the size the data foretold; its middle is not that capture's). Areas not measured (Hyrule Castle: too
+/// little ground walked; Gerudo's Fortress: fitted where Link walked (2026-11-24), but its archery range and a Skulltula fall off
+/// that picture, so another picture may take over there; Sacred Forest Meadow, whose tall minimap scrolls with Link) have no dots, rather than wrong ones; Kakariko, Zora's
+/// Domain and Fountain and Gerudo Valley were measured once the game's side marked them visited (hos_main.c IsVisitLocation). The crater was measured 2026-11-24
+/// (five runs, 1433 points over 39 x 45 m, worst 0.3% of the height off; all nine of its checks on the picture). Hyrule
 /// Field's folder has three pictures: Lake Hylia's within 199 of its LocationArea's middle (a sphere, there once the owl's
 /// lake scene is seen), Lon Lon Ranch's inside its walls (in_ranch, from the owner's screenshots), the field's), the field's), the field's
 /// elsewhere. Dungeons (a picture a floor) and indoor maps have none.
@@ -8171,6 +8173,7 @@ constexpr MiniMapArea kMiniMaps[] = {
     {"Gerudo Valley", -0.1955f, 0.8225f, 0.001855f},
     {"Zora's Domain", -0.3255f, 0.8568f, 0.002952f},
     {"Zora's Fountain", -0.2549f, 0.8420f, 0.002279f},
+    {"Death Mountain Crater", -0.1546f, 0.7858f, 0.002361f},
 };
 constexpr MiniMapArea kMiniLake = {"Hyrule Field", 0.0119f, 0.3135f, 0.001062f}, kMiniRanch = {"Hyrule Field", -0.0625f, 0.4508f, 0.001602f};
 /// Lon Lon Ranch's outline, inside its walls (the owner's screenshots 2026-11-24, Link's place from his arrow on the measured
