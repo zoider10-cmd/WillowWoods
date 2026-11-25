@@ -1,4 +1,4 @@
-// crt_downsample.comp sha256 9a79a0d255c230c55898fd7bbe7e15cdaf2499efe0eb24cf53ae2784e0c73b10 (scripts/crt_shaders.py: glslangValidator -V --target-env vulkan1.2 --vn CRT_DOWNSAMPLE_COMP_SPV)
+// crt_downsample.comp sha256 0f70a61de207fa49509d000ee030f6017eb7b8efde292f0c81c6a057a936a735 (scripts/crt_shaders.py: glslangValidator -V --target-env vulkan1.2 --vn CRT_DOWNSAMPLE_COMP_SPV)
 // Hookshot's virtual CRT raster: an area-weighted box over the finished SDR picture.
 // Unlike a few bilinear taps, every covered source texel contributes its actual overlap.
 // This also handles magnification on either axis: a footprint may be smaller than one source texel.
