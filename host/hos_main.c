@@ -3577,24 +3577,29 @@ static int oot_banc_in_folder(const char *banc, const char *folder) {
    (Until 2026-11-25 it went by distance: a pot within 3 m of Link done with that item was "back". Seen in play in the
    Market's guard house, 22 pots in 8 m, four of them a Gold Skulltula token: a second token from the pot beside a
    collected one was refused, and a thrown pot's item lands far from it, so the record marked another pot.) */
-static int oot_pot_again(Ctx *c, const char *name) {
-    int broken = 0, open = -1;
+/* (the pot of Link's map giving name, or its family's, that is broken now and not yet collected: its index, or -1;
+   broken: how many broken ones give it) */
+static int oot_pot_open(Ctx *c, const char *name, int *broken) {
+    int open = -1;
     const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
-    oot_pot_chosen = -1;
+    if (broken) *broken = 0;
     AcquireSRWLockShared(&oot_checks_lock);
     for (int i = 0; i < oot_check_count && open < 0; i++) {
         int now = 0;
         if (!oot_checks[i].pot || !oot_checks[i].broken || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
         if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
         if (!oot_gamedata_keyed_bool(c, oot_checks[i].broken, &now) || !now) continue;
-        broken++;
+        if (broken) ++*broken;
         if (oot_checks[i].done != 1) open = i;
     }
     ReleaseSRWLockShared(&oot_checks_lock);
-    if (open >= 0) {
-        oot_pot_chosen = open;
-        return 0;
-    }
+    return open;
+}
+static int oot_pot_again(Ctx *c, const char *name) {
+    int broken = 0;
+    const int open = oot_pot_open(c, name, &broken);
+    oot_pot_chosen = open;
+    if (open >= 0) return 0;
     if (broken) hos_log("rando: %s from a pot whose check is collected already (%d broken pots give it): nothing is added", name, broken);
     return broken > 0;
 }
@@ -5156,7 +5161,12 @@ static int oot_holder_giving;   /* (a holder the host gives just now: not a chec
 #endif
 
 /* 1: the pick-up is to be got with nothing given (w0 1 in the game's answer); 0: the game answers, with a holder given
-   first when Link had none (an add is counted an update later: the touch is answered no this time and yes the next) */
+   first when Link had none (an add is counted an update later: the touch is answered no this time and yes the next).
+   (bug 136, 2026-11-25) A check's pick-up (a Gold Skulltula's drop near its place, or a pot's whose pot is broken and not
+   yet collected: oot_pot_open) is got with a full bag too: the game answered no, and it stayed there, lifted and thrown
+   (seen in play: Deku Nut and Stick bundles from the Market guard house's pots, after the first; the first was got by its
+   get scene, which asks nothing). Got, the add follows with what fits (seen: "pouch add Item_DekuNut x0"). */
+static int oot_pot_open(Ctx *c, const char *name, int *broken);
 int hos_oot_pickup_room(Ctx *c) {
 #if defined(_WIN32) || defined(__linux__)
     if (!hos_rando_on()) return 0;
@@ -5171,9 +5181,16 @@ int hos_oot_pickup_room(Ctx *c) {
     name[length] = 0;
     const char *const *sizes;
     const int rule = oot_bundle_holder(name, &sizes);
-    if (!rule || !oot_drop_check_near(name)) return 0;
-    for (int i = 0; i < 3; i++)
-        if (oot_pouch_count(c, sizes[i]) != 0) return 0;   /* (he has one, or it is not known: the game's answer) */
+    if (!oot_drop_check_near(name) && oot_pot_open(c, name, NULL) < 0) return 0;   /* (no check's: the game's answer) */
+    int holder = !rule;
+    for (int i = 0; i < 3 && !holder; i++)
+        if (oot_pouch_count(c, sizes[i]) != 0) holder = 1;   /* (he has one, or it is not known) */
+    if (holder) {
+        static int64_t said_at;
+        const int64_t now = hos_now_ns();
+        if (!said_at || now - said_at > 2000000000LL) hos_log("rando: %s is a check's: got whatever the bag holds", name), said_at = now;
+        return 1;
+    }
     if (rule == 2) {
         hos_log("rando: a Gold Skulltula's %s with no %s: taken, nothing given", name, sizes[0]);
         return 1;

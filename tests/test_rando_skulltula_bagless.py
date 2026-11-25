@@ -70,6 +70,8 @@ static int oot_pouch_change(Ctx *c, const char *name, int by) {
 static void hos_log(const char *f, ...) { (void)f; }
 static int64_t clock_now = 1;
 static int64_t hos_now_ns(void) { return clock_now; }
+static int pot_open = -1;   /* (a broken pot not yet collected giving the item touched: its index, oot_pot_open) */
+static int oot_pot_open(Ctx *c, const char *name, int *broken) { (void)c; (void)name; if (broken) *broken = pot_open >= 0; return pot_open; }
 @FN@
 static int touch(const char *name) {
     Ctx c;
@@ -101,15 +103,16 @@ int main(void) {
         given[0] = 0, gives = 0;
         CHECK(hos_oot_pickup_room(&c) == 0 && gives == 0);
     }
-    /* with any bag, or the pouch not read: nothing given */
-    for (int i = 0; i < 3; i++) { bags[0] = bags[1] = bags[2] = 0, bags[i] = 1; CHECK(touch("TBox_DekuNutBundle") == 0 && gives == 0); }
+    /* with any bag, or the pouch not read: nothing given, and got whatever the bag holds (bug 136: a full bag refused a
+       check's bundle, and it stayed) */
+    for (int i = 0; i < 3; i++) { bags[0] = bags[1] = bags[2] = 0, bags[i] = 1; CHECK(touch("TBox_DekuNutBundle") == 1 && gives == 0); }
     bags[0] = -1, bags[1] = bags[2] = 0;
-    CHECK(touch("TBox_DekuNutBundle") == 0 && gives == 0);
+    CHECK(touch("TBox_DekuNutBundle") == 1 && gives == 0);
     bags[0] = 0;
     /* bombs and arrows with no holder: taken, nothing given; with one, the game answers */
     CHECK(touch("Item_BombBundle_Small") == 1 && gives == 0 && touch("TBox_ArrowBundle_Medium") == 1 && gives == 0);
     bags[7] = 1;
-    CHECK(touch("Item_BombBundle_Small") == 0 && gives == 0);
+    CHECK(touch("Item_BombBundle_Small") == 1 && gives == 0);
     bags[7] = 0;
     /* not a check's, far, another map, collected, other items: the game answers */
     CHECK(touch("Item_ScrubBusinessSeed") == 0 && touch("Item_BombchuBundle_Small") == 0 && touch("Item_Boomerang") == 0 && gives == 0);
@@ -122,6 +125,12 @@ int main(void) {
     oot_checks[0].done = 1;
     CHECK(touch("TBox_DekuNutBundle") == 0 && gives == 0);
     oot_checks[0].done = 0;
+    /* a pot's item far from its pot (thrown), the pot broken and not collected: got; another item: the game answers */
+    oot_link_place[0] = 100, bags[3] = 1, pot_open = 3;
+    CHECK(touch("Item_DekuStickBundle_Small") == 1 && gives == 0);
+    pot_open = -1;
+    CHECK(touch("Item_DekuStickBundle_Small") == 0 && gives == 0);
+    oot_link_place[0] = 0, bags[3] = 0;
     /* the randomizer off */
     rando_on = 0;
     CHECK(touch("TBox_DekuNutBundle") == 0 && gives == 0 && touch("Item_BombBundle_Small") == 0);

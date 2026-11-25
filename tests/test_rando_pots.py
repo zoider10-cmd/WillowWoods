@@ -35,11 +35,13 @@ def main():
     assert again < host.index("oot_tracker_item(name, shop, price);"), "a pot back after a day is recorded before it is refused"
     # (2026-11-25, from play: the pot is known by the game's "broken" truth value by its hash, not by distance: the Market's
     #  guard house has 22 pots in 8 m, and a second token from the pot beside a collected one was refused)
-    body = host[host.index("static int oot_pot_again(Ctx *c, const char *name) {"):]
+    body = host[host.index("static int oot_pot_open(Ctx *c, const char *name, int *broken) {"):]
     body = body[:body.index("\n}\n")]
+    again = host[host.index("static int oot_pot_again(Ctx *c, const char *name) {"):]
+    again = again[:again.index("\n}\n")]
     assert "oot_gamedata_keyed_bool(c, oot_checks[i].broken, &now)" in body and "OOT_POT_NEAR" not in host, \
         "a pot is still found by distance"
-    assert "if (oot_checks[i].done != 1) open = i;" in body and "return broken > 0;" in body, \
+    assert "if (oot_checks[i].done != 1) open = i;" in body and "return broken > 0;" in again, \
         "an item is refused while a broken pot giving it is not collected"
     assert "oot_checks[oot_check_count].broken = oot_checks[oot_check_count].pot ? oot_checks[oot_check_count].key : 0;" in host
     track = host[host.index("static void oot_tracker_item(const char *name, int shop, int price) {"):]
