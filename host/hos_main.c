@@ -5086,6 +5086,26 @@ static int oot_tier_shelf_want(int i) {
 static struct { uint64_t hash; char game[40], bagged[24]; uint64_t slot, bagged_slot; } oot_pot_looks[OOT_POT_LOOK_MAX];
 static int oot_bundle_holder(const char *name, const char *const **sizes);
 static int oot_pot_look_count = -1;
+/* (POT_BAGGED) Whether Link holds one of a bundle's bags (sizes: smallest first). The pouch, else (as a map is read with a save
+   just loaded, the pouch not there yet: its count -1) the save's IsGet.<bag> flags; not known: not held, so the pot drops the
+   bundle that gives the bag. Reported 2026-11-25: a save loaded in the Market had its stick pots read with the pouch not yet
+   there, taken as a bag held: the game's own sticks, a green rupee with no bag, and no bag ever given. */
+static int oot_pot_bag_held(Ctx *c, const char *const *sizes) {
+    int known = 0;
+    for (int i = 0; i < 3; i++) {
+        const int n = oot_pouch_count(c, sizes[i]);
+        if (n > 0) return 1;
+        if (n == 0) known++;
+    }
+    if (known == 3) return 0;
+    for (int i = 0; i < 3; i++) {
+        char flag[64];
+        int got = 0;
+        snprintf(flag, sizeof flag, "IsGet.%s", sizes[i]);
+        if (oot_gamedata_bool(c, oot_flag_hash(flag), &got) && got) return 1;
+    }
+    return 0;
+}
 static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
     static const char head[] = "Obj_PotR";
     for (int i = 0; head[i]; i++)
@@ -5126,8 +5146,7 @@ static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
         /* (FIXES 100, POT_BAGGED: a pot holding Deku Nuts or Sticks, Link with no such bag: the actor dropping the bundle
            itself, whose pick-up gives the bag, the game's supply drop being a green rupee then) */
         const char *const *sizes;
-        if (!done && found >= 0 && oot_pot_looks[k].bagged[0] && oot_bundle_holder(item, &sizes) == 1 &&
-            !oot_pouch_count(c, sizes[0]) && !oot_pouch_count(c, sizes[1]) && !oot_pouch_count(c, sizes[2])) {
+        if (!done && found >= 0 && oot_pot_looks[k].bagged[0] && oot_bundle_holder(item, &sizes) == 1 && !oot_pot_bag_held(c, sizes)) {
             if (!oot_pot_looks[k].bagged_slot && (oot_pot_looks[k].bagged_slot = hos_sys_alloc(32, 16)) != 0)
                 snprintf((char *)A64_PTR(oot_pot_looks[k].bagged_slot), 32, "%s", oot_pot_looks[k].bagged);
             answer = oot_pot_looks[k].bagged_slot;
