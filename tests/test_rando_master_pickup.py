@@ -6,7 +6,8 @@ Sword's. Checked on a small pack and lists made here:
 - master_item_pack: every file under the new name, the actor named and equipped as the sword (both ages), its model
   file its own (the Biggoron's colour animations gone), nothing of the Biggoron's left;
 - master_rows: the new row is the Biggoron item's with the sword's names and model size, the other rows as they were;
-- a pot's drop of the sword names the new item (POT_AS), the game's side adds the sword for it, and no Skulltula holds it.
+- its animations stay the Biggoron's (the game has none of the sword's: an item naming them is never made);
+- a pot's and a Skulltula's drop of the sword name the new item (POT_AS), and the game's side adds the sword for it.
 
     python -I -B tests/test_rando_master_pickup.py
 """
@@ -52,7 +53,9 @@ def biggoron_pack():
         S.MODEL_INFO_FILE % weapon: S.byml_build(model, 7),
         table: S.byml_build(("dict", D((("Components", ("dict", D((("PlayerEquipmentActor", text("?" + equip)),)))),))), 7),
         equip: S.byml_build(("dict", D((("Adult", text(S.ACTOR_REF % weapon)), ("Child", text(S.ACTOR_REF % weapon))))), 7),
-        anim: S.byml_build(("dict", D((("AnimationResources", ("array", [])),))), 7),
+        anim: S.byml_build(("dict", D((("AnimationResources", ("array", [
+            ("dict", D((("ModelProjectName", text("Item_Common_Animation")),))),
+            ("dict", D((("ModelProjectName", text(weapon + "_Animation")),)))])),))), 7),
         "Component/PouchContentParam/WeaponGetTypeMedium.game__component__PouchContentParam.bgyml":
             S.byml_build(("dict", D((("GetType", (0xD3, struct.pack("<I", 1))),))), 7),
     }
@@ -76,7 +79,11 @@ def main():
     files = S.sarc_read(S.master_item_pack(biggoron_pack()))
     check(not any("Biggoron" in name for name in files), "a file keeps the Biggoron's name: %s" % sorted(files))
     every = [s for name, data in files.items() for s in strings(S.byml_parse(data)[0])]
-    check(not any("Biggoron" in s for s in every), "a file names the Biggoron's: %s" % [s for s in every if "Biggoron" in s])
+    # (but its animations: the game has no Weapon_Sword_Master_Animation, and an item naming it is never made. Seen
+    #  2026-11-25: nothing where its Skulltula died, until the name was the Biggoron's again)
+    check([s for s in every if "Biggoron" in s] == [S.MASTER_PICKUP_ANIMATION],
+          "the item names the Biggoron's other than by its animations, or not those: %s" % [s for s in every if "Biggoron" in s])
+    check(not any(s.endswith("_Animation") and "Master" in s for s in every), "the item names animations of the sword's, which the game has none of")
     actor, _ = S.byml_parse(files[S.ACTOR_FILE % S.MASTER_PICKUP])
     comps = actor[1]["Components"][1]
     check(comps["ActorNameRef"][1] == "?ActorSystem/ActorName/%s.engine__actor__ActorName.bgyml" % master,
@@ -109,13 +116,13 @@ def main():
 
     check(S.POT_AS.get(master) == S.MASTER_PICKUP, "the sword has no pick-up of its own (POT_AS)")
     src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
-    # (a Gold Skulltula never holds the sword: its drop of it was never seen, 2026-11-25)
-    check('(s[4] == "skulltula" or KEYS_ENDING_FROM <= placement < MASTER_POTS_FROM' in src, "a Gold Skulltula may hold the sword, which it was never seen to drop")
+    check("drops.setdefault(h, POT_AS.get(item, item))" in src, "a Gold Skulltula's sword is dropped as the weapon (no pick-up)")
+    check('(s[4] == "skulltula" and placement < MASTER_SKULLS_FROM or KEYS_ENDING_FROM' in src, "a seed placed before 34 may put the sword on a Gold Skulltula")
     check("drop = POT_AS.get(pot_drops[h], pot_drops[h])" in src, "a pot's sword is dropped as the weapon (no pick-up)")
     check("pickups = sorted({POT_AS.get(i, i) for i in pickups})" in src, "the sword's pick-up pack is not made")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     check('{"Item_Sword_Master", "Weapon_Sword_Master"}' in host, "the game's side adds the item, not the sword (the check is not found)")
-    check(S.PLACEMENT >= S.MASTER_POTS_FROM, "the placement is before the sword's pots")
+    check(S.MASTER_SKULLS_FROM > S.MASTER_POTS_FROM and S.PLACEMENT >= S.MASTER_SKULLS_FROM, "the placements are not in order")
     print("PASS: the Master Sword's pick-up is its own item, named, equipped and shown as the sword")
 
 
