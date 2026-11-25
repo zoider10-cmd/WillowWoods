@@ -53,7 +53,7 @@ def main():
 
     # the end itself: the request is taken back first, and the part is ended and begun as before
     cut = block(replay, "void split_part(VkCommandBuffer& cmd) {")
-    order("split_part", cut, ["part_end_wanted = false;", "if (split_off || !rec_cur || rec_parts + 1 >= kMaxParts || dump_on()) return;",
+    order("split_part", cut, ["part_end_wanted = false, part_end_at_pass = false;", "if (split_off || !rec_cur || rec_parts + 1 >= kMaxParts || dump_on()) return;",
                               "end_pass(cmd);", "memory_end_submission(cmd, rec_cur->part);",
                               "submit_recording(*rec_cur, false);", "begin_recording(rec_cur_value);", "part_work = 0;",
                               "rec_parts++;"])
@@ -68,7 +68,7 @@ def main():
             raise SystemExit("replay() ends a part before a " + op + ": a part would begin with it")
 
     # a submission starts with no end asked for (both places a submission's first recording is begun)
-    if replay.count("rec_parts = 0, part_work = 0, part_end_wanted = false;") != 2:
+    if replay.count("rec_parts = 0, part_work = 0, part_end_wanted = false, part_end_at_pass = false;") != 2:
         raise SystemExit("a submission's start no longer takes back the part's end asked for in the one before")
 
     need("docs/development.md", docs, ["`RX_VK_SPLIT_BEFORE_DRAW=0` or `1`"])

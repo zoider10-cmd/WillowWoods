@@ -1479,6 +1479,7 @@ void maybe_split(VkCommandBuffer& cmd);
 // (hookshot) A part's end that waits for the next plain draw (maybe_split, split_part): see part_ends_before_draw
 void split_part(VkCommandBuffer& cmd);
 bool part_end_wanted = false;
+bool part_end_at_pass = false;   // ((ProjectReLink 88e38c0) the part ends at the game's next barrier or render target change: maybe_split)
 void early_split(VkCommandBuffer& cmd);   // (RX_VK_READBACK_EARLY: a part's end after a readback's writer)
 bool early_split_pending = false;   // (RX_VK_READBACK_EARLY: a writer of a waited-for range is in the part being recorded)
 extern int64_t part_work;
@@ -1522,6 +1523,8 @@ void replay(VkCommandBuffer& cmd, NvnState& s, const uint8_t* p, const uint8_t* 
         if (!dry && !worker && part_end_wanted && (h.op == NOP_DRAW || h.op == NOP_DRAW_IDX || h.op == NOP_DRAW_INDIRECT) &&
             s.render_enabled && !s.raster_discard)
             split_part(cmd);
+        // ((ProjectReLink 88e38c0) the part's end maybe_split put off to the game's own pass end: here, where the pass ends anyway)
+        if (!dry && !worker && part_end_at_pass && (h.op == NOP_BARRIER || h.op == NOP_SET_RT)) split_part(cmd);
         switch (h.op) {
         case NOP_END: return;
         case NOP_BEGIN: case NOP_JUMP: case NOP_CALL: break;
@@ -2175,6 +2178,17 @@ void maybe_split(VkCommandBuffer& cmd) {
         part_end_wanted = true;
         return;
     }
+    // (ProjectReLink 88e38c0) A part ended after its 120th draw ended the game's render pass there: the next part began the
+    // same pass again (a load of every target, a second begin), and a pass cut in two costs the GPU its tiling and the replay
+    // a pass's setup. It now ends at the game's next pass end (a barrier or a render target change: replay()), unless the
+    // pass goes on for four parts' worth of draws, as the forest's 1200-draw ones do: then here, as before. Intel's rule
+    // above comes first (nothing changes there), and RX_VK_READBACK_EARLY's early_split still ends a part at once.
+    // RX_VK_SPLIT_AT_PASS=0: always here
+    static const bool at_pass = !(getenv("RX_VK_SPLIT_AT_PASS") && atoi(getenv("RX_VK_SPLIT_AT_PASS")) == 0);
+    if (at_pass && part_work < every * 4) {
+        part_end_at_pass = true;
+        return;
+    }
     split_part(cmd);
 }
 
@@ -2183,7 +2197,7 @@ bool early_end_asked = false;   // (early_split asked for the part's end: counte
 
 /// The recording's part ends here and the submission goes on in a new one (maybe_split says when)
 void split_part(VkCommandBuffer& cmd) {
-    part_end_wanted = false;
+    part_end_wanted = false, part_end_at_pass = false;
     // (asked for in another command buffer of the submission, or before a parallel replay's segments took their parts:
     // what maybe_split refuses is refused here too, and it asks again at the next draw it would cut after)
     if (split_off || !rec_cur || rec_parts + 1 >= kMaxParts || dump_on()) return;
@@ -2679,7 +2693,7 @@ void bench_replay(const std::vector<uint64_t>& handles) {
     memory_begin_submission();
     memory_gpu_writes_begin();   // (RX_VK_UB_SNAPSHOT's guard: a submission's start, not a part's: split_part)
     full_barrier(first.cmd);
-    rec_cur = &first, rec_cur_value = value, rec_parts = 0, part_work = 0, part_end_wanted = false;
+    rec_cur = &first, rec_cur_value = value, rec_parts = 0, part_work = 0, part_end_wanted = false, part_end_at_pass = false;
     rec_open(value);
     VkCommandBuffer cmd = first.cmd;
     for (uint64_t h : handles)
@@ -3073,7 +3087,7 @@ bool run_submit(const uint64_t* handles, int n, uint64_t value, uint64_t queue, 
         memory_begin_submission();
         memory_gpu_writes_begin();   // (RX_VK_UB_SNAPSHOT's guard: a submission's start, not a part's: split_part)
         full_barrier(first.cmd, "barrier (recording start)");
-        rec_cur = &first, rec_cur_value = tag, rec_parts = 0, part_work = 0, part_end_wanted = false;
+        rec_cur = &first, rec_cur_value = tag, rec_parts = 0, part_work = 0, part_end_wanted = false, part_end_at_pass = false;
         rec_open(tag);
         if (rb_writers_on()) rb_span_begin(tag, first.part);
     }

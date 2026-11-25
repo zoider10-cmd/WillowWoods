@@ -727,6 +727,7 @@ SW(RX_VK_SLOW_LOG, diag, int, "off (0)", "Logs the replay's times for each frame
 SW(RX_VK_SPARSE, kill, bool, "sparse resident 2D images used where the queue and device support them", "0 turns off sparse resident images (the terrain's huge arrays); sparse buffers are not affected.")
 SW(RX_VK_SPARSE_IDLE, attempt, bool, "off: sparse binds are queued without waiting for the queue to go idle", "Waits for the GPU queue to be idle before each sparse texture bind.")
 SW(RX_VK_SPARSE_WAIT, kill, bool, "off: sparse binds signal a timeline semaphore the submissions wait for on the GPU", "1 waits on the CPU for each bind of the sparse mirrors' blocks, as before.")
+SW(RX_VK_SPLIT_AT_PASS, kill, bool, "on: a part's end after its RX_VK_CHUNK draws waits for the game's next barrier or render target change (up to 4 parts' worth); Intel's before-draw rule first", "=0 ends a part right after its RX_VK_CHUNK-th draw or dispatch, cutting the game's pass, as before.")
 SW(RX_VK_SPLIT_BEFORE_DRAW, hw, bool, "on for Intel (vendor 0x8086), off elsewhere", "1 ends a submission's part only right before a plain draw; 0 after its 120th draw or dispatch.")
 SW(RX_VK_SPLIT_UBFLUSH, hw, bool, "off on Intel without VRAM mirrors (iGPUs), on elsewhere", "1 writes uniform updates into game memory at each part's end; 0 only at the last part's.")
 SW(RX_VK_SQUEEZE_ALWAYS, kill, bool, "off: no squeeze while VMA's blocks hold room and the count is within the allowance", "Squeezes the texture budget near the driver's limit even while the allocator's blocks hold free room, as before.")

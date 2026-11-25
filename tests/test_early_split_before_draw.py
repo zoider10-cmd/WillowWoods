@@ -34,7 +34,7 @@ FIXTURE = r"""
 #include <string>
 #include <vector>
 typedef int VkCommandBuffer;   // (the part's index)
-enum : uint32_t { NOP_DRAW = 1, NOP_DRAW_IDX, NOP_DRAW_INDIRECT, NOP_DRAW_MESH, NOP_DISPATCH, NOP_DISPATCH_INDIRECT };
+enum : uint32_t { NOP_DRAW = 1, NOP_DRAW_IDX, NOP_DRAW_INDIRECT, NOP_DRAW_MESH, NOP_DISPATCH, NOP_DISPATCH_INDIRECT, NOP_BARRIER, NOP_SET_RT };
 static bool env_value_off(const char* e) {
     return !*e || !strcmp(e, "0") || !strcmp(e, "off") || !strcmp(e, "false") || !strcmp(e, "no");
 }
@@ -73,6 +73,7 @@ int64_t part_work = 0;
 constexpr int kMaxParts = 32;
 thread_local bool split_off = false;
 bool part_end_wanted = false;
+bool part_end_at_pass = false;
 bool early_split_pending = false;
 void split_part(VkCommandBuffer& cmd);
 void early_split(VkCommandBuffer& cmd);
@@ -83,12 +84,13 @@ void early_split(VkCommandBuffer& cmd);
 /* EARLY_SPLIT */
 
 static const char* name(uint32_t op) {
-    return op == NOP_DRAW ? "draw" : op == NOP_DRAW_MESH ? "mesh" : op == NOP_DISPATCH ? "dispatch" : "?";
+    return op == NOP_DRAW ? "draw" : op == NOP_DRAW_MESH ? "mesh" : op == NOP_DISPATCH ? "dispatch" : op == NOP_BARRIER ? "barrier" : "?";
 }
 // (a stream: 'd' a plain draw, 'm' a mesh draw, 'c' a dispatch, 'W' a dispatch writing a range a read has waited for).
 // Returns the part the writer was recorded in
 static int replay_stream(const std::string& stream) {
-    parts.clear(), part_work = 0, rec_parts = 0, part_end_wanted = false, early_split_pending = false, split_asked = false;
+    parts.clear(), part_work = 0, rec_parts = 0, part_end_wanted = false, part_end_at_pass = false, early_split_pending = false,
+    split_asked = false;
     st_early_splits = 0, early_end_asked = false;
     Recording& first = begin_recording(1);
     rec_cur = &first, rec_cur_value = 1;
@@ -97,12 +99,13 @@ static int replay_stream(const std::string& stream) {
     struct { bool render_enabled = true, raster_discard = false; } s;
     const bool dry = false, worker = false, early = early_on;
     for (char c : stream) {
-        struct { uint32_t op; } h = {c == 'd' ? (uint32_t)NOP_DRAW : c == 'm' ? (uint32_t)NOP_DRAW_MESH : (uint32_t)NOP_DISPATCH};
+        struct { uint32_t op; } h = {c == 'd' ? (uint32_t)NOP_DRAW : c == 'm' ? (uint32_t)NOP_DRAW_MESH
+                                     : c == 'b' ? (uint32_t)NOP_BARRIER : (uint32_t)NOP_DISPATCH};
         bool split_after = false;
         /* REPLAY_BEFORE */
         parts[cmd].push_back(h.op);   // (the op, recorded in the part being recorded)
         if (c == 'W') writer_part = cmd, split_asked = true;
-        maybe_split(cmd);   // (replay(): after every draw or dispatch)
+        if (c != 'b') maybe_split(cmd);   // (replay(): after every draw or dispatch)
         /* REPLAY_AFTER */
         (void)split_after;
     }
@@ -145,8 +148,18 @@ int main(int argc, char** argv) {
         check(parts.size() == 1 && st_early_splits == 0, "no part ends after the writer");
         replay_stream(std::string(250, 'd'));
         check(parts.size() == 3 && parts[0].size() == 120 && parts[1].size() == 120, "maybe_split's ends, every 120 draws");
+    } else if (mode == "at-pass") {   // ((ProjectReLink 88e38c0) RX_VK_SPLIT_AT_PASS, on: the end waits for the game's pass end)
+        early_on = false;
+        replay_stream(std::string(130, 'd') + "b" + "ddd");
+        check(parts.size() == 2 && parts[0].size() == 130, "the part's end after 120 draws waits for the game's barrier");
+        check(parts.size() == 2 && parts[1][0] == NOP_BARRIER, "and the next part begins with that barrier");
+        replay_stream(std::string(500, 'd'));
+        check(parts.size() == 2 && parts[0].size() == 480, "a pass that runs on for 4 parts' worth is cut there, as before");
+        early_on = true;
+        int w = replay_stream(gap + "W" + "ccmmd" + "ddd");
+        check(parts.size() == 2 && w == 0 && parts[0].size() == 21, "a readback's writer still ends its part at once");
     } else {
-        check(false, "a mode: before-draw, at-once or off");
+        check(false, "a mode: before-draw, at-once, off or at-pass");
     }
     for (size_t i = 0; i < parts.size() && fails; i++) {
         printf("  part %zu:", i);
@@ -174,12 +187,16 @@ def main():
            .replace("/* SPLIT_PART */", block(replay, "void split_part(VkCommandBuffer& cmd) {"))
            .replace("/* EARLY_SPLIT */", block(replay, "void early_split(VkCommandBuffer& cmd) {"))
            .replace("/* REPLAY_BEFORE */", before).replace("/* REPLAY_AFTER */", after))
-    base = {k: v for k, v in os.environ.items() if not k.startswith("RX_VK_")}
+    # ((ProjectReLink 88e38c0) the rows from before RX_VK_SPLIT_AT_PASS run with it off; "at-pass" with it on, its default)
+    clean = {k: v for k, v in os.environ.items() if not k.startswith("RX_VK_")}
+    base = dict(clean, RX_VK_SPLIT_AT_PASS="0")
     runs = (("before-draw", dict(base, VENDOR="0x8086")),                               # (Intel: the rule by default)
             ("before-draw", dict(base, VENDOR="0x1002", RX_VK_SPLIT_BEFORE_DRAW="1")),   # (asked for elsewhere)
             ("at-once", dict(base, VENDOR="0x1002")),                                    # (the Steam Deck's AMD APU)
             ("at-once", dict(base, VENDOR="0x8086", RX_VK_SPLIT_BEFORE_DRAW="0")),       # (Intel with the rule off)
-            ("off", dict(base, VENDOR="0x8086")), ("off", dict(base, VENDOR="0x1002")))
+            ("off", dict(base, VENDOR="0x8086")), ("off", dict(base, VENDOR="0x1002")),
+            ("at-pass", dict(clean, VENDOR="0x1002")),                                   # (RX_VK_SPLIT_AT_PASS unset: on)
+            ("before-draw", dict(clean, VENDOR="0x8086")))                               # (Intel's rule comes first)
     with tempfile.TemporaryDirectory(prefix="early-split-") as tmp:
         tmp = Path(tmp)
         c, exe = tmp / "split.cpp", tmp / ("split.exe" if os.name == "nt" else "split")
