@@ -145,7 +145,7 @@ def main():
                                                                   for n in ("Item_A", "Item_X")]), 7), {"Item_X_Fall": "Item_X", "Item_Q_Fall": "Item_Q"}))[0][1]
     assert [(r[1]["__RowId"][1], r[1]["K"][1]) for r in rows] == [("Item_A", "Item_A's"), ("Item_X", "Item_X's"), ("Item_X_Fall", "Item_X's")], rows
     assert "fall if fall and dropped == item else dropped" in pack_src, "a pot's unique item is not dropped as its falling pick-up"
-    assert "fall=None if pot_drops[h] in POT_WORLD else fall_of(pot_drops[h])" in main_src, "a pot's unique item hangs where the pot broke"
+    assert "drop = POT_AS.get(pot_drops[h], pot_drops[h])" in main_src and "fall=None if drop in POT_WORLD else fall_of(drop)" in main_src,         "a pot's unique item hangs where the pot broke, or the Master Sword is not dropped as its own pick-up (POT_AS)"
     assert "size_table_add(tbl, pot_fall_parts, POT_FALL_PART)" in main_src and S.POT_FALL_PART > 8976 + 4096,         "a falling pick-up's files have no size table entry, or one its set of bodies does not fit (the game stops as the area loads)"
     assert "pot_fall_rows(pot_rows(table, table_kind, made)" in main_src, "a falling pick-up has no rows in the lists of actors"
     add = host[host.index("int hos_oot_pouch_add(Ctx *c) {"):]

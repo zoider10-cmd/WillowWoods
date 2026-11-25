@@ -5487,11 +5487,19 @@ static int oot_pot_open(Ctx *c, const char *name, int *broken);
    "<the item>_Fall", and the game names the pick-up and the pouch's add by the actor: the name is made the item's again
    (1), so everything after goes by the seed's item as it did. 0: not such a name, left as it is. */
 #define OOT_POT_FALL "_Fall"
+/* (tools/rando/rando_seed.py POT_AS, asked 2026-11-25) A pick-up the seed made for an item that has no chest's item of its
+   own, and the item it stands for: the Master Sword's (MASTER_PICKUP, made from the Biggoron's item) */
+static const char *const oot_pot_as[][2] = {{"Item_Sword_Master", "Weapon_Sword_Master"}};
 static int oot_pot_fall(char *name) {
     const size_t length = strlen(name), tail = sizeof OOT_POT_FALL - 1;
-    if (length <= tail || strcmp(name + length - tail, OOT_POT_FALL)) return 0;
-    name[length - tail] = 0;
-    return 1;
+    int changed = 0;
+    if (length > tail && !strcmp(name + length - tail, OOT_POT_FALL)) name[length - tail] = 0, changed = 1;
+    for (unsigned i = 0; i < sizeof oot_pot_as / sizeof oot_pot_as[0]; i++)
+        if (!strcmp(name, oot_pot_as[i][0])) {   /* (both names are shorter than any buffer this is given: 96) */
+            strcpy(name, oot_pot_as[i][1]);
+            changed = 1;
+        }
+    return changed;
 }
 int hos_oot_pickup_room(Ctx *c) {
 #if defined(_WIN32) || defined(__linux__)
@@ -5550,7 +5558,7 @@ int hos_oot_pouch_add(Ctx *c) {
     }
     name[length] = 0;
     if (oot_pot_fall(name)) {   /* (a pot's falling pick-up, POT_FALL_AS: the add is its item's) */
-        hos_log("rando: pots: the falling pick-up %s" OOT_POT_FALL " is the seed's %s: that is added", name, name);
+        hos_log("rando: pots: a pot's pick-up is the seed's %s: that is added", name);
         view = oot_pouch_name(c, view, name);
     }
     /* (every content added, with where the call came from and its other arguments: the game gives a Bomb Bag with a

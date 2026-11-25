@@ -61,7 +61,7 @@ def main():
         check(S.own_model_pack(item, p) == p, "%s's pack changed: it names no shield's model file" % item)
     check(S.own_model_pack("TBox_Shield_Deku", pack("Item_Boomerang", "Item_Boomerang")) is not None, "a pack without the actor stops the seed")
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
-    check("new = own_model_pack(item, pickup_pack(item, old, base, each_time=item not in PROGRESSION))" in script,
+    check("new = own_model_pack(item, pickup_pack(item, pack(item), base, each_time=item not in PROGRESSION and item != MASTER_PICKUP))" in script,
           "the seed's pick-ups are not made through own_model_pack")
     print("PASS: a shield's pick-up has a model file of its own")
 

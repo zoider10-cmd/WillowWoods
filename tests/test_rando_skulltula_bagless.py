@@ -14,6 +14,7 @@ and the patch: the hook is the function's first line, asked from the touch's cal
     python -I -B tests/test_rando_skulltula_bagless.py [--cc gcc]
 """
 import argparse
+import re
 import subprocess
 import sys
 import tempfile
@@ -154,7 +155,8 @@ def main():
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     fn = "\n".join(block(host, marker) for marker in (
         "static int oot_bundle_holder(const char *name, const char *const **sizes) {",
-        "static int oot_drop_check_near(const char *name) {")) + '\n#define OOT_POT_FALL "_Fall"\n' + block(
+        "static int oot_drop_check_near(const char *name) {")) + '\n#define OOT_POT_FALL "_Fall"\n' + re.search(
+        r"^static const char \*const oot_pot_as\[\]\[2\] = .*$", host, re.M).group(0) + "\n" + block(
         host, "static int oot_pot_fall(char *name) {") + "\n" + block(
         host, "int hos_oot_pickup_room(Ctx *c) {")
     add = block(host, "int hos_oot_pouch_add(Ctx *c) {")

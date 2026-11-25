@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 32  # 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 33  # 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -3650,8 +3650,90 @@ GET_LARGE = 1746592023
 # event each time one is picked up), and of the copies of one name the game uses the first it loaded. These are given
 # a pouch file of their own, under a name of its own (OWN_POUCH), with the item's as its parent.
 PICKUP_OWN_POUCH = frozenset(("TBox_Rupee_Green", "TBox_Rupee_Blue", "TBox_Rupee_Red", "TBox_Rupee_Purple", "TBox_Rupee_Gold",
-                              "TBox_ArrowBundle_Medium", "TBox_ArrowBundle_Large", "Tbox_MagicJar_Large"))
+                              "TBox_ArrowBundle_Medium", "TBox_ArrowBundle_Large", "Tbox_MagicJar_Large",
+                              "Item_Sword_Master"))   # (MASTER_PICKUP: its pouch file is every two-handed sword item's)
 OWN_POUCH = "Component/PouchContentParam/Rando_%s.game__component__PouchContentParam.bgyml"
+
+
+# ---- The Master Sword as a pick-up (asked 2026-11-25) ----
+# The game has the sword only as the weapon (Weapon_Sword_Master: physics, attacks, AI), not as a chest's item made from
+# Item_EventObject_Base, which pickup_pack needs: a pot of the seed holding it stopped the seed ("Weapon_Sword_Master is
+# not made from Item_EventObject_Base"). The Biggoron's Sword has such an item (Item_Sword_Biggoron: its name, model and
+# equipment the weapon's, for both ages), so the sword gets one made from it (MASTER_PICKUP, master_item_pack): the
+# same files under its own name, naming Weapon_Sword_Master (its name for the pouch, so the pouch's add is the sword's)
+# and a model file of its own showing the sword (a shared one was opened with the game's copy and lost the cosmetics'
+# look, bug 78), and the Biggoron item's rows of the lists of actors with the sword's model (master_rows). A pot holding
+# the sword drops it (POT_AS).
+MASTER_PICKUP = "Item_Sword_Master"
+MASTER_PICKUP_FROM = "Item_Sword_Biggoron"
+MASTER_PICKUP_WEAPON_FROM = "Weapon_Sword_Biggoron"
+MASTER_POTS_FROM = 33   # (placement: the sword in pots and lying pieces again)
+POT_AS = {"Weapon_Sword_Master": MASTER_PICKUP}   # (what a pot drops for an item that has no chest's item of its own)
+
+
+def master_item_pack(from_pack, master="Weapon_Sword_Master"):
+    """MASTER_PICKUP's pack (a SARC archive) from MASTER_PICKUP_FROM's (from_pack): each file under the new name, every
+    name in it of that item made MASTER_PICKUP and of its weapon `master`; the model's file MASTER_PICKUP's own, without
+    the Biggoron's colour animations. ValueError: from_pack is not that item's."""
+    files = sarc_read(from_pack)
+    if ACTOR_FILE % MASTER_PICKUP_FROM not in files:
+        raise ValueError("%s: its pack has no actor of that name" % MASTER_PICKUP_FROM)
+    old_model, new_model = MODEL_INFO_FILE % MASTER_PICKUP_WEAPON_FROM, MODEL_INFO_FILE % MASTER_PICKUP
+    old_ref, new_ref = "ModelInfo/%s." % MASTER_PICKUP_WEAPON_FROM, "ModelInfo/%s." % MASTER_PICKUP   # (a reference to the model's file, ?... or Work/...)
+
+    def swap(text):
+        text = text.replace(MASTER_PICKUP_FROM, MASTER_PICKUP).replace(old_ref, new_ref)
+        return text.replace(MASTER_PICKUP_WEAPON_FROM, master)
+
+    def walk(node):
+        kind, value = node
+        if kind == "string":
+            return (kind, swap(value))
+        if kind == "dict":
+            return (kind, collections.OrderedDict((k, walk(v)) for k, v in value.items()))
+        if kind == "list":
+            return (kind, [walk(v) for v in value])
+        return node
+    out = {}
+    for name, data in files.items():
+        new_name = new_model if name == old_model else name.replace(MASTER_PICKUP_FROM, MASTER_PICKUP)
+        if new_name == name and MASTER_PICKUP_WEAPON_FROM in name:
+            raise ValueError("%s: a file of the weapon's not known here, %s" % (MASTER_PICKUP_FROM, name))
+        if not name.endswith(".bgyml"):
+            out[new_name] = data
+            continue
+        tree, version = byml_parse(data)
+        tree = walk(tree)
+        if name == old_model:
+            tree[1].pop("ModelVariationAnims", None)   # (the Biggoron's blade colours: the sword has none)
+        out[new_name] = byml_build(tree, version)
+    return sarc_write(out)
+
+
+def master_rows(data, kind, master="Weapon_Sword_Master"):
+    """one of the lists of actors (SHOP_TABLES) with MASTER_PICKUP's row: MASTER_PICKUP_FROM's, its names the sword's and
+    its model's fields the sword's own row's (its size, no colour variations). ValueError: a row is missing."""
+    tree, version = byml_parse(data)
+    by = {row[1]["__RowId"][1]: row for row in tree[1]}
+    if MASTER_PICKUP_FROM not in by:
+        raise ValueError("%s has no row of %s" % (kind, MASTER_PICKUP_FROM))
+    rows = [row for row in tree[1] if row[1]["__RowId"][1] != MASTER_PICKUP]
+    row = collections.OrderedDict(by[MASTER_PICKUP_FROM][1])
+    row["__RowId"] = ("string", MASTER_PICKUP)
+    for key, value in list(row.items()):
+        if value[0] == "string" and key != "__RowId":
+            row[key] = ("string", value[1].replace(MASTER_PICKUP_WEAPON_FROM, master))
+    row.pop("ModelVariationFmabName", None)
+    row.pop("ModelVariationAnims", None)
+    if kind == "ActorInfo":
+        if master not in by:
+            raise ValueError("ActorInfo has no row of %s" % master)
+        for key in ("ModelAabbMax", "ModelAabbMin", "CalcRadius", "DisplayRadius"):
+            if key in by[master][1]:
+                row[key] = by[master][1][key]
+    rows.append(("dict", row))
+    rows.sort(key=lambda x: x[1]["__RowId"][1])
+    return byml_build((tree[0], rows), version)
 
 
 def pickup_pack(item, item_pack, base_pack, base_name=PICKUP_BASE, effects_name=PICKUP_EFFECTS, each_time=False,
@@ -9188,8 +9270,8 @@ def main():
         for h, s in spots.items():
             if s[4] in ("shop", "scrub"):
                 holds[h] = frozenset(every - {MASTER})
-            elif h in holds and (s[4] == "skulltula" or placement >= KEYS_ENDING_FROM and s[4] in ("pot", "piece")):
-                holds[h] = holds[h] - {MASTER}   # (a pot's or a piece's drop is a pick-up's pack, which the sword has none of: 2026-11-25)
+            elif h in holds and (s[4] == "skulltula" or KEYS_ENDING_FROM <= placement < MASTER_POTS_FROM and s[4] in ("pot", "piece")):
+                holds[h] = holds[h] - {MASTER}   # (placement 32 only: a pot's drop was a pick-up's pack, which the sword had none of; MASTER_POTS_FROM)
     if placement >= RAINY_FROM:   # (a check there only for a while: junk only, RAINY_ONLY)
         junk = frozenset(i for i in {s[1] for s in spots.values()} if junk_holds(i))
         holds.update((h, junk) for h in JUNK_ONLY if h in spots)
@@ -9485,10 +9567,14 @@ def main():
 
     # ---- TEST: items' packs made pick-ups' ----
     pack_files, pack_sizes, pack_parts, pack_new = {}, {}, set(), set()
+    pack_added = {}   # (a pick-up's pack of our own, MASTER_PICKUP: its size table entry added)
     pouch_changed = {}   # (the pouch files the pick-ups changed: a shelf actor's pack takes them too)
     if pickups:
         def pack(name):
+            if name == MASTER_PICKUP:   # (no pack of the game's: made from the Biggoron's item, master_item_pack)
+                return master_item_pack(pack(MASTER_PICKUP_FROM))
             return unpack(open(os.path.join(romfs, "Pack", "Actor", name + ".pack.zs"), "rb").read(), zs, dicts)
+        pickups = sorted({POT_AS.get(i, i) for i in pickups})
         try:
             base = pack(PICKUP_BASE)
             base_parts = sarc_read(base)
@@ -9498,14 +9584,19 @@ def main():
                             if n not in pickups and os.path.isfile(os.path.join(romfs, "Pack", "Actor", n + ".pack.zs"))]
             for item in pickups:
                 old = pack(item)
+                if item == MASTER_PICKUP:   # (all its files are new: told apart from the item it is made from)
+                    old = pack(MASTER_PICKUP_FROM)
                 # (each time: what can be got more than once. A gating item is got once, and is as it was seen in play)
-                new = own_model_pack(item, pickup_pack(item, old, base, each_time=item not in PROGRESSION))   # (a shield's model file its own: bug 78)
+                new = own_model_pack(item, pickup_pack(item, pack(item), base, each_time=item not in PROGRESSION and item != MASTER_PICKUP))   # (a shield's model file its own: bug 78)
                 old_parts = sarc_read(old)
                 pack_parts.update(name for name, data in sarc_read(new).items()   # (the files changed in it)
                                   if data != old_parts.get(name, base_parts.get(name)))
                 pack_new.update(name for name in sarc_read(new) if name not in old_parts and name not in base_parts)
                 pack_files["Pack/Actor/%s.pack.zs" % item] = new
-                pack_sizes["Pack/Actor/%s.pack" % item] = len(new)
+                if item == MASTER_PICKUP:   # (a pack the size table has no entry of: one added, pack_added)
+                    pack_added["Pack/Actor/%s.pack" % item] = len(new)
+                else:
+                    pack_sizes["Pack/Actor/%s.pack" % item] = len(new)
                 pouch.update((name, data) for name, data in sarc_read(new).items()
                              if "/PouchContentParam/" in name and data != old_parts.get(name, base_parts.get(name)))
             # What an item is in the pouch is a file other packs carry a copy of, under the same name: the item in
@@ -9764,6 +9855,16 @@ def main():
 
     # ---- Shops: the shelves that take part sell what the shuffle put there, once ----
     shop_files, shop_packs, shop_new, shop_sizes, shop_parts = {}, {}, set(), {}, set()
+    if "Pack/Actor/%s.pack.zs" % MASTER_PICKUP in pack_files:   # (the sword's pick-up: its rows, master_rows)
+        try:
+            folder = os.path.join(romfs, "RSDB")
+            for kind in SHOP_TABLES:
+                n = next(n for n in sorted(os.listdir(folder)) if n.startswith(kind + ".") and ".byml" in n.lower())
+                table = master_rows(unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts), kind)
+                shop_files["RSDB/" + n] = table
+                shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
+        except (OSError, ValueError, struct.error, StopIteration) as e:
+            sys.exit("the Master Sword's pick-up's rows: %s. Nothing written." % e)
     tier_files, tier_maps = {}, {}   # (a shelf of a family: its map for each tier, SHELF_TIERS; a map: its shelves of a family)
     if shelves:
         def pack(name):
@@ -9813,7 +9914,7 @@ def main():
                 n = next((n for n in sorted(os.listdir(folder)) if n.startswith(kind + ".") and ".byml" in n.lower()), None)
                 if n is None:
                     raise ValueError("the game has no list %s" % kind)
-                table = unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
+                table = shop_files.get("RSDB/" + n) or unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)   # (the sword's pick-up's rows first, master_rows)
                 if kind == "ActorInfo":   # (how high each shelf's actor stands: by its item's model)
                     fits = {actor: SHELF_FIT_SHOP.get(shelf_shop(actor), {}).get(item) or shelf_fit(item, model_box(table, SHELF_MODEL_AS.get(item, item)))
                             for actor, (item, _) in on_sale.items()}
@@ -10422,8 +10523,9 @@ def main():
                     pot_falls[item] = fall
                 return pot_falls[item]
             for h, name in names.items():
-                new, own_parts = pot_pack(kind[h], designs[kind[h]], name, pot_drops[h],
-                                           fall=None if pot_drops[h] in POT_WORLD else fall_of(pot_drops[h]))   # (junk: the game's own pick-up)
+                drop = POT_AS.get(pot_drops[h], pot_drops[h])   # (the Master Sword: its own pick-up, MASTER_PICKUP)
+                new, own_parts = pot_pack(kind[h], designs[kind[h]], name, drop,
+                                           fall=None if drop in POT_WORLD else fall_of(drop))   # (junk: the game's own pick-up)
                 shop_files["Pack/Actor/%s.pack.zs" % name] = new
                 shop_packs["Pack/Actor/%s.pack" % name] = len(new)
                 shop_new.update(own_parts)
@@ -10547,8 +10649,11 @@ def main():
     new_tables = {}
     for n in tables:
         try:
+            first = unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
+            for path, size in pack_added.items():   # (a pack of our own: MASTER_PICKUP)
+                first = size_table_add(first, [path], size_entry(size, PACK_EXTRA))
             new_tables["System/Resource/" + n] = shop_table(size_table_update(size_table_add(size_table_raise(size_table_update(
-                size_table_update(unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts), sizes), pack_sizes, PACK_EXTRA),
+                size_table_update(first, sizes), pack_sizes, PACK_EXTRA),
                 pack_parts - pack_new), pack_new | gift_new), gift_sizes, FLOW_EXTRA))
         except Exception as e:
             sys.exit("the size table %s could not be updated (%s). Nothing written." % (n, e))
