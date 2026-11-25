@@ -66,7 +66,7 @@
       "The Spiritual Stones and Medallions the eight dungeons end in. Dungeons: shuffled among those eight endings. Anywhere: any item's place. None is needed to go on: the story goes by each dungeon being done, not by its stone or medallion.", \
       "Off", "Dungeons", "Anywhere") \
     X(KEYS, "Dungeon keys", "rando_keys", \
-      "Small keys and Boss Keys. Own dungeon: shuffled inside their dungeon. Anywhere: each dungeon's small keys can be in any chest of the game, and still count for their own dungeon; a check behind a locked door then asks for all of its dungeon's keys, and a dungeon's keys never lie behind a dungeon that waits on it. The Boss Keys and the maps and compasses left on With the keys go anywhere too. The Tracker's rules don't name the keys. Not tried in play yet.", \
+      "Small keys and Boss Keys. Own dungeon: shuffled inside their dungeon. Anywhere: each dungeon's small keys can be in any chest of the game, and still count for their own dungeon; a check behind a locked door then asks for all of its dungeon's keys, and a dungeon's keys never lie behind a dungeon that waits on it. The Boss Keys and the maps and compasses left on With the keys go anywhere too. The Tracker counts the keys you have found for each dungeon. Not tried in play yet.", \
       "Off", "Own dungeon", "Anywhere") \
     X(MAJOR, "Major items", "rando_major", \
       "The big items in chests (Kokiri Sword, Bow, Megaton Hammer and the like) are shuffled too, placed so the game can be finished. Needs Chests.", \
@@ -194,7 +194,7 @@
       "With the keys: as Dungeon keys has them. Anywhere: each dungeon's map and compass can be in any chest of the game; found in another place, it still counts for its own dungeon. From the start: every dungeon's map and compass are had from a new game's start, and the chests that held them hold rupees instead. Maps and compasses open no way: no rule asks for them. Not tried in play yet.", \
       "With the keys", "Anywhere", "From the start") \
     X(BOSS_KEYS, "Boss Keys", "rando_boss_keys", \
-      "With the keys: as Dungeon keys has them. Anywhere: each dungeon's Boss Key can be in any chest of the game, but only one you can reach with what its boss already asks for (so it is never behind another dungeon it waits on). Found in another place, it still opens its own dungeon's boss door. The Tracker's rules don't name the Boss Keys. Not tried in play yet.", \
+      "With the keys: as Dungeon keys has them. Anywhere: each dungeon's Boss Key can be in any chest of the game, but only one you can reach with what its boss already asks for (so it is never behind another dungeon it waits on). Found in another place, it still opens its own dungeon's boss door. The Tracker counts the Boss Keys you have found. Not tried in play yet.", \
       "With the keys", "Anywhere")
 
 enum {
