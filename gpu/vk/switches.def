@@ -804,6 +804,7 @@ SW(RX_VK_VB_RANGE, kill, bool, "on: only the vertex bindings that changed are bo
 SW(RX_VK_VERIFY_DIM, diag, string, "no verification", "WxH: hashes the guest memory of textures that size at upload and every 300 frames, logging writes the tracking missed.")
 SW(RX_VK_VRAM_MB, hw, int, "by rule from the driver's allowance, the card's VRAM, system RAM and integrated or not (texture_budget.h)", "Sets the texture budget in MB for a test, in place of the hardware rule.")
 SW(RX_VK_WAIT_GPU, attempt, int, "0: the replay is not held to the GPU", "<frames> keeps the replay no further ahead of the GPU than that many frames (at most 8).")
+SW(RX_VK_WAIT_OWN, hw, enum, "1 (each present waits for its own frame's GPU work) on AMD integrated GPUs on Windows; 0 elsewhere and when RX_VK_WAIT_GPU is set", "0 no wait, 1 its own frame's, 2 the frame before's, 3 the frame before's and its own after a texture upload (HeyListen 51e533a8).")
 SW(RX_VK_WAIT_HOLD_US, tune, int, "3000 microseconds", "How long a game wait that needs stopped work gives another queue's submit before forcing it on.")
 SW(RX_VK_WARP64, hw, bool, "long warp path where the GPU's subgroups can exceed 32 lanes, except in stages pinned to 32", "0 or 1 forces the graphics stages' long warp path off or on, whatever the GPU.")
 SW(RX_VK_WATCH_ADDRS, diag, string, "empty: none watched", "Watches fixed guest addresses (hex list) in the measured statistics frame.")

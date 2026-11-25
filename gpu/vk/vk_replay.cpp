@@ -50,6 +50,7 @@
 #include "vk_shader.h"
 #include "vk_state.h"
 #include "vk_texture.h"
+#include "wait_own.h"   // ((HeyListen 51e533a8) RX_VK_WAIT_OWN)
 #include "vk_xfer.h"
 #include "vk_present_rect.h"
 #include "vk_present_trace.h"
@@ -5454,6 +5455,40 @@ void do_present(const nvn_tex* t, const int crop[4]) {
                 const uint64_t old = values[presents % ahead];
                 values[presents % ahead] = value;
                 if (old) wait_value(old);
+            }
+        }
+        {   // ((HeyListen 51e533a8, from Hookshot 737a0975 by bubblesnout) On an AMD integrated GPU each present waits for its own
+            // frame's GPU work: the GPU reads guest memory where it is, and a Radeon 890M (ROG Xbox Ally X) ran far enough behind that
+            // the game had rewritten its HUD's records before a pass read them: icons flashing mid-screen, the minimap drawn with another
+            // texture whenever the camera moved, gone with the wait (48-56 fps there). On a Ryzen 7 5700U's graphics only this mode
+            // gave a whole HUD (18 of 18 pictures; 2, 3 and 0 gave 15-17 wrong of 20). It costs fps there (the GPU idle while the game
+            // builds the next frame). Here on Windows only, where it was seen: the Steam Deck keeps today's no wait. AMD's discrete
+            // cards and other vendors: no wait. RX_VK_WAIT_OWN=1 / 0 on / off on any GPU (2: the frame before's, 3: the frame before's,
+            // its own after a texture upload; wait_own.h); setting RX_VK_WAIT_GPU (the ring above) leaves the default off
+#ifdef _WIN32
+            constexpr bool windows = true;
+#else
+            constexpr bool windows = false;
+#endif
+            static const int own = [] {
+                const int m = wait_own::mode(getenv("RX_VK_WAIT_OWN"), getenv("RX_VK_WAIT_GPU") != nullptr,
+                                             windows && dev.props.vendorID == 0x1002 &&
+                                                 dev.props.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU);
+                if (m && !getenv("RX_VK_WAIT_OWN"))
+                    logf("vk: an AMD integrated GPU: each present waits for the GPU's work of its own frame (RX_VK_WAIT_OWN=2: of the frame before, =3: of the frame before, its own when textures were uploaded, =0: not)");
+                else if (m)
+                    logf("vk: RX_VK_WAIT_OWN=%d: each present waits for the GPU's work of %s", m, m == 1 ? "its own frame" : m == 2 ? "the frame before" : "the frame before (its own when textures were uploaded)");
+                return m;
+            }();
+            static uint64_t own_prev = 0;
+            static int64_t own_uploads = 0;
+            if (own) {
+                int64_t uploads = 0, astc = 0, bytes = 0;
+                texture_stats(&uploads, &astc, &bytes);   // (mode 3: did this frame upload textures)
+                const bool uploaded = uploads != own_uploads;
+                own_uploads = uploads;
+                const uint64_t t = wait_own::target(own, value, own_prev, uploaded);
+                if (t) wait_value(t);
             }
         }
         if (presents % 300 == 0) pipeline_cache_save(false);
