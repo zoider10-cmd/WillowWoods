@@ -588,6 +588,13 @@ float tracker_world_map(ui::Ctx& c, float x0, float x1, float y0, float y1) {
     constexpr ImU32 kLine = ui::rgba(70, 84, 110);
     ui::box(c, ImVec2(x0, y0), ImVec2(x1, y1));
     ui::text(c, c.f.heading, 21 * s, ImVec2(x0 + 24 * s, y0 + 18 * s), ui::kInk, "Map");
+    {   // (the legend, beside the heading: what a box's colours and counts mean)
+        const float ly = y0 + 18 * s + 4 * s, lh = 15 * s;
+        float lx = x0 + 24 * s + ui::size_of(c.f.heading, 21 * s, "Map").x + 22 * s;
+        lx += ui::text(c, c.f.body, lh, ImVec2(lx, ly), kIn, "green: checks you can get now") + 18 * s;
+        lx += ui::text(c, c.f.body, lh, ImVec2(lx, ly), kOut, "grey: needs more items") + 18 * s;
+        ui::text(c, c.f.body, lh, ImVec2(lx, ly), kGot, "dim: done");
+    }
     const float mx0 = x0 + pad, mx1 = x1 - pad, my0 = y0 + 52 * s, my1 = y1 - pad;
     const char* here = tracker_here_area();
     struct Placed { ImVec2 a, b, mid; AreaCount n; };
@@ -600,7 +607,7 @@ float tracker_world_map(ui::Ctx& c, float x0, float x1, float y0, float y1) {
         at[i].n = tracker_area_count(a.area);
         const float tw = ui::size_of(c.f.body, a.dungeon ? small : big, a.label).x;
         char tail[24] = "";
-        if (a.dungeon && at[i].n.left) snprintf(tail, sizeof tail, "  %d", at[i].n.left);
+        if (a.dungeon && at[i].n.left) snprintf(tail, sizeof tail, at[i].n.in ? "  %d now" : "  %d left", at[i].n.in ? at[i].n.in : at[i].n.left);
         const float w = tw + (tail[0] ? ui::size_of(c.f.body, small, tail).x : 0) + (a.dungeon ? 14 : 18) * k, h = (a.dungeon ? 20 : 34) * k;
         float cx = mx0 + a.x * (mx1 - mx0), cy = my0 + a.y * (my1 - my0);
         cx = std::clamp(cx, mx0 + w * 0.5f, mx1 - w * 0.5f), cy = std::clamp(cy, my0 + h * 0.5f, my1 - h * 0.5f);
@@ -628,24 +635,24 @@ float tracker_world_map(ui::Ctx& c, float x0, float x1, float y0, float y1) {
         if (a.dungeon) {
             float tx = at[i].a.x + 7 * k;
             tx += ui::text_mid(c, c.f.body, small, tx, at[i].mid.y, ink, a.label);
-            if (n.left) {
+            if (n.left) {   // (a dungeon's chip: the checks to get now, else the checks left)
                 char tail[24];
-                snprintf(tail, sizeof tail, "  %d", n.left);
+                snprintf(tail, sizeof tail, n.in ? "  %d now" : "  %d left", n.in ? n.in : n.left);
                 ui::text_mid(c, c.f.body, small, tx, at[i].mid.y, n.in ? kIn : kOut, tail);
             }
             continue;
         }
         ui::text_mid_centre(c, c.f.body, big, at[i].mid.x, at[i].mid.y - 7 * k, ink, a.label);
-        char line[40];
+        // (the checks to get now first, in green, then how many are left: "3 now · 12 left"; "12 left" with none to get now)
+        char in[24] = "", line[40];
+        if (n.left && n.in) snprintf(in, sizeof in, "%d now", n.in);
         if (!n.all) snprintf(line, sizeof line, "no checks");
         else if (!n.left) snprintf(line, sizeof line, "done");
-        else snprintf(line, sizeof line, "%d left", n.left);
+        else snprintf(line, sizeof line, in[0] ? ", %d left" : "%d left", n.left);
         const float lw = ui::size_of(c.f.body, small, line).x;
-        char in[16] = "";
-        if (n.left && n.in) snprintf(in, sizeof in, ", %d", n.in);
         const float iw = in[0] ? ui::size_of(c.f.body, small, in).x : 0, lx = at[i].mid.x - (lw + iw) * 0.5f;
-        ui::text_mid(c, c.f.body, small, lx, at[i].mid.y + 8 * k, ui::kDim, line);
-        if (in[0]) ui::text_mid(c, c.f.body, small, lx + lw, at[i].mid.y + 8 * k, kIn, in);
+        if (in[0]) ui::text_mid(c, c.f.body, small, lx, at[i].mid.y + 8 * k, kIn, in);
+        ui::text_mid(c, c.f.body, small, lx + iw, at[i].mid.y + 8 * k, ui::kDim, line);
     }
     return y1;
 }
