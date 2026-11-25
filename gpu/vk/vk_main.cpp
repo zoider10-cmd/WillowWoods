@@ -2020,12 +2020,6 @@ void mkwvk_close_asked(void) {
 
 static MkwVkHost host_storage;
 
-extern "C"
-#ifdef _WIN32
-__declspec(dllexport)
-#else
-__attribute__((visibility("default")))
-#endif
 namespace mkwvk {
 // ((HeyListen c81f500c) RX_VK_THREAD_PRIO, thread_prio.h) the background compile threads' processors, and the start line
 static void thread_prio_init() {
@@ -2047,6 +2041,12 @@ static void thread_prio_init() {
 }
 } // namespace mkwvk
 
+extern "C"
+#ifdef _WIN32
+__declspec(dllexport)
+#else
+__attribute__((visibility("default")))
+#endif
 const MkwVkRenderer* mkwvk_init(const MkwVkHost* h) {
     using namespace mkwvk;
     if (!h) return nullptr;
