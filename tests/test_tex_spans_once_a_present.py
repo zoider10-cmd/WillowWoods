@@ -21,7 +21,9 @@ def main():
     parser.add_argument('--cxx', default='g++')
     parser.add_argument('--source', type=Path, default=ROOT / 'gpu/vk/vk_memory.cpp')
     args = parser.parse_args()
-    publish = block(args.source.read_text(encoding='utf-8'), 'void publish_tex_spans(uint64_t frame) {')
+    text = args.source.read_text(encoding='utf-8')
+    # (how long a span is kept, RX_VK_TEX_SPAN_KEEP, 1800 when unset, as the cases below expect)
+    publish = block(text, 'uint64_t tex_span_keep() {') + '\n' + block(text, 'void publish_tex_spans(uint64_t frame) {')
     fixture = r'''
 #include <algorithm>
 #include <cstdint>
@@ -29,6 +31,7 @@ def main():
 #include <cstdlib>
 #include <map>
 #include <mutex>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 #define CHECK(ok) do { if (!(ok)) { std::fprintf(stderr, "failed line %d\n", __LINE__); std::exit(1); } } while (0)
@@ -43,6 +46,7 @@ bool tex_spans_changed = false;
 uint64_t tex_merged_bytes = 0, cap_ranges_ver = 0;
 std::mutex shadow_mu, cap_ranges_mu;
 void shadow_drop_range(uint64_t lo, uint64_t hi) { dropped.push_back({lo, hi}); }
+std::unordered_set<uint64_t> tex_spans_dropped;
 ''' + publish + r'''
 int main() {
     tex_spans.try_emplace(0x1000, 0x3000, 100);   // (lo -> hi, the present it was last uploaded from)

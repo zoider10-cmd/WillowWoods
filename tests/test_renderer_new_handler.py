@@ -67,7 +67,9 @@ def check_sites(main):
     if "hos_alloc_gave_up(0, what)" not in block(backend, "static void host_out_of_memory(const char *what)"):
         raise SystemExit("FAIL: the host's out_of_memory is not hos_alloc_gave_up's line, notice and stop")
     replay = read("gpu/vk/vk_replay.cpp")
-    if not re.search(r"presents\+\+;\n\s*presents_now = presents;\n\s*new_refuse_test\(presents\);", replay):
+    # (in the present, after its count; Triforce's frame note for the predicted pipelines' builder came between them)
+    if not re.search(r"presents\+\+;\n\s*presents_now = presents;\n(?:(?!presents\+\+;)[\s\S]){0,800}?\n\s*new_refuse_test\(presents\);",
+                     replay):
         raise SystemExit("FAIL: HOS_TEST_ALLOC_REFUSE's allocation (new_refuse_test) is not run at the replay's present")
 
 
@@ -88,7 +90,7 @@ def main():
         (folder / "renderer_new_handler_head.inc").write_text(head + "\n", encoding="utf-8")
         (folder / "renderer_new_handler_body.inc").write_text(body + "\n", encoding="utf-8")
         executable = folder / "fixture.exe"
-        subprocess.run([cxx, "-std=c++20", "-O1", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT), "-I", str(folder),
+        subprocess.run([cxx, "-std=c++20", "-O1", "-Wall", "-Wextra", "-Werror", "-idirafter", str(ROOT), "-I", str(folder),
                         str(ROOT / "tests/renderer_new_handler_test.cpp"), "-o", str(executable)],
                        check=True, creationflags=flags)
         for case in CASES:

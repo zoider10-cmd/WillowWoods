@@ -77,7 +77,14 @@ def main():
     sites = [line.strip() for line in replay.splitlines() if "VK_ERROR_DEVICE_LOST" in line and "if (" in line]
     if len(sites) < 4:
         raise SystemExit("FAIL: fewer VK_ERROR_DEVICE_LOST checks than the four known: update this test")
-    stray = [s for s in sites if not re.search(r"== VK_ERROR_DEVICE_LOST\) device_lost\(\);", s)]
+    # (the captures' timeline waits only say it, wait_lost, and report the value not done: "the next submit or the GPU hang
+    # watch ends the game", whose VK_ERROR_DEVICE_LOST goes to device_lost() as below. Mako 4.2's vk_timeline_wait_for is one)
+    said_only = (r"== VK_ERROR_DEVICE_LOST\) wait_lost\(\"a capture's wait for write-back\", v\);",
+                 r"return ok != 0 && wait_rec_result != VK_ERROR_DEVICE_LOST;")
+    if "the next submit or the GPU hang watch ends the game" not in replay[:replay.index("void wait_lost(const char* what")]:
+        raise SystemExit("FAIL: wait_lost no longer says the next submit or the hang watch ends the game: update this test")
+    stray = [s for s in sites if not re.search(r"== VK_ERROR_DEVICE_LOST\) device_lost\(\);", s)
+             and not any(re.search(p, s) for p in said_only)]
     if stray:
         raise SystemExit("FAIL: a device lost that does not end the process: " + "; ".join(stray))
     # (the report is logf lines, which the host queues on Windows: replay_fatal writes the queue out before _Exit)

@@ -34,7 +34,9 @@ def heavy_structs(bodies):
     """the structs that hold a heavy member, directly or through another such struct"""
     heavy = {name for name, body in bodies.items() if HEAVY.search(body)}
     while True:
-        more = {name for name, body in bodies.items() if name not in heavy and any(re.search(r"\b%s\b" % h, body) for h in heavy)}
+        # (a pointer to one, as PipeFast's PipeEntry*, holds nothing that needs a destructor)
+        more = {name for name, body in bodies.items()
+                if name not in heavy and any(re.search(r"\b%s\b(?!\s*\*)" % h, body) for h in heavy)}
         if not more:
             return heavy
         heavy |= more

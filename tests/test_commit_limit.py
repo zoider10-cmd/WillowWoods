@@ -64,7 +64,9 @@ def main():
         raise SystemExit("FAIL: the first-touch handler does not wait at the commit limit")
     # (the retry of a page another thread committed is Windows' only: on Linux the VirtualQuery stand-in calls every guest page
     # committed and read-write and the signal handler never sets 8, so every fault in the window would be tried again forever)
-    retry = "if (mbi.State == MEM_COMMIT && mbi.Protect == PAGE_READWRITE && rec->ExceptionInformation[0] != 8)"
+    # (Mako 4.1.1: or PAGE_EXECUTE_READWRITE, a range the renderer imported, made a region of its own)
+    retry = ("if (mbi.State == MEM_COMMIT && (mbi.Protect == PAGE_READWRITE || mbi.Protect == PAGE_EXECUTE_READWRITE) &&\n"
+             "        rec->ExceptionInformation[0] != 8)")
     if touch.count(retry) != 1:
         raise SystemExit("FAIL: the first-touch handler does not retry a page another thread committed (not an execute fault)")
     head, tail = touch[:touch.index(retry)], touch[touch.index(retry):]

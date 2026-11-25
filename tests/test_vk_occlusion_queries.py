@@ -777,7 +777,9 @@ def check_wiring(replay, draw):
     """Where the helpers are called, checked in the source"""
     # every draw takes its query before it is recorded (the dry pass too)
     for case in ("case NOP_DRAW: {", "case NOP_DRAW_IDX: {", "case NOP_DRAW_INDIRECT: {", "case NOP_DRAW_MESH: {"):
-        body = block(replay, case)
+        # (the replay's own switch, at its indent: the barrier's look ahead for mesh draws, ProjectReLink 88e38c0, has a
+        # case NOP_DRAW_MESH of its own before it)
+        body = block(replay, "\n        " + case)
         take = body.index("occ_take(s, da, dry);")
         assert take < body.index("if (s.render_enabled && !s.raster_discard && !dry) {"), case
         assert "DrawArgs da;" not in body[take:], "%s: a second DrawArgs after the query was taken" % case
@@ -804,7 +806,9 @@ def check_wiring(replay, draw):
     assert "occ_collect();" in block(replay, "Recording& begin_recording(uint64_t value)")
     # RX_VK_OCC_COPY: a recording's queries copied after its end barrier (its draws done), before it is submitted; every
     # recording's end forgets them, so none is copied by a later recording than its own
-    for marker, c in (("void maybe_split(VkCommandBuffer& cmd) {", "cmd"), ("void finish_recording(uint64_t value) {", "r.cmd")):
+    # (a part's end is split_part's, which maybe_split and the pass-end split call: ProjectReLink 88e38c0)
+    assert "split_part(cmd);" in block(replay, "void maybe_split(VkCommandBuffer& cmd) {")
+    for marker, c in (("void split_part(VkCommandBuffer& cmd) {", "cmd"), ("void finish_recording(uint64_t value) {", "r.cmd")):
         body = block(replay, marker)
         end = body.index('full_barrier(%s, "barrier (recording end)");' % c)
         assert end < body.index("occ_copy_part(%s);" % c) < body.index("submit_recording("), marker

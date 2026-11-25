@@ -295,7 +295,8 @@ def main():
     readback = between(source, "// (a command buffer of its own for the read-backs", wait) + wait
     frame = block(source, "void texture_frame(uint64_t completed)")
     evict_struct = frame[frame.index("    struct Evict {"):frame.index("\n", frame.index("    struct Evict {"))]
-    tail = between(frame, "    evict_reason::Tally tally;", "    if (n_dead && frame_no >= dead_logged_at")
+    # (up to the eviction's log lines: the idle uploads' (Mako), then the dead targets')
+    tail = between(frame, "    evict_reason::Tally tally;", "    if (n_idle && frame_no >= idle_logged_at")
     fixture = (FIXTURE.replace("/* DEAD */", block(source, "struct Dead {") + ";")
                .replace("/* READBACK */", readback)
                .replace("/* FLUSH */", block(source, "struct Flush {") + ";")

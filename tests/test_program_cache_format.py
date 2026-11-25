@@ -38,7 +38,9 @@ def body(text, marker):
 def translator_files():
     """nx2/translator_files.py, which nx2/build.py's HOOKSHOT_SHADER_STAMP is made from"""
     build = (ROOT / "nx2" / "build.py").read_text(encoding="utf-8")
-    if 'shader_stamp = "-DHOOKSHOT_SHADER_STAMP=0x%sull" % translator_files.stamp(vk)' not in build:
+    # (Mako 4.1: the files' own stamp, or the pin in nx2/shader_stamp_pin.txt while the files still hash to what it stands for)
+    if not all(t in build for t in ('computed = translator_files.stamp(vk)', 'pin[1] == computed',
+                                    'shader_stamp = "-DHOOKSHOT_SHADER_STAMP=0x%sull" % (chosen or computed)')):
         raise SystemExit("FAIL: nx2/build.py's HOOKSHOT_SHADER_STAMP is no longer translator_files.stamp: update this check")
     spec = importlib.util.spec_from_file_location("translator_files_under_test", ROOT / "nx2" / "translator_files.py")
     m = importlib.util.module_from_spec(spec)

@@ -134,6 +134,9 @@ class ShaderStampCacheTests(unittest.TestCase):
             "NGX_MSVC_RT": "vk_ngx_msvc_rt.cpp",
             "FSR": fsr,   # (HOOKSHOT_FSR=1: vk_fsr4.cpp built with AMD FSR 4)
             "translator_files": self.translator_files,
+            # (the build script's own path: since Mako 4.1 it reads nx2/shader_stamp_pin.txt beside it. The fixture's tree has
+            # none, so the stamp is the files' own)
+            "__file__": str(self.root / "nx2" / "build.py"),
         }
         environ = dict({"RX_RELEASE": "1"} if release else {}, **({"RX_VK_PGO": pgo} if pgo else {}))   # (pgo: gen, or a profile)
         with mock.patch.dict(os.environ, environ, clear=True), warnings.catch_warnings():

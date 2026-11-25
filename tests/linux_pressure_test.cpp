@@ -35,6 +35,7 @@ using VkDescriptorType = uint32_t;
 using VkPipeline = uintptr_t;
 using VkShaderStageFlags = uint32_t;
 using VkPrimitiveTopology = uint32_t;
+using VkDescriptorUpdateTemplate = uintptr_t;
 
 constexpr VkShaderModule VK_NULL_HANDLE = 0;
 constexpr VkShaderStageFlagBits VK_SHADER_STAGE_VERTEX_BIT = 0x01;
@@ -101,6 +102,8 @@ void vkDestroyShaderModule(uintptr_t, VkShaderModule m, const void*) {
 }
 
 #include "cache_types.inc"
+
+void program_record_of(const Program*, uint64_t, uint64_t) {}   // (vk_shader.cpp: where a program's record is, for Mako's remake)
 
 std::mutex disk_mu;
 FILE* disk_in = nullptr;

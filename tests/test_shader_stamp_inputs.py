@@ -16,7 +16,9 @@ spec.loader.exec_module(files)
 
 build = (ROOT / "nx2" / "build.py").read_text(encoding="utf-8")
 assert re.search(r"^import translator_files$", build, re.M), "nx2/build.py no longer imports translator_files"
-assert 'shader_stamp = "-DHOOKSHOT_SHADER_STAMP=0x%sull" % translator_files.stamp(vk)' in build, \
+# (Mako 4.1: the files' own stamp, or the pin in nx2/shader_stamp_pin.txt while the files still hash to what it stands for)
+assert all(t in build for t in ('computed = translator_files.stamp(vk)', 'pin[1] == computed',
+                                'shader_stamp = "-DHOOKSHOT_SHADER_STAMP=0x%sull" % (chosen or computed)')), \
     "nx2/build.py's HOOKSHOT_SHADER_STAMP is no longer translator_files.stamp(vk): update this check"
 assert files.DIRS == ("eden", "sirit", "compat") and files.FILES == ("vk_shader.cpp", "vk_bank.cpp", "vk_state.h"), \
     "the stamped files changed: say in nx2/translator_files.py why each one is in or out, then update this check"
