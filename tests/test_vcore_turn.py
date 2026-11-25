@@ -59,6 +59,11 @@ static void hos_log(const char *fmt, ...) {
 static const char *hos_profiling_dir(void) { return 0; }
 static void hos_profiling_event(const char *fmt, ...) { (void)fmt; }
 static int hos_cores(void) { return 2; }
+/* ((HeyListen e44c839d) HOS_BG_CAP's auto reading of the host's cores: none read here, so auto finds no cap) */
+typedef struct { int Relationship; } SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+enum { RelationProcessorCore = 0 };
+static BOOL GetLogicalProcessorInformation(SYSTEM_LOGICAL_PROCESSOR_INFORMATION *i, DWORD *len) { (void)i, (void)len; return 0; }
+static uint64_t hos_reserved_cpus(void) { return 0; }
 static int sleeps;
 static void (*on_sleep)(void);
 static BOOL SleepConditionVariableSRW(PCONDITION_VARIABLE cv, PSRWLOCK lk, DWORD ms, unsigned long f) {

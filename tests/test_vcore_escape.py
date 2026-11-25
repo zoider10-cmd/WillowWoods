@@ -62,7 +62,12 @@ static void hos_log(const char *fmt, ...) { if (strstr(fmt, "ran without a core"
 /* (host/profiling.c: the profiling mode off, so a long wait is no event) */
 static const char *hos_profiling_dir(void) { return 0; }
 static void hos_profiling_event(const char *fmt, ...) { (void)fmt; }
-static int hos_cores(void) { return 2; }
+static int hos_cores(void) { return getenv("HARNESS_CORES") ? atoi(getenv("HARNESS_CORES")) : 2; }
+/* ((HeyListen e44c839d) HOS_BG_CAP's auto reading of the host's cores: none read here, so auto finds no cap) */
+typedef struct { int Relationship; } SYSTEM_LOGICAL_PROCESSOR_INFORMATION;
+enum { RelationProcessorCore = 0 };
+static BOOL GetLogicalProcessorInformation(SYSTEM_LOGICAL_PROCESSOR_INFORMATION *i, DWORD *len) { (void)i, (void)len; return 0; }
+static uint64_t hos_reserved_cpus(void) { return 0; }
 static int sleeps;
 static void (*on_sleep)(void);   /* (what the other threads do during one look: only the test sets it) */
 /* (no other thread runs here, except what on_sleep does: a wait for a core lets the clock go on, 1 ms a look, as the real one
@@ -159,7 +164,41 @@ static void starvation(int off) {
           "before the starved time the better waiter gets the core first and the waiter after it");
     on_sleep = NULL;
 }
+/* ((HeyListen e44c839d, ProjectReLink 34efe84) HOS_BG_CAP=2 on 4 virtual cores) a background thread (priority over 18) takes a free core only while fewer than 2 are held */
+static void bg_cap(void) {
+    HosThread f1, f2, bg;
+    memset(vc_owner, 0, sizeof vc_owner), vc_nq = 0, memset(&vc_st, 0, sizeof vc_st);
+    thread(&f1, "frame1", 16, 15), thread(&f2, "frame2", 17, 15), thread(&bg, "ParallelDecompThread", 19, 15);
+    on_sleep = NULL, sleeps = 0;
+    vc_take(&f1, 0);   /* one core held of the cap's two: the background thread takes a core at once */
+    cur = &bg; hos_vcore_back();
+    check(bg.vc_held && sleeps == 0, "bg cap: under the cap a background thread takes a free core without waiting");
+    cur = &bg; hos_vcore_away();
+    memset(vc_owner, 0, sizeof vc_owner), sleeps = 0;
+    bg.vc_free_until = 0;
+    vc_take(&f1, 0), vc_take(&f2, 1);   /* the cap's two held: it waits for its 8 ms, then takes a free core, and is left alone */
+    cur = &bg; hos_vcore_back();
+    check(bg.vc_held && sleeps >= 7 && sleeps <= 10, "bg cap: at the cap a background thread waits about 8 ms, then runs");
+    check(bg.vc_free_until > now_ns, "bg cap: and is left alone for a while after it");
+    const int slept = sleeps;
+    cur = &bg; hos_vcore_away();
+    hos_vcore_back();
+    check(sleeps == slept, "bg cap: left alone, it takes a free core again without waiting");
+    cur = &bg; hos_vcore_away();
+    memset(vc_owner, 0, sizeof vc_owner), vc_nq = 0, bg.vc_free_until = 0;
+    vc_take(&bg, 0), vc_take(&f1, 1);   /* a frame thread takes a core past the cap: the background holder is asked to give its up */
+    vc_take(&f2, 2);
+    check(bg.vc_kick == 3, "bg cap: a frame thread's core past the cap asks the background holder to give its core up");
+    cur = &bg;
+    hos_vcore_checkpoint();
+    check(vc_st.yields >= 1, "bg cap: it gives it up at its next checkpoint, with nobody queued");
+}
 int main(int argc, char **argv) {
+    if (argc > 1 && !strcmp(argv[1], "cap")) {   /* HOS_BG_CAP=2, HARNESS_CORES=4 */
+        bg_cap();
+        if (!bad) puts("ok");
+        return bad;
+    }
     if (argc > 1) {   /* the old rule: HOS_VCORE_STARVE_US=0 */
         starvation(1);
         if (!bad) puts("ok");
@@ -258,6 +297,12 @@ def main():
             raise SystemExit("a starved thread escapes, or an escaped thread does not take a core again (issues 262, 1929)")
         if old.returncode or "ok" not in old.stdout:
             raise SystemExit("with HOS_VCORE_STARVE_US=0 the fixture no longer shows the old escape (issue 262)")
+        # ((HeyListen e44c839d) HOS_BG_CAP: a background thread waits for a core while the cap is held, and gives one up past it)
+        cap = subprocess.run([str(exe), "cap"], capture_output=True, text=True, timeout=30,
+                             env={**os.environ, "HOS_BG_CAP": "2", "HARNESS_CORES": "4"})
+        print(cap.stdout, end="")
+        if cap.returncode or "ok" not in cap.stdout:
+            raise SystemExit("HOS_BG_CAP: a background thread must wait for a core while the cap is held, and give one up past it")
 
 
 if __name__ == "__main__":
