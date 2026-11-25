@@ -653,6 +653,7 @@ SW(RX_VK_PTR_DIAG, diag, bool, "off: no lines", "Logs a line for each program wh
 SW(RX_VK_PTR_SPLIT_FALLBACK, kill, bool, "on: a split address is left to the run-time search", "=0 binds a split address to the constant buffer pointer on one side of its select or phi, as before.")
 SW(RX_VK_PUSH_ALL, kill, bool, "off: only changed bindings are pushed", "Pushes every descriptor binding at every draw, as before.")
 SW(RX_VK_PUSH_STATE_OLD, kill, bool, "off: the new pushed-state comparison", "Tracks pushed descriptor state as a vector of words per write, as before.")
+SW(RX_VK_QUERY_RING, kill, bool, "on where host-coherent memory holds the ring: recordings' timestamps copied by the GPU into a mapped ring, read a turn later", "=0 reads each recording's timestamps with vkGetQueryPoolResults, as before.")
 SW(RX_VK_QUEUE_STATE, kill, bool, "on: each queue keeps its own replay state", "=0: one replay state shared by all queues, as before.")
 SW(RX_VK_QUICK_MS, attempt, float, "off (0: no quick pipelines)", "Milliseconds a frame each recording thread may spend on quick pipeline builds for draws still waiting.")
 SW(RX_VK_RB_REFRESH_EACH, kill, bool, "off: a recording that joined an open submission refreshes only pages safe to copy", "1 refreshes the readback pages in every recording, as before.")

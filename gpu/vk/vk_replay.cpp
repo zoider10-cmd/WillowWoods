@@ -390,12 +390,57 @@ int64_t st_wait_ns;   // (time the replay waited for a recording slot: the GPU b
 VkQueryPool ts_pool = VK_NULL_HANDLE;
 bool ts_pending[kRecordings];
 int64_t st_gpu_ns, st_gpu_max_ns;
-void gpu_time_collect(Recording& r) {
-    if (!ts_pool || !ts_pending[r.slot]) return;
-    ts_pending[r.slot] = false;
-    uint64_t t[2] = {0, 0};
-    if (vkGetQueryPoolResults(dev.device, ts_pool, 2 * r.slot, 2, sizeof t, t, 8, VK_QUERY_RESULT_64_BIT) != VK_SUCCESS)
+// ---- (Triforce 86170247) RX_VK_QUERY_RING: a recording's timestamps read from memory the GPU copied them into, not with
+// vkGetQueryPoolResults. On AMD's Windows driver that call cost Triforce about 0.6 ms a frame on the replay's thread (an RX 6700
+// XT; they make two a recording, we make one), and with RX_VK_RECORDER=thread each call is a boundary that waits for the recorder
+// thread first. A slot's next use begins with a copy of its last use's timestamps (long done: the slot's fence was waited for)
+// into the ring, each value with its availability word, before the queries are reset (query commands on one queue run in
+// submission order), behind a copy-to-host barrier; the next time the slot comes round, its fence waited for again, the CPU
+// reads them. So each recording's GPU time arrives one turn of the ring later (48 recordings, about two frames) and nothing
+// waits for it: the FPS counter and perf_monitor average over many frames anyway. Not without host-coherent memory for the
+// ring (an invalidate would be a recorder boundary too). RX_VK_QUERY_RING=0: read with vkGetQueryPoolResults, as before.
+// tests/test_query_ring.py
+constexpr int kRingWords = 4;   // (per slot: 2 timestamps, each a value and its availability word, 32 bytes a slot)
+VkBuffer ts_ring = VK_NULL_HANDLE;
+VmaAllocation ts_ring_alloc = nullptr;
+const volatile uint64_t* ts_ring_map = nullptr;
+bool ts_ring_copied[kRecordings];   // (the slot's last use copied its use before's timestamps: read them when it comes round)
+bool query_ring_on() {
+    static const bool v = !(getenv("RX_VK_QUERY_RING") && atoi(getenv("RX_VK_QUERY_RING")) == 0);
+    return v;
+}
+/// (with ts_pool, the first time: where gpu_time_begin makes the pool) the ring, mapped and host-coherent, or none
+void query_ring_make() {
+    if (!query_ring_on() || ts_ring) return;
+    void* mapped = nullptr;
+    if (!create_buffer_cached(kRecordings * kRingWords * 8, VK_BUFFER_USAGE_TRANSFER_DST_BIT, ts_ring, ts_ring_alloc, &mapped, true) ||
+        !mapped || !host_coherent(ts_ring_alloc)) {
+        if (ts_ring) destroy_buffer(ts_ring, ts_ring_alloc);
+        ts_ring = VK_NULL_HANDLE, ts_ring_alloc = nullptr;
+        logf("vk: no host-coherent memory for the timestamps' ring: read with vkGetQueryPoolResults (RX_VK_QUERY_RING)");
         return;
+    }
+    std::memset(mapped, 0, kRecordings * kRingWords * 8);
+    ts_ring_map = (const volatile uint64_t*)mapped;
+    logf("vk: the recordings' timestamps go through a ring the GPU copies them into, read a turn later without a driver call "
+         "(RX_VK_QUERY_RING=0: vkGetQueryPoolResults)");
+}
+/// (sent: the slot's last use went to the GPU, so the copy it began with ran)
+void gpu_time_collect(Recording& r, bool sent = true) {
+    uint64_t t[2] = {0, 0};
+    if (ts_ring_map) {   // ((Triforce 86170247) the timestamps the slot's last use copied (those of its use before), from memory)
+        if (!ts_ring_copied[r.slot]) return;
+        ts_ring_copied[r.slot] = false;
+        if (!sent) return;   // (the copy never went to the GPU)
+        const volatile uint64_t* w = ts_ring_map + (size_t)r.slot * kRingWords;
+        t[0] = w[0], t[1] = w[2];
+        if (!w[1] || !w[3]) return;   // (each value's availability word)
+    } else {
+        if (!ts_pool || !ts_pending[r.slot]) return;
+        ts_pending[r.slot] = false;
+        if (vkGetQueryPoolResults(dev.device, ts_pool, 2 * r.slot, 2, sizeof t, t, 8, VK_QUERY_RESULT_64_BIT) != VK_SUCCESS)
+            return;
+    }
     if (t[1] <= t[0]) return;
     const int64_t ns = (int64_t)((t[1] - t[0]) * (double)dev.props.limits.timestampPeriod);
     st_gpu_ns += ns;
@@ -415,6 +460,22 @@ void gpu_time_begin(Recording& r) {
         qi.queryCount = 2 * kRecordings;
         if (vkCreateQueryPool(dev.device, &qi, nullptr, &ts_pool) != VK_SUCCESS) ts_pool = VK_NULL_HANDLE;
         if (!ts_pool) return;
+        query_ring_make();   // (Triforce 86170247)
+    }
+    // ((Triforce 86170247) RX_VK_QUERY_RING: the slot's last use's timestamps (done: its fence was waited for) into the ring,
+    // before the reset below, the command buffer just begun (no pass open); read when the slot comes round again,
+    // gpu_time_collect)
+    if (ts_ring_map && ts_pending[r.slot]) {
+        ts_pending[r.slot] = false;
+        vkCmdCopyQueryPoolResults(r.cmd, ts_pool, 2 * r.slot, 2, ts_ring, (VkDeviceSize)r.slot * kRingWords * 8, 16,
+                                  VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+        VkMemoryBarrier2 mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER_2};
+        mb.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT, mb.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+        mb.dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT, mb.dstAccessMask = VK_ACCESS_2_HOST_READ_BIT;
+        VkDependencyInfo di{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+        di.memoryBarrierCount = 1, di.pMemoryBarriers = &mb;
+        vkCmdPipelineBarrier2(r.cmd, &di);
+        ts_ring_copied[r.slot] = true;
     }
     vkCmdResetQueryPool(r.cmd, ts_pool, 2 * r.slot, 2);
     vkCmdWriteTimestamp2(r.cmd, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, ts_pool, 2 * r.slot);
@@ -830,9 +891,10 @@ Recording& begin_recording(uint64_t value) {
     if (r.value) {
         PROF(PROF_SLOTWAIT);
         const auto t0 = std::chrono::steady_clock::now();
+        const bool sent = r.submitted;   // ((Triforce 86170247) RX_VK_QUERY_RING: whether its timestamps' copy ran)
         recording_wait(r);
         st_wait_ns += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - t0).count();
-        gpu_time_collect(r);
+        gpu_time_collect(r, sent);
         gprof_collect(r.slot);
     }
     rec::slot_begin(rec_end_pos[r.slot]);   // (RX_VK_RECORDER_OWN: the slot's own resets below and in draw_begin_recording)
@@ -2183,8 +2245,9 @@ Recording& begin_segment_recording(uint64_t value) {
     recording_index = (recording_index + 1) % kRecordings;
     if (r.value) {
         PROF(PROF_SLOTWAIT);
+        const bool sent = r.submitted;   // ((Triforce 86170247) RX_VK_QUERY_RING)
         recording_wait(r);
-        gpu_time_collect(r);
+        gpu_time_collect(r, sent);
         gprof_collect(r.slot);
     }
     vkResetCommandPool(dev.device, r.pool, 0);
