@@ -7,8 +7,8 @@
    "kind": "fork",
    "license": "GPL-3.0-or-later",
    "base": "engine/ is Hookshot by subtree at a2e65052 (our tree has it): diff a2e65052 HEAD:engine",
-   "surveyed": "8464b217",
-   "surveyed_on": "2026-11-22"
+   "surveyed": "752e305b",
+   "surveyed_on": "2026-11-24"
   },
   {
    "name": "ProjectReLink",
@@ -16,8 +16,8 @@
    "kind": "fork",
    "license": "GPL-3.0-or-later",
    "base": "squashed history: diff trees",
-   "surveyed": "34efe843",
-   "surveyed_on": "2026-11-22"
+   "surveyed": "54af18c",
+   "surveyed_on": "2026-11-24"
   },
   {
    "name": "Longshot",
@@ -25,7 +25,7 @@
    "kind": "fork",
    "license": "GPL-3.0-or-later",
    "base": "shares our history up to 1be60eae; its main up to 544229a2 (2026-11-17) is merged here with the rename undone (a62ba9e8), so ancestry hides it: a commit is new here when it is not an ancestor of 544229a2. Picks conflict on the name (longshot/hookshot) and our README",
-   "surveyed": "8aa5ab87",
+   "surveyed": "863aaf8d",
    "surveyed_on": "2026-11-24"
   },
   {
@@ -34,8 +34,8 @@
    "kind": "fork",
    "license": "GPL-3.0-or-later",
    "base": "engine/ = Hookshot v2.2.0-rc.1 plus patches",
-   "surveyed": "5d00dad9",
-   "surveyed_on": "2026-11-22"
+   "surveyed": "60b73d9",
+   "surveyed_on": "2026-11-24"
   },
   {
    "name": "Triforce",
@@ -43,8 +43,8 @@
    "kind": "fork",
    "license": "GPL-3.0-or-later",
    "base": "one squashed commit per release: diff trees",
-   "surveyed": "e6f2f248",
-   "surveyed_on": "2026-11-22"
+   "surveyed": "86170247",
+   "surveyed_on": "2026-11-24"
   },
   {
    "name": "Rekarina",
