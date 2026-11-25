@@ -61,6 +61,12 @@ int hos_rando_open_door(void) {
 }
 /* Ammo pick-ups (0 as the game has it, 1 five each, 2 the bag filled) and Rupees fill the wallet: on with the randomizer
    (hos_main.c oot_pickup_qol). A test's: HOS_OOT_AMMO=<0-2> and HOS_OOT_RUPEE_FILL=<0|1> over the options */
+/* Link crawls faster (rando_fast_crawl; hos_main.c hos_oot_cct_speed). A test's: HOS_OOT_FAST_CRAWL=<0|1> over the options */
+int hos_rando_fast_crawl(void) {
+    const char *e = getenv("HOS_OOT_FAST_CRAWL");
+    if (e && (*e == '0' || *e == '1')) return rando_active ? *e - '0' : 0;
+    return rando_active && rando.v[OOT_RANDO_FAST_CRAWL] != 0;
+}
 int hos_rando_ammo_pickups(void) {
     const char *e = getenv("HOS_OOT_AMMO");
     if (e && *e >= '0' && *e <= '2') return rando_active ? *e - '0' : 0;

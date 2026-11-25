@@ -857,13 +857,31 @@ void hos_oot_hit(Ctx *c, uint64_t actor, uint32_t old, uint32_t next, uint32_t h
 /* Movement speed (the Debug tab's row): Link's character controller and the row's percent, as oot_player_speed saw them on
    his last update (0: none, or 1x) */
 static uint64_t oot_speed_controller;
+static uint64_t oot_link_controller;   /* (Link's, whatever the speed: Link crawls faster, hos_oot_cct_speed) */
 static int oot_speed_percent = 100;
 
 /* A character controller's forward speed being set (nx2/oot_patches.py patch_cct_speed: s0, in metres a second, or a frame when
    per_second is 0): Link's scaled by the row while it is above 1x and the player steers him (a scene's walk, as the one into a
    map, keeps its pace), the physics step moving him by it with its collisions. Only speeds up to 15 m/s (his run is 4.5): a ledge
    climb sets some 55 for a frame, and scaled it threw him past the ledge. Every other controller as it is. */
+/* (Link crawls faster, rando_fast_crawl, asked 2026-11-23) A crawl's forward speed comes through f_809552f0 called from the
+   crawl's own step (the return address OOT_CRAWL_CALLER), 0.025 m a frame, seen without a window 2026-11-24 in Kokiri
+   Forest's crawlspace (a walk's comes from 0x827f38e0). With the setting on it is made OOT_CRAWL_FASTER times as much; the
+   crawl's animation keeps its pace. */
+#define OOT_CRAWL_CALLER 0x82e98270ULL
+#define OOT_CRAWL_FASTER 2.0f
 void hos_oot_cct_speed(Ctx *c, uint64_t controller, int per_second) {
+    int hos_rando_fast_crawl(void);   /* host/oot_rando.c */
+    if (!per_second && c->x[30] == OOT_CRAWL_CALLER && controller && controller == __atomic_load_n(&oot_link_controller, __ATOMIC_RELAXED) &&
+        hos_rando_fast_crawl()) {
+        float crawl;
+        memcpy(&crawl, &c->vreg[0][0], sizeof crawl);
+        if (fabsf(crawl) <= 0.1f) {   /* (a crawl's pace, and not NaN) */
+            crawl *= OOT_CRAWL_FASTER;
+            memcpy(&c->vreg[0][0], &crawl, sizeof crawl);
+        }
+        return;
+    }
     if (!controller || controller != __atomic_load_n(&oot_speed_controller, __ATOMIC_RELAXED)) return;
     const int percent = __atomic_load_n(&oot_speed_percent, __ATOMIC_RELAXED);
     int hos_move_stick_held(void);   /* host/nn_hid.c */
@@ -3505,7 +3523,9 @@ static void oot_player_speed(Ctx *c, uint64_t components) {
     static int logged = 100;
     int percent = rx_option(HOS_OPT_CHEAT_SPEED, 100);
     if (percent < 100 || percent > 400) percent = 100;
-    __atomic_store_n(&oot_speed_controller, percent > 100 ? oot_player_controller(c, components) : 0, __ATOMIC_RELAXED);
+    const uint64_t link = oot_player_controller(c, components);
+    __atomic_store_n(&oot_link_controller, link, __ATOMIC_RELAXED);
+    __atomic_store_n(&oot_speed_controller, percent > 100 ? link : 0, __ATOMIC_RELAXED);
     __atomic_store_n(&oot_speed_percent, percent, __ATOMIC_RELAXED);
     if (percent != logged) hos_log("cheats: movement speed %d%%", percent);
     logged = percent;

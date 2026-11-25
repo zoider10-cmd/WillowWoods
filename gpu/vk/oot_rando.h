@@ -195,7 +195,10 @@
       "With the keys", "Anywhere", "From the start") \
     X(BOSS_KEYS, "Boss Keys", "rando_boss_keys", \
       "With the keys: as Dungeon keys has them. Anywhere: each dungeon's Boss Key can be in any chest of the game, but only one you can reach with what its boss already asks for (so it is never behind another dungeon it waits on). Found in another place, it still opens its own dungeon's boss door. The Tracker counts the Boss Keys you have found. Not tried in play yet.", \
-      "With the keys", "Anywhere")
+      "With the keys", "Anywhere") \
+    X(FAST_CRAWL, "Link crawls faster", "rando_fast_crawl", \
+      "Link crawls through the crawlspaces twice as fast (Kokiri Forest's to the Lost Woods, the Deku Tree's, the castle's hole and the others). His crawl's animation keeps its own pace, so he slides a little. Moves no item: it can be turned on for a seed being played. Not tried in play yet.", \
+      "Off", "On")
 
 enum {
 #define OOT_RANDO_ENUM(NAME, label, key, help, ...) OOT_RANDO_##NAME,
