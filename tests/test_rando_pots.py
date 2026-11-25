@@ -88,11 +88,15 @@ def main():
     flags = host[host.index("static int oot_shelf_flags(Ctx *c) {"):]
     assert "oot_checks[i].pot && oot_checks[i].broken && oot_checks[i].done != 1 && oot_pot_junk(oot_checks[i].item)" in flags[:flags.index("\n}\n")], \
         "a junk pot is not collected when it breaks (it may drop a green rupee or nothing)"
-    assert 'ACTOR_REF % POT_WORLD.get(item, item)' in pack_src and all(i in S.POT_WORLD for i in S.POT_OWNS), "a pot's own junk has a scene"
-    assert "if (open >= 0 || oot_pot_world_item(name)) return 0;" in host, "a world pick-up (grass's too) can be refused"
+    assert 'ACTOR_REF % (POT_WORLD.get(item, item) if world else item)' in pack_src and all(i in S.POT_WORLD for i in S.POT_OWNS), "a pot's own junk has a scene"
+    assert "if (open >= 0 || oot_pot_world_item(name) || oot_pot_junk(name)) return 0;" in host, "a world pick-up (grass's too) can be refused"
+    assert S.POT_BAGGED <= set(S.POT_WORLD) and "pot_pack(kind[h], designs[kind[h]], bagged, pot_drops[h], world=False)" in main_src,         "a pot's Deku Nuts or Sticks have no actor dropping their bag-giving bundle"
+    assert "if (open >= 0 || oot_pot_world_item(name) || oot_pot_junk(name)) return 0;" in host, "a junk pot's bundle is refused after its pot is collected"
+    assert "? -2 : -1;" in host and "if (oot_pot_chosen == -2) {" in track[:track.index("\n}\n")], \
+        "a junk pot's item got after its pot was collected marks another check"
     look = host[host.index("static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {"):]
     look = look[:look.index("\n}\n")]
-    assert "oot_checks[i].broken == oot_pot_looks[k].hash && oot_checks[i].done == 1" in look and "mods/rando-seed/pot_looks.txt" in look, \
+    assert "if (oot_checks[i].pot && oot_checks[i].broken == oot_pot_looks[k].hash)" in look and "if (done && !answer) {" in look and "oot_pot_looks[k].bagged[0] && oot_bundle_holder(item, &sizes) == 1" in look and "mods/rando-seed/pot_looks.txt" in look, \
         "a collected pot is not read as the game's pot"
     assert host.index("const uint64_t pot = oot_pot_look_answer(c, name_at);") < host.index("if (!name_at || !__atomic_load_n(&oot_tier_shelf_count"), \
         "the pots are answered only where shelves of a family are"

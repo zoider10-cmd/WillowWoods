@@ -2398,6 +2398,11 @@ static void oot_tracker_item(const char *name, int shop, int price) {
         oot_tracker_shop_on = !(e && *e == '0');
         read = 1;
     }
+    if (oot_pot_chosen == -2) {   /* (a junk pot's item, its pot collected when it broke: oot_pot_again) */
+        oot_pot_chosen = -1;
+        hos_log("rando: tracker: %s from a pot collected when it broke: no other check marked", name);
+        return;
+    }
     AcquireSRWLockExclusive(&oot_checks_lock);
     int best = -1, elsewhere = -1, others = 0;
     float nearest = 1e30f;
@@ -3636,8 +3641,11 @@ static int oot_pot_open(Ctx *c, const char *name, int *broken) {
 static int oot_pot_again(Ctx *c, const char *name) {
     int broken = 0;
     const int open = oot_pot_open(c, name, &broken);
-    oot_pot_chosen = open;
-    if (open >= 0 || oot_pot_world_item(name)) return 0;   /* (a world pick-up is grass's and the game's pots' too: never refused) */
+    /* (-2: the item of a junk pot broken just now and collected already, oot_shelf_flags: no record of it, which would mark
+       another check giving the same within OOT_CHECK_NEAR; seen without a window, a pot's nut bundle marked a check 36 m off) */
+    oot_pot_chosen = open >= 0 ? open : broken && (oot_pot_world_item(name) || oot_pot_junk(name)) ? -2 : -1;
+    if (open >= 0 || oot_pot_world_item(name) || oot_pot_junk(name)) return 0;   /* (a world pick-up is grass's and the game's pots' too, and a
+       junk pot is collected when it breaks, oot_shelf_flags, its bundle got after: never refused) */
     if (broken) hos_log("rando: %s from a pot whose check is collected already (%d broken pots give it): nothing is added", name, broken);
     return broken > 0;
 }
@@ -5008,7 +5016,8 @@ static int oot_tier_shelf_want(int i) {
    its check is collected (the record's: oot_checks[].broken is the pot's hash), its name read as its map is read is
    answered with the game's pot: red again, and its drop table "None" the game's, which drops nothing. (0: not one) */
 #define OOT_POT_LOOK_MAX 1024
-static struct { uint64_t hash; char game[40]; uint64_t slot; } oot_pot_looks[OOT_POT_LOOK_MAX];
+static struct { uint64_t hash; char game[40], bagged[24]; uint64_t slot, bagged_slot; } oot_pot_looks[OOT_POT_LOOK_MAX];
+static int oot_bundle_holder(const char *name, const char *const **sizes);
 static int oot_pot_look_count = -1;
 static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
     static const char head[] = "Obj_PotR";
@@ -5028,9 +5037,10 @@ static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
         char path[MAX_PATH], line[160];
         FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/pot_looks.txt") ? fopen(path, "rb") : NULL;
         while (f && fgets(line, sizeof line, f) && oot_pot_look_count < OOT_POT_LOOK_MAX) {
-            char actor[40], hash[24], game[40];
-            if (line[0] == '#' || sscanf(line, "%39[^|]|%23[^|]|%39[^|\r\n]", actor, hash, game) != 3) continue;
+            char actor[40], hash[24], game[40], bagged[24] = "";
+            if (line[0] == '#' || sscanf(line, "%39[^|]|%23[^|]|%39[^|\r\n]|%23[^|\r\n]", actor, hash, game, bagged) < 3) continue;
             oot_pot_looks[oot_pot_look_count].hash = strtoull(hash, NULL, 16);
+            snprintf(oot_pot_looks[oot_pot_look_count].bagged, sizeof oot_pot_looks[0].bagged, "%s", bagged);
             snprintf(oot_pot_looks[oot_pot_look_count].game, sizeof oot_pot_looks[0].game, "%s", game);
             oot_pot_look_count++;
         }
@@ -5039,12 +5049,24 @@ static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
     }
     uint64_t answer = 0;
     if (k < oot_pot_look_count) {
-        int done = 0;
+        int done = 0, found = -1;
+        char item[48] = "";
         AcquireSRWLockShared(&oot_checks_lock);
-        for (int i = 0; i < oot_check_count && !done; i++)
-            done = oot_checks[i].pot && oot_checks[i].broken == oot_pot_looks[k].hash && oot_checks[i].done == 1;
+        for (int i = 0; i < oot_check_count && found < 0; i++)
+            if (oot_checks[i].pot && oot_checks[i].broken == oot_pot_looks[k].hash)
+                found = i, done = oot_checks[i].done == 1, snprintf(item, sizeof item, "%s", oot_checks[i].item);
         ReleaseSRWLockShared(&oot_checks_lock);
-        if (done) {
+        /* (FIXES 100, POT_BAGGED: a pot holding Deku Nuts or Sticks, Link with no such bag: the actor dropping the bundle
+           itself, whose pick-up gives the bag, the game's supply drop being a green rupee then) */
+        const char *const *sizes;
+        if (!done && found >= 0 && oot_pot_looks[k].bagged[0] && oot_bundle_holder(item, &sizes) == 1 &&
+            !oot_pouch_count(c, sizes[0]) && !oot_pouch_count(c, sizes[1]) && !oot_pouch_count(c, sizes[2])) {
+            if (!oot_pot_looks[k].bagged_slot && (oot_pot_looks[k].bagged_slot = hos_sys_alloc(32, 16)) != 0)
+                snprintf((char *)A64_PTR(oot_pot_looks[k].bagged_slot), 32, "%s", oot_pot_looks[k].bagged);
+            answer = oot_pot_looks[k].bagged_slot;
+            if (answer) hos_log("rando: pots: Obj_PotR%03d holds %s and Link has no bag for it: read as %s", k, item, oot_pot_looks[k].bagged);
+        }
+        if (done && !answer) {
             if (!oot_pot_looks[k].slot && (oot_pot_looks[k].slot = hos_sys_alloc(64, 16)) != 0)
                 snprintf((char *)A64_PTR(oot_pot_looks[k].slot), 64, "%s", oot_pot_looks[k].game);
             answer = oot_pot_looks[k].slot;
@@ -5274,7 +5296,8 @@ int hos_oot_pickup_room(Ctx *c) {
     name[length] = 0;
     const char *const *sizes;
     const int rule = oot_bundle_holder(name, &sizes);
-    if (!oot_drop_check_near(name) && oot_pot_open(c, name, NULL) < 0) return 0;   /* (no check's: the game's answer) */
+    int broken_pots = 0;   /* (a junk pot's bundle: its pot is collected when it breaks, so any broken pot giving it, POT_BAGGED) */
+    if (!oot_drop_check_near(name) && oot_pot_open(c, name, &broken_pots) < 0 && !(broken_pots && oot_pot_junk(name))) return 0;   /* (no check's: the game's answer) */
     int holder = !rule;
     for (int i = 0; i < 3 && !holder; i++)
         if (oot_pouch_count(c, sizes[i]) != 0) holder = 1;   /* (he has one, or it is not known) */

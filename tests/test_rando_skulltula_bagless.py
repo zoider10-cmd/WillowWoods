@@ -72,6 +72,8 @@ static int64_t clock_now = 1;
 static int64_t hos_now_ns(void) { return clock_now; }
 static int pot_open = -1;   /* (a broken pot not yet collected giving the item touched: its index, oot_pot_open) */
 static int oot_pot_open(Ctx *c, const char *name, int *broken) { (void)c; (void)name; if (broken) *broken = pot_open >= 0; return pot_open; }
+static int pot_junk;   /* (the item a junk pot's, collected when it breaks: oot_pot_junk) */
+static int oot_pot_junk(const char *name) { (void)name; return pot_junk; }
 @FN@
 static int touch(const char *name) {
     Ctx c;
