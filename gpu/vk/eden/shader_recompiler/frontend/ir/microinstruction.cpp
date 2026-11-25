@@ -76,6 +76,18 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::DemoteToHelperInvocation:
     case Opcode::Barrier:
     case Opcode::SubgroupBarrier:
+    // ((HeyListen bdd56f2a) their issue 97, black leaves on NVIDIA) the warp-wide operations are convergence points of the guest
+    // program: they run even when nothing reads their result. A fold that leaves one without a reader (HeyListen's pseudo-operation
+    // fold of R2P mask 0x40; here FoldSelect on an immediate condition) let dead code elimination drop the vote, and the
+    // ballot/shuffle that follows then saw fewer lanes. tests/test_dce_convergent_ops.py
+    case Opcode::VoteAll:
+    case Opcode::VoteAny:
+    case Opcode::VoteEqual:
+    case Opcode::SubgroupBallot:
+    case Opcode::ShuffleIndex:
+    case Opcode::ShuffleUp:
+    case Opcode::ShuffleDown:
+    case Opcode::ShuffleButterfly:
     case Opcode::WorkgroupMemoryBarrier:
     case Opcode::DeviceMemoryBarrier:
     case Opcode::EmitVertex:
