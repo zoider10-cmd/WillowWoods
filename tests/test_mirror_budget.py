@@ -31,7 +31,10 @@ def check_source():
     if '#include "mirror_budget.h"' not in mem:
         raise SystemExit("vk_memory.cpp no longer includes mirror_budget.h")
     budget = block(mem, "uint64_t mirror_budget() {")
-    for needle in ['getenv("RX_VK_MIRROR_MB")', "mirror_rule::auto_bytes(device_vram_bytes())"]:
+    # (and Longshot #637, 8e3dfde6, measured on an RTX 3050 6 GB laptop: cards of 6.5 GB or less hold up to 1700 MB, a third of the
+    #  card, to keep open areas off PCIe reads; every other card by mirror_budget.h)
+    for needle in ['getenv("RX_VK_MIRROR_MB")', "if (vram && vram <= (6ull << 30) + (512ull << 20)) return std::min<uint64_t>(1700ull << 20, vram / 3);",
+                   "return mirror_rule::auto_bytes(vram);"]:
         if needle not in budget:
             raise SystemExit("vk_memory.cpp: mirror_budget() no longer has: " + needle)
     if "vram / 8" in budget or "vram / 4" in budget:
