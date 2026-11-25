@@ -496,6 +496,33 @@ AFTER_WATER_FROM = 29
 # Keys), and the other spots' keys are kept out of them. With Small keys: Anywhere, the Boss Keys and the maps and
 # compasses left "With the keys" are anywhere too. The Tracker's rules do not name the keys (no letters).
 SMALL_KEY = "Item_Dungeon_SmallKey"
+# ---- Pots (rando_pots, "Potsanity", asked 2026-11-23; share/todo.md) ----
+# The pots the logic's tables know (POT_TABLES' actors of kind "pot": a house's, a grotto's, a dungeon room's, 67 in all)
+# take part as a Gold Skulltula does: each a spot holding its own item (POT_OWN, a Deku Nut bundle) in the pool, giving
+# what a Gold Skulltula may drop (skull_may), by the rule its table gives it (heart_asks, as a piece lying in the world,
+# over its actor's hash). Its map's pot drops that item (add_drop: Drop__DropActor; its random Drop__DropTable taken
+# away), and the Tracker has it as "Pot". A pot is back after about a day (bug 96): the game's side gives its item once
+# (host/hos_main.c oot_pot_again: a pot's check collected, the same item picked up by it again is nothing). Only the pots
+# the tables rule: the others' rules would be guesses, and the Tracker keeps CHECK_ROWS checks.
+POT_OWN = "TBox_DekuNutBundle"
+POT_TABLES = ("overworld_rules.json", "dungeon_rules.json")
+
+
+def pot_actors():
+    """{a pot's actor hash: its folder} of the logic's tables (POT_TABLES, kind "pot"); {} without them"""
+    out = {}
+    here = os.path.dirname(os.path.abspath(__file__))
+    for name in POT_TABLES:
+        try:
+            with open(os.path.join(here, name), encoding="utf-8") as f:
+                table = json.load(f)
+        except (OSError, ValueError):
+            continue
+        rows = table.get("by_actor") or next(iter(table.get("variants", {}).values()), {}).get("by_actor", {})
+        for h, e in rows.items():
+            if e.get("kind") == "pot":
+                out[int(h)] = e.get("folder")
+    return out
 KEYLESS_FILE = "dungeon_keyless.json"
 
 
@@ -5779,7 +5806,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0, "rando_house_hints": 0, "rando_maps": 0, "rando_boss_keys": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0, "rando_house_hints": 0, "rando_maps": 0, "rando_boss_keys": 0, "rando_pots": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -6115,7 +6142,7 @@ def marks(data):
                     turned = struct.unpack_from("<3f", data, v + 8)
                 elif k == "Dynamic" and t == 0xC1:
                     dyn = v
-            if gyaml in MARKS or gyaml == SKULLTULA or gyaml.startswith("Obj_TBox") or gyaml in HEART_ACTORS or gyaml == CONTAINER or gyaml == SUN_ACTOR:
+            if gyaml in MARKS or gyaml == SKULLTULA or gyaml.startswith("Obj_TBox") or gyaml in HEART_ACTORS or gyaml == CONTAINER or gyaml == SUN_ACTOR or gyaml.startswith("Obj_Pot"):
                 words = {}
                 for dk, dt, dv, _ in entries(data, dyn, keys) if dyn is not None else ():
                     words[dk] = (strings[dv] if dv < len(strings) else "") if dt == 0xA0 else dv
@@ -8184,6 +8211,7 @@ def main():
     a.gerudo_guards = ini["rando_gerudo_guards"] != 0   # (GERUDO_GUARDS_FLOW, 2026-11-24: a Quality of life setting; moves no item)
     a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
     a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0   # (Maps and compasses: MAPS_START, MAPS_LOOSE)
+    a.pots = ini["rando_pots"] == 1   # (Pots: the tables' pots take part, POT_OWN)
     a.boss_keys = ini["rando_boss_keys"] == 1   # (Boss Keys: Anywhere, boss_key_tag; with Small keys: Anywhere too, below)
     if keys_mode == 2:   # (Small keys: Anywhere: the Boss Keys and the maps "With the keys" go with them, key_tags)
         a.boss_keys = True
@@ -8291,7 +8319,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, keys_mode, a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" pots 1" if a.pots else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -8374,6 +8402,8 @@ def main():
     pieces = collections.OrderedDict()  # a Piece of Heart lying in the world: hash -> [area, position]
     bosses = {}                          # the same of a boss's Heart Container in pieces (placement 12): hash -> its dungeon
     suns = set()                         # the same of Lake Hylia's Fire Arrows in pieces (SUN_FROM)
+    pots = collections.OrderedDict()     # a pot of the tables taking part (Pots): hash -> [area, position]
+    pot_table = pot_actors() if a.pots else {}
     every_skull = collections.OrderedDict()   # every Gold Skulltula, the setting's or not: hash -> [area, position]
     paths = []
     for top, dirs, names in os.walk(os.path.join(romfs, "Banc")):
@@ -8451,7 +8481,14 @@ def main():
             entry = skulls.setdefault(h, [parts[1] if len(parts) > 2 else "(Banc)", pos, True, False, False])
             entry[2], entry[3] = entry[2] and can, entry[3] or dungeon
             entry[4] = entry[4] or "_Child_" in parts[-1] or entry[0] in SKULLTULA_CHILD_DUNGEONS
-        if found or here or any(struct.pack("<Q", h) in data for h in drops):
+        potted = False
+        if pot_table:   # (Pots: the tables' pots in this file)
+            for h, gyaml, pos, _, _ in marks(data):
+                if gyaml.startswith("Obj_Pot") and h in pot_table and len(pos) == 3:
+                    maps[h].add(rel.split("/")[-1])
+                    pots.setdefault(h, [rel.split("/")[1] if rel.count("/") > 1 else "(Banc)", pos])
+                    potted = True
+        if found or here or potted or any(struct.pack("<Q", h) in data for h in drops):
             files[rel] = (data, found)
 
     # ---- the chests: one per hash (the same chest is in several files: child and adult, static and dynamic) ----
@@ -8709,16 +8746,17 @@ def main():
         skull_rule(h, area))), h, area))(at or skulls[h][0])
     # (a boss's container: without Open forest exit's step, as a Skulltula's: its CHILD is the weapons to beat the boss.
     #  Seen 2026-11-18: Gohma's asked for nothing)
-    heart_asks = lambda h: (skull_door if h in bosses else door)(step((lambda n: each(song_need, n, pieces[h][0]) if a.songs else n)(
-        (lambda n: each(quest_need, n, pieces[h][0], placement >= 12, deep) if a.quests else n)(
-            own_rule(h, pieces[h][0], lambda: boss_need(bosses[h]) if h in bosses else (boss_need("WaterTemple") | {BOW}) if h in suns else
-                     TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0]))))), h, pieces[h][0])
+    lying = collections.ChainMap(pieces, pots)   # (the pieces lying in the world, and the pots taking part: their rules alike)
+    heart_asks = lambda h: (skull_door if h in bosses else door)(step((lambda n: each(song_need, n, lying[h][0]) if a.songs else n)(
+        (lambda n: each(quest_need, n, lying[h][0], placement >= 12, deep) if a.quests else n)(
+            own_rule(h, lying[h][0], lambda: boss_need(bosses[h]) if h in bosses else (boss_need("WaterTemple") | {BOW}) if h in suns else
+                     TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, lying[h][0]))))), h, lying[h][0])
     piece_own = lambda h: CONTAINER if h in bosses else SUN_ITEM if h in suns else HEART   # (what a piece's, a container's or the sun's spot holds of its own)
     if a.dampe_hookshot:   # (Shuffle Dampe's Hookshot: a Skulltula's and a piece's rule too, wherever it is written: hook_asks)
         skull_plain, heart_plain = skull_asks, heart_asks
         skull_asks = lambda h, at=None: (lambda n, area: each(hook_need, n, HOOK_OR.get(h)) if hook_asks(area, h=h) else n)(
             skull_plain(h, at), at or skulls[h][0])
-        heart_asks = lambda h: (lambda n: each(hook_need, n) if hook_asks(pieces[h][0], h=h) else n)(heart_plain(h))
+        heart_asks = lambda h: (lambda n: each(hook_need, n) if hook_asks(lying[h][0], h=h) else n)(heart_plain(h))
     # (Deku Sticks for the Kokiri Sword, placement 20, with the Deku Tree and the forest's way out open: stick_need)
     sticks = placement >= STICKS_FROM and a.open_deku and a.open_forest
     if sticks:
@@ -8741,7 +8779,7 @@ def main():
             return skull_old(h, at) if made is None else over_done(made)
 
         def heart_over(h):
-            made = over_rule(h, pieces[h][0]) if h not in bosses else None
+            made = over_rule(h, lying[h][0]) if h not in bosses else None
             return heart_old(h) if made is None else over_done(made)
         skull_asks, heart_asks = skull_over, heart_over
     if a.start:   # (Starting items held: start_need, on what every step above made)
@@ -8775,6 +8813,7 @@ def main():
     # (placement 12, SHUFFLED_FROM: the Gold Skulltulas of the setting and the Pieces of Heart lying in the world are
     #  spots of the placement, with their token and their piece in the pool, each holding what it can: holds)
     skull_drops, able, mine = {}, [], []
+    pot_drops = {}   # (Pots: a pot's hash -> the item it drops now)
     heart_drops = {}   # a piece's hash -> the item it gives now
     if a.skulltulas:
         mine = [h for h, s in skulls.items() if a.skulltulas == 3 or s[3] == (a.skulltulas == 1)]   # (this setting's)
@@ -8784,13 +8823,14 @@ def main():
     if placement >= SHUFFLED_FROM:
         joined.update((h, [skulls[h][0], TOKEN, None, None, "skulltula", skulls[h][1], ""]) for h in able)
         joined.update((h, [pieces[h][0], piece_own(h), None, None, "piece", pieces[h][1], ""]) for h in pieces if a.heart_pieces or h in suns)
+        joined.update((h, [pots[h][0], POT_OWN, None, None, "pot", pots[h][1], ""]) for h in pots)   # (Pots)
         kinds = {s[1] for s in spots.values()} | {s[1] for s in joined.values()}
         skull_may = frozenset(i for i in kinds if skulltula_holds(i, PROGRESSION))
         piece_may = frozenset(i for i in kinds if piece_holds(i))
         for h, s in joined.items():
             spots[h] = s
             needs[h] = skull_asks(h) if s[4] == "skulltula" else heart_asks(h)
-            holds[h] = skull_may if s[4] == "skulltula" else piece_may | {CONTAINER} if h in bosses else piece_may | {SUN_ITEM} if h in suns else piece_may
+            holds[h] = skull_may if s[4] in ("skulltula", "pot") else piece_may | {CONTAINER} if h in bosses else piece_may | {SUN_ITEM} if h in suns else piece_may
     if a.master_sword:   # (the pedestal: what the pouch takes by name; the sword on no shelf, no scrub's sale and no Skulltula)
         every = {s[1] for s in spots.values()}
         holds[gift_hash(MASTER_GIFT.key)] = frozenset(i for i in every if pedestal_holds(i))
@@ -8922,6 +8962,8 @@ def main():
             skull_drops[h] = item
         elif s[4] == "piece" and item != piece_own(h):
             heart_drops[h] = item
+        elif s[4] == "pot":   # (every pot taking part drops its item, its own a Deku Nut bundle: POT_OWN)
+            pot_drops[h] = item
     if joined and any(not skulltula_holds(i, PROGRESSION) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER or h in suns and i == SUN_ITEM) for h, i in heart_drops.items()):
         sys.exit("a Gold Skulltula or a Piece of Heart was given what it may not hold: nothing written")
 
@@ -8972,6 +9014,16 @@ def main():
                 len(pieces) - len(bosses) - len(suns), len(bosses), len(heart_drops), sum(1 for i in heart_drops.values() if i in PROGRESSION)))
     if suns:
         print("Lake Hylia's Fire Arrows: a check, giving %s" % next((heart_drops.get(h, SUN_ITEM) for h in suns)))
+
+    if pot_drops:   # (Pots: their drops, pick-ups as a Skulltula's are, with their families' tiers)
+        if any(not skulltula_holds(i, PROGRESSION) for i in pot_drops.values()):
+            sys.exit("a pot was given what it may not drop: nothing written")
+        for h, item in pot_drops.items():
+            drops.setdefault(h, item)
+        if a.progressive:
+            skull_tier_list = sorted(set(skull_tier_list) | set(skull_tiers(pot_drops.values())))
+        pickups = sorted(set(pickups) | set(pot_drops.values()) | set(skull_tier_list))
+        print("Pots: %d of the tables' pots take part, %d drop a gating item" % (len(pot_drops), sum(1 for i in pot_drops.values() if i in PROGRESSION)))
 
     if test_chests:   # (a test: these chests give what the file says)
         strangers = sorted(h for h in test_chests if h not in gives)
@@ -10077,7 +10129,11 @@ def main():
         spoiler += ["", "Pieces of Heart lying in the world and the bosses' Heart Containers (area, position -> what it gives)"]
         for h in sorted(pieces, key=lambda q: (pieces[q][0], str(pieces[q][1]), q)):
             spoiler.append("  %-22s %-26s -> %s" % (pieces[h][0], str(pieces[h][1]), heart_drops.get(h, "(its container)" if h in bosses else "(its Fire Arrows)" if h in suns else "(its piece)")))
-    elif suns:
+    if pots:
+        spoiler += ["", "Pots (area, position -> what it drops)"]
+        for h in sorted(pots, key=lambda q: (pots[q][0], str(pots[q][1]), q)):
+            spoiler.append("  %-22s %-26s -> %s" % (pots[h][0], str(pots[h][1]), pot_drops.get(h, POT_OWN)))
+    if suns and not a.heart_pieces:
         spoiler += ["", "Lake Hylia's Fire Arrows -> %s" % next(heart_drops.get(h, "(its Fire Arrows)") for h in suns)]
     if a.dry_run:
         print("\n".join(spoiler[:50]))
@@ -10225,7 +10281,7 @@ def main():
     with open(os.path.join(mod, TRACKER), "w", encoding="utf-8", newline="\n") as f:   # (for the menu's Tracker tab)
         took = [h for h in able] if a.skulltulas else []
         f.write("\n".join(tracker_lines(collections.Counter(spots[h][0] for h in gives if h not in gifts), collections.Counter(skulls[h][0] for h in took),
-                                        collections.Counter(g.area for g in gifts.values()), collections.Counter(p[0] for p in pieces.values()))) + "\n")
+                                        collections.Counter(g.area for g in gifts.values()), collections.Counter(p[0] for p in list(pieces.values()) + list(pots.values())))) + "\n")
     with open(os.path.join(mod, DUNGEON_ITEMS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: oot_dungeon_item)
         f.write("".join("%016x|%s|%s\n" % (h, owners[h], gives[h]) for h in sorted(owners)))
     # (the Tracker's rules only: a boss's Heart Container and its ending ask for its Boss Key when it moved, key_codes. The
@@ -10244,6 +10300,8 @@ def main():
                                       [(skulls[h][0], skulls[h][1], check_ages(maps[h]), tneeds.get(h) or skull_need(h), named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN,
                                         SKULL_GO.get(h))
                                        for h in took] +
+                                      [(pots[h][0], pots[h][1], check_ages(maps[h]), tneeds.get(h) or heart_asks(h), "Pot", h, pot_drops.get(h, POT_OWN))
+                                       for h in pots] +
                                       [(pieces[h][0], pieces[h][1], check_ages(maps[h]), tracked(h, needs.get(h) or heart_asks(h), bosses.get(h)),
                                         "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else SUN_NAME if h in suns else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
                                         heart_drops.get(h, piece_own(h))) for h in pieces],

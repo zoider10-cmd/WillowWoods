@@ -36,7 +36,7 @@ def main():
     script = open(os.path.join(HERE, "..", "tools", "rando", "rando_seed.py"), encoding="utf-8").read()
     check(script.count(", placement >= 12, deep)") == 4 and "deep = a.quests and placement >= TUNIC_WATER_FROM" in script and
           "needs = {h: TUNIC_DRY.get(h, n) for h, n in needs.items()}" in script and
-          "TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, pieces[h][0])" in script,
+          "TUNIC_DRY[h] if deep and h in TUNIC_DRY else heart_rule(h, lying[h][0])" in script,
           "the chests', Skulltulas' and pieces' rules are not given the deep water's tunic by placement")
     print("FAIL" if failed else "PASS: the tunics by hot rooms and deep water")
     return 1 if failed else 0

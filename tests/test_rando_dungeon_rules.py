@@ -67,7 +67,7 @@ def main():
     script = open(os.path.join(ROOT, "tools", "rando", "rando_seed.py"), encoding="utf-8").read()
     check(S.PLACEMENT >= S.DUNGEON_RULES_FROM == 21 and "dungeon_on = placement >= DUNGEON_RULES_FROM and bool(dungeon_table())" in script and
           "needs = {h: own_rule(h, s[0], lambda s=s: rule(s[0], s[6])) for h, s in spots.items()}" in script and
-          "skull_rule = lambda h, area: own_rule(h, area, lambda:" in script and "own_rule(h, pieces[h][0], lambda:" in script,
+          "skull_rule = lambda h, area: own_rule(h, area, lambda:" in script and "own_rule(h, lying[h][0], lambda:" in script,
           "the chests', Skulltulas' and pieces' rules are not their own from placement 21")
     check("PROGRESSION = PROGRESSION | DUNGEON_GATES" in script and S.CHECK_CODES.get(S.DIN) == "DF" and
           '{"DF", "Din\'s Fire", {"Din\'s Fire"}},' in open(os.path.join(ROOT, "gpu", "vk", "vk_menu.cpp"), encoding="utf-8").read(),

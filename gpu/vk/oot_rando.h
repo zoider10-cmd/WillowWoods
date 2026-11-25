@@ -198,6 +198,9 @@
       "With the keys", "Anywhere") \
     X(FAST_CRAWL, "Link crawls faster", "rando_fast_crawl", \
       "Link crawls through the crawlspaces twice as fast (Kokiri Forest's to the Lost Woods, the Deku Tree's, the castle's hole and the others). His crawl's animation keeps its own pace, so he slides a little. Moves no item: it can be turned on for a seed being played. Not tried in play yet.", \
+      "Off", "On") \
+    X(POTS, "Pots", "rando_pots", \
+      "The 67 pots the logic has rules for (in houses, grottos and dungeon rooms: the Market's guard house, Talon's house, Goron City, the Gerudo hideout and the like) take part as Gold Skulltulas do: each drops an item of the shuffle (what a Gold Skulltula may drop, its own a Deku Nut bundle) and is a check on the Tracker. A pot is back after about a day; its item is had once. Not tried in play yet.", \
       "Off", "On")
 
 enum {
