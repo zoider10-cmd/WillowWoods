@@ -27,7 +27,7 @@ def main():
     assert 'a.boss_keys = ini["rando_boss_keys"] == 1' in main_src and '(" boss keys 1" if a.boss_keys else "")' in main_src
     assert "s[1] = boss_tags[h] = boss_key_tag(s[0])" in main_src and "loose = loose | frozenset(boss_tags.values())" in main_src
     assert "unfit = frozenset(t for t, cap in caps.items() if not boss_key_fits(needs.get(h), cap))" in main_src
-    assert main_src.index("owners[h] = gives[h].split(\"@\")[1]") < main_src.index("before = collections.Counter(spots[h][1] for h in gives)"), \
+    assert main_src.index("owners[h] = gives[h].split(\"@\")[1].split(\"#\")[0]") < main_src.index("before = collections.Counter(spots[h][1] for h in gives)"), \
         "the tags are not taken off before the items are read"
     assert "if placement >= AFTER_WATER_FROM:" in main_src and 'water = frozenset(boss_need("WaterTemple"))' in main_src
     host = open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()

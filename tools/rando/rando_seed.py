@@ -486,6 +486,42 @@ BOSS_KEY = "Item_Dungeon_BossKey"
 # ending's rule too (boss_need), so nothing it needs to get there lies in it.
 AFTER_WATER = (0xec3f782c547551a1,)
 AFTER_WATER_FROM = 29
+# ---- Small keys: Anywhere (Dungeon keys' third choice, rando_keys 2; share/dungeon-items-plan.md stage 3) ----
+# Each dungeon's small keys in chests are items of the shuffle (SMALL_KEY "@" its dungeon "#" a number, key_tags), told
+# their dungeon in DUNGEON_ITEMS_FILE as a map is (the game's side raises DungeonInfo.<folder>.SmallKeyNum). The dungeon
+# rules are worked out with the keys where the game has them, so they never ask for one: tools/rando/dungeon_keyless.py
+# found which dungeon checks are reached with no small key at all (KEYLESS_FILE); every other check of a dungeon with
+# keys that move asks for all of them (too much, never too little). The rules stand for "a dungeon done" by its items, not
+# its keys: so a dungeon's keys go only where its ending's rule reaches, with its own keys (boss_key_fits, as the Boss
+# Keys), and the other spots' keys are kept out of them. With Small keys: Anywhere, the Boss Keys and the maps and
+# compasses left "With the keys" are anywhere too. The Tracker's rules do not name the keys (no letters).
+SMALL_KEY = "Item_Dungeon_SmallKey"
+KEYLESS_FILE = "dungeon_keyless.json"
+
+
+def key_tags(spots, which=3):
+    """{a chest's hash: its small key's own name for the shuffle} of the chests in a dungeon (DUNGEON_FOLDERS) holding one
+    that take part (no reason to stay, s[3]; dungeon chests with the Chests setting's, which), numbered in each dungeon by
+    hash; spots: hash -> [area, item, a dungeon's, why it stays, its kind (Obj_TBox...), ...]. A key that stays is the
+    game's, got where it lies (a key of the shuffle there would need itself)."""
+    out, count = {}, collections.Counter()
+    for h in sorted(spots):
+        s = spots[h]
+        if s[3] or which == 1 and s[2]:
+            continue
+        if s[1] == SMALL_KEY and str(s[4]).startswith("Obj_TBox") and s[0] in DUNGEON_FOLDERS:
+            count[s[0]] += 1
+            out[h] = "%s@%s#%d" % (SMALL_KEY, s[0], count[s[0]])
+    return out
+
+
+def keyless_actors():
+    """the dungeon checks' actors (hashes) reached with no small key (KEYLESS_FILE); an empty set without it"""
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), KEYLESS_FILE), encoding="utf-8") as f:
+            return frozenset(int(h) for h in json.load(f)["keyless"])
+    except (OSError, ValueError, KeyError):
+        return frozenset()
 
 
 def boss_key_tag(folder):
@@ -8075,7 +8111,10 @@ def main():
     a.gerudo_guards = ini["rando_gerudo_guards"] != 0   # (GERUDO_GUARDS_FLOW, 2026-11-24: a Quality of life setting; moves no item)
     a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
     a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0   # (Maps and compasses: MAPS_START, MAPS_LOOSE)
-    a.boss_keys = ini["rando_boss_keys"] == 1   # (Boss Keys: Anywhere, boss_key_tag)
+    a.boss_keys = ini["rando_boss_keys"] == 1   # (Boss Keys: Anywhere, boss_key_tag; with Small keys: Anywhere too, below)
+    if keys_mode == 2:   # (Small keys: Anywhere: the Boss Keys and the maps "With the keys" go with them, key_tags)
+        a.boss_keys = True
+        a.maps = a.maps or 1
     a.soil_bottle = ini["rando_soil_bottle"] != 0       # (SOIL_FILES, 2026-11-24: a Quality of life setting; moves no item)
     a.fast_push = ini["rando_fast_push"] != 0           # (FAST_PUSH, 2026-11-24: the blocks' curves; moves no item)
     a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
@@ -8177,7 +8216,7 @@ def main():
             a.dampe_hookshot = True
     except OSError:
         pass
-    rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
+    rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, keys_mode, a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
                                                                (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
@@ -8229,7 +8268,7 @@ def main():
         stamp = stamp[:-1] + " pins %r\n" % (read_pins(),)
     print("randomizer %s, seed %d, chests %s, dungeon keys %s, major items %s" % (
         "on" if on else "off", seed, ("off", "overworld", "dungeons", "all")[which],
-        ("off", "own dungeon", "anywhere (as own dungeon for now)")[keys_mode], "on" if a.event_chests else "off"))
+        ("off", "own dungeon", "anywhere")[keys_mode], "on" if a.event_chests else "off"))
     if a.if_changed and on and which:
         try:
             if open(stamp_path, encoding="utf-8").read() == stamp:
@@ -8728,15 +8767,41 @@ def main():
             if s[1] == BOSS_KEY and str(s[4]).startswith("Obj_TBox") and s[0] in DUNGEON_FOLDERS:
                 s[1] = boss_tags[h] = boss_key_tag(s[0])
         loose = loose | frozenset(boss_tags.values())
+    small_tags = key_tags(spots, which) if keys_mode == 2 else {}   # (Small keys: Anywhere)
+    key_sets = {}
+    if small_tags:
+        for h, t in small_tags.items():
+            spots[h][1] = t
+            key_sets.setdefault(t.split("@")[1].split("#")[0], set()).add(t)
+        key_sets = {d: frozenset(ts) for d, ts in key_sets.items()}
+        free = keyless_actors()
+        if not free:
+            sys.exit("Small keys: Anywhere: %s is missing (tools/rando/dungeon_keyless.py writes it). Nothing written." % KEYLESS_FILE)
+        if logic:
+            asked = 0
+            for h in needs:
+                area = spots[h][0] if h in spots else None
+                if area in key_sets and h not in free:
+                    needs[h] = each(lambda way, keys=key_sets[area]: frozenset(way) | keys, needs[h])
+                    asked += 1
+            print("Small keys: Anywhere: %d keys of %d dungeons are items of the shuffle; %d checks ask for their dungeon's keys" % (
+                len(small_tags), len(key_sets), asked))
+        PROGRESSION = PROGRESSION | frozenset(small_tags.values())
+        loose = loose | frozenset(small_tags.values())
     if loose:   # (Anywhere: chests only, MAPS_LOOSE; a Boss Key to a chest its boss's rule covers, boss_key_fits)
         every = {s[1] for s in spots.values()}
         holds = dict(holds or {})
         caps = {t: (frozenset(boss_need(t.split("@")[1])) if t.split("@")[1] in BOSS_HEARTS else None) for t in set(boss_tags.values())}
+        for t in small_tags.values():   # (a dungeon's keys where its ending's rule reaches, with its own keys)
+            d = t.split("@")[1].split("#")[0]
+            caps[t] = frozenset(boss_need(d)) | key_sets[d] if d in BOSS_HEARTS else None
         for h, s in spots.items():
             if not str(s[4]).startswith("Obj_TBox"):
                 holds[h] = frozenset(holds.get(h, every)) - loose
             elif caps and logic:
                 unfit = frozenset(t for t, cap in caps.items() if not boss_key_fits(needs.get(h), cap))
+                if h in AFTER_WATER:   # (there only once the Water Temple is done: none of its own keys, whatever the items say)
+                    unfit = unfit | frozenset(t for t in caps if t.split("@")[1].split("#")[0] == "WaterTemple")
                 if unfit:
                     holds[h] = frozenset(holds.get(h, every)) - unfit
     try:
@@ -8756,8 +8821,8 @@ def main():
     if a.magic:   # (no magic on a shop's shelf: its "You got" words are the shelf's own, the doubled magic's, not the meter's)
         for h in [h for h in shelves if gives.get(h) == MAGIC_DOUBLE]:
             ways = list(needs[h]) if isinstance(needs.get(h), Either) else [needs.get(h, frozenset())]   # (every way of the shelf's rule)
-            mate = next((m for m in sorted(gives) if m not in shelves and m not in lesson_only and m not in joined and m not in holds
-                         and gives[m] not in PROGRESSION and isinstance(needs.get(m), frozenset)
+            mate = next((m for m in sorted(gives) if m not in shelves and m not in lesson_only and m not in joined and (m not in holds or MAGIC_DOUBLE in holds[m])
+                         and gives[m] not in PROGRESSION and gives[m] not in loose and (h not in holds or gives[m] in holds[h]) and isinstance(needs.get(m), frozenset)
                          and all(needs[m] <= way for way in ways)), None)   # (a place no harder than any of the shelf's ways)
             if mate is None:
                 sys.exit("Magic and the fairies' gifts: magic on a shelf, and no place to trade it with. Nothing written.")
@@ -8765,11 +8830,11 @@ def main():
 
     # (Maps and compasses: Anywhere: the dungeon each now belongs to, DUNGEON_ITEMS_FILE)
     owners = dungeon_owners(random.Random("dungeon items:%d" % seed), spots, gives, loose & MAPS_LOOSE) if loose & MAPS_LOOSE else {}
-    for h in [h for h in gives if "@" in gives[h]]:   # (Boss Keys: Anywhere: each chest's, and the tags taken off)
-        owners[h] = gives[h].split("@")[1]
-        gives[h] = BOSS_KEY
-    for h in boss_tags:
-        spots[h][1] = BOSS_KEY
+    for h in [h for h in gives if "@" in gives[h]]:   # (Boss Keys and small keys: Anywhere: each chest's, and the tags taken off)
+        owners[h] = gives[h].split("@")[1].split("#")[0]
+        gives[h] = gives[h].split("@")[0]
+    for h in list(boss_tags) + list(small_tags):
+        spots[h][1] = spots[h][1].split("@")[0]
     if any(not str(spots[h][4]).startswith("Obj_TBox") for h in owners):
         sys.exit("a dungeon's map or compass is somewhere else than a chest: nothing written")
     # (the game's own count of each item is kept: every item given was some chest's)

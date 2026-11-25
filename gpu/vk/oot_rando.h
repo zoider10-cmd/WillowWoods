@@ -66,7 +66,7 @@
       "The Spiritual Stones and Medallions the eight dungeons end in. Dungeons: shuffled among those eight endings. Anywhere: any item's place. None is needed to go on: the story goes by each dungeon being done, not by its stone or medallion.", \
       "Off", "Dungeons", "Anywhere") \
     X(KEYS, "Dungeon keys", "rando_keys", \
-      "Small keys and Boss Keys. Own dungeon: shuffled inside their dungeon. Anywhere: they can be in any place of the game.", \
+      "Small keys and Boss Keys. Own dungeon: shuffled inside their dungeon. Anywhere: each dungeon's small keys can be in any chest of the game, and still count for their own dungeon; a check behind a locked door then asks for all of its dungeon's keys, and a dungeon's keys never lie behind a dungeon that waits on it. The Boss Keys and the maps and compasses left on With the keys go anywhere too. The Tracker's rules don't name the keys. Not tried in play yet.", \
       "Off", "Own dungeon", "Anywhere") \
     X(MAJOR, "Major items", "rando_major", \
       "The big items in chests (Kokiri Sword, Bow, Megaton Hammer and the like) are shuffled too, placed so the game can be finished. Needs Chests.", \

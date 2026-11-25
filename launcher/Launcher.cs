@@ -2833,12 +2833,12 @@ class LauncherForm : Form {
     // seed's ID is copied and pasted)
     // (the settings a seed does nothing with yet, and the first of each one's choices that is so: the row offers the
     // choices before it, and with only Off left says "Not available yet". Dungeon rewards' Anywhere and
-    // Dungeon keys' Anywhere are made as the choice before. tools/rando/rando_seed.py is what places a seed. Songs'
+    // (Dungeon keys' Anywhere is made since 2026-11-24, key_tags.) tools/rando/rando_seed.py is what places a seed. Songs'
     // Anywhere is made: its line is here again, { "rando_songs", 2 }, while the script's SONGS_ANYWHERE is False)
     // (Songs' fourth choice, "Anywhere, ocarina too", is no longer offered: the ocarinas are a setting of their own since
     //  2026-11-21, rando_ocarinas. A file or a seed's ID that has it still makes the same seed: the seed tool reads it so)
     internal static readonly Dictionary<string, int> RandoNotYet = new Dictionary<string, int> {
-        { "rando_dungeon_rewards", 2 }, { "rando_keys", 2 }, { "rando_songs", 3 } };
+        { "rando_dungeon_rewards", 2 }, { "rando_songs", 3 } };
     // (rows that are no longer a choice and are not shown: the frogs of Zora's River take part whenever Quest rewards is
     // on. The row stays in RandoRows, its place being its place in a seed's ID, gpu/vk/oot_rando.h)
     internal static readonly HashSet<string> RandoHidden = new HashSet<string> { "rando_frogs" };
@@ -2866,7 +2866,7 @@ class LauncherForm : Form {
         new object[] { "rando_dungeon_rewards", "Dungeon rewards", new[] { "Off", "Dungeons", "Anywhere" }, new[] { 0, 1, 2 },
             "The Spiritual Stones and Medallions the eight dungeons end in. Dungeons: shuffled among those eight endings. Anywhere: any item's place. None is needed to go on: the story goes by each dungeon being done, not by its stone or medallion." },
         new object[] { "rando_keys", "Dungeon keys", new[] { "Off", "Own dungeon", "Anywhere" }, new[] { 0, 1, 2 },
-            "Small keys and Boss Keys. Own dungeon: shuffled inside their dungeon. Anywhere: they can be in any place of the game." },
+            "Small keys and Boss Keys. Own dungeon: shuffled inside their dungeon. Anywhere: each dungeon's small keys can be in any chest of the game, and still count for their own dungeon; a check behind a locked door then asks for all of its dungeon's keys, and a dungeon's keys never lie behind a dungeon that waits on it. The Boss Keys and the maps and compasses left on With the keys go anywhere too. The Tracker's rules don't name the keys. Not tried in play yet." },
         new object[] { "rando_major", "Major items", new[] { "Off", "On" }, new[] { 0, 1 },
             "The big items in chests (Kokiri Sword, Bow, Megaton Hammer and the like) are shuffled too, placed so the game can be finished. Needs Chests." },
         new object[] { "rando_open_deku", "Open Deku Tree", new[] { "Off", "On" }, new[] { 0, 1 },
