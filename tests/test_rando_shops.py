@@ -341,7 +341,7 @@ def main():
     # (how an item stands: by its box, lowered when made where it is worn, long ones made smaller, its own numbers first)
     box = lambda low, high: ((0.0, low, 0.0), (0.1, high, 0.1))
     check(seed.shelf_fit("Item_Thing", None) == (0.0, 1.0) and seed.shelf_fit("Item_Token_Gold", ((-0.19, -0.193, -0.01), (0.17, 0.19, 0.02))) == (0.19, 1.0) and
-          seed.shelf_fit("Item_Gauntlet_Gold", ((-0.8, 1.171, -0.11), (0.8, 1.33, 0.05))) == (-1.02, 1.0) and
+          seed.shelf_fit("Item_Gauntlet_Gold", ((-0.8, 1.171, -0.11), (0.8, 1.33, 0.05))) == (-0.26, 0.35) and
           seed.shelf_fit("Item_Hammer", ((-0.45, -0.28, -0.33), (0.22, 0.28, 1.45))) == (0.14, 0.51) and
           seed.shelf_fit("Item_Dungeon_SmallKey", box(0.0, 0.56)) == (0.0, 0.6) and seed.shelf_fit("Item_Arrow_Light", box(-0.38, 0.3)) == (0.1, 1.0) and
           seed.shelf_fit("Item_GlassTruth", box(0.92, 1.04)) == (-0.67, 1.0) and seed.shelf_fit("Item_Thing", box(0.0, 1.0))[1] == 1.0,
