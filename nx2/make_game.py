@@ -199,6 +199,18 @@ def killed_reason():
             % (" (%d GB here)" % total if total else ""))
 
 
+def reported(line):
+    """The sentence a builder shows. @@check is '@@check <ok|bad> <text>'; @@error is '@@error <text>'. None otherwise.
+    (builder/linux/hookshot_builder.py reads the check's lines by it; taken out with the Builder's window on 11-13, 000f19fb, while
+    the Linux builder still called it: tests/test_builder_status.py)"""
+    if line.startswith("@@error "):
+        return line[len("@@error "):]
+    if line.startswith("@@check "):
+        parts = line.split(" ", 2)
+        return parts[2] if len(parts) == 3 else ""
+    return None
+
+
 class LogStream:
     """Keep console output live while also saving it to the build log."""
     def __init__(self, console, log):

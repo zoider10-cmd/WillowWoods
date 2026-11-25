@@ -634,7 +634,7 @@ class PromptDependencyTests(unittest.TestCase):
                 P.prompt_packages()
 
     def test_local_imports_and_environment_are_accounted_for(self):
-        sources = {"prompt_assets", "prompt_draw", "prompt_faces", "prompt_keys"}
+        sources = {"prompt_assets", "prompt_draw", "prompt_faces", "prompt_keys", "mq_logo", "mq_banc"}
         for name in sources:
             tree = ast.parse((SOURCE / (name + ".py")).read_text(encoding="utf-8"))
             for node in ast.walk(tree):

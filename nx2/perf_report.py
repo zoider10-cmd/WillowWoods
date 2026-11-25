@@ -252,7 +252,7 @@ class Relay:
                 self.conn.request("POST", self.path, body, HEADERS)
                 r = self.conn.getresponse()
                 r.read()   # (all of it: the connection serves the next one)
-            except (http.client.RemoteDisconnected, BrokenPipeError, ConnectionResetError):
+            except (http.client.RemoteDisconnected, BrokenPipeError, ConnectionResetError, ConnectionAbortedError):   # (Windows: WSAECONNABORTED)
                 # (a kept connection the relay closed while it waited: the summary never arrived, once more on a new one)
                 self.close()
                 if reused and not again:
