@@ -53,9 +53,11 @@ def main():
     fn = fn[:fn.index("\n}\n")]
     check("if (kind == 1) {" in fn and "if (!strcmp(shown, oot_show_as[i][1])) {" in fn and
           "give = oot_show_as[i][0];" in fn, "a held-up gauntlet is still shown by its worn piece's spelling")
-    # (bug 55: the Silver and Golden Gauntlets show the bracelet's model on a shelf, their own name)
-    check("SHELF_MODEL_AS = {\"Item_Gauntlet_Silver\": \"Item_Gauntlet_Goron\", \"Item_Gauntlet_Gold\": \"Item_Gauntlet_Goron\"," in src and
-          '"TBox_Shield_Deku": "Shop_Weapon_Shield_Deku", "TBox_Shield_Hylian": "Shop_Weapon_Shield_Hylian"}' in src and
+    # (bug 55, then the owner 2026-11-24: the Silver and Golden Gauntlets show their own pair on a shelf, a third its size;
+    #  the shields keep the game's own shelf models)
+    check('SHELF_MODEL_AS = {"TBox_Shield_Deku": "Shop_Weapon_Shield_Deku", "TBox_Shield_Hylian": "Shop_Weapon_Shield_Hylian"}' in src and
+          R.SHELF_SCALE["Item_Gauntlet_Silver"] == R.SHELF_SCALE["Item_Gauntlet_Gold"] == 0.35 and
+          R.shelf_fit("Item_Gauntlet_Silver", ((-0.8, 1.17, -0.11), (0.8, 1.33, 0.05))) == (-0.26, 0.35) and
           'SHELF_POSE_AS = frozenset(("TBox_Shield_Deku", "TBox_Shield_Hylian"))' in src and
           "    if item in SHELF_POSE_AS:   # (the game's own shelf's model and pose: no turn of ours, bug 77)" in src and
           'SHELF_HOLD_OFFSET = {"Item_Hookshot": (0.3, 0.2, 0.0), "Item_Longshot": (0.3, 0.2, 0.0)}' in src and
@@ -63,7 +65,7 @@ def main():
           'SHELF_MODEL_FIELDS = ("FmdbName", "ModelProjectName", "ModelAabbMin", "ModelAabbMax", "AnimationResources")' in src and
           "row[1].update((k, v) for k, v in by[SHELF_MODEL_AS[item]][1].items() if k in SHELF_MODEL_FIELDS)" in src and
           "pack(SHELF_MODEL_AS[item]) if item in SHELF_MODEL_AS else None)" in src,
-          "the gauntlets' shelves do not show the bracelet's model with their own name (bug 55)")
+          "the gauntlets' shelves do not show their own pair a third its size, or the shields lost their shelf models (bug 55)")
     print("PASS: the bottle and Kakariko's Potion Shop's shelves")
 
 
