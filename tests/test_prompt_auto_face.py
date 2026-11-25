@@ -55,7 +55,7 @@ def main():
     check("face_of_name(name)" in block(src, "static int auto_face("), "auto_face does not ask face_of_name")
 
     harness = "\n".join([
-        "#include <ctype.h>", "#include <stdio.h>", "#include <stdlib.h>", "#include <string.h>", '#include "gpu/vk/vk_api.h"',
+        "#include <ctype.h>", "#include <stdio.h>", "#include <stdlib.h>", "#include <string.h>", '#include "gpu/vk/vk_api.h"', '#include "gpu/vk/compat/hookshot_env.h"',
         "static int pads_xinput;",
         "static int hos_xinput_pads(void) { return pads_xinput; }",
         "static int keyboard_built;",

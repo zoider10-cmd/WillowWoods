@@ -52,7 +52,7 @@ def main():
     check('counts["ring post writers"] += ring[1]' in src and 'total["ring post writers"] != len(RING_POST_FUNCS)' in src,
           "patch_file does not count the writers, or apply does not warn when not all 77 are made")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
-    check("int hos_oot_ring_post(Ctx *c) {" in host and 'getenv("HOS_OOT_RING_ABORT")' in host,
+    check("int hos_oot_ring_post(Ctx *c) {" in host and 'env_on("HOS_OOT_RING_ABORT")' in host,
           "the host has no hos_oot_ring_post, or no way to keep the game's abort")
     print("FAIL" if failed else "PASS: the game's queue writers return instead of ending the game")
     return 1 if failed else 0

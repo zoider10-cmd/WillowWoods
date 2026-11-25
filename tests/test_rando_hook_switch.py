@@ -50,6 +50,7 @@ FIXTURE = r'''#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "@ENV_H@"   /* (env_on: the cut code reads its switch so) */
 #define CHECK(x) do { if (!(x)) { fprintf(stderr, "FAIL:%d %s\n", __LINE__, #x); exit(1); } } while (0)
 typedef struct { uint64_t x[32]; } Ctx;
 #define BASE 0x1000000000ULL
@@ -175,7 +176,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="hook-switch-") as tmp:
         c = Path(tmp) / "fixture.c"
         exe = Path(tmp) / "fixture"
-        c.write_text(FIXTURE.replace("@FN@", fn), encoding="utf-8")
+        c.write_text(FIXTURE.replace("@FN@", fn).replace("@ENV_H@", (ROOT / "gpu/vk/compat/hookshot_env.h").as_posix()), encoding="utf-8")
         subprocess.run([a.cc, "-std=c11", "-Wall", "-Wextra", "-Werror", str(c), "-o", str(exe)], check=True)
         env = {k: v for k, v in os.environ.items() if k != "HOS_OOT_NO_HOOK_HIT"}
         subprocess.run([str(exe)], check=True, env=env)
