@@ -57,7 +57,9 @@ def main():
     #  the shields keep the game's own shelf models)
     check('SHELF_MODEL_AS = {"TBox_Shield_Deku": "Shop_Weapon_Shield_Deku", "TBox_Shield_Hylian": "Shop_Weapon_Shield_Hylian"}' in src and
           R.SHELF_SCALE["Item_Gauntlet_Silver"] == R.SHELF_SCALE["Item_Gauntlet_Gold"] == 0.35 and
-          R.shelf_fit("Item_Gauntlet_Silver", ((-0.8, 1.17, -0.11), (0.8, 1.33, 0.05))) == (-0.26, 0.35) and
+          R.shelf_fit("Item_Gauntlet_Silver", ((-0.8, 1.17, -0.11), (0.8, 1.33, 0.05))) == (0.27, 1.2) and
+          R.SHELF_OWN_POSE == {"Item_Gauntlet_Silver", "Item_Gauntlet_Gold"} and
+          'comps.update((key, part(key)) for key in ("ASInfoRef", "ASRef", "AnimationRef") if part(key))' in src and
           'SHELF_POSE_AS = frozenset(("TBox_Shield_Deku", "TBox_Shield_Hylian"))' in src and
           "    if item in SHELF_POSE_AS:   # (the game's own shelf's model and pose: no turn of ours, bug 77)" in src and
           'SHELF_HOLD_OFFSET = {"Item_Hookshot": (0.3, 0.2, 0.0), "Item_Longshot": (0.3, 0.2, 0.0)}' in src and
