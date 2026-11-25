@@ -109,12 +109,12 @@ static void WaitForSingleObject(HANDLE h, unsigned timeout) {
     ++waited;
 }
 static void load_hookshot_env() {}
-static void record_stutters_env() {}   // (hookshot: the slow-frame recorder's switch, host/hos_main.c)
 static void hos_game_layout() {}   // (host/game_layout.c: the game folder's cache/ and logs/)
 static void hos_options_choose(int, char**) {}   // (host/options_path.c: the settings file, in the user folder)
 static void driver_cache_room() {}   // (host/hos_main.c: the drivers' shader caches' size, #2033)
 static void driver_cache_folder() {}   // (host/hos_main.c: the folder __GL_SHADER_DISK_CACHE_PATH names, made)
 static void driver_env_choose() {}   // (host/hos_main.c: RADV_FORCE_VRS_CONFIG_FILE dropped)
+static void hos_profiling_env() {}   // (host/profiling.c: HOS_PROFILE=1, the profiler's switch)
 
 #include "display_startup_actual.inc"
 

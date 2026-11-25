@@ -1,6 +1,6 @@
 """Game-free: the button prompts' Auto face for a controller's name (host/prompts.c face_of_name, contains). A Steam Controller
-gets the Steam Deck's face, as the Deck does: SDL3 names it "Steam Controller", which fell through to the Xbox's. Under
-Steam, Steam Input's stand-in pad for a Steam Controller has the same name, so it gets the Deck's face too. A pad named
+gets a face of its own (8ef8e170; it had the Steam Deck's, and before that fell through to the Xbox's: SDL3 names it "Steam
+Controller"). Under Steam, Steam Input's stand-in pad for a Steam Controller has the same name, so it gets that face too. A pad named
 "Steam Virtual Gamepad" stays on the Xbox's, since any controller can be behind it. And auto_face, which choose_face and live_face
 ask: with no controller, the keyboard's face when the build made it and XInput has no controller either, else the Switch's.
 
@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # (the controller's name as SDL gives it, the face Auto picks)
 NAMES = [
     ("", "HOS_PROMPT_SWITCH"),
-    ("Steam Controller", "HOS_PROMPT_STEAMDECK"),
+    ("Steam Controller", "HOS_PROMPT_STEAMCONTROLLER"),
     ("Steam Deck", "HOS_PROMPT_STEAMDECK"),
     ("Steam Deck Controller", "HOS_PROMPT_STEAMDECK"),
     ("Steam Virtual Gamepad", "HOS_PROMPT_XBOX"),
@@ -55,7 +55,7 @@ def main():
     check("face_of_name(name)" in block(src, "static int auto_face("), "auto_face does not ask face_of_name")
 
     harness = "\n".join([
-        "#include <ctype.h>", "#include <stdio.h>", "#include <string.h>", '#include "gpu/vk/vk_api.h"',
+        "#include <ctype.h>", "#include <stdio.h>", "#include <stdlib.h>", "#include <string.h>", '#include "gpu/vk/vk_api.h"',
         "static int pads_xinput;",
         "static int hos_xinput_pads(void) { return pads_xinput; }",
         "static int keyboard_built;",

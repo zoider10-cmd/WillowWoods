@@ -50,6 +50,10 @@ CPP = r"""
 #include <cstring>
 #include <cstdio>
 #include "gpu/vk/auto_settings.h"
+#ifdef _WIN32   // (Windows' C library has no setenv: the same through _putenv_s, where "" removes the variable)
+static int setenv(const char* n, const char* v, int) { return _putenv_s(n, v); }
+static int unsetenv(const char* n) { return _putenv_s(n, ""); }
+#endif
 enum { VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU = 1, VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU = 2 };
 struct Props { int deviceType; char deviceName[256]; unsigned vendorID; };
 static ::auto_settings::Hardware detect(const Props& p) {
@@ -95,7 +99,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="auto-handheld-") as tmp:
         src, exe = Path(tmp) / "t.cpp", Path(tmp) / "t"
         src.write_text(code, encoding="utf-8")
-        subprocess.run([args.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT), str(src), "-o", str(exe)],
+        subprocess.run([args.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-idirafter", str(ROOT), str(src), "-o", str(exe)],
                        check=True)
         r = subprocess.run([str(exe)])
         if r.returncode:

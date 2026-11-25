@@ -122,8 +122,11 @@ def report():
         wait_end = frames[40][2] - 10_000_000
         (d / "events.txt").write_text("%d vcore_wait 80.0 ms from %d: ARes_Loading_0 (priority 26) waited for a core: given by "
                                       "sead::MainThread\n" % (wait_end, wait_end - 80_000_000), encoding="utf-8")
-        (d / "cpu.csv").write_text("t_ns,process_cpu_ns,rss_mb,available_mb\n%d,0,1000,8000\n%d,%d,1100,7900\n" %
-                                   (t0, at, (at - t0) * 2), encoding="utf-8")
+        # (2 cores from the first present, the run's 0 s where its window begins, to the last: a sample before the window,
+        # at the start of loading, is not in its cores)
+        first = int(pres[0].split(",")[1])
+        (d / "cpu.csv").write_text("t_ns,process_cpu_ns,rss_mb,available_mb\n%d,0,900,8100\n%d,%d,1000,8000\n%d,%d,1100,7900\n" %
+                                   (t0, first, 5_000_000, at, 5_000_000 + (at - first) * 2), encoding="utf-8")
         (d / "process.json").write_text(json.dumps({"env": {"HOS_PROFILE": "1", "HOS_SAMPLE_ALL": str(d / "all.txt")}}),
                                         encoding="utf-8")
         (d / "game.log").write_text("[hos host] prof: threads in 5 s: sead::MainThread 60%; ARes_Loading_0 12%;\n",
@@ -180,7 +183,7 @@ def sources():
          "the mode replaces a switch already set")
     for path in ("host/posix/prof.c", "host/mkw_glue.c"):
         src = (ROOT / path).read_text(encoding="utf-8")
-        need("hos_profiling_start();" in block(src, "void hos_prof_start(void)"), path + ": the mode's thread is not started")
+        need("hos_profiling_start();" in block(src, "void hos_prof_start(void) {"), path + ": the mode's thread is not started")
         need("else hos_sample_write(out, line);" in block(src, "static DWORD WINAPI sample_all_thread(void *p)"),
              path + ": the sampler does not write through hos_sample_write")
     replay = (ROOT / "gpu/vk/vk_replay.cpp").read_text(encoding="utf-8")

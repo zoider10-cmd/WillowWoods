@@ -1,7 +1,7 @@
 """The Debug tab's inventory editor's items (gpu/vk/oot_cheat_items.h, read by gpu/vk/vk_menu.cpp and host/hos_main.c):
-no two rows share a label or a pouch name, and the probe list names no spelling twice. The Hookshot and the Hookshot are
-two items of the game, each with its own row: the project's rename to Hookshot once made the Hookshot's row a second
-Hookshot (Item_Hookshot and Weapon_Range_Hookshot gone), so the Debug tab could not give the Hookshot.
+no two rows share a label or a pouch name, and the probe list names no spelling twice. The Hookshot and the Longshot are
+two items of the game, each with its own row: the project's rename to Longshot (since undone) once made the Hookshot's row
+a second Longshot (Item_Hookshot and Weapon_Range_Hookshot gone), so the Debug tab could not give the Hookshot.
 
 The header's own macros are expanded by the compiler (a small program prints each row), so the check sees what the menu
 and the game side compile. No game, no GPU.
@@ -63,18 +63,18 @@ def main():
         problems.append("pouch names twice: %s" % ", ".join(twice(names)))
     if twice(probes):
         problems.append("probes twice: %s" % ", ".join(twice(probes)))
-    for label, name in (("Hookshot", "Item_Hookshot"), ("Hookshot", "Item_Longshot")):
+    for label, name in (("Hookshot", "Item_Hookshot"), ("Longshot", "Item_Longshot")):
         if [label, name, "0"] not in items:
             problems.append("no %s row (%s, kind 0)" % (label, name))
     for probe in ("Weapon_Range_Hookshot", "Weapon_Range_Longshot"):
         if probe not in probes:
             problems.append("no %s probe" % probe)
-    if "Hookshot" in labels and "Hookshot" in labels and labels.index("Hookshot") + 1 != labels.index("Hookshot"):
-        problems.append("the Hookshot's row is not right after the Hookshot's (its upgrade, as the game lists them)")
+    if "Hookshot" in labels and "Longshot" in labels and labels.index("Hookshot") + 1 != labels.index("Longshot"):
+        problems.append("the Longshot's row is not right after the Hookshot's (its upgrade, as the game lists them)")
     for p in problems:
         print("FAIL " + p)
     if not problems:
-        print("cheat items: %d items, %d probes; no label, pouch name or probe twice; the Hookshot and the Hookshot both there"
+        print("cheat items: %d items, %d probes; no label, pouch name or probe twice; the Hookshot and the Longshot both there"
               % (len(items), len(probes)))
     return 1 if problems else 0
 

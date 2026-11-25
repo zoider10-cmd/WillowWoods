@@ -29,6 +29,7 @@ RUN_ALL_ARGS = ["--cxx", "{cxx}"]
 ROOT = Path(__file__).resolve().parents[1]
 
 FIXTURE = r'''#include "gpu/vk/vk_menu_keys.h"
+#include <algorithm>
 #include <atomic>
 #include <cstdarg>
 #include <cstdio>
@@ -37,6 +38,7 @@ FIXTURE = r'''#include "gpu/vk/vk_menu_keys.h"
 #include <filesystem>
 #include <string>
 #include <system_error>
+#include <vector>
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "FAIL:%d %s\n", __LINE__, #x); std::exit(1); } } while (0)
 using ULONGLONG = unsigned long long;
 // CONSTANTS
@@ -60,6 +62,13 @@ ULONGLONG GetTickCount64() { return now_ms; }
 bool cheats_on() { return false; }
 void logf(const char*, ...) {}
 const char* tracker_here_area() { return nullptr; }
+// (the Gossip Stones' row and the hints' marks: no hints here; what the story holds back: nothing)
+std::atomic<int> tracker_on{1};
+std::vector<std::string> tracker_stone_lines;
+int tracker_stone_total = 0;
+void tracker_stones_load(const std::string&, bool) {}
+int tracker_area_hint(const char*) { return 0; }
+std::string tracker_after(const TrackerCheck&) { return std::string(); }
 // JUNK
 // SHOW
 // FUNCTIONS
@@ -89,8 +98,9 @@ static bool press_on(int row, int which) {
 int main(int argc, char** argv) {
     CHECK(argc == 2);
     folder = std::string(argv[1]) + "/";
-    const char* names[] = {"The whole game", "Show", "Return home", "Market", "Kokiri Forest"};
-    for (int r = 0; r < 5; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
+    const char* names[] = {"The whole game", "Show", "Return home", "Gossip Stones", "Market", "Kokiri Forest"};
+    static_assert(kTrackerStoneRow == 3 && kTrackerFirstArea == 4, "the rows before the areas are not these");
+    for (int r = 0; r < 6; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
     const int market = kTrackerFirstArea;
     put(0, "Market", "Chest A", 0, 1);
     put(1, "Market", "Chest B", 0, 1);
@@ -217,7 +227,7 @@ def main():
           "the junk record is not read with the seed's checks")
     check('return game_folder_path() + "rando\\\\junk.txt";' in junk and 'mods\\\\rando-seed\\\\rando_stamp.txt' in junk,
           "the junk record is not rando\\junk.txt beside collected.txt, or the stamp is not the seed's")
-    panel = block(menu, "void tracker_panel(")
+    panel = block(menu, "float tracker_panel(")
     check("got ? 2 : tracker_junk[i] ? 3 : tracker_in_logic(tracker_checks[i])" in panel and
           "if (l.state == 3) c.d->AddLine(" in panel and '{3, "junk"}' in panel,
           "the panel does not draw a junk check struck through, or the legend does not say what it is")

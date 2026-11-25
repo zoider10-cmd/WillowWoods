@@ -126,6 +126,13 @@ void rx_request_frame_dump(void) { commands++; }
 void rx_set_screenshot_ms(int64_t ms) { (void)ms; commands++; }
 void rx_request_rdoc_capture(int frames) { (void)frames; commands++; }
 void rx_flash_dark_arm(void) { commands++; }
+/* the input recorder (HOS_INPUT_RECORD, HOS_INPUT_PLAY): off here, no recorded run plays */
+static int input_play(uint64_t *buttons, int32_t stick[4]) { (void)buttons; (void)stick; return 0; }
+static void input_record(uint64_t buttons, const int32_t stick[4]) { (void)buttons; (void)stick; }
+static uint64_t pad_buttons_given;   /* (hos_pad_a_held's: what the game was given) */
+void hos_input_play_start(void) {}   /* (the live "!play": no recorded run here) */
+/* host/oot_wheel.c's item wheel: closed here, so the buttons and the stick pass through as it gives them then */
+uint64_t hos_wheel_input(uint64_t buttons, int32_t stick[4]) { (void)stick; return buttons; }
 
 #include "input_actual.inc"
 

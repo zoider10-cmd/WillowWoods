@@ -37,6 +37,9 @@ DRIVER = r'''
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32   /* (Windows' C library has no setenv) */
+#define setenv(name, value, overwrite) _putenv_s(name, value)
+#endif
 int64_t fake_now;
 static void sweep(int64_t t, const char *a, const char *b) {
     fake_now = t;
@@ -49,7 +52,7 @@ int main(int argc, char **argv) {
     (void)argc;
     setenv("HOS_SLOW_FRAMES", argv[1], 1);
     assert(hos_slow_frames_path() && !strcmp(hos_slow_frames_path(), argv[1]));
-    char longest[600] = "Long|";
+    char longest[1024] = "Long|";   /* (5 + 16 + 39 x 17 = 684 bytes: 600 ran past its end) */
     for (int i = 0; i < 40; i++) strcat(longest, i ? ";hookshot+1234567" : "hookshot+1234567");
     int64_t t = 1000000000;   /* 1 s */
     for (int i = 0; i < 100; i++, t += 4000000) {   /* (400 ms of sweeps, 4 ms apart, frames on time every 16 ms) */
@@ -110,7 +113,7 @@ def sources():
              path + ": the ring's samples do not share their sweep's time")
         need("if (ring) hos_slow_sweep_done();" in sampler, path + ": a sweep's end is not told to the recorder")
         need("else hos_sample_write(out, line);" in sampler, path + ": the sampler's lines are not written through hos_sample_write")
-        need("CreateThread(NULL, 0, sample_all_thread, (void *)slow, 0, NULL);" in block(src, "void hos_prof_start(void)"),
+        need("CreateThread(NULL, 0, sample_all_thread, (void *)slow, 0, NULL);" in block(src, "void hos_prof_start(void) {"),
              path + ": HOS_SLOW_FRAMES starts no sampler")
     need("hos_slow_frame_present();" in block((ROOT / "host/rx_backend.c").read_text(encoding="utf-8"),
                                               "void rx_nvn_present(const nvn_tex *t, const int crop[4])"),
@@ -122,7 +125,8 @@ def sources():
          "a long wait for a virtual core is not logged")
     need("if (hos_fps_timing) t->vc_wait_total += waited;" in acquire, "the virtual core's waits are not counted")
     need("vc_grant(c, t);" in block(threads, "static void vc_release(HosThread *t)"), "a grant does not know who let the core go")
-    need("t->blocked_total += hos_now_ns() - t->away_at" in block(threads, "void hos_vcore_back(void)"),
+    need("t->blocked_total += hos_now_ns() - t->away_at" in block(threads, "void hos_vcore_back(void) {\n    HosThread *t = cur;"),   # (not the
+         # empty one of a build without virtual cores)
          "a block's time is not counted")
     need("host_main_thread_times" in (ROOT / "host/rx_backend.c").read_text(encoding="utf-8"), "the host does not give the main thread's times")
     need("host->main_thread_times(mt)" in (ROOT / "gpu/vk/vk_replay.cpp").read_text(encoding="utf-8"),

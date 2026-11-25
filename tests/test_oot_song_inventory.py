@@ -54,6 +54,7 @@ static int oot_gamedata_set_bool(Ctx *, uint32_t hash, int value) {
     ++flag_writes;
     return 1;
 }
+static int oot_gamedata_int(Ctx *, uint32_t, int32_t *, int) { return 0; }   // (the magic meter's MPMax: not read here)
 static uint32_t rotate(uint32_t x, int n) { return x << n | x >> (32 - n); }
 static uint32_t flag_hash(const std::string& name) {
     const std::string s = "IsGet." + name;

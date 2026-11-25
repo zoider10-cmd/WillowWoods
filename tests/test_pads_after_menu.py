@@ -142,6 +142,10 @@ def main():
         block(hid, "static void stick_max("), block(hid, "static uint64_t bound_pad_buttons("), state,
         block(hid, "void hos_filter_stick("),
         re.search(r"^static volatile int xinput_pads_now;.*$", hid, re.M).group(0),
+        re.search(r"^typedef struct \{ int on; XINPUT_GAMEPAD pad; \} XinSlot;$", hid, re.M).group(0),
+        # (XInput's slots as its asking thread last saw them: none on, as xinput_get is NULL here)
+        "static void xinput_take(int64_t now, XinSlot out[XUSER_MAX_COUNT]) {\n"
+        "    (void)now; (void)xinput_get; memset(out, 0, XUSER_MAX_COUNT * sizeof *out);\n}",
         block(hid, "static void pads_read("),
         "static void game_pads(uint64_t *buttons, int32_t stick[4]) " + pads,
         MAIN))

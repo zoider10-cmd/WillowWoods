@@ -566,7 +566,7 @@ def wiring(root, tap, mutation):
           "GameDataMgr's slot differs from hos_main.c's")
     check(re.search(r"#define OOT_EVENTMGR_SLOT %sULL\b" % defs["STATE_EVENTMGR_SLOT"], main_c) is not None,
           "EventMgr's slot differs from hos_main.c's")
-    check("recomp_load64(c, %sULL)" % defs["STATE_CAMERAS_SLOT"] in block(main_c, "static uint64_t oot_gameplay_view("),
+    check("recomp_load64(c, %sULL)" % defs["STATE_CAMERAS_SLOT"] in block(main_c, "static uint64_t oot_gameplay_view(Ctx *c) {"),
           "the camera manager's slot differs from oot_gameplay_view's")
     check("recomp_load64(c, view) != %sULL" % defs["STATE_VIEW_VTABLE"] in main_c,
           "the view's vtable differs from hos_oot_free_view's")

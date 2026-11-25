@@ -12,7 +12,12 @@
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "FAIL:%d %s\n", __LINE__, #x); std::exit(1); } } while (0)
 using namespace std::chrono_literals;
 
-struct HosThread { int vc_held = 0, vc_escaped = 0, releases = 0, takes = 0; bool returning_caller = false; };
+struct HosThread {
+    int vc_held = 0, vc_escaped = 0, releases = 0, takes = 0; bool returning_caller = false;
+    uint64_t away_at = 0, blocked_total = 0;   // (the frame trace's blocked time: off here, hos_fps_timing is 0)
+};
+static int hos_fps_timing;
+static uint64_t hos_now_ns() { return 0; }
 static thread_local HosThread* cur;
 static thread_local bool callback_active;
 static std::mutex lease_mu, renderer_mu;

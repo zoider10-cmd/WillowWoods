@@ -194,7 +194,7 @@ def fixture_source(root):
     head = run[run.index('const std::string running = pipe_notes_path() + ".running";'):]
     head = head[:head.index("\n", head.index("done_marker{running};"))]
     warm = block(draw, "void precompile_warm(void (*progress)(size_t done, size_t total)) {")
-    predict = block(draw, "void predict_run(void (*progress)(size_t done, size_t total)) {")
+    predict = block(draw, "void predict_run(void (*progress)(size_t done, size_t total), bool background) {")
     prepare = block(draw, "bool prepare_run(")
     close = block(main_cpp, "void mkwvk_close_asked(void) {")
     # (the parts of the close this is about, in their order: what else it closes (FSR 4, DLSS, the caches) is not)
