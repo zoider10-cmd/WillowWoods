@@ -132,7 +132,12 @@ int main(void) {
     CHECK(touch("Item_DekuStickBundle_Small") == 1 && gives == 0);
     pot_open = -1;
     CHECK(touch("Item_DekuStickBundle_Small") == 0 && gives == 0);
+    /* (fixes 102) a pot's falling pick-up is asked for as its item: got, its pot broken and not collected */
+    pot_open = 3;
+    CHECK(touch("Item_DekuStickBundle_Small_Fall") == 1 && gives == 0);
+    pot_open = -1;
     oot_link_place[0] = 0, bags[3] = 0;
+    CHECK(touch("TBox_DekuNutBundle_Fall") == 0 && gives == 1 && !strcmp(given, "Item_NutBag_Small"));
     /* the randomizer off */
     rando_on = 0;
     CHECK(touch("TBox_DekuNutBundle") == 0 && gives == 0 && touch("Item_BombBundle_Small") == 0);
@@ -149,7 +154,8 @@ def main():
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     fn = "\n".join(block(host, marker) for marker in (
         "static int oot_bundle_holder(const char *name, const char *const **sizes) {",
-        "static int oot_drop_check_near(const char *name) {")) + "\n" + block(
+        "static int oot_drop_check_near(const char *name) {")) + '\n#define OOT_POT_FALL "_Fall"\n' + block(
+        host, "static int oot_pot_fall(char *name) {") + "\n" + block(
         host, "int hos_oot_pickup_room(Ctx *c) {")
     add = block(host, "int hos_oot_pouch_add(Ctx *c) {")
     if "if (!oot_holder_giving) {" not in add:

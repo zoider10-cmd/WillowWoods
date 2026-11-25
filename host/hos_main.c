@@ -5297,6 +5297,16 @@ static int oot_holder_giving;   /* (a holder the host gives just now: not a chec
    (seen in play: Deku Nut and Stick bundles from the Market guard house's pots, after the first; the first was got by its
    get scene, which asks nothing). Got, the add follows with what fits (seen: "pouch add Item_DekuNut x0"). */
 static int oot_pot_open(Ctx *c, const char *name, int *broken);
+/* (fixes 102, tools/rando/rando_seed.py POT_FALL_AS) A pot's unique item is an actor of its own that falls to the ground,
+   "<the item>_Fall", and the game names the pick-up and the pouch's add by the actor: the name is made the item's again
+   (1), so everything after goes by the seed's item as it did. 0: not such a name, left as it is. */
+#define OOT_POT_FALL "_Fall"
+static int oot_pot_fall(char *name) {
+    const size_t length = strlen(name), tail = sizeof OOT_POT_FALL - 1;
+    if (length <= tail || strcmp(name + length - tail, OOT_POT_FALL)) return 0;
+    name[length - tail] = 0;
+    return 1;
+}
 int hos_oot_pickup_room(Ctx *c) {
 #if defined(_WIN32) || defined(__linux__)
     if (!hos_rando_on()) return 0;
@@ -5309,6 +5319,7 @@ int hos_oot_pickup_room(Ctx *c) {
         if (!name[length]) break;
     }
     name[length] = 0;
+    oot_pot_fall(name);   /* (a pot's falling pick-up: its item) */
     const char *const *sizes;
     const int rule = oot_bundle_holder(name, &sizes);
     int broken_pots = 0;   /* (a junk pot's bundle: its pot is collected when it breaks, so any broken pot giving it, POT_BAGGED) */
@@ -5352,6 +5363,10 @@ int hos_oot_pouch_add(Ctx *c) {
         if (!name[length]) break;
     }
     name[length] = 0;
+    if (oot_pot_fall(name)) {   /* (a pot's falling pick-up, POT_FALL_AS: the add is its item's) */
+        hos_log("rando: pots: the falling pick-up %s" OOT_POT_FALL " is the seed's %s: that is added", name, name);
+        view = oot_pouch_name(c, view, name);
+    }
     /* (every content added, with where the call came from and its other arguments: the game gives a Bomb Bag with a
        chest's bombs when Link has none, seen in play, and that add is to be told from a chest's own Bomb Bag) */
     hos_log("rando: pouch add %s x%d (lr %#llx, x2 %#llx x4 %#llx x5 %#llx x6 %#llx x7 %#llx)", name, (int)(int32_t)c->x[3],

@@ -6,6 +6,7 @@ tables and the sources.
 
 python -I -B tests/test_rando_pots.py
 """
+import collections
 import os
 import sys
 
@@ -73,7 +74,7 @@ def main():
     assert S.pot_own(5, 30) in S.POT_OWNS and S.pot_own(5, 29) == S.POT_OWN and all(S.skulltula_holds(i, S.PROGRESSION) for i in S.POT_OWNS)
     assert "found = dungeon_table().get(RULE_AS.get(h, h))" in src and "h = RULE_AS.get(h, h)" in main_src, "a pot's borrowed rule is not read"
     pack_src = src[src.index("\ndef pot_pack("):src.index("\ndef pot_rows(")]
-    design_src = src[src.index("\ndef pot_design("):src.index("\ndef pot_pack(")]
+    design_src = src[src.index("\ndef pot_design("):src.index("\ndef pot_fall_pack(")]
     assert "LiftableRef" not in pack_src + design_src, "a pot taking part is not lifted as the game's are"
     assert 'comps["DropRef"] = ("string", "?" + POT_DROP_PARAM % name)' in pack_src, \
         "the pot does not drop by its own table"
@@ -88,9 +89,9 @@ def main():
     flags = host[host.index("static int oot_shelf_flags(Ctx *c) {"):]
     assert "oot_checks[i].pot && oot_checks[i].broken && oot_checks[i].done != 1 && oot_pot_junk(oot_checks[i].item)" in flags[:flags.index("\n}\n")], \
         "a junk pot is not collected when it breaks (it may drop a green rupee or nothing)"
-    assert 'ACTOR_REF % (POT_WORLD.get(item, item) if world else item)' in pack_src and all(i in S.POT_WORLD for i in S.POT_OWNS), "a pot's own junk has a scene"
+    assert 'dropped = POT_WORLD.get(item, item) if world else item' in pack_src and all(i in S.POT_WORLD for i in S.POT_OWNS), "a pot's own junk has a scene"
     assert "if (open >= 0 || oot_pot_world_item(name) || oot_pot_junk(name)) return 0;" in host, "a world pick-up (grass's too) can be refused"
-    assert S.POT_BAGGED <= set(S.POT_WORLD) and "pot_pack(kind[h], designs[kind[h]], bagged, pot_drops[h], world=False)" in main_src,         "a pot's Deku Nuts or Sticks have no actor dropping their bag-giving bundle"
+    assert S.POT_BAGGED <= set(S.POT_WORLD) and "pot_pack(kind[h], designs[kind[h]], bagged, pot_drops[h], world=False, fall=fall_of(pot_drops[h]))" in main_src,         "a pot's Deku Nuts or Sticks have no actor dropping their bag-giving bundle"
     assert "if (open >= 0 || oot_pot_world_item(name) || oot_pot_junk(name)) return 0;" in host, "a junk pot's bundle is refused after its pot is collected"
     assert "? -2 : -1;" in host and "if (oot_pot_chosen == -2) {" in track[:track.index("\n}\n")], \
         "a junk pot's item got after its pot was collected marks another check"
@@ -101,6 +102,41 @@ def main():
     assert host.index("const uint64_t pot = oot_pot_look_answer(c, name_at);") < host.index("if (!name_at || !__atomic_load_n(&oot_tier_shelf_count"), \
         "the pots are answered only where shelves of a family are"
     assert "size_table_entry(tbl, was)" in main_src, "a pot's model and texture copies have no size table entry"
+    # (FIXES 102: a pot's unique item is an actor of its own that falls, the item's pick-up with the rupee's body)
+    def actor(name, parent=None, **parts):
+        d = collections.OrderedDict()
+        if parent:
+            d["$parent"] = ("string", S.ACTOR_REF % parent)
+        d["Components"] = ("dict", collections.OrderedDict((k, ("string", v)) for k, v in parts.items()))
+        return S.byml_build(("dict", d), 7)
+    token_set, token_physics = S.POT_FALL_SET_FROM % S.PICKUP_BASE, S.POT_FALL_PHYSICS_FROM % S.PICKUP_BASE
+    pickup = S.sarc_write(collections.OrderedDict((
+        (S.ACTOR_FILE % "Item_X", actor("Item_X", S.PICKUP_BASE, ModelInfoRef="?m")),
+        (token_set, S.byml_build(("dict", collections.OrderedDict((("RigidBodyEntityNamePathAry", ("array", [("dict", collections.OrderedDict((
+            ("FilePath", ("string", "Work/Phive/RigidBodyEntityParam/Token_Gold_0.phive__RigidBodyEntityParam.gyml")), ("Name", ("string", "Body")))))])),))), 7)),
+        (token_physics, S.byml_build(("dict", collections.OrderedDict((("ControllerSetPath", ("string", S.ref_of(token_set))),))), 7)))))
+    body = S.sarc_write(collections.OrderedDict(((S.POT_FALL_BODY_FROM, b"the body that falls"),)))
+    fall, own = S.pot_fall_pack("Item_X", pickup, body, S.POT_FALL_AS % "Item_X")
+    parts = S.sarc_read(fall)
+    mine = S.byml_parse(parts[S.ACTOR_FILE % "Item_X_Fall"])[0][1]
+    assert mine["$parent"][1] == S.ACTOR_REF % "Item_X" and dict(mine["Components"][1]) == {"PhysicsRef": ("string", "?" + S.POT_FALL_PHYSICS)}, mine
+    assert S.byml_parse(parts[S.POT_FALL_PHYSICS])[0][1]["ControllerSetPath"][1] == S.ref_of(S.POT_FALL_SET)
+    assert S.byml_parse(parts[S.POT_FALL_SET])[0][1]["RigidBodyEntityNamePathAry"][1][0][1]["FilePath"][1] == S.ref_of(S.POT_FALL_BODY)
+    assert parts[S.POT_FALL_BODY] == b"the body that falls" and parts[token_set] == S.sarc_read(pickup)[token_set], "the token's own set was changed"
+    assert sorted(own) == sorted([S.ACTOR_FILE % "Item_X_Fall", S.POT_FALL_BODY, S.POT_FALL_SET, S.POT_FALL_PHYSICS])
+    assert all("Rando_Fall" in p_ for p_ in (S.POT_FALL_BODY, S.POT_FALL_SET, S.POT_FALL_PHYSICS)), "a falling pick-up's files are under the game's own names"
+    rows = S.byml_parse(S.pot_fall_rows(S.byml_build(("array", [("dict", collections.OrderedDict((("__RowId", ("string", n)), ("K", ("string", n + "'s")))))
+                                                                  for n in ("Item_A", "Item_X")]), 7), {"Item_X_Fall": "Item_X", "Item_Q_Fall": "Item_Q"}))[0][1]
+    assert [(r[1]["__RowId"][1], r[1]["K"][1]) for r in rows] == [("Item_A", "Item_A's"), ("Item_X", "Item_X's"), ("Item_X_Fall", "Item_X's")], rows
+    assert "fall if fall and dropped == item else dropped" in pack_src, "a pot's unique item is not dropped as its falling pick-up"
+    assert "fall=None if pot_drops[h] in POT_WORLD else fall_of(pot_drops[h])" in main_src, "a pot's unique item hangs where the pot broke"
+    assert "size_table_add(tbl, pot_fall_parts, POT_FALL_PART)" in main_src and S.POT_FALL_PART > 8976 + 4096,         "a falling pick-up's files have no size table entry, or one its set of bodies does not fit (the game stops as the area loads)"
+    assert "pot_fall_rows(pot_rows(table, table_kind, made)" in main_src, "a falling pick-up has no rows in the lists of actors"
+    add = host[host.index("int hos_oot_pouch_add(Ctx *c) {"):]
+    room = host[host.index("int hos_oot_pickup_room(Ctx *c) {"):host.index("int hos_oot_pouch_add(Ctx *c) {")]
+    assert '#define OOT_POT_FALL "%s"' % (S.POT_FALL_AS % "") in host, "the game's side does not know a falling pick-up's name"
+    assert add.index("if (oot_pot_fall(name)) {") < add.index('hos_log("rando: pouch add %s x%d') and "view = oot_pouch_name(c, view, name);" in add[:add.index('hos_log("rando: pouch add %s x%d')],         "a falling pick-up's add is not its item's"
+    assert room.index("oot_pot_fall(name);") < room.index("oot_bundle_holder(name, &sizes)"), "a falling pick-up is not asked for as its item"
     header = open(os.path.join(ROOT, "gpu", "vk", "oot_rando.h"), encoding="utf-8").read()
     assert 'X(POTS, "Pots", "rando_pots",' in header
     print("PASS: Pots: every pot takes part")
