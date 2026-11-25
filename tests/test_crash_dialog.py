@@ -12,7 +12,7 @@
   not known) and the stage (the start, the shaders' preparation, play).
 - The log's redaction is the Insert menu's Bug report's (gpu/vk/vk_bug_report.cpp redact, compiled beside it: the same
   output for the same lines); a setting's value is shown only when it is a number, a size or on/off.
-- The issue link: the game-problem form (.forgejo/ISSUE_TEMPLATE/1-game-problem.yml, which has the fields it fills), at
+- The issue link: the game-problem form (.github/ISSUE_TEMPLATE/1-game-problem.yml, which has the fields it fills), at
   most 2000 characters.
 - The wiring in the source: main() hands a helper's command line over first, the helper starts after the crash record and
   before the guest and the renderer, a quit is noted first in rx_close_asked, HOS_CRASH_TEST is not taken from
@@ -492,8 +492,8 @@ def source_checks():
                                                       "mkwvk_crash_close_fn"}, set(re.findall(r"\bmkwvk_\w+", code))
     for word in ("HOS_CRASH_WATCH", "HOS_CRASH_TEST", "--crash-watch"):
         assert word in (ROOT / "docs/development.md").read_text(encoding="utf-8"), word + " is documented"
-    template = (ROOT / ".forgejo/ISSUE_TEMPLATE/1-game-problem.yml").read_text(encoding="utf-8")
-    for field in ("version", "track", "kind", "gpu", "system", "where", "what", "settings", "log"):
+    template = (ROOT / ".github/ISSUE_TEMPLATE/1-game-problem.yml").read_text(encoding="utf-8")
+    for field in ("version", "kind", "gpu", "system", "where", "what", "settings", "log"):
         assert re.search(r"^\s+id: " + field + r"$", template, re.M), "the form has the field " + field
     menu = (ROOT / "gpu/vk/vk_bug_report.cpp").read_text(encoding="utf-8")
     form = re.search(r'#define HOS_CRASH_ISSUE_FORM "([^"]+)"', (ROOT / "host/hos_crash_dialog.h").read_text(encoding="utf-8")).group(1)
@@ -853,19 +853,19 @@ def logic_checks(exe, menu, tmp, form):
               "Hookshot closed unexpectedly during the start. An unexpected error.").strip()
     assert url.startswith(form + "&") and len(url) <= 2000, url
     q = parse_qs(urlsplit(url).query)
-    assert q["template"] == [".forgejo/ISSUE_TEMPLATE/1-game-problem.yml"]
-    assert (ROOT / q["template"][0]).is_file()
-    assert q["field:version"] == ["v3.1.0 (source 1234abcd)"] and q["field:gpu"] == ["NVIDIA GeForce RTX 3090, NVIDIA 580.95.05"]
-    assert q["title"] == ["Game: Hookshot closed unexpectedly during the start"] and "field:what" in q and "field:system" in q
-    assert q["field:kind"] == ["Crash, freeze or black screen"] and "field:track" not in q and "field:where" not in q
+    assert q["template"] == ["1-game-problem.yml"]
+    assert (ROOT / ".github/ISSUE_TEMPLATE" / q["template"][0]).is_file()
+    assert q["version"] == ["v3.1.0 (source 1234abcd)"] and q["gpu"] == ["NVIDIA GeForce RTX 3090, NVIDIA 580.95.05"]
+    assert q["title"] == ["Game: Hookshot closed unexpectedly during the start"] and "what" in q and "system" in q
+    assert q["kind"] == ["Crash, freeze or black screen"] and "track" not in q and "where" not in q
     url = run(exe, "url", "T", "v1", "G", "S", "W", "Release", "Kokiri Forest", "ultrawide=1\n").strip()
     q = parse_qs(urlsplit(url).query)
-    assert (q["field:track"], q["field:where"], q["field:settings"]) == (["Release"], ["Kokiri Forest"], ["ultrawide=1\n"]), q
-    template = (ROOT / ".forgejo/ISSUE_TEMPLATE/1-game-problem.yml").read_text(encoding="utf-8")
+    assert ("track" not in q, q["where"], q["settings"]) == (True, ["Kokiri Forest"], ["ultrawide=1\n"]), q
+    template = (ROOT / ".github/ISSUE_TEMPLATE/1-game-problem.yml").read_text(encoding="utf-8")
     for option in ("Release", "Release candidate", "Nightly", "Built from source", "Crash, freeze or black screen"):
         assert re.search(r"^\s+- " + re.escape(option) + r"$", template, re.M), "the form's dropdowns have " + option
     long_url = run(exe, "url", "T", "v1", "G", "S", "w" * 3000).strip()
-    assert len(long_url) <= 2000 and "field:what" not in parse_qs(urlsplit(long_url).query) and "field:version=v1" in long_url, \
+    assert len(long_url) <= 2000 and "what" not in parse_qs(urlsplit(long_url).query) and "&version=v1" in long_url, \
         "what does not fit is left out, the rest kept"
     print("PASS: the issue link: the game-problem form, its fields, within 2000 characters")
 
@@ -1096,7 +1096,7 @@ esac
     reports = sorted((folder / "bug-reports/pending").glob("report-*.txt"))
     assert reports[-1].read_text(encoding="utf-8") == clip, "the report is written beside the records too"
     assert len(reports) == 10 and reports[0].name == "report-20200101T000002Z.txt", ("the newest ten reports kept", reports)
-    assert link.startswith(source_form()) and len(link) <= 2000 and "field%3Aversion" not in link and "field:version=vtest-1" in link
+    assert link.startswith(source_form()) and len(link) <= 2000 and "field" not in link and "&version=vtest-1" in link
     assert "Hookshot%20report" not in link and "private-user" not in link
     assert "on your clipboard" in got[5][1] and "Open the report" in got[5][1].split("\n")[-1], got[5][1]
     assert "It is saved as " + str(reports[-1]) + "." in got[5][1], "the box names the saved report's path"

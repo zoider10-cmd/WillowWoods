@@ -22,10 +22,11 @@
 
 #define HOS_CRASH_WATCH_ARG "--crash-watch"
 #define HOS_CRASH_SHOW_ARG "--crash-show"
-/* (the game-problem form, as the Insert menu's Bug report links it: gpu/vk/vk_bug_report.cpp kForm. Forgejo fills a form's field
-   from the query's field:<its id>, and the title from title=) */
-#define HOS_CRASH_ISSUE_FORM "https://git.magicbean.dev/MagicBeanDev/Hookshot/issues/new?template=.forgejo/ISSUE_TEMPLATE/1-game-problem.yml"
-#define HOS_CRASH_ISSUES "https://git.magicbean.dev/MagicBeanDev/Hookshot/issues/new/choose"
+/* (the game-problem form, as the Insert menu's Bug report links it: gpu/vk/vk_bug_report.cpp kForm. GitHub fills an issue form's
+   field from the query's <its id>=, and the title from title=; a field the form has not is left out. Willow Woods: the fork's
+   GitHub, .github/ISSUE_TEMPLATE/1-game-problem.yml) */
+#define HOS_CRASH_ISSUE_FORM "https://github.com/zoider10-cmd/WillowWoods/issues/new?template=1-game-problem.yml"
+#define HOS_CRASH_ISSUES "https://github.com/zoider10-cmd/WillowWoods/issues/new/choose"
 enum { HOS_CRASH_LINK_MAX = 2000, HOS_CRASH_LOG_LINES = 200 };
 
 /* ---- the helper's command line ---- */
@@ -563,9 +564,10 @@ static inline size_t hos_crash_issue_url(char *out, size_t cap, const char *titl
                                          const char *settings) {
     /* (in the order the form asks; Changes from the defaults last, as the longest and the first left out. What kind of problem
        is always a crash here) */
-    const char *keys[] = {"&field:version=", "&field:track=", "&field:kind=", "&field:gpu=", "&field:system=", "&title=",
-                          "&field:where=", "&field:what=", "&field:settings="};
-    const char *values[] = {version, track, "Crash, freeze or black screen", gpu, system, title, where, what, settings};
+    /* (not the track: the fork's GitHub form has no such field, .github/ISSUE_TEMPLATE/1-game-problem.yml) */
+    (void)track;
+    const char *keys[] = {"&version=", "&kind=", "&gpu=", "&system=", "&title=", "&where=", "&what=", "&settings="};
+    const char *values[] = {version, "Crash, freeze or black screen", gpu, system, title, where, what, settings};
     const size_t max = cap < HOS_CRASH_LINK_MAX + 1 ? cap : HOS_CRASH_LINK_MAX + 1;
     size_t n = strlen(HOS_CRASH_ISSUE_FORM);
     if (n + 1 > max) return 0;

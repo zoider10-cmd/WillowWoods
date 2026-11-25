@@ -44,7 +44,7 @@ namespace {
 // device and the options are, and its last 9 MB, where the problem usually is: an hour of play logs about 10 MB)
 constexpr uint64_t kLogCap = 10ull << 20, kLogHead = 1ull << 20;
 constexpr const char* kIssues = "https://github.com/zoider10-cmd/WillowWoods/issues/new";
-constexpr const char* kForm = "https://github.com/zoider10-cmd/WillowWoods/issues/new";
+constexpr const char* kForm = "https://github.com/zoider10-cmd/WillowWoods/issues/new?template=1-game-problem.yml";
 // (the link's longest: a player who is not signed in is sent to the sign-in page, and the address waits for them in a cookie,
 // about 4 KB at most; GitHub's sign-in page, where the form lived first, failed from links of 3500 characters of escaped text
 // on. 2000 passes both, and every browser and chat program takes it)
@@ -509,10 +509,10 @@ std::string write(const Inputs& in) {
     // (the link fills in the form's one-line answers and, while the whole link stays within kLinkMax, the options changed, the
     // rows that depend on this PC and the switches' names: never a switch's value, which only report.txt has. When they do not
     // fit, the options, those rows and how many switches there are; then the options and how many of each; else only the counts)
-    // (Forgejo fills a form's field from the query's field:<its id>: routers/web/repo/issue.go, setTemplateIfExists)
-    std::string link = std::string(kForm) + "&field:version=" + url_part(in.version) +
-                       (now.map.empty() ? "" : "&field:where=" + url_part(now.map)) + "&field:gpu=" + url_part(gpu) +
-                       "&field:system=" + url_part(in.system);
+    // (GitHub fills an issue form's field from the query's <its id>=: .github/ISSUE_TEMPLATE/1-game-problem.yml)
+    std::string link = std::string(kForm) + "&version=" + url_part(in.version) +
+                       (now.map.empty() ? "" : "&where=" + url_part(now.map)) + "&gpu=" + url_part(gpu) +
+                       "&system=" + url_part(in.system);
     const auto count = [](const std::string& s) { return std::to_string(std::count(s.begin(), s.end(), '\n')); };
     const std::string named = sw.empty() ? "Switches set: none.\n" : "Switches set (their values are in the attached report.txt): " + names + ".\n";
     const std::string listed = sw.empty() ? "" : "Switches set: " + count(sw) + ", listed in the attached report.txt.\n";
@@ -525,7 +525,7 @@ std::string write(const Inputs& in) {
                                      " Insert menu options with fixed defaults changed, " + count(in.pc_options) +
                                      " whose defaults depend on this PC and ") + count(sw) +
                                      " switches set, listed in the attached report.txt.\n"}) {
-        const std::string part = "&field:settings=" + url_part(s);
+        const std::string part = "&settings=" + url_part(s);
         if (link.size() + part.size() <= kLinkMax) {
             link += part;
             break;
