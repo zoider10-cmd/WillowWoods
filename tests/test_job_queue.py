@@ -96,6 +96,9 @@ class Environment(unittest.TestCase):
 
     def test_ram_file_system(self):
         table = [("/", "btrfs"), ("/tmp", "tmpfs"), ("/tmp/disk", "ext4")]
+        if q.WINDOWS:   # (Windows has no RAM file system: on_ram says no there, whatever a table says)
+            self.assertFalse(q.on_ram("/tmp/x", table))
+            return
         self.assertTrue(q.on_ram("/tmp/x", table))
         self.assertFalse(q.on_ram("/tmp/disk/x", table))
         self.assertFalse(q.on_ram("/tmpx", table))

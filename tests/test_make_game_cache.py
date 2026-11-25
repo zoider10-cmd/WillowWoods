@@ -47,6 +47,8 @@ def game_files(romfs, heapdef=HEAPDEF):
     (romfs / "Pack").mkdir(parents=True, exist_ok=True)
     (romfs / "Pack" / "ZsDic.pack.zs").write_bytes(b"\x28\xb5\x2f\xfd" + b"authored dictionary stand-in")
     (romfs / "System" / "Resource").mkdir(parents=True, exist_ok=True)
+    # (the supported version's resource size table: a romfs without it is another version's or another tool's, romfs_problem)
+    (romfs / "System" / "Resource" / make_game.ROMFS_TABLE).write_bytes(b"\x28\xb5\x2f\xfd" + b"authored size table stand-in")
     if heapdef:
         (romfs / heapdef).parent.mkdir(parents=True, exist_ok=True)
         (romfs / heapdef).write_bytes(b"\x28\xb5\x2f\xfd" + b"authored heap definition stand-in")
@@ -387,7 +389,7 @@ class NupCacheTests(NupCacheHarness):
         (packed / "romfs.bin").write_bytes(b"authored packed stand-in")
         empty.mkdir()
         self.game_files(half)
-        (half / "System" / "Resource").rmdir()
+        shutil.rmtree(half / "System" / "Resource")
         self.game_files(no_heap, heapdef=None)
         for romfs, said, packed_copy in ((packed, "no Pack/ZsDic.pack.zs", True), (empty, "no Pack/ZsDic.pack.zs", False),
                                          (half, "no System/Resource", False), (no_heap, "no " + HEAPDEF, False)):
@@ -442,7 +444,7 @@ class NupCacheTests(NupCacheHarness):
     def test_cached_nup_or_update_without_the_start_files_is_refused(self):
         # (a folder unpacked by a builder before this check, or kept for an update: refused before the build)
         (self.out / "romfs" / HEAPDEF).unlink()
-        for update, said in ((False, "Your .nup file %s" % self.old_nup),
+        for update, said in ((False, "Your game package %s" % self.old_nup),   # (a .nup or an .nx read before)
                              (True, "This game folder's copy of the game files (%s)" % (self.out / "romfs"))):
             with self.subTest(update=update):
                 with self.assertRaises(SystemExit) as result:

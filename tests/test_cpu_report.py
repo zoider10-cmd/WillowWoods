@@ -69,6 +69,8 @@ def run(tmp, cats_text=None, extra=(), candidates=None, guest=True, samples=None
     (scripts / "cpu_report.py").write_text(SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
     text = cats_text if cats_text is not None else (ROOT / "scripts" / "cpu_categories.py").read_text(encoding="utf-8")
     (scripts / "cpu_categories.py").write_text(text, encoding="utf-8")
+    # (scripts/samples.py: the report reads the capture's samples through it)
+    (scripts / "samples.py").write_text((ROOT / "scripts" / "samples.py").read_text(encoding="utf-8"), encoding="utf-8")
     # (a local guest map, as a developer would pass it; without it lifted code must be one row)
     (tmp / "guest_map.py").write_text("GUEST_MAP = [(0x80000000, 0x80800000, 'main', 'core', 'test'), "
                                       "(0x80800000, 0x81000000, 'main', 'actors', 'test')]\n", encoding="utf-8")

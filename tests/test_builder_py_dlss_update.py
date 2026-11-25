@@ -43,7 +43,7 @@ class PyBuilderDlssUpdate(unittest.TestCase):
         win = types.SimpleNamespace(download=None, rows={}, prepare_now=True,
                                     run=lambda tools, args, keep_rows, dlss: got.update(dlss=dlss, args=args))
         self.namespace["update_build"](win, "tools", str(self.game))
-        self.assertEqual(got["args"], ["--update", str(self.game)])
+        self.assertEqual(got["args"], ["--update", str(self.game), "--no-fast"])   # (no Fast saved: --no-fast, as the WPF builder)
         return got["dlss"]
 
     def runtime(self):

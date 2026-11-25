@@ -27,6 +27,7 @@ import struct
 import sys
 import tempfile
 import unittest
+RUN_ALL_MODULES = ["lz4"]   # (third_party/a64-kit/tools/nso.py reads the NSOs with it)
 from unittest import mock
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

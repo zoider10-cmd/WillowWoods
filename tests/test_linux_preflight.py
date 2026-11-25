@@ -132,6 +132,17 @@ class LinuxPreflightTests(unittest.TestCase):
             dest = Path(cmd[cmd.index("--extract") + 1])
             (dest / "exefs").mkdir(parents=True)
             (dest / "romfs").mkdir()
+            # (what make_game checks an unpacked romfs holds before the build, ROMFS_NEEDED and the supported version's
+            # ROMFS_TABLE: authored placeholders, each an empty zstd frame, so the damaged-file check finds none damaged)
+            empty_zstd = bytes.fromhex("28b52ffd2000010000")
+            for names, there in self.make.ROMFS_NEEDED:
+                path = dest / "romfs" / names[0]
+                if there is os.path.isdir:
+                    path.mkdir(parents=True, exist_ok=True)
+                else:
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(empty_zstd)
+            (dest / "romfs" / "System" / "Resource" / self.make.ROMFS_TABLE).write_bytes(empty_zstd)
             header = bytearray(0x60)
             header[:4] = b"NSO0"
             header[0x40:0x44] = bytes.fromhex(self.make.BUILD_ID)

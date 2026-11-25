@@ -57,8 +57,11 @@ def test_stamp_matches_build(d):
     nx2/build.py makes HOOKSHOT_SHADER_STAMP with), read from the checkout packed, or that module itself; a checkout from before
     it by the files that one stamped"""
     src = (ROOT / "nx2" / "build.py").read_text(encoding="utf-8")
+    # (the files' stamp, unless HOOKSHOT_SHADER_STAMP or nx2/shader_stamp_pin.txt chooses one that stands for them: a pin is
+    # used only while the files still hash to what it names, so a change to them still moves the stamp)
     check("nx2/build.py makes HOOKSHOT_SHADER_STAMP with translator_files.stamp",
-          'shader_stamp = "-DHOOKSHOT_SHADER_STAMP=0x%sull" % translator_files.stamp(vk)' in src)
+          "computed = translator_files.stamp(vk)" in src and
+          'shader_stamp = "-DHOOKSHOT_SHADER_STAMP=0x%sull" % (chosen or computed)' in src)
     check("cmd_pack prepares by translator_changed", "prepare = translator_changed(tree, changed) or SEED in extra" in
           (ROOT / "scripts" / "dev_packs.py").read_text(encoding="utf-8"))
     tree, old = d / "tree", d / "old"

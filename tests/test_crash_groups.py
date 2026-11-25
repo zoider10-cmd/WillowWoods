@@ -13,6 +13,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+import tooling  # noqa: E402
+if not tooling.folder():
+    # (MagicBeanDev/Tooling, whose forge.py the script imports to read the issues, is not beside this checkout: what is
+    #  checked here reads no forge, so a stand-in that refuses every call takes its place)
+    import types
+
+    def _no_forge(*a, **k):
+        raise RuntimeError("tests/%s: no forge in this check" % Path(__file__).name)
+    forge = types.ModuleType("forge")
+    forge.ForgeError, forge.api, forge.REPO = type("ForgeError", (Exception,), {}), _no_forge, ""
+    sys.modules["forge"] = forge
+    tooling.scripts = lambda: None
 import crash_groups  # noqa: E402
 
 

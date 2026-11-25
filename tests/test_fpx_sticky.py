@@ -75,9 +75,21 @@ def skip(why):
     sys.exit(0)
 
 
+def bundled_mingw():
+    """As nx2/make_game.py's bundled_mingw: on Windows, the checkout's own llvm-mingw (beside nx2/, as in a builder's tools)
+    is the build's toolchain when HOOKSHOT_MINGW is not set and HOOKSHOT_MSVC=1 does not ask for Visual Studio, so the
+    translator and the drivers are built for its target, not the MSVC one its clang has no C++ headers for"""
+    if os.name != "nt" or os.environ.get("HOOKSHOT_MINGW") or os.environ.get("HOOKSHOT_MSVC") == "1":
+        return
+    here = os.path.join(ROOT, "llvm-mingw")
+    if os.path.isfile(os.path.join(here, "bin", "clang.exe")):
+        os.environ["HOOKSHOT_MINGW"] = here
+
+
 def compiler(given, env, names, build_name):
     """--cc/--cxx, else $CC/$CXX, else HOOKSHOT_MINGW's when it is set (target_flags gives its target and runtime, which
     another clang on PATH cannot use), else PATH, else the toolchain the build itself uses (emsdk)"""
+    bundled_mingw()
     for c in (given, os.environ.get(env)):
         if c:
             return shutil.which(c) or (c if os.path.isfile(c) else None)

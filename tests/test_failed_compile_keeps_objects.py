@@ -124,8 +124,10 @@ class FailedCompileTests(unittest.TestCase):
         self.assertTrue(re.match(pattern, "compiled in %.0fs, %d failed" % (790.4, 0)))
         self.assertFalse(re.match(pattern, "compiled in %.0fs, %d failed" % (790.4, 1)))
         self.assertFalse(re.match(pattern, "compiled in %.0fs, %d failed" % (790.4, 10)))
-        self.assertIn("forget_failed_build(work, bool(linking), failed)", src)
-        self.assertIn('run(PY + ["nx2/build.py", "--standalone", "--jobs", str(a.jobs)], env, compile_line)', src)
+        self.assertIn("forget_failed_build(work, bool(linking), failed, bool(game_linked))", src)   # (and whether the game linked)
+        # (both runs of build.py, the one with the kept translation and the one after it no longer fits, read through compile_line)
+        self.assertIn('run(PY + ["nx2/build.py", "--standalone", "--jobs", str(a.jobs)] + kept_lift, fast_env(env, a), compile_line,', src)
+        self.assertIn('run(PY + ["nx2/build.py", "--standalone", "--jobs", str(a.jobs)], fast_env(env, a), compile_line)', src)
 
     def test_the_failed_files_are_told_by_build_pys_line(self):
         """make_game takes the files that failed from build.py's last word on each: "FAILED <name> (... alone too)" """

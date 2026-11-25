@@ -122,12 +122,13 @@ static int64_t hos_now_ns(void) { return 0; }
 static int npresses;
 static int64_t script_end_ms;
 static int64_t script_elapsed_ms(int64_t now) { (void)now; return 0; }
-static void scripted_input(uint64_t *b, int32_t s[4]) { (void)b; (void)s; }
+static void scripted_input(uint64_t *b, uint64_t *t, int32_t s[4]) { (void)b; (void)t; (void)s; }
 void hos_oot_autoload_input(void) {}   /* (host/oot_autoload.c: Skip title screen off) */
 int hos_control_input(uint64_t *buttons, int32_t stick[4]) { (void)buttons; (void)stick; return 0; }   /* (host/control.c: off) */
 static int game_in_front(void) { return front; }
 static volatile LONG pad_raw_now;
-static int pad_after_menu;   /* (main shares this state with the ocarina note word) */
+static uint64_t pad_after_menu;   /* (main shares this state with the ocarina note word) */
+static uint64_t pad_raw_game;     /* (pads_read's last inputs: the stand-in reads none) */
 static void player_used(void) {}
 """
 
@@ -152,10 +153,10 @@ static int mouse_stick(int32_t *x, int32_t *y, int pointing) {
 MAIN = r"""
 static int fails;
 #define CHECK(c) do { if (!(c)) { printf("FAIL line %d: %s\n", __LINE__, #c); fails++; } } while (0)
-static uint64_t buttons;
+static uint64_t buttons, taps;   /* (taps: the host's own presses, none here) */
 static int32_t st[4];
 static void poll(void) {
-    read_input(&buttons, st);
+    read_input(&buttons, &taps, st);
     CHECK(oc_consumed_pads == 0);   /* the inactive note layer must not consume the controller while walking */
 }
 static void release(void) { memset(held, 0, sizeof held); }
@@ -328,6 +329,7 @@ class WalkKeyTests(unittest.TestCase):
         hid = read("host", "nn_hid.c")
         code = [block(hid, "enum { B_A"), block(hid, "static int key("), block(hid, "static int kmap_down("),
                 between(hid, "static const char *const bind_names[HOS_KEY_N]", "void hos_bind("),
+                block(hid, "static uint64_t bound_pad_buttons("),
                 between(hid, "static int mouse_vk_slot(", "static int bound_down("), block(hid, "static void stick_max("),
                 block(hid, "static void oc_notes("),
                 block(hid, "static int pads_in_background("), block(hid, "static int walk_held("),

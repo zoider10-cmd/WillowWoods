@@ -6,6 +6,7 @@ The ASCII pipe checks are portable stand-ins, not native Windows runtime evidenc
 import contextlib
 import importlib.util
 import io
+import os
 from pathlib import Path
 import re
 import tempfile
@@ -273,7 +274,9 @@ class Fragments(unittest.TestCase):
             code, _, errors = self.invoke([], stream=pipe)
             pipe.flush()
             self.assertEqual((code, errors), (0, ""))
-            self.assertEqual(pipe.buffer.getvalue(), checked.render(self.root).encode("utf-8"))
+            # (a text pipe writes each line end as the platform's own, as Windows' stdout does: CRLF there)
+            want = checked.render(self.root).replace("\n", os.linesep)
+            self.assertEqual(pipe.buffer.getvalue(), want.encode("utf-8"))
 
     def test_cli_output_file_is_utf8_and_stdout_stays_empty(self):
         destination = self.root / "views/résultats.md"

@@ -19,6 +19,7 @@ import re
 import struct
 import sys
 import unittest
+RUN_ALL_MODULES = ["lz4"]   # (third_party/a64-kit/tools/nso.py reads the NSOs with it)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "nx2"))

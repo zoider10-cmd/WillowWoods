@@ -177,10 +177,12 @@ class MakeGameJobsTests(unittest.TestCase):
 
     def test_one_a_cpu_thread_and_the_memory_gate_decides(self):
         # (nx2/build.py's MemoryGate starts each compiler when the memory free holds it, so the count is not fitted to the free
-        # memory at the start; the window chose 7 from 32 GB total at 3.5 GB each on a 16-thread PC)
-        self.assertEqual(self.choose(16, "posix"), 16)
-        self.assertEqual(self.choose(16, "nt"), 16)
-        self.assertEqual(self.choose(32, "posix"), 32)
+        # memory at the start; the window chose 7 from 32 GB total at 3.5 GB each on a 16-thread PC). One thread is left over to
+        # keep the PC usable while it builds (issue 418, as the launcher's Automatic), never fewer than one compiler
+        self.assertEqual(self.choose(16, "posix"), 15)
+        self.assertEqual(self.choose(16, "nt"), 15)
+        self.assertEqual(self.choose(32, "posix"), 31)
+        self.assertEqual(self.choose(1, "posix"), 1)
 
     def test_the_gate_floor_is_windows_only(self):
         # (Windows pages rather than fails; Linux stops a compiler that does not fit)
