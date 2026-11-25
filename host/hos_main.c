@@ -5840,6 +5840,10 @@ static int game_main(int argc, char **argv) {
     /* (the settings file, in the user folder: chosen before the crash window's helper, the Discord status and the renderer read
        it, and after hookshot_env.txt, which may set HOS_OPTIONS_FILE; Linux's main chose it already: host/options_path.c) */
     hos_options_choose(argc, argv);
+    {   /* (the heap retry's test switches, read once before the game's threads: host/oot_heap_retry.c) */
+        void hos_oot_heap_test_init(void);
+        hos_oot_heap_test_init();
+    }
     {
         const char *protect_hearts = getenv("HOS_OOT_PROTECT_HEARTS");
         hos_oot_protect_hearts = protect_hearts && !strcmp(protect_hearts, "1");

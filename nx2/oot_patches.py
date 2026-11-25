@@ -20,8 +20,11 @@ Each is a runtime switch where it can be, so the game's own path stays reachable
   camera each frame by the speeds the right stick's turn functions return in s0; hos_camera_scale multiplies them at each of
   their returns, 1.0 as shipped. Even the fastest of the game's own camera speeds turned slowly for players.
 - The OptimizeChangeBank thread's allocations tried again when their heap is full (host/oot_heap_retry.c): f_804566e0's two
-  calls of f_80522050, its GPU memory (GPU_ALLOC_SITES), and its two tryAllocs of CPU buffers (HEAP_ALLOC_SITES). They went on
-  with a null pointer and crashed writing through it (issue 1697). The supported build only.
+  calls of f_80522050, its GPU memory (GPU_ALLOC_SITES), its two tryAllocs of CPU buffers (HEAP_ALLOC_SITES), and the
+  tryAllocs of the objects and buffers made for it further down (OBJECT_ALLOC_SITES). They went on with a null pointer and
+  crashed writing through it (issue 1697; Longshot 6b928cb4 for the objects). One that came from a parent hands the rest of
+  its build to that parent, and f_804566e0's two reads of its heap get the build's own (REST_OWN_SITES, REST_END_SITES).
+  The supported build only.
 - The Voice Language option kept after a restart (host/oot_voice.c): the voice resource's update (f_80a9ca30) asks
   GameDataMgr whether the option was written (f_80a9d1c0) and applies it only then; option.sav's value replaces the
   option without a write, so a saved choice was never applied (issue 430). The call goes through hos_oot_voice_option,
@@ -1507,33 +1510,59 @@ GPU_ALLOC_SITES = (0x80456f1c, 0x80457098)   # (the calls' return addresses)
 GPU_ALLOC_OLD = "c->x[30] = %#xULL; f_80522050(c);"
 GPU_ALLOC_NEW = "c->x[30] = %#xULL; hos_oot_gpu_alloc(c, f_80522050);   /* (nx2/oot_patches.py: host/oot_heap_retry.c) */"
 GPU_ALLOC_DECL = "void hos_oot_gpu_alloc(Ctx *A64_NOESC c, A64Fn game);\n"
-# f_804566e0's tryAllocs of the CPU buffers at its MatBlock's +200 (its bump allocator's memory) and +168, each sized for the
-# model (x0 the heap, x1 the size, x2 the alignment): a null result tried in the heap's parents (hos_oot_heap_retry)
-HEAP_ALLOC_SITES = (0x80456910, 0x80456da4)
+# The CPU allocations of a material block's build, each a heap's tryAlloc (x0 the heap, x1 the size, x2 the alignment)
+# whose result the game does not check: a null one is tried in the heap's parents (hos_oot_heap_retry), and the parent
+# that had room is written to the heaps' holder, so what the build takes afterwards comes from it (Longshot 6b928cb4). A
+# place is its call's return address and the way it reads the holder (the +8 of which is the heap it has just loaded);
+# hos_oot_heap_refuse is the test switches' (HOS_GPU_ALLOC_TEST_FAIL, HOS_GPU_ALLOC_TEST_FILL). The call's text is the
+# same at each.
+# f_804566e0's two buffers, at its MatBlock's +200 (its bump allocator's memory) and +168, each sized for the model; the
+# holder is its second argument, kept at sp+56
+HEAP_ALLOC_SITES = ((0x80456910, "recomp_load64(c, c->x[31] + 56)"), (0x80456da4, "recomp_load64(c, c->x[31] + 56)"))
 HEAP_ALLOC_OLD = "{ uint64_t _t = c->x[8]; c->x[30] = %#xULL; A64_ICALL(c, _t); }\n"
-HEAP_ALLOC_NEW = ("{ const uint64_t _hh = c->x[0], _hn = c->x[1], _ha = c->x[2];   /* (nx2/oot_patches.py: host/oot_heap_retry.c) */\n"
-                  "  if (hos_oot_heap_refuse()) c->x[0] = 0;\n"
+HEAP_ALLOC_NEW = ("{ const uint64_t _hh = c->x[0], _hn = c->x[1], _ha = c->x[2], _ho = %s;   /* (nx2/oot_patches.py: host/oot_heap_retry.c) */\n"
+                  "  if (hos_oot_heap_test_enabled && hos_oot_heap_refuse(c, _hh, _ho, %#xULL)) c->x[0] = 0;\n"
                   "  else { uint64_t _t = c->x[8]; c->x[30] = %#xULL; A64_ICALL(c, _t); }\n"
-                  "  if (!c->x[0]) hos_oot_heap_retry(c, _hh, _hn, _ha, %#xULL); }\n")
-HEAP_ALLOC_DECL = "int hos_oot_heap_refuse(void);\nvoid hos_oot_heap_retry(Ctx *c, uint64_t heap, uint64_t size, uint64_t align, uint64_t lr);\n"
+                  "  if (!c->x[0]) hos_oot_heap_retry(c, _hh, _hn, _ha, %#xULL, _ho); }\n")
+HEAP_ALLOC_DECL = ("extern int hos_oot_heap_test_enabled;\n"
+                   "int hos_oot_heap_refuse(Ctx *c, uint64_t heap, uint64_t holder, uint64_t lr);\n"
+                   "void hos_oot_heap_retry(Ctx *c, uint64_t heap, uint64_t size, uint64_t align, uint64_t lr, uint64_t holder);\n")
+# What f_804566e0 reaches through f_8044cb30 and f_8044db80, each handing the holder down as its last argument:
+# f_8044f420's 0x238-byte object for each entry of its list (0x8044f66c; the holder is x21), cleared at once (Longshot issue
+# 2437: write guest 0x20, thread OptimizeChangeBanc, lr 0x8044f684); the two buffers f_8044ed60 takes for that object (the
+# holder is x22 there); f_80443000's buffer and its 0x310-byte object (the holder is its fourth argument, kept at sp+0)
+OBJECT_ALLOC_SITES = ((0x8044f670, "c->x[21]"), (0x8044efc8, "c->x[22]"), (0x8044f074, "c->x[22]"),
+                      (0x80443200, "recomp_load64(c, c->x[31] + 0)"), (0x80443e30, "recomp_load64(c, c->x[31] + 0)"))
+# f_804566e0's two reads of its heap, the heap's getFreeSize before and after for the MatBlock's count of the memory the
+# build took (0x80456928 and 0x80457188): a build handed to a parent has its own heap read both times
+# (hos_oot_heap_rest_own, hos_oot_heap_rest_end, which also puts it back in the holder). The call's text is
+# HEAP_ALLOC_OLD's again, kept as it is with one line before it
+REST_OWN_SITES = (0x8045692c,)
+REST_END_SITES = (0x8045718c,)
+REST_NEW = ("    hos_oot_heap_rest_%s(c, recomp_load64(c, c->x[31] + 56));   /* (nx2/oot_patches.py: host/oot_heap_retry.c) */\n"
+            + HEAP_ALLOC_OLD)
+REST_DECL = "void hos_oot_heap_rest_own(Ctx *c, uint64_t holder);\nvoid hos_oot_heap_rest_end(Ctx *c, uint64_t holder);\n"
 
 
 def patch_heap_retry(s):
-    """The four places above in one file's text: (text, [GPU sites, CPU sites] made now or found made). apply() wants
-    [2, 2] over the whole lift and warns otherwise"""
-    found = [0, 0]
+    """The places above in one file's text: (text, [GPU sites, the two buffers, the other allocations, the two reads] made
+    now or found made). apply() wants [2, 2, 5, 2] over the whole lift (the objects' at least 5: their functions may have
+    a hot copy too) and warns otherwise"""
+    found = [0, 0, 0, 0]
     decls = []
-    for kind, sites, old, new, decl in ((0, GPU_ALLOC_SITES, GPU_ALLOC_OLD, GPU_ALLOC_NEW, GPU_ALLOC_DECL),
-                                        (1, HEAP_ALLOC_SITES, HEAP_ALLOC_OLD, HEAP_ALLOC_NEW, HEAP_ALLOC_DECL)):
-        for lr in sites:
-            o, n = old % lr, (new % lr if kind == 0 else new % (lr, lr))
-            if n in s:
-                found[kind] += 1
-            elif s.count(o) == 1 and s.count('#include "a64.h"\n') == 1:
-                s = s.replace(o, n, 1)
-                found[kind] += 1
-                if decl not in decls:
-                    decls.append(decl)
+    places = [(0, GPU_ALLOC_OLD % lr, GPU_ALLOC_NEW % lr, GPU_ALLOC_DECL) for lr in GPU_ALLOC_SITES]
+    places += [(kind, HEAP_ALLOC_OLD % lr, HEAP_ALLOC_NEW % (holder, lr, lr, lr), HEAP_ALLOC_DECL)
+               for kind, sites in ((1, HEAP_ALLOC_SITES), (2, OBJECT_ALLOC_SITES)) for lr, holder in sites]
+    places += [(3, HEAP_ALLOC_OLD % lr, REST_NEW % (which, lr), REST_DECL)
+               for which, sites in (("own", REST_OWN_SITES), ("end", REST_END_SITES)) for lr in sites]
+    for kind, o, n, decl in places:
+        if n in s:
+            found[kind] += 1
+        elif s.count(o) == 1 and s.count('#include "a64.h"\n') == 1:
+            s = s.replace(o, n, 1)
+            found[kind] += 1
+            if decl not in decls:
+                decls.append(decl)
     for decl in decls:
         if decl not in s:
             s = s.replace('#include "a64.h"\n', '#include "a64.h"\n' + decl, 1)
@@ -2013,9 +2042,11 @@ def patch_file(s, name, protect_hearts=False):
     counts["step sites"] += out.count(STEP_MARK)   # (made now, or by an earlier run over this file)
     if sites:
         lines.append("oot_patches: the frame's time at %d step divide(s) in %s" % (sites, name))
-    heap, found = patch_heap_retry(out) if protect_hearts else (out, [0, 0])
+    heap, found = patch_heap_retry(out) if protect_hearts else (out, [0, 0, 0, 0])
     counts["heap GPU sites"] += found[0]
     counts["heap CPU sites"] += found[1]
+    counts["heap object sites"] += found[2]
+    counts["heap rest sites"] += found[3]
     if heap != out:
         lines.append("oot_patches: heap-full retries of the OptimizeChangeBank allocations in " + name)
     out = heap
@@ -2141,8 +2172,13 @@ def report(paths, counts, protect_hearts=False):
         done[what] = total[what]
     speed_hooks = total["speed hooks"]   # (SPEED_PLACES', in one file or several)
     camera_speed = total["camera speed"]   # (the turn-speed functions that scale by hos_camera_scale: patch_camera_speed)
-    heap_sites = [total["heap GPU sites"], total["heap CPU sites"]]   # (patch_heap_retry, the supported build only)
-    if protect_hearts and heap_sites != [len(GPU_ALLOC_SITES), len(HEAP_ALLOC_SITES)]:   # (the supported build's functions)
+    # (patch_heap_retry, the supported build only: its functions)
+    heap_sites = [total["heap GPU sites"], total["heap CPU sites"], total["heap object sites"], total["heap rest sites"]]
+    # (the object sites' functions may also have a copy in code_hot.c, split_hot's: each copy is patched, so at least once
+    # each; Reborn 4050cb2's count)
+    if protect_hearts and (heap_sites[:2] + heap_sites[3:] != [len(GPU_ALLOC_SITES), len(HEAP_ALLOC_SITES),
+                                                                len(REST_OWN_SITES) + len(REST_END_SITES)]
+                           or heap_sites[2] < len(OBJECT_ALLOC_SITES)):
         print("oot_patches: WARNING: the OptimizeChangeBank allocations were found %s times, not once each: a full heap is "
               "not tried again" % heap_sites)
     step_sites = total["step sites"]   # (the divides with the hook)
