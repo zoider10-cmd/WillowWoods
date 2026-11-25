@@ -742,6 +742,7 @@ const char* tx_framegen(int v) {
 }
 const char* tx_onoff(int v) { return v ? "On" : "Off"; }
 const char* tx_boss_health(int v) { return v ? "Hearts" : "Bar"; }   // (opts.boss_hearts: the Boss health row)
+const char* tx_item_buttons(int v) { return v ? "L and R slots" : "Off"; }   // (Willow Woods) the Item buttons row
 const char* tx_cycle_items(int v) {   // (Willow Woods, from ReLink) the Cycle items row
     static const char* t[] = {"Off", "Last used", "Basic", "+Bombs", "+Tools"};
     return t[(unsigned)v < 5 ? v : 0];
@@ -2255,6 +2256,11 @@ Row rows[] = {
     {TAB_GAMEPLAY, "Cycle items", &opts.cycle_items, 0, 4, 1, tx_cycle_items,
      "Changes the item on ZR with a tap of R or L, within its group. Holding R or L still opens the line (or the wheel), a "
      "quarter of a second later.", hn_cycle_items, false, true},
+    // (Willow Woods, asked 2026-11-25: host/oot_wheel.c "Item buttons", share/design-item-slots.md)
+    {TAB_GAMEPLAY, "Item buttons", &opts.item_buttons, 0, 1, 1, tx_item_buttons,
+     "L and R slots: L and R each hold an item of their own, used like ZR (hold to aim). Choose them in the pause menu's "
+     "Items page: put the cursor on an item and press L or R. ZR keeps its own item. Cycle items is off while this is on.",
+     nullptr, false, true},
     {TAB_GAMEPLAY, "FPS counter size", &opts.fps_size, 0, 3, 1, tx_fps_size,
      "How large the FPS counter is drawn. Auto grows with the window, as the menu does; Small, Medium and Large keep one size "
      "whatever the window, the size Auto has in a 720p, 1080p and 1440p window.", nullptr, false, true},

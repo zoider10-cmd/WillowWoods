@@ -763,6 +763,9 @@ static Seen *screen_seen(uint64_t screen, int64_t now) {
     return free_one;
 }
 
+/* (Willow Woods: host/oot_wheel.c's Item buttons) the pause menu's page last focused: 0 Collection, 1 Equipment, 2 Items,
+   3 System, -1 not known */
+int hos_oot_pause_page(void) { return page_now; }
 /* (Mako 4.1) the pause menu updated within the last 300 ms (nn_hid.c: a recorded run starts only without it) */
 static volatile LONG64 menu_front_ns;
 int hos_oot_menu_open(void) {
@@ -840,4 +843,5 @@ void hos_oot_menu_focus(Ctx *c, uint64_t screen, uint64_t pane, uint64_t lr) {
 int hos_wheel_menu_tick(Ctx *c, uint64_t screen);   /* (Willow Woods, from ReLink: host/oot_wheel.c) */
 void hos_oot_menu_tick(Ctx *c, uint64_t screen) { if (screen) hos_wheel_menu_tick(c, screen); }
 int hos_oot_menu_open(void) { return 0; }
+int hos_oot_pause_page(void) { return -1; }
 #endif

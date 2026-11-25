@@ -15,6 +15,9 @@
    (Willow Woods: 60, the number gpu/vk/vk_api.h kept for an item wheel, and 102 after the randomizer's 101; ReLink's own
    40 and 41 are the HDR rows' here) */
 enum { HOS_OPT_ITEM_WHEEL = 60, HOS_OPT_CYCLE_ITEMS = 102 };
+/* (Willow Woods, asked 2026-11-25, share/design-item-slots.md) the Gameplay tab's Item buttons row: 0 the game's own (R and L
+   open the item row), 1 L and R hold items of their own, used as ZR is (host/oot_wheel.c, "Item buttons") */
+enum { HOS_OPT_ITEM_BUTTONS = 103 };
 
 /* the index of mic_name (MkwVkHost) that asks for the item wheel's state instead of a microphone's name: the answer is a
    const MkwVkWheel *, never null with the host of this build */

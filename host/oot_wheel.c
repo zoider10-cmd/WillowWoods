@@ -767,9 +767,11 @@ static void wheel_tick(Ctx *c, uint64_t screen, int opened) {
 static volatile int64_t hud_tick_ns, pause_tick_ns;   /* (the HUD's and the pause menu's last updates: play or not) */
 static volatile int cycle_seq, cycle_dir;             /* (the input side's taps: +1 R, -1 L) */
 
+static int slots_on(void);   /* (Item buttons, below: Cycle items is off while L and R hold items of their own) */
 static int cycle_level(void) {   /* 0 off, 1 the arrows, bottles and spells, 2 and bombs, 3 and the hookshot and hammer,
                                     4 (relink) the item on ZR before this one */
     int rx_option(int id, int otherwise);
+    if (slots_on()) return 0;
     static int forced = -2;
     if (forced == -2) {
         const char *e = getenv("HOS_CYCLE_ITEMS");
@@ -1098,6 +1100,202 @@ static void choose(int key) {   /* (the input thread) a new choice for the menu 
     __atomic_add_fetch(&choice_seq, 1, __ATOMIC_ACQ_REL);
 }
 
+/* ---- Item buttons (Willow Woods, asked 2026-11-25, share/design-item-slots.md) ---------------------------------------------
+   The Gameplay tab's Item buttons row (HOS_OPT_ITEM_BUTTONS; HOS_ITEM_BUTTONS=0 or 1 over it): L and R each hold an item of
+   their own, for each age (item_slots.txt in the game folder), used as ZR's is. The game has one item to use, on ZR:
+   - In play, L and R are kept from the game (they would open its item row). A press of one puts its item on ZR at the HUD's
+     next update (setAssignableItem, as the wheel does: slots_hud), what ZR held kept as ZR's own; ZR is then held for the
+     game as long as the button is (the Bow aims). A press of ZR while another's item is on it puts ZR's own back first, ZR
+     held back meanwhile. An item put on ZR another way (the pause menu) is ZR's own from then.
+   - In the pause menu's Items page, L or R with the cursor on an item: kept from the game (they turn its pages), A sent
+     instead, which puts the item on ZR (seen 2026-11-25); the pause menu's next updates read it into the slot and put back
+     what ZR held (slots_pause).
+   HOS_WHEEL_TRACE=1 logs them. */
+static int slots_on(void) {
+    int rx_option(int id, int otherwise);
+    static int forced = -2;
+    if (forced == -2) {
+        const char *e = getenv("HOS_ITEM_BUTTONS");
+        forced = e ? env_on("HOS_ITEM_BUTTONS") : -1;   /* (set: it decides; unset: the menu's row) */
+    }
+    return forced >= 0 ? forced : rx_option(HOS_OPT_ITEM_BUTTONS, 0) != 0;
+}
+#define SLOT_L 0
+#define SLOT_R 1
+static volatile int slot_item[2][2] = {{-1, -1}, {-1, -1}};   /* [age: 0 the adult, 1 the child][SLOT_L, SLOT_R]: an item, -1 none */
+static volatile int slot_age;                                  /* (the HUD's: 1 the child) */
+static volatile int swap_want = -1, swap_seq, swap_done;       /* (the input's ask of the HUD: an item to put on ZR, -2 ZR's own) */
+static volatile int zr_own_on = 1;                             /* (ZR holds its own item, not L's or R's) */
+static volatile int assign_state, assign_which;   /* (0 none; 1 L or R pressed on the Items page; 2 ZR read, A to be sent; 3 A sent) */
+
+/* item_slots.txt beside hookshot_options.ini, in the game folder: lines of "<age> <slot> <item>" */
+static int slots_path(char *out, size_t cap) {
+    char path[MAX_PATH];
+    if (!hos_game_path_a(path, MAX_PATH)) return 0;
+    char *slash = strrchr(path, 92) ? strrchr(path, 92) : strrchr(path, 47);
+    if (!slash) return 0;
+    slash[1] = 0;
+    snprintf(out, cap, "%sitem_slots.txt", path);
+    return 1;
+}
+static void slots_load(void) {
+    static int done;
+    if (done) return;
+    done = 1;
+    char path[MAX_PATH + 32], line[64];
+    FILE *f = slots_path(path, sizeof path) ? fopen(path, "r") : NULL;
+    while (f && fgets(line, sizeof line, f)) {
+        int age, slot, item;
+        if (sscanf(line, "%d %d %d", &age, &slot, &item) == 3 && age >= 0 && age < 2 && slot >= 0 && slot < 2 && item >= -1 && item < CY_ITEMS)
+            slot_item[age][slot] = item;
+    }
+    if (f) fclose(f);
+}
+static void slots_save(void) {
+    char path[MAX_PATH + 32];
+    FILE *f = slots_path(path, sizeof path) ? fopen(path, "w") : NULL;
+    if (!f) return;
+    fprintf(f, "# Item buttons (the Gameplay tab): <age: 0 adult, 1 child> <slot: 0 L, 1 R> <the game's item number, -1 none>\n");
+    for (int a = 0; a < 2; a++)
+        for (int s = 0; s < 2; s++) fprintf(f, "%d %d %d\n", a, s, slot_item[a][s]);
+    fclose(f);
+}
+static int slots_ask(int item) {   /* (the input side: returns the ask's number, for slots_hud's answer) */
+    __atomic_store_n(&swap_want, item, __ATOMIC_RELEASE);
+    return __atomic_add_fetch(&swap_seq, 1, __ATOMIC_ACQ_REL);
+}
+
+/* (the HUD's update, the game's thread) the item asked for put on ZR */
+static void slots_hud(Ctx *c) {
+    static int zr_own[2] = {-1, -1}, zr_put = -1;   /* (ZR's own item for each age; the item put on ZR last, -1 ZR's own) */
+    slots_load();
+    const uint64_t mgr = cy_peek(CY_POUCH_SLOT, 8), ui = cy_peek(CY_UI_SLOT, 8);
+    if (!mgr || !ui || !a64_lookup(CY_GETTER) || !a64_lookup(CY_SETTER)) return;
+    const int age = (int)(cy_peek(ui + 0x5c0, 1) & 1);
+    __atomic_store_n(&slot_age, age, __ATOMIC_RELEASE);
+    const uint64_t g[3] = {mgr, (uint64_t)age, 1};
+    const int cur = (int32_t)cy_guest(c, CY_GETTER, 3, g);
+    if (zr_put >= 0 && cur != zr_put) {   /* (put there another way, or used up: ZR's own from now) */
+        zr_put = -1;
+        __atomic_store_n(&zr_own_on, 1, __ATOMIC_RELEASE);
+    }
+    const int seq = __atomic_load_n(&swap_seq, __ATOMIC_ACQUIRE);
+    if (seq == __atomic_load_n(&swap_done, __ATOMIC_ACQUIRE)) return;
+    const int want = __atomic_load_n(&swap_want, __ATOMIC_ACQUIRE);
+    int target;
+    if (want == -2) {
+        target = zr_own[age], zr_put = -1;
+    } else {
+        if (zr_put < 0) zr_own[age] = cur;
+        target = want, zr_put = want;
+    }
+    __atomic_store_n(&zr_own_on, zr_put < 0, __ATOMIC_RELEASE);
+    if (target >= 0 && target < CY_ITEMS && target != cur) {
+        const uint64_t s[4] = {mgr, (uint64_t)age, (uint64_t)target, 1};
+        cy_guest(c, CY_SETTER, 4, s);
+    }
+    if (wheel_trace()) hos_log("item buttons: ZR had %d, now %d (%s)", cur, target, want == -2 ? "its own back" : "a button's");
+    __atomic_store_n(&swap_done, seq, __ATOMIC_RELEASE);
+}
+
+/* (the pause menu's update, the game's thread) an item put on L or R: ZR read before the A sent, and after it */
+static void slots_pause(Ctx *c) {
+    static int before, ticks;
+    const int state = __atomic_load_n(&assign_state, __ATOMIC_ACQUIRE);
+    if (state != 1 && state != 3) return;
+    const uint64_t mgr = cy_peek(CY_POUCH_SLOT, 8), ui = cy_peek(CY_UI_SLOT, 8);
+    if (!mgr || !ui || !a64_lookup(CY_GETTER) || !a64_lookup(CY_SETTER)) {
+        __atomic_store_n(&assign_state, 0, __ATOMIC_RELEASE);
+        return;
+    }
+    slots_load();
+    const int age = (int)(cy_peek(ui + 0x5c0, 1) & 1);
+    const uint64_t g[3] = {mgr, (uint64_t)age, 1};
+    if (state == 1) {
+        before = (int32_t)cy_guest(c, CY_GETTER, 3, g), ticks = 0;
+        __atomic_store_n(&assign_state, 2, __ATOMIC_RELEASE);
+        return;
+    }
+    if (++ticks < 6) return;   /* (the game's answer to the A: a few updates) */
+    const int after = (int32_t)cy_guest(c, CY_GETTER, 3, g);
+    const int which = __atomic_load_n(&assign_which, __ATOMIC_ACQUIRE);
+    if (after >= 0 && after < CY_ITEMS && after != before) {
+        slot_item[age][which] = after;
+        slots_save();
+        if (before >= 0 && before < CY_ITEMS) {
+            const uint64_t s[4] = {mgr, (uint64_t)age, (uint64_t)before, 1};
+            cy_guest(c, CY_SETTER, 4, s);
+        }
+        hos_log("item buttons: %s holds item %d (the %s's); ZR keeps %d", which == SLOT_R ? "R" : "L", after, age ? "child" : "adult", before);
+    } else if (wheel_trace()) {
+        hos_log("item buttons: %s pressed, ZR unchanged (%d): nothing put on it", which == SLOT_R ? "R" : "L", after);
+    }
+    __atomic_store_n(&assign_state, 0, __ATOMIC_RELEASE);
+}
+
+/* (the input thread, before the wheel's) L and R as the slots' buttons */
+static uint64_t slots_input(uint64_t buttons, int64_t now) {
+    static uint64_t prev, blocked;
+    static int active = -1, want_seq, pending_tap;   /* (active: SLOT_L, SLOT_R, 2 ZR's own being put back; -1 none) */
+    static int64_t asked_at, tap_until, a_until;
+    const uint64_t lr = HOLD_BUTTONS, zr = 1ULL << B_ZR;
+    if (!slots_on()) {
+        prev = buttons, blocked = 0, active = -1;
+        return buttons;
+    }
+    const uint64_t raw = buttons, pressed = raw & ~prev;
+    prev = raw;
+    blocked &= raw;   /* (a press taken from the game stays taken until let go) */
+    const int64_t pause = __atomic_load_n(&pause_tick_ns, __ATOMIC_ACQUIRE);
+    if (pause && now - pause < 150000000LL) {   /* the pause menu */
+        int hos_oot_pause_page(void);
+        active = -1, tap_until = 0;
+        if ((pressed & lr) && hos_oot_pause_page() == 2 && !__atomic_load_n(&assign_state, __ATOMIC_ACQUIRE)) {
+            __atomic_store_n(&assign_which, pressed & (1ULL << B_R) ? SLOT_R : SLOT_L, __ATOMIC_RELEASE);
+            __atomic_store_n(&assign_state, 1, __ATOMIC_RELEASE);
+            blocked |= pressed & lr;
+        }
+        if (__atomic_load_n(&assign_state, __ATOMIC_ACQUIRE) == 2 && !a_until) a_until = now + 80000000LL;
+        if (a_until) {
+            if (now < a_until) buttons |= 1ULL << B_A;
+            else a_until = 0, __atomic_store_n(&assign_state, 3, __ATOMIC_RELEASE);
+        }
+        return buttons & ~blocked;
+    }
+    if (__atomic_load_n(&assign_state, __ATOMIC_ACQUIRE)) __atomic_store_n(&assign_state, 0, __ATOMIC_RELEASE), a_until = 0;
+    if (!in_play(now)) {
+        active = -1, tap_until = 0;
+        return buttons & ~blocked;
+    }
+    buttons &= ~lr;   /* (in play L and R are the slots', never the game's item row) */
+    const int age = __atomic_load_n(&slot_age, __ATOMIC_ACQUIRE) & 1;
+    if (pressed & lr) {
+        const int w = pressed & (1ULL << B_R) ? SLOT_R : SLOT_L;
+        const int item = slot_item[age][w];
+        if (item >= 0) want_seq = slots_ask(item), active = w, asked_at = now, pending_tap = 0;
+        else if (wheel_trace()) hos_log("item buttons: %s has no item (choose one in the pause menu's Items page)", w == SLOT_R ? "R" : "L");
+    } else if ((pressed & zr) && !__atomic_load_n(&zr_own_on, __ATOMIC_ACQUIRE)) {
+        want_seq = slots_ask(-2), active = 2, asked_at = now, pending_tap = 0;
+    }
+    if (active >= 0) {
+        const uint64_t mine = active == 2 ? zr : active == SLOT_R ? 1ULL << B_R : 1ULL << B_L;
+        const int held = (raw & mine) != 0;
+        const int done = __atomic_load_n(&swap_done, __ATOMIC_ACQUIRE) - want_seq >= 0;
+        if (!done) {
+            buttons &= ~zr;   /* (ZR waits for the item it is to use) */
+            if (!held) pending_tap = 1;
+            if (now - asked_at > 600000000LL) active = -1;   /* (no HUD update: a scene, a load) */
+        } else if (held) {
+            buttons |= zr;
+        } else {
+            if (pending_tap) tap_until = now + 100000000LL;   /* (let go before the item was there: a short press of it) */
+            active = -1;
+        }
+    }
+    if (now < tap_until) buttons |= zr;
+    return buttons;
+}
+
 uint64_t hos_wheel_input(uint64_t buttons, int32_t stick[4]) {
     void hos_wheel_mouse_open(int open);   /* display.c */
     void hos_audio_cue(const char *name);  /* nn_audio.c */
@@ -1132,6 +1330,7 @@ uint64_t hos_wheel_input(uint64_t buttons, int32_t stick[4]) {
         tap_frames = n < 1 ? 1 : n > 8 ? 8 : n;
     }
     const int64_t now = hos_now_ns();
+    buttons = slots_input(buttons, now);   /* (Item buttons: L and R are theirs while it is on) */
     const int64_t last = __atomic_load_n(&row_tick_ns, __ATOMIC_ACQUIRE);
     /* (shown: updated within 100 ms; while R is held, the game's or ours, within 500 ms: a game stall is not a close) */
     const int open = last && !row_gone(last) && (now - last < ROW_OPEN_NS || (r_kept && now - last < ROW_STALL_NS));
@@ -1420,6 +1619,7 @@ int hos_wheel_menu_tick(Ctx *c, uint64_t screen_arg) {
             __atomic_store_n(&state_lock, 0, __ATOMIC_RELEASE);
         }
         if (cycle_level() >= 4) zr_follow(c, hos_now_ns());   /* (relink: Last used's history of ZR's item) */
+        if (slots_on()) slots_hud(c);   /* (Item buttons: an item swapped onto ZR) */
         if (seq != cycle_seen && !__atomic_exchange_n(&state_lock, 1, __ATOMIC_ACQUIRE)) {
             cycle_seen = seq;
             const int level = cycle_level();
@@ -1428,6 +1628,7 @@ int hos_wheel_menu_tick(Ctx *c, uint64_t screen_arg) {
         }
     } else if (vt == CY_PLUS_VTABLE || vt == CY_OVERLAY_VTABLE) {
         __atomic_store_n(&pause_tick_ns, hos_now_ns(), __ATOMIC_RELEASE);
+        if (vt == CY_PLUS_VTABLE && slots_on()) slots_pause(c);   /* (Item buttons: an item put on L or R) */
     }
     if (vt != ITEM_CHOICE_VTABLE) __atomic_store_n(&other_tick_ns, hos_now_ns(), __ATOMIC_RELEASE);   /* (row_gone) */
     /* (the screens update on several worker threads at once: one at a time here, the others skip this frame) */

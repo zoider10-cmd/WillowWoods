@@ -70,6 +70,7 @@ struct Options {
     int show_health = 0;  // (Willow Woods) the Health bars row: a bar over each enemy hit lately, a boss's at the foot of the screen (OOT_HEALTH_AT)
     int minimap_checks = 0;   // (Willow Woods) the Minimap checks row: the checks left in the area Link is in, as dots on the game's minimap
     int item_wheel = 0;   // (Willow Woods, from ReLink) R or L held shows the item row as a wheel (host/oot_wheel.c, vk_wheel.cpp); HOS_ITEM_WHEEL over it
+    int item_buttons = 0;   // (Willow Woods) 1: L and R hold items of their own (host/oot_wheel.c, HOS_OPT_ITEM_BUTTONS)
     int cycle_items = 0;  // (Willow Woods, from ReLink) a tap of R or L changes the ZR item: 0 off (R and L as the game has them),
                           // 1 Last used (the item on ZR before this one), 2 Basic, 3 +Bombs, 4 +Tools (host/oot_wheel.c cycle_level)
     int boss_hearts = 0;  // (Willow Woods) the Boss health row: a boss's life 0 as a bar, 1 as hearts, a quarter heart a point, as Link's

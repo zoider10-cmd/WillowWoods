@@ -7580,6 +7580,7 @@ void fill_replay_table(MkwVkRenderer& t) {
         if (id == HOS_OPT_HUD_LAYOUT) return opts.hud_layout;
         if (id == HOS_OPT_ITEM_WHEEL) return opts.item_wheel != 0;   // (Willow Woods, from ReLink: host/oot_wheel.c)
         if (id == HOS_OPT_CYCLE_ITEMS) return opts.cycle_items;
+        if (id == HOS_OPT_ITEM_BUTTONS) return opts.item_buttons;
         if (id == OOT_CHEAT_AGE_ID) return menu_link_age();
         if (id >= OOT_CHEAT_ITEM_BASE && id < OOT_CHEAT_ITEM_BASE + 4096) return menu_item_count(id - OOT_CHEAT_ITEM_BASE);
         if (id == HOS_OPT_SKIP_TITLE) return opts.skip_title != 0;
