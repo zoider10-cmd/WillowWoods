@@ -66,10 +66,24 @@ def main():
     check('return !strcmp(name, OOT_PIECE) || !strncmp(name, OOT_PIECE "_R", sizeof OOT_PIECE "_R" - 1);' in host and
           host.count("oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY)") == 2 and S.PIECE_LOOK == "Obj_Heart_Piece_R%02d",
           "the game's side does not take a piece's actor of its own for a piece")
+    # (fixes 94: a boss's Heart Container the same way, from the container's actor)
+    check('return !strcmp(name, OOT_CONTAINER) || !strncmp(name, OOT_CONTAINER "_R", sizeof OOT_CONTAINER "_R" - 1);' in host and
+          host.count("oot_is_container(name)") == 3 and host.count("!strcmp(name, OOT_CONTAINER)") == 1 and
+          S.CONTAINER_LOOK == "Obj_Heart_Container_R%02d",
+          "the game's side does not take a container's actor of its own for a container")
+    box = S.sarc_write({S.ACTOR_FILE % S.CONTAINER: actor({"ModelInfoRef": "?Component/ModelInfo/Obj_Heart_Container.x", "AIInfoRef": "?AI/Box.x"})})
+    try:
+        pack, own = S.piece_variant_pack("Item_Token_Gold", box, token, "Obj_Heart_Container_R00", S.CONTAINER)
+        comps = S.byml_parse(S.sarc_read(pack)[S.ACTOR_FILE % "Obj_Heart_Container_R00"])[0][1]["Components"][1]
+        check(comps["ModelInfoRef"][1] == "?Component/ModelInfo/Item_Token_Gold.x" and comps["AIInfoRef"][1] == "?AI/Box.x",
+              "the container's actor of its own is not the container's with the item's model")
+    except (ValueError, KeyError, struct.error) as e:
+        check(False, "a made-up container and token: %s" % e)
     src = open(S.__file__, encoding="utf-8").read()
     main_src = src[src.index("\ndef main():"):]
-    check("new, own_parts = piece_variant_pack(item, actor_pack(HEART), actor_pack(item), name)" in main_src and
-          "table = piece_rows(table, kind, item, name)" in main_src and "new, k = piece_named(data, {h: renamed[h]})" in main_src and
+    check("new, own_parts = piece_variant_pack(item, actor_pack(base), actor_pack(item), name, base)" in main_src and
+          "table = piece_rows(table, kind, item, name, base)" in main_src and "new, k = piece_named(data, {h: renamed[h]}, base)" in main_src and
+          "for base, look, of_boss in ((HEART, PIECE_LOOK, False), (CONTAINER, CONTAINER_LOOK, True)):" in main_src and
           main_src.index("piece_variant_pack(item") < main_src.index("    def shop_table(tbl):"),
           "the seed does not make the pieces' looks before the size table")
     print("FAIL" if failed else "PASS: a Piece of Heart shows the item it gives")

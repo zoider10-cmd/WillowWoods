@@ -128,7 +128,7 @@ DAMPE_HOOK_FROM = 19   # (the owner, 2026-11-21: "it should be randomized the sa
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
 # while it is shut: without the Bow the room is left by a warp song, as any other. Nothing new to learn for a player.
 FIXES = {0x74fb0489585fe0e2: {"IsDisableSaveAndWarp": False}}
-FIXES_VERSION = 93   # (92: before a Piece of Heart lying in the world that gives another item showed that item, PIECE_LOOK. 91: before the Silver and Golden Gauntlets' shelves posed their pair as the get scene does, SHELF_OWN_POSE. 90: before the Silver and Golden Gauntlets' shelves showed their own pair a third its size, not the Bracelet. 89: before a Gold Skulltula's drop of a family was shown as the family's next, its tiers made pick-ups, SKULL_TIERS. 88: before the bean-soil Gold Skulltulas were there for a bottle got, no bugs, SOIL_FILES. 87: before Bombchu Bowling's first two wins gave its two checks, the bag's then the Piece of Heart's, BOWLING_FLOW. 86: before the climbing boxes over Lake Hylia's dead tree's vines, baked, were a Hookshot catch and its baked Wood was not, CLIMB_WALL_ENTRY (bug 119). 85: before Lake Hylia's dead tree was baked again, its climbing boxes as the game has them, and its baked Wood a Hookshot catch, BAKED_TREE_FILES (bug 119). 84: before Lake Hylia's dead tree was placed without Bakeable, a body of its own, TREE_NAME (bug 119). 83: before the climbing boxes over Lake Hylia's dead tree's vines were a Hookshot catch, TREE_CLIMB_SHAPE, and its mesh's Wood was left as it was (bug 119). 82: before Lake Hylia's dead tree's wood was a Hookshot catch (83 only). 81: before Lake Hylia's tree had its hookshot-stopping wall taken out again (its own HitOnlyHookshot: it stops the Hookshot; 79 had kept it). 80: before Darunia's gift was had after Dodongo's Cavern, DARUNIA_LATE (bug 128). 79: before Goron City's sign-order grotto gave its right chest after a wrong try, SIGN_GROTTO_LOGIC (bug 127). 78: before Lake Hylia's dead tree kept the Hookshot's catch along its vines, there always (TREE_WALL keep, bug 119; 73 had taken it out). 77: before a new game started with the mask salesman's trade done, MASK_TRADE (bug 133). 76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
+FIXES_VERSION = 94   # (93: before a boss's Heart Container that gives another item showed that item, CONTAINER_LOOK. 92: before a Piece of Heart lying in the world that gives another item showed that item, PIECE_LOOK. 91: before the Silver and Golden Gauntlets' shelves posed their pair as the get scene does, SHELF_OWN_POSE. 90: before the Silver and Golden Gauntlets' shelves showed their own pair a third its size, not the Bracelet. 89: before a Gold Skulltula's drop of a family was shown as the family's next, its tiers made pick-ups, SKULL_TIERS. 88: before the bean-soil Gold Skulltulas were there for a bottle got, no bugs, SOIL_FILES. 87: before Bombchu Bowling's first two wins gave its two checks, the bag's then the Piece of Heart's, BOWLING_FLOW. 86: before the climbing boxes over Lake Hylia's dead tree's vines, baked, were a Hookshot catch and its baked Wood was not, CLIMB_WALL_ENTRY (bug 119). 85: before Lake Hylia's dead tree was baked again, its climbing boxes as the game has them, and its baked Wood a Hookshot catch, BAKED_TREE_FILES (bug 119). 84: before Lake Hylia's dead tree was placed without Bakeable, a body of its own, TREE_NAME (bug 119). 83: before the climbing boxes over Lake Hylia's dead tree's vines were a Hookshot catch, TREE_CLIMB_SHAPE, and its mesh's Wood was left as it was (bug 119). 82: before Lake Hylia's dead tree's wood was a Hookshot catch (83 only). 81: before Lake Hylia's tree had its hookshot-stopping wall taken out again (its own HitOnlyHookshot: it stops the Hookshot; 79 had kept it). 80: before Darunia's gift was had after Dodongo's Cavern, DARUNIA_LATE (bug 128). 79: before Goron City's sign-order grotto gave its right chest after a wrong try, SIGN_GROTTO_LOGIC (bug 127). 78: before Lake Hylia's dead tree kept the Hookshot's catch along its vines, there always (TREE_WALL keep, bug 119; 73 had taken it out). 77: before a new game started with the mask salesman's trade done, MASK_TRADE (bug 133). 76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
 # The forest's two closed ways. Each is a flag of the game that starts set and is put out by the story: Mido stands in
 # the way to the Deku Tree until Link has a sword and a shield (KokiriForest_Npc_Kokiri_Mido_Child_Blocker), and a
 # Kokiri in the forest's way out until the Deku Tree is done (KokiriForest_Npc_Kokiri_007_Child_Blocker_00). An
@@ -6352,14 +6352,17 @@ HEART_RULES = {0x88358af5b5300aa9: CHILD}   # (Lon Lon Ranch, behind the crates)
 # game stays the piece's (ActorNameRef), so the pouch's add is the piece's and the game's side gives the seed's item as
 # before. The Gerudo Valley's piece (another actor) keeps its look.
 PIECE_LOOK = "Obj_Heart_Piece_R%02d"
+# (and a boss's Heart Container that gives another item, the same way from the container's actor: CONTAINER_LOOK)
+CONTAINER_LOOK = "Obj_Heart_Container_R%02d"
 
 
-def piece_variant_pack(item, piece_pack, item_pack, name):
+def piece_variant_pack(item, piece_pack, item_pack, name, base=None):
     """A Piece of Heart's pack made an actor of its own (name) with an item's model: the piece's files and the item's
     (its model's and pose's), the actor the piece's but its model the item's; the item's own pose only where its shelf
     keeps one (SHELF_OWN_POSE), else none (the piece's spin is its own model's). (the pack, the files only it has)"""
+    base = base or HEART   # (the piece's actor, or a boss's Heart Container's: CONTAINER)
     piece, own = sarc_read(piece_pack), sarc_read(item_pack)
-    if ACTOR_FILE % HEART not in piece:
+    if ACTOR_FILE % base not in piece:
         raise ValueError("the piece's pack has no actor of its name")
     chain = actor_chain(item, own)
     if not chain:
@@ -6377,7 +6380,7 @@ def piece_variant_pack(item, piece_pack, item_pack, name):
     files = collections.OrderedDict(piece)
     for k, v in own.items():
         files.setdefault(k, v)
-    tree, version = byml_parse(piece[ACTOR_FILE % HEART])
+    tree, version = byml_parse(piece[ACTOR_FILE % base])
     comps = tree[1]["Components"][1]
     comps["ModelInfoRef"] = model
     for key in ("ASInfoRef", "ASRef", "AnimationRef"):
@@ -6388,14 +6391,15 @@ def piece_variant_pack(item, piece_pack, item_pack, name):
     return sarc_write(files), [ACTOR_FILE % name]
 
 
-def piece_rows(data, kind, item, name):
+def piece_rows(data, kind, item, name, base=None):
     """one of the three lists of actors (SHOP_TABLES) with a row for a piece's actor of its own (name): the piece's row,
     its model's fields (ActorInfo) the item's"""
+    base = base or HEART
     tree, version = byml_parse(data)
     by = {r[1]["__RowId"][1]: r for r in tree[1]}
-    if HEART not in by or (kind == "ActorInfo" and item not in by):
-        raise ValueError("the game's %s has no row of %s" % (kind, HEART if HEART not in by else item))
-    row = ("dict", collections.OrderedDict(by[HEART][1]))
+    if base not in by or (kind == "ActorInfo" and item not in by):
+        raise ValueError("the game's %s has no row of %s" % (kind, base if base not in by else item))
+    row = ("dict", collections.OrderedDict(by[base][1]))
     if kind == "ActorInfo":
         row[1].update((k, v) for k, v in by[item][1].items() if k in SHELF_MODEL_FIELDS)
         for k in ("InstanceHeapSize", "PreActorRenderInfoHeapSize"):   # (the larger of the two, as a shelf's)
@@ -6408,7 +6412,7 @@ def piece_rows(data, kind, item, name):
     return byml_build((tree[0], rows), version)
 
 
-def piece_named(data, renamed):
+def piece_named(data, renamed, base=None):
     """a map file with the Pieces of Heart of these hashes ({hash: name}) naming their actor of their own: (the file, how many)"""
     tree, version = byml_parse(data)
     n = 0
@@ -6417,7 +6421,7 @@ def piece_named(data, renamed):
         h = d.get("Hash")
         h = h[1] if h else None
         h = struct.unpack("<Q", h)[0] if isinstance(h, bytes) and len(h) == 8 else h
-        if d.get("Gyaml", ("", ""))[1] == HEART and h in renamed:
+        if d.get("Gyaml", ("", ""))[1] == (base or HEART) and h in renamed:
             d["Gyaml"] = ("string", renamed[h])
             n += 1
     return byml_build(tree, version), n
@@ -9641,50 +9645,50 @@ def main():
             sys.exit("Gold Skulltulas by day: %s. Nothing written." % e)
         print("Gold Skulltulas by day: %d night-only ones are out by day too, their AI never told it is day" % day)
 
-    # ---- (fixes 93) a Piece of Heart lying in the world that gives another item shows that item: PIECE_LOOK ----
-    looks = {}
+    # ---- (fixes 93, 94) a Piece of Heart lying in the world, or a boss's Heart Container, that gives another item shows
+    #      that item: PIECE_LOOK, CONTAINER_LOOK ----
     if a.heart_pieces and heart_drops:
         try:
-            given = sorted({i for h, i in heart_drops.items() if h not in bosses and i != HEART})
-            looks = {i: PIECE_LOOK % k for k, i in enumerate(given)}
-
             def actor_pack(name):
                 rel = "Pack/Actor/%s.pack.zs" % name
                 return pack_files[rel] if rel in pack_files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
-            made = {}
-            for item, name in looks.items():
-                try:
-                    new, own_parts = piece_variant_pack(item, actor_pack(HEART), actor_pack(item), name)
-                except (OSError, ValueError) as e:
-                    print("a Piece of Heart giving %s keeps its look (%s)" % (item, e))
-                    continue
-                made[item] = name
-                shop_files["Pack/Actor/%s.pack.zs" % name] = new
-                shop_packs["Pack/Actor/%s.pack" % name] = len(new)
-                shop_new.update(own_parts)
-            looks = made
             folder = os.path.join(romfs, "RSDB")
-            for kind in SHOP_TABLES if looks else ():
-                n = next(n for n in sorted(os.listdir(folder)) if n.startswith(kind + ".") and ".byml" in n.lower())
-                table = shop_files.get("RSDB/" + n) or unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
-                for item, name in looks.items():
-                    table = piece_rows(table, kind, item, name)
-                shop_files["RSDB/" + n] = table
-                shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
-            renamed = {h: looks[i] for h, i in heart_drops.items() if i in looks and h not in bosses}
-            shown = 0
-            for h in renamed:
-                for file in maps.get(h, ()):
-                    rel = "Banc/%s/%s" % (pieces[h][0], file)
-                    if rel in changed or os.path.isfile(os.path.join(romfs, *rel.split("/"))):
-                        data = changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
-                        new, k = piece_named(data, {h: renamed[h]})
-                        if k:
-                            changed[rel], shown = new, shown + 1
-                            sizes[rel[:-3]] = len(new)
-            print("Pieces of Heart: %d that give another item show it (%d map entries, %d items' looks)" % (len(renamed), shown, len(looks)))
+            for base, look, of_boss in ((HEART, PIECE_LOOK, False), (CONTAINER, CONTAINER_LOOK, True)):
+                given = sorted({i for h, i in heart_drops.items() if (h in bosses) == of_boss and i != base})
+                made = {}
+                for k, item in enumerate(given):
+                    name = look % k
+                    try:
+                        new, own_parts = piece_variant_pack(item, actor_pack(base), actor_pack(item), name, base)
+                    except (OSError, ValueError) as e:
+                        print("a %s giving %s keeps its look (%s)" % (base, item, e))
+                        continue
+                    made[item] = name
+                    shop_files["Pack/Actor/%s.pack.zs" % name] = new
+                    shop_packs["Pack/Actor/%s.pack" % name] = len(new)
+                    shop_new.update(own_parts)
+                for kind in SHOP_TABLES if made else ():
+                    n = next(n for n in sorted(os.listdir(folder)) if n.startswith(kind + ".") and ".byml" in n.lower())
+                    table = shop_files.get("RSDB/" + n) or unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
+                    for item, name in made.items():
+                        table = piece_rows(table, kind, item, name, base)
+                    shop_files["RSDB/" + n] = table
+                    shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
+                renamed = {h: made[i] for h, i in heart_drops.items() if i in made and (h in bosses) == of_boss}
+                shown = 0
+                for h in renamed:
+                    for file in maps.get(h, ()):
+                        rel = "Banc/%s/%s" % (pieces[h][0], file)
+                        if rel in changed or os.path.isfile(os.path.join(romfs, *rel.split("/"))):
+                            data = changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+                            new, k = piece_named(data, {h: renamed[h]}, base)
+                            if k:
+                                changed[rel], shown = new, shown + 1
+                                sizes[rel[:-3]] = len(new)
+                print("%s: %d that give another item show it (%d map entries, %d items' looks)" % (
+                    "the bosses' Heart Containers" if of_boss else "Pieces of Heart", len(renamed), shown, len(made)))
         except (OSError, ValueError, struct.error, IndexError, KeyError, StopIteration) as e:
-            sys.exit("the Pieces of Heart's looks: %s. Nothing written." % e)
+            sys.exit("the Pieces of Heart's and Heart Containers' looks: %s. Nothing written." % e)
 
     def shop_table(tbl):
         """the size table with the shops' files: the new packs and their own files added, the keepers' packs' goods

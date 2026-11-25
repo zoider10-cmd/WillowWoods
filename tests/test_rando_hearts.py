@@ -113,7 +113,7 @@ def main():
     check('"Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else named("Piece of Heart"' in script and
           'oot_checks[oot_check_count].boss = !strncmp(kind, "Heart Container, ", 17);' in host,
           "the containers' checks are not named so that the game's side knows them")
-    check('} else if (!strcmp(name, OOT_CONTAINER) && c->x[30] != 0x828d50acULL && oot_piece_gives(gives, sizeof gives, 1)) {' in block and
+    check('} else if (oot_is_container(name) && c->x[30] != 0x828d50acULL && oot_piece_gives(gives, sizeof gives, 1)) {' in block and
           block.index("oot_piece_gives(gives, sizeof gives, 1)") < block.index("oot_tracker_item(name, shop, price);"),
           "a boss's container that the seed made another item does not give it, or a chest's container is renamed")
     # (the container's own taking still makes a heart, seen without a window: five became six. It is put back in the

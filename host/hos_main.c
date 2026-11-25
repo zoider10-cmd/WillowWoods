@@ -2414,6 +2414,10 @@ static int oot_is_piece(const char *name) {
     return !strcmp(name, OOT_PIECE) || !strncmp(name, OOT_PIECE "_R", sizeof OOT_PIECE "_R" - 1);
 }
 #define OOT_CONTAINER "Obj_Heart_Container"
+/* (fixes 94, CONTAINER_LOOK: a boss's Heart Container that gives another item is an actor of its own, Obj_Heart_Container_R<nn>) */
+static int oot_is_container(const char *name) {
+    return !strcmp(name, OOT_CONTAINER) || !strncmp(name, OOT_CONTAINER "_R", sizeof OOT_CONTAINER "_R" - 1);
+}
 #define OOT_PIECE_WAIT 600   /* (the player's updates a piece counted late is waited for: some seconds) */
 static int oot_piece_back;   /* (a piece to take back out of the pouch: the updates it is still waited for) */
 /* (bug 31: a boss's Heart Container that gives the seed's item still made a heart, seen without a window: five hearts
@@ -4626,9 +4630,9 @@ void hos_oot_get_name(Ctx *c, uint64_t node, int kind) {
            spelling with "You got" words. Seen without a window 2026-11-20: Zora's River's piece of a Gold Skulltula
            token said "You got a Piece of Heart!" and "Four pieces form one container". The piece itself is still what
            Link holds up: it is the world's actor) */
-        if (oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY) || !strcmp(name, OOT_CONTAINER)) {
+        if (oot_is_piece(name) || !strcmp(name, OOT_PIECE_VALLEY) || oot_is_container(name)) {
             char gives[64];
-            if (!oot_piece_gives(gives, sizeof gives, !strcmp(name, OOT_CONTAINER))) return;
+            if (!oot_piece_gives(gives, sizeof gives, oot_is_container(name))) return;
             const char *word = gives;
             if (hos_rando_progressive() || oot_magic_family(gives)) {
                 uint64_t saved[31];
@@ -5088,7 +5092,7 @@ int hos_oot_pouch_add(Ctx *c) {
                     valley ? "none is taken out (the piece made a heart of three)" : "the one to come is taken out");
             view = oot_pouch_name(c, view, gives);
             snprintf(name, sizeof name, "%s", gives);
-        } else if (!strcmp(name, OOT_CONTAINER) && c->x[30] != 0x828d50acULL && oot_piece_gives(gives, sizeof gives, 1)) {
+        } else if (oot_is_container(name) && c->x[30] != 0x828d50acULL && oot_piece_gives(gives, sizeof gives, 1)) {
             /* (bug 31: a boss's Heart Container that the seed made another item gives that item. The container's add
                gives its heart by itself and the pouch keeps none, so the add renamed gives no heart: nothing to take back) */
             hos_log("rando: the boss's Heart Container here is the seed's %s: that is given", gives);
