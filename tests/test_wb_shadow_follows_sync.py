@@ -165,7 +165,7 @@ def main():
         src = Path(tmp) / 'follows.cpp'
         exe = Path(tmp) / 'follows.exe'
         src.write_text(fixture, encoding='utf-8')
-        subprocess.run([args.cxx, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-I', str(ROOT), str(src), '-o', str(exe)],
+        subprocess.run([args.cxx, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-idirafter', str(ROOT), str(src), '-o', str(exe)],
                        check=True)
         subprocess.run([str(exe)], check=True, env=env, timeout=60)
         subprocess.run([str(exe), 'off'], check=True, env=dict(env, RX_VK_SHADOW_FOLLOWS_SYNC='0'), timeout=60)

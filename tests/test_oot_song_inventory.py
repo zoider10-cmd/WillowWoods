@@ -138,7 +138,7 @@ def main():
         src, exe = Path(tmp) / "songs.cpp", Path(tmp) / "songs.exe"
         src.write_text(FIXTURE.replace("// HOST_HELPERS", "\n".join(helpers)), encoding="utf-8")
         subprocess.run([args.cxx, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-Wno-unused-function",
-                        "-I" + str(ROOT), str(src), "-o", str(exe)], check=True)
+                        "-idirafter", str(ROOT), str(src), "-o", str(exe)], check=True)
         return subprocess.run([str(exe)]).returncode
 
 

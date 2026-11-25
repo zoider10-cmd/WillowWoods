@@ -118,7 +118,7 @@ def main():
         src = Path(tmp) / "display_modes.cpp"
         exe = Path(tmp) / ("display_modes.exe" if os.name == "nt" else "display_modes")
         src.write_text(DRIVER, encoding="utf-8")
-        subprocess.run([args.cxx, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-D_CRT_SECURE_NO_WARNINGS", "-I", str(ROOT), str(src), "-o", str(exe)],
+        subprocess.run([args.cxx, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-D_CRT_SECURE_NO_WARNINGS", "-idirafter", str(ROOT), str(src), "-o", str(exe)],
                        check=True)
         subprocess.run([str(exe)], check=True)
 

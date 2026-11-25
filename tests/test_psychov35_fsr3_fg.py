@@ -127,7 +127,7 @@ int main(int argc,char**){
     with tempfile.TemporaryDirectory(prefix='psycho-fsr3-fg-') as folder:
         cpp, exe = Path(folder)/'test.cpp', Path(folder)/'test.exe'
         cpp.write_text(fixture, encoding='utf-8')
-        subprocess.run([a.cxx, '-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror', '-I'+str(ROOT), str(cpp), '-o', str(exe)], check=True)
+        subprocess.run([a.cxx, '-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror', '-idirafter', str(ROOT), str(cpp), '-o', str(exe)], check=True)
         subprocess.run([str(exe), 'enabled'], check=True)
         subprocess.run([str(exe)], check=True)
     if 'void colour_constants(' in fi:

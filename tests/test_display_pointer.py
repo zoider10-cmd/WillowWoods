@@ -57,7 +57,7 @@ def main():
         unit, exe = Path(temp) / "fixture.cpp", Path(temp) / "fixture.exe"
         unit.write_text(template, encoding="utf-8")
         header_root = args.source if (args.source / "host/display_pointer.h").is_file() else ROOT
-        includes = ["-I" + str(header_root), "-I" + str(ROOT)]
+        includes = ["-I" + str(header_root), "-idirafter", str(ROOT)]
         if os.name != "nt":
             includes.append("-I" + str(ROOT / "host/posix"))
         subprocess.run([args.cxx, "-std=c++20", "-O2", "-Wall", "-Wextra", "-Werror", "-Wno-missing-field-initializers",

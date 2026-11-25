@@ -49,7 +49,7 @@ def main():
         root = Path(folder)
         cpp, exe = root / "fixture.cpp", root / "fixture.exe"
         cpp.write_text(fixture, encoding="utf-8")
-        includes = ["-I" + str(a.source), "-I" + str(ROOT)]
+        includes = ["-idirafter", str(a.source), "-idirafter", str(ROOT)]
         subprocess.run([a.cxx, "-std=c++20", "-O2", "-Wall", "-Wextra", "-Werror", "-Wno-missing-field-initializers",
                         "-pthread", *includes, str(cpp), "-o", str(exe)], check=True)
         for args in ([], ["off"], ["fsr-jitter-off"], ["parallel-host"], ["late-host"]):

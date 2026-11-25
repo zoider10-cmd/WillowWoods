@@ -129,7 +129,7 @@ int main() {
         cpp, exe = Path(folder)/'test.cpp', Path(folder)/'test.exe'
         cpp.write_text(fixture, encoding='utf-8')
         subprocess.run([args.cxx, '-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror',
-                        '-I'+str(args.root), str(cpp), '-o', str(exe)], check=True)
+                        '-idirafter', str(args.root), str(cpp), '-o', str(exe)], check=True)
         subprocess.run([str(exe)], check=True)
     print('PsychoV35 Off: native/scaled dispatch, decoding pipeline, format/camera guards and failure recovery passed')
 

@@ -174,7 +174,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix="dlss-native-transition-") as folder:
         source, exe = Path(folder) / "fixture.cpp", Path(folder) / "fixture.exe"
         source.write_text(text, encoding="utf-8")
-        subprocess.run([args.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-I" + str(args.source),
+        subprocess.run([args.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-idirafter", str(args.source),
                         str(source), "-o", str(exe)], check=True, timeout=30)
         raise SystemExit(subprocess.run([str(exe)], timeout=30).returncode)
 

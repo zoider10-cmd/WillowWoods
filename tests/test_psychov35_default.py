@@ -81,7 +81,7 @@ int main(int argc,char**){
         cpp, exe = Path(folder)/'test.cpp', Path(folder)/'test.exe'
         cpp.write_text(code, encoding='utf-8')
         subprocess.run([a.cxx, '-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror',
-                        '-I'+str(a.source), str(cpp), '-o', str(exe)], check=True)
+                        '-idirafter', str(a.source), str(cpp), '-o', str(exe)], check=True)
         for value in (None, '', '0', '1', '2'):
             env = os.environ.copy()
             env.pop('RX_VK_PSYCHOV35_DLSS', None)

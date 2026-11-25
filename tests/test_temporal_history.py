@@ -43,7 +43,7 @@ def main():
         cpp, exe = Path(folder) / "fixture.cpp", Path(folder) / "fixture.exe"
         cpp.write_text(fixture, encoding="utf-8")
         subprocess.run([a.cxx, "-std=c++20", "-O2", "-Wall", "-Wextra", "-Werror", "-pthread",
-                        "-I" + str(a.source), str(cpp), "-o", str(exe)], check=True)
+                        "-idirafter", str(a.source), str(cpp), "-o", str(exe)], check=True)
         subprocess.run([str(exe)], check=True, timeout=30)
 
 

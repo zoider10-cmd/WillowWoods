@@ -261,7 +261,7 @@ def main():
         exe = Path(tmp) / ("defaults.exe" if os.name == "nt" else "defaults")
         cpp.write_text(fixture(args.source), encoding="utf-8")
         subprocess.run([args.cxx, "-std=c++20", "-O1", "-Wall", "-Wextra", "-Werror", "-D_CRT_SECURE_NO_WARNINGS",
-                        "-I", str(args.source), str(cpp), "-o", str(exe)], check=True)
+                        "-idirafter", str(args.source), str(cpp), "-o", str(exe)], check=True)
         for case in cases:
             env = {key: value for key, value in os.environ.items() if not key.startswith(("HOS_", "RX_", "HOOKSHOT_"))}
             env["HOS_DISPLAY_MODES"] = "1920x1080,5120x1440"

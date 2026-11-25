@@ -582,7 +582,7 @@ def compile_run(cxx, lang, std, source, name, tmp):
     """source compiled as lang (c++ or c, the C++ driver given -x) and run"""
     src, exe = Path(tmp) / (name + ".src"), Path(tmp) / name
     src.write_text(source, encoding="utf-8")
-    subprocess.run([cxx, "-x", lang, "-std=" + std, "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT), str(src), "-o", str(exe)],
+    subprocess.run([cxx, "-x", lang, "-std=" + std, "-Wall", "-Wextra", "-Werror", "-idirafter", str(ROOT), str(src), "-o", str(exe)],
                    check=True)
     subprocess.run([str(exe)], check=True)
 

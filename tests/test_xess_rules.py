@@ -140,7 +140,7 @@ def main():
         src = Path(tmp) / "xess_rules_test.cpp"
         src.write_text(PROGRAM, encoding="utf-8")
         exe = Path(tmp) / "xess-rules"
-        subprocess.run([args.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT), str(src), "-o", str(exe)],
+        subprocess.run([args.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-idirafter", str(ROOT), str(src), "-o", str(exe)],
                        check=True)
         subprocess.run([str(exe)], check=True)
 

@@ -664,7 +664,7 @@ def main():
         src = Path(tmp) / 'late_fix_build.cpp'
         exe = Path(tmp) / 'late_fix_build.exe'
         src.write_text(fixture, encoding='utf-8')
-        subprocess.run([args.cxx, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-I', str(ROOT), str(src), '-o', str(exe)],
+        subprocess.run([args.cxx, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-idirafter', str(ROOT), str(src), '-o', str(exe)],
                        check=True)
         subprocess.run([str(exe)], check=True, env=env, timeout=60)
 

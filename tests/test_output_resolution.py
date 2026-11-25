@@ -355,13 +355,13 @@ int main() {
     with tempfile.TemporaryDirectory(prefix="output-default-") as tmp:
         source, exe = Path(tmp) / "rule.cpp", Path(tmp) / "rule.exe"
         source.write_text(rule, encoding="utf-8")
-        subprocess.run([args.cxx, "-std=c++17", "-I", str(ROOT), str(source), "-o", str(exe)], check=True)
+        subprocess.run([args.cxx, "-std=c++17", "-idirafter", str(ROOT), str(source), "-o", str(exe)], check=True)
         subprocess.run([str(exe)], check=True)
     with tempfile.TemporaryDirectory(prefix="output-resolution-") as tmp:
         work = Path(tmp)
         source, exe = work / "fixture.cpp", work / "fixture.exe"
         source.write_text(fixture, encoding="utf-8")
-        subprocess.run([args.cxx, "-std=c++17", "-I", str(ROOT), str(source), "-o", str(exe)], check=True)
+        subprocess.run([args.cxx, "-std=c++17", "-idirafter", str(ROOT), str(source), "-o", str(exe)], check=True)
         for saved, handheld, override, mode, w, h, label, pool, writes in cases:
             (work / "hookshot_options.ini").write_text(   # (saved None: no output_res= line, a new install)
                 ("" if saved is None else f"output_res={saved}\n") + f"handheld_profile={handheld}\n", encoding="ascii")

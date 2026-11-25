@@ -67,7 +67,7 @@ def main():
             command = [compiler, "/nologo", "/std:c++17", "/EHsc", "/W4", "/WX", "/I" + str(ROOT),
                        "/I" + str(folder), "/Fo" + str(folder / "fixture.obj"), "/Fe" + str(binary), str(fixture)]
         else:
-            command = [compiler, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pthread", "-I" + str(ROOT),
+            command = [compiler, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-pthread", "-idirafter", str(ROOT),
                        "-I" + str(folder), str(fixture), "-o", str(binary)]
         run(command, 60)
         for case in ((args.case,) if args.case else CASES):

@@ -76,7 +76,7 @@ int main(int argc,char**){
         cpp, exe = Path(folder)/'test.cpp', Path(folder)/'test.exe'
         cpp.write_text(fixture, encoding='utf-8')
         subprocess.run([args.cxx, '-std=c++20', '-O2', '-Wall', '-Wextra', '-Werror',
-                        '-I'+str(args.source_root), str(cpp), '-o', str(exe)], check=True)
+                        '-idirafter', str(args.source_root), str(cpp), '-o', str(exe)], check=True)
         subprocess.run([str(exe)], check=True)
         subprocess.run([str(exe), 'enabled'], check=True)
     print('FSR 3.1 PsychoV35: real HDR registration/callback, unchanged Vanilla and matching format policy pass')

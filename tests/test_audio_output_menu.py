@@ -142,7 +142,7 @@ def main():
         work = Path(tmp)
         source, exe = work / "fixture.cpp", work / "fixture.exe"
         source.write_text(FIXTURE.replace("HOST", host).replace("MENU", menu_part), encoding="utf-8")
-        subprocess.run([args.cxx, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I" + str(ROOT), str(source), "-o", str(exe)], check=True)
+        subprocess.run([args.cxx, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-idirafter", str(ROOT), str(source), "-o", str(exe)], check=True)
         for saved, env_channels, device, want, asked, log in CASES:
             ini = work / "hookshot_options.ini"
             if ini.exists():

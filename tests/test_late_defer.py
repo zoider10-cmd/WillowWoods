@@ -260,7 +260,7 @@ def main():
                            ('rules', RULES)):
             src, exe = Path(tmp) / (name + '.cpp'), Path(tmp) / (name + '.exe')
             src.write_text(body, encoding='utf-8')
-            subprocess.run([args.cxx, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-Wno-unused-function', '-Wno-unused-variable', '-I', str(ROOT),
+            subprocess.run([args.cxx, '-std=c++20', '-O1', '-Wall', '-Wextra', '-Werror', '-Wno-unused-function', '-Wno-unused-variable', '-idirafter', str(ROOT),
                             str(src), '-o', str(exe)], check=True)
         subprocess.run([str(Path(tmp) / 'late_defer.exe')], check=True, env=env, timeout=60)
         subprocess.run([str(Path(tmp) / 'rules.exe')], check=True, env=env, timeout=60)
