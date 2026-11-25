@@ -4965,9 +4965,64 @@ static int oot_tier_shelf_want(int i) {
     return level < tiers ? level : oot_tier_shelves[i].own;
 }
 #endif
+/* (Pots, 2026-11-25) Each pot taking part is an actor of its own, coloured, dropping its check's item (tools/rando/rando_seed.py
+   POT_ACTOR: Obj_PotR000...); <seed>/pot_looks.txt lists them in order, "<actor>|<its hash>|<the game's pot it was>". Once
+   its check is collected (the record's: oot_checks[].broken is the pot's hash), its name read as its map is read is
+   answered with the game's pot: red again, and its drop table "None" the game's, which drops nothing. (0: not one) */
+#define OOT_POT_LOOK_MAX 1024
+static struct { uint64_t hash; char game[40]; uint64_t slot; } oot_pot_looks[OOT_POT_LOOK_MAX];
+static int oot_pot_look_count = -1;
+static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
+    static const char head[] = "Obj_PotR";
+    for (int i = 0; head[i]; i++)
+        if ((char)recomp_load8(c, name_at + i) != head[i]) return 0;
+    int k = 0;
+    for (int i = 0; i < 3; i++) {
+        const char d = (char)recomp_load8(c, name_at + sizeof head - 1 + i);
+        if (d < '0' || d > '9') return 0;
+        k = k * 10 + d - '0';
+    }
+    if ((char)recomp_load8(c, name_at + sizeof head - 1 + 3)) return 0;
+    static SRWLOCK lock = SRWLOCK_INIT;
+    AcquireSRWLockExclusive(&lock);
+    if (oot_pot_look_count < 0) {
+        oot_pot_look_count = 0;
+        char path[MAX_PATH], line[160];
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/pot_looks.txt") ? fopen(path, "rb") : NULL;
+        while (f && fgets(line, sizeof line, f) && oot_pot_look_count < OOT_POT_LOOK_MAX) {
+            char actor[40], hash[24], game[40];
+            if (line[0] == '#' || sscanf(line, "%39[^|]|%23[^|]|%39[^|\r\n]", actor, hash, game) != 3) continue;
+            oot_pot_looks[oot_pot_look_count].hash = strtoull(hash, NULL, 16);
+            snprintf(oot_pot_looks[oot_pot_look_count].game, sizeof oot_pot_looks[0].game, "%s", game);
+            oot_pot_look_count++;
+        }
+        if (f) fclose(f);
+        if (oot_pot_look_count) hos_log("rando: pots: %d actors of their own (pot_looks.txt)", oot_pot_look_count);
+    }
+    uint64_t answer = 0;
+    if (k < oot_pot_look_count) {
+        int done = 0;
+        AcquireSRWLockShared(&oot_checks_lock);
+        for (int i = 0; i < oot_check_count && !done; i++)
+            done = oot_checks[i].pot && oot_checks[i].broken == oot_pot_looks[k].hash && oot_checks[i].done == 1;
+        ReleaseSRWLockShared(&oot_checks_lock);
+        if (done) {
+            if (!oot_pot_looks[k].slot && (oot_pot_looks[k].slot = hos_sys_alloc(64, 16)) != 0)
+                snprintf((char *)A64_PTR(oot_pot_looks[k].slot), 64, "%s", oot_pot_looks[k].game);
+            answer = oot_pot_looks[k].slot;
+            if (answer) hos_log("rando: pots: Obj_PotR%03d is collected: read as %s", k, oot_pot_looks[k].game);
+        }
+    }
+    ReleaseSRWLockExclusive(&lock);
+    return answer;
+}
 uint64_t hos_oot_shelf_actor(Ctx *c, uint64_t name_at) {
 #if defined(_WIN32) || defined(__linux__)
     static const char head[] = "Shop_Rando_";
+    if (name_at && hos_rando_on()) {   /* (Pots: a collected pot's actor read as the game's pot) */
+        const uint64_t pot = oot_pot_look_answer(c, name_at);
+        if (pot) return pot;
+    }
     {   /* (the Door of Time by the Song of Time: its name answered with a stand-in once open, oot_time_door; a test's
            HOS_OOT_DOOR_AS=<actor> answers it with that actor's whatever the setting) */
         static const char door[] = "Obj_TimeTemple_Door_A_01";

@@ -122,7 +122,7 @@
 /* (and where Link is: rx_option_set(OOT_TRACKER_HERE, i), a check of the seed's file that is in the map he is in, or -1:
    the Tracker tab puts that check's area first) */
 #define OOT_TRACKER_HERE 8190
-#define OOT_TRACKER_MAX 512
+#define OOT_TRACKER_MAX 1024   /* (was 512: with Pots, every pot of the game a check, 877, 2026-11-25) */
 #define OOT_CHEAT_AGE_ID 4090      /* rx_option_set(OOT_CHEAT_AGE_ID, age) from the game side: 0 child, 1 adult, -1 unknown */
 /* (Willow Woods, asked 2026-11-21) the game's time of day for the In-game clock row: rx_option_set(OOT_CLOCK_ID, seconds since
    midnight) from the game side, twice a second; -1 no save loaded */
