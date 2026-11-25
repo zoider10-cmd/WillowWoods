@@ -457,6 +457,16 @@ bool image_compact_pass_end(uint64_t* freed_bytes, uint32_t* freed_blocks);
 void destroy_image(VkImage image, VmaAllocation allocation);
 /// (Mako 4.2) fn on the thread that destroys images, in order (vk_vma.cpp): a driver call the render thread need not wait for
 void reap(std::function<void()> fn);
+/// (ProjectReLink 88e38c0) the indirect mesh draws of a stretch between two of the game's barriers, converted at its start
+/// (vk_draw.cpp, RX_VK_INDIRECT_AHEAD)
+struct MeshDraw {
+    const void* op;
+    uint64_t indirect;
+    int32_t max, stride;
+};
+bool mesh_ahead_on();
+void mesh_op_set(const void* op);
+void mesh_convert_ahead(VkCommandBuffer cmd, const MeshDraw* draws, size_t count);
 /// What an allocation really takes (VkMemoryRequirements.size: padding, alignment, the driver's metadata), 0 for none
 uint64_t allocation_size(VmaAllocation allocation);
 /// (dedicated: its own memory object, not a share of a 64 MB block: for the 16 to 32 MB ones that fit two to a block and leave

@@ -1508,6 +1508,7 @@ void replay(VkCommandBuffer& cmd, NvnState& s, const uint8_t* p, const uint8_t* 
     const bool dry = mode == Mode::Dry, worker = mode == Mode::Worker;
     // (RX_VK_LOG_RB_WRITERS, RX_VK_READBACK_EARLY: each op said, as the writer of what it writes)
     static const bool rb_writers = rb_writers_on(), early = readback_early_on(), note_ops = rb_writers || early;
+    if (!dry) mesh_convert_ahead(cmd, nullptr, 0);   // ((ProjectReLink 88e38c0) a stretch converted ahead ends with its command buffer)
     for (;;) {
         if (p == end) return;
         nvn_op_hdr h;
@@ -1972,6 +1973,37 @@ void replay(VkCommandBuffer& cmd, NvnState& s, const uint8_t* p, const uint8_t* 
             end_pass(cmd);
             full_barrier(cmd, "barrier (the game's nvnCommandBufferBarrier)");
             st_barriers++;
+            // ((ProjectReLink 88e38c0) RX_VK_INDIRECT_AHEAD: the stretch's indirect mesh draws, up to the next op that may
+            // write memory, converted together here. Not in a parallel replay's workers (untested there): each converts itself)
+            if (!worker && mesh_ahead_on()) {
+                thread_local std::vector<MeshDraw> ahead;
+                ahead.clear();
+                for (const uint8_t* q = p + h.size; !end || q + sizeof(nvn_op_hdr) <= end;) {
+                    nvn_op_hdr hq;
+                    std::memcpy(&hq, q, sizeof hq);
+                    if (hq.size < sizeof hq || (end && q + hq.size > end)) break;
+                    bool stop = false;
+                    switch (hq.op) {
+                    case NOP_DRAW_MESH: {
+                        const auto dm = payload<nvn_p_draw_mesh>(q + 8, hq.size - 8);
+                        if (dm.indirect && dm.max >= 1 && dm.max <= 4096) ahead.push_back({q, dm.indirect, dm.max, dm.stride});
+                        break;
+                    }
+                    case NOP_SET_RT: case NOP_CLEAR_COLOR: case NOP_CLEAR_DS: case NOP_VIEWPORTS: case NOP_SCISSOR:
+                    case NOP_DEPTH_RANGE: case NOP_BIND_PROGRAM: case NOP_BIND_STATE: case NOP_BIND_VATTR: case NOP_BIND_VSTREAM:
+                    case NOP_BIND_VBUF: case NOP_BIND_UBO: case NOP_BIND_SSBO: case NOP_BIND_TEX: case NOP_BIND_SAMP:
+                    case NOP_STENCIL: case NOP_POLY_OFFSET: case NOP_DRAW: case NOP_DRAW_IDX: case NOP_SET_TEX_POOL:
+                    case NOP_SET_SAMP_POOL: case NOP_BLEND_COLOR: case NOP_BIND_IMG: case NOP_DEPTH_CLAMP: case NOP_RENDER_ENABLE:
+                    case NOP_RASTER_DISCARD: case NOP_PRIMITIVE_RESTART: case NOP_BIND_BUFS: case NOP_DRAW_INDIRECT:
+                    case NOP_PUSH_CONST:
+                        break;
+                    default: stop = true; break;   // (a barrier, a dispatch, a copy, an update, an event, the stream's end)
+                    }
+                    if (stop) break;
+                    q += hq.size;
+                }
+                mesh_convert_ahead(cmd, ahead.data(), ahead.size());
+            }
             break;
         // ---- work ----
         case NOP_CLEAR_COLOR:
@@ -2042,6 +2074,7 @@ void replay(VkCommandBuffer& cmd, NvnState& s, const uint8_t* p, const uint8_t* 
             DrawArgs da;
             occ_take(s, da, dry);   // (hookshot: RX_VK_OCC_QUERIES, numbered in the dry pass too)
             if (s.render_enabled && !s.raster_discard && !dry) {
+                mesh_op_set(p);   // ((ProjectReLink 88e38c0) its records may be converted already: mesh_convert_ahead at the barrier before it)
                 da.mesh = true;
                 // (DrawMeshTasks(first, count): the count of task workgroups, as Eden draws NVN2's mesh draws; a
                 // first task other than 0 has no Vulkan counterpart)

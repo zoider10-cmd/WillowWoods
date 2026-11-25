@@ -7390,8 +7390,41 @@ std::mutex mesh_ring_mu;
 uint64_t mesh_ring_at = 0;
 thread_local VkBuffer mesh_conv_buf = VK_NULL_HANDLE;   // (the converted records for the draw in progress)
 thread_local uint64_t mesh_conv_off = 0;
+// (ProjectReLink 88e38c0) The conversions of the indirect mesh draws between two of the game's barriers, done together right
+// after the first barrier (mesh_convert_ahead, from the replay), each draw then finding its records converted: one fill, one
+// copy and three barriers for the stretch instead of a pass ended and three barriers before every such draw. Those draws'
+// counts are written by the GPU's culling before the game's barrier, which is the order the game itself relies on.
+// RX_VK_INDIRECT_AHEAD=0: before each draw, as before
+struct MeshAhead {
+    const void* op;
+    uint64_t gen, off;
+};
+thread_local std::vector<MeshAhead> mesh_ahead;
+thread_local const void* mesh_op_now = nullptr;
+thread_local uint64_t mesh_ahead_gen = 0;
+/// The ring's room for n records (mesh_ring_mu taken here), or false when the ring cannot be made
+bool mesh_ring_take(uint32_t n, uint64_t& off) {
+    std::lock_guard lk(mesh_ring_mu);
+    if (!mesh_ring) {
+        void* unused = nullptr;
+        if (!create_buffer(kMeshRing, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, false, mesh_ring,
+                           mesh_ring_mem, &unused))
+            return false;
+    }
+    const uint64_t bytes = ((uint64_t)n * 12 + 15) & ~15ull;
+    if (mesh_ring_at + bytes > kMeshRing) mesh_ring_at = 0;   // (4 MB: frames of draws before it comes round)
+    off = mesh_ring_at;
+    mesh_ring_at += bytes;
+    return true;
+}
 bool mesh_indirect_convert(VkCommandBuffer cmd, const DrawArgs& d) {
     mesh_conv_buf = VK_NULL_HANDLE;
+    if (d.mesh && d.indirect && mesh_op_now)   // ((ProjectReLink 88e38c0) converted at the barrier before it)
+        for (const MeshAhead& m : mesh_ahead)
+            if (m.op == mesh_op_now && m.gen == mesh_ahead_gen) {
+                mesh_conv_buf = mesh_ring, mesh_conv_off = m.off;
+                return true;
+            }
     static const bool raw = getenv("RX_VK_MESH_IND_RAW") && atoi(getenv("RX_VK_MESH_IND_RAW")) != 0;
     static const uint32_t word = getenv("RX_VK_MESH_IND_COUNT_WORD") ? (uint32_t)atoi(getenv("RX_VK_MESH_IND_COUNT_WORD")) & 3 : 0;
     // (amd-fix: the rewrite with the firsts in the draw does it, RX_VK_MESH_ARGS; this one drew every draw from its first 0)
@@ -7403,19 +7436,7 @@ bool mesh_indirect_convert(VkCommandBuffer cmd, const DrawArgs& d) {
     const BufferRef args = gpu_buffer_bind(d.indirect, (uint64_t)(n - 1) * stride + 4 * (word + 1), false);
     if (!args) return false;
     uint64_t off;
-    {
-        std::lock_guard lk(mesh_ring_mu);
-        if (!mesh_ring) {
-            void* unused = nullptr;
-            if (!create_buffer(kMeshRing, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, false, mesh_ring,
-                               mesh_ring_mem, &unused))
-                return false;
-        }
-        const uint64_t bytes = ((uint64_t)n * 12 + 15) & ~15ull;
-        if (mesh_ring_at + bytes > kMeshRing) mesh_ring_at = 0;   // (4 MB: frames of draws before it comes round)
-        off = mesh_ring_at;
-        mesh_ring_at += bytes;
-    }
+    if (!mesh_ring_take(n, off)) return false;
     end_pass(cmd);
     VkMemoryBarrier2 mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER_2};
     VkDependencyInfo di{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
@@ -7437,6 +7458,64 @@ bool mesh_indirect_convert(VkCommandBuffer cmd, const DrawArgs& d) {
     return true;
 }
 } // namespace
+/// (ProjectReLink 88e38c0) RX_VK_INDIRECT_AHEAD: on unless =0; off with the records read as they are or rewritten
+/// (RX_VK_MESH_IND_RAW, RX_VK_MESH_ARGS), with the count in another word (RX_VK_MESH_IND_COUNT_WORD) and on the compute
+/// fallback (its own conversion)
+bool mesh_ahead_on() {
+    static const bool on = !(getenv("RX_VK_INDIRECT_AHEAD") && atoi(getenv("RX_VK_INDIRECT_AHEAD")) == 0) &&
+                           !(getenv("RX_VK_MESH_IND_RAW") && atoi(getenv("RX_VK_MESH_IND_RAW")) != 0) &&
+                           !(getenv("RX_VK_MESH_ARGS") && atoi(getenv("RX_VK_MESH_ARGS")) != 0) &&
+                           !getenv("RX_VK_MESH_IND_COUNT_WORD");
+    return on && !dev.mesh_fallback;
+}
+void mesh_op_set(const void* op) { mesh_op_now = op; }
+/// (ProjectReLink 88e38c0) the indirect mesh draws {op, indirect, max, stride} up to the next barrier, converted now (outside
+/// a pass: the game's barrier just ended it). A call with none ends the stretch (the start of each replayed command buffer)
+void mesh_convert_ahead(VkCommandBuffer cmd, const MeshDraw* draws, size_t count) {
+    mesh_ahead.clear();
+    mesh_ahead_gen++;
+    if (!count) return;
+    PROF_EXACT();
+    struct Job { const void* op; BufferRef args; uint32_t n, stride; uint64_t off; };
+    thread_local std::vector<Job> jobs;
+    jobs.clear();
+    for (size_t i = 0; i < count; i++) {
+        const MeshDraw& d = draws[i];
+        const uint32_t n = (uint32_t)std::clamp(d.max, 1, 4096);
+        const uint32_t stride = d.stride > 0 ? (uint32_t)d.stride : 8;
+        const BufferRef args = gpu_buffer_bind(d.indirect, (uint64_t)(n - 1) * stride + 4, false);
+        uint64_t off = 0;
+        if (!args || !mesh_ring_take(n, off)) continue;   // (that draw converts itself, as before)
+        jobs.push_back({d.op, args, n, stride, off});
+    }
+    if (jobs.empty()) return;
+    VkMemoryBarrier2 mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER_2};
+    VkDependencyInfo di{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};
+    di.memoryBarrierCount = 1, di.pMemoryBarriers = &mb;
+    mb.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, mb.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+    mb.dstStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, mb.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT | VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    vkCmdPipelineBarrier2(cmd, &di);
+    for (const Job& j : jobs) vkCmdFillBuffer(cmd, mesh_ring, j.off, (uint64_t)j.n * 12, 1u);
+    mb.srcStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, mb.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    mb.dstStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, mb.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    vkCmdPipelineBarrier2(cmd, &di);
+    thread_local std::vector<VkBufferCopy> regions;
+    for (const Job& j : jobs) {
+        regions.resize(j.n);
+        for (uint32_t i = 0; i < j.n; i++) regions[i] = {j.args.offset + (uint64_t)i * j.stride, j.off + (uint64_t)i * 12, 4};
+        vkCmdCopyBuffer(cmd, j.args.buffer, mesh_ring, j.n, regions.data());
+    }
+    mb.srcStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, mb.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    mb.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, mb.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
+    vkCmdPipelineBarrier2(cmd, &di);
+    for (const Job& j : jobs) mesh_ahead.push_back({j.op, mesh_ahead_gen, j.off});
+    static std::atomic<int64_t> stretches{0}, converted{0};
+    const int64_t k = ++stretches;
+    converted += (int64_t)jobs.size();
+    if (k == 1 || (!(k & (k - 1)) && k >= 1024))
+        logf("vk: indirect mesh draws converted at the game's barriers: %lld in %lld stretches (RX_VK_INDIRECT_AHEAD=0: before each)",
+             (long long)converted.load(), (long long)k);
+}
 // (hookshot) NVN's indirect mesh draws hold (count, first) and Vulkan's (x, y, z): given as they were, every one drew y = first = 0 workgroups,
 // with no error. They are most of the game's vegetation: the forest's trees, ferns and grass (GPU culling writes their counts, so they can only
 // be moved on the GPU): each count is copied into this buffer of (count, 1, 1) just before its draw. The GPU runs the copies and draws in
