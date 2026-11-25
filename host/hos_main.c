@@ -2308,6 +2308,20 @@ static int oot_pot_junk(const char *item);
    pot just collected takes the progress of now. An older record's pot (no progress written) takes the first one above 0 it
    meets, and is dropped in a new game. Left: a pot collected before any check the save marks (progress 0) stays collected
    in a new game. The lock held; returns how many marks changed. */
+/* (tools/rando/rando_seed.py NEW_GAME_FLAG) The hash of the seed's flag that is true in a new game, or 0 (none, or no seed) */
+static uint32_t oot_new_game_flag(void) {
+    static uint32_t fresh;
+    static char fresh_seed[sizeof oot_checks_seed];
+    if (strcmp(fresh_seed, oot_checks_seed)) {
+        snprintf(fresh_seed, sizeof fresh_seed, "%s", oot_checks_seed);
+        fresh = 0;
+        char path[MAX_PATH + 48], line[160];
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/new_game_flag.txt") ? fopen(path, "r") : NULL;
+        if (f && fgets(line, sizeof line, f)) fresh = (uint32_t)strtoul(line, NULL, 16);
+        if (f) fclose(f);
+    }
+    return fresh;
+}
 static int oot_pot_progress(Ctx *c) {
     int progress = 0, read = 0, changed = 0;
     for (int i = 0; i < oot_check_count; i++) {
@@ -2321,6 +2335,19 @@ static int oot_pot_progress(Ctx *c) {
     static int last = -1, steady;
     steady = read && oot_link_map[0] && progress == last ? steady + 1 : 0;
     last = progress;
+    /* (a new game of the seed: its own flag true, tools/rando/rando_seed.py NEW_GAME_FLAG. Every pot of the record is another
+       game's: dropped, and the flag put out, so this game's own pots stay from now on) */
+    const uint32_t fresh = oot_new_game_flag();
+    int is_new = 0;
+    if (fresh && steady >= 5 && oot_gamedata_bool(c, fresh, &is_new) && is_new) {
+        int dropped = 0;
+        for (int i = 0; i < oot_check_count; i++)
+            if (oot_checks[i].pot && oot_checks[i].pot_kept)
+                oot_checks[i].pot_kept = 0, oot_checks[i].pot_at = -1, oot_checks[i].done = 0, dropped++, changed++;
+        const int out = oot_gamedata_set_bool(c, fresh, 0);
+        hos_log("rando: tracker: a new game of the seed: %d pots of another game dropped from the record%s", dropped,
+                out ? "" : " (its flag NOT put out)");
+    }
     for (int i = 0; i < oot_check_count; i++) {
         if (!oot_checks[i].pot) continue;
         if (oot_checks[i].done == 1 && !oot_checks[i].pot_kept && read)   /* (collected just now: the progress of now) */
@@ -5135,6 +5162,17 @@ static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
         if (oot_pot_look_count) hos_log("rando: pots: %d actors of their own (pot_looks.txt)", oot_pot_look_count);
     }
     uint64_t answer = 0;
+    /* (the seed's checks not read yet: the first map of a save just loaded is read before the Tracker's first refresh, a second
+       later, and a pot was then no check's: its default actor, the game's own Deku Nuts or Sticks with no bag, and never the
+       game's pot once collected. Reported 2026-11-25. Read here, as oot_tracker_refresh does) */
+    AcquireSRWLockExclusive(&oot_checks_lock);
+    if (oot_check_count < 0) {
+        char stamp[sizeof oot_checks_seed];
+        oot_tracker_stamp(stamp, sizeof stamp);
+        oot_tracker_load(stamp);
+        hos_log("rando: pots: the seed's checks read as the first map is read (%d)", oot_check_count);
+    }
+    ReleaseSRWLockExclusive(&oot_checks_lock);
     if (k < oot_pot_look_count) {
         int done = 0, found = -1;
         char item[48] = "";
@@ -5143,6 +5181,10 @@ static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
             if (oot_checks[i].pot && oot_checks[i].broken == oot_pot_looks[k].hash)
                 found = i, done = oot_checks[i].done == 1, snprintf(item, sizeof item, "%s", oot_checks[i].item);
         ReleaseSRWLockShared(&oot_checks_lock);
+        /* (a new game of the seed, its own flag still true: none of the record's pots is this game's, oot_pot_progress) */
+        int is_new = 0;
+        const uint32_t fresh = oot_new_game_flag();
+        if (done && fresh && oot_gamedata_bool(c, fresh, &is_new) && is_new) done = 0;
         /* (FIXES 100, POT_BAGGED: a pot holding Deku Nuts or Sticks, Link with no such bag: the actor dropping the bundle
            itself, whose pick-up gives the bag, the game's supply drop being a green rupee then) */
         const char *const *sizes;

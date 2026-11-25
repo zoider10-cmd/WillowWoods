@@ -106,6 +106,11 @@ def main():
         "pots are dropped on the title's defaults (progress 0), not in a game being played"
     assert 'fprintf(f, "%d:%d\\n", i, oot_checks[i].pot_at);' in host and "marks += oot_pot_progress(c);" in host, \
         "the record keeps no pot's progress, or it is never read against the save"
+    # (FIXES 103: a new game of the seed is known by a flag of its own, true in a new game; its pots start afresh)
+    assert "new_game_flag = shelf_flags(len(shelves) + 1, a.shop_shelves, shield_shelf, placement)[-1]" in main_src and \
+        "flag_defaults(new if new is not None else was, {new_game_flag: True})" in main_src, "no flag of a new game's own"
+    assert "a new game of the seed: %d pots of another game dropped from the record" in prog and \
+        "oot_gamedata_set_bool(c, fresh, 0)" in prog, "a new game keeps another game's pots, or its flag is never put out"
     look = host[host.index("static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {"):]
     look = look[:look.index("\n}\n")]
     assert "if (oot_checks[i].pot && oot_checks[i].broken == oot_pot_looks[k].hash)" in look and "if (done && !answer) {" in look and "oot_pot_looks[k].bagged[0] && oot_bundle_holder(item, &sizes) == 1" in look and "mods/rando-seed/pot_looks.txt" in look, \
