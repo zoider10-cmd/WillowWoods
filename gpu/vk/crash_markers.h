@@ -60,6 +60,17 @@ inline void begin(const std::string& path, int count, int closed) {
     s.open.push_back({path, closed});
 }
 
+/// A step still open writes its progress into its file (text: the whole file). Nothing once the close began, nor for a step not
+/// open: a write after the close would leave the file as if the start had crashed (tests/test_quit_not_crash.py)
+inline void mark(const std::string& path, const std::string& text) {
+    detail::State& s = detail::state();
+    std::lock_guard lk(s.mu);
+    if (s.closing) return;
+    bool open = false;
+    for (const detail::Open& o : s.open) open = open || o.path == path;
+    if (!open) return;
+    if (FILE* f = std::fopen(path.c_str(), "wb")) std::fputs(text.c_str(), f), std::fclose(f);
+}
 /// The step got through (or its file is no longer wanted): the file goes
 inline void end(const std::string& path) {
     detail::State& s = detail::state();

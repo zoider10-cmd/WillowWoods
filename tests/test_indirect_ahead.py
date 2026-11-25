@@ -74,7 +74,7 @@ def main():
           conv.find("m.op == mesh_op_now") < conv.find("end_pass(cmd);"),
           "a draw converted ahead still ends the pass, or is found without its generation")
     ahead = block(draw, "void mesh_convert_ahead(VkCommandBuffer cmd, const MeshDraw* draws, size_t count) {")
-    check(ahead.find("mesh_ahead.clear();") < ahead.find("mesh_ahead_gen++;") < ahead.find("if (!count) return;"),
+    check(0 <= ahead.find("mesh_ahead().clear();") < ahead.find("mesh_ahead_gen++;") < ahead.find("if (!count) return;"),
           "a stretch does not start empty under a new generation")
     for step in ("vkCmdFillBuffer(cmd, mesh_ring, j.off, (uint64_t)j.n * 12, 1u);", "vkCmdCopyBuffer(cmd, j.args.buffer, mesh_ring,",
                  "VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT"):

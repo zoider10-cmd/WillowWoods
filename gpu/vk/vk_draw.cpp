@@ -2707,7 +2707,9 @@ PipeEntry* graphics_pipeline(const Program& p, const NvnState& s, const Targets&
 /// cold: made only if the driver has it compiled already; set, and nothing made, when it would have had to compile
 VkPipeline build_graphics(const Program& p, const NvnState& s, const Targets& at, VkPrimitiveTopology topo, int part, bool* cold) {
     program_modules(p);   // (Mako: made again if let go after the start)
-    if (at.n < 0 || at.n > 8) return VK_NULL_HANDLE;   // (hookshot: at most 8 colour targets)
+    // (hookshot: at most 8 colour targets; and modules let go that could not be made again: no pipeline of no stages, Longshot's
+    // guard, lost in the 11-17 merge, tests/test_linux_pressure.py)
+    if (at.n < 0 || at.n > 8 || program_modules_dropped(p)) return VK_NULL_HANDLE;
     const Shader::Info& vs = *vertex_info(p);
     const auto t0 = std::chrono::steady_clock::now();
     std::vector<VkPipelineShaderStageCreateInfo> stages;
@@ -7404,7 +7406,7 @@ struct MeshAhead {
     const void* op;
     uint64_t gen, off;
 };
-thread_local std::vector<MeshAhead> mesh_ahead;
+TLS_OBJECT(mesh_ahead, std::vector<MeshAhead>)   // (a per-thread object with a destructor: TLS_OBJECT, tests/test_tls_objects.py)
 thread_local const void* mesh_op_now = nullptr;
 thread_local uint64_t mesh_ahead_gen = 0;
 /// The ring's room for n records (mesh_ring_mu taken here), or false when the ring cannot be made
@@ -7425,7 +7427,7 @@ bool mesh_ring_take(uint32_t n, uint64_t& off) {
 bool mesh_indirect_convert(VkCommandBuffer cmd, const DrawArgs& d) {
     mesh_conv_buf = VK_NULL_HANDLE;
     if (d.mesh && d.indirect && mesh_op_now)   // ((ProjectReLink 88e38c0) converted at the barrier before it)
-        for (const MeshAhead& m : mesh_ahead)
+        for (const MeshAhead& m : mesh_ahead())
             if (m.op == mesh_op_now && m.gen == mesh_ahead_gen) {
                 mesh_conv_buf = mesh_ring, mesh_conv_off = m.off;
                 return true;
@@ -7477,7 +7479,7 @@ void mesh_op_set(const void* op) { mesh_op_now = op; }
 /// (ProjectReLink 88e38c0) the indirect mesh draws {op, indirect, max, stride} up to the next barrier, converted now (outside
 /// a pass: the game's barrier just ended it). A call with none ends the stretch (the start of each replayed command buffer)
 void mesh_convert_ahead(VkCommandBuffer cmd, const MeshDraw* draws, size_t count) {
-    mesh_ahead.clear();
+    mesh_ahead().clear();
     mesh_ahead_gen++;
     if (!count) return;
     PROF_EXACT();
@@ -7513,7 +7515,7 @@ void mesh_convert_ahead(VkCommandBuffer cmd, const MeshDraw* draws, size_t count
     mb.srcStageMask = VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT, mb.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     mb.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, mb.dstAccessMask = VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
     vkCmdPipelineBarrier2(cmd, &di);
-    for (const Job& j : jobs) mesh_ahead.push_back({j.op, mesh_ahead_gen, j.off});
+    for (const Job& j : jobs) mesh_ahead().push_back({j.op, mesh_ahead_gen, j.off});
     static std::atomic<int64_t> stretches{0}, converted{0};
     const int64_t k = ++stretches;
     converted += (int64_t)jobs.size();
@@ -8328,27 +8330,7 @@ void draw(VkCommandBuffer cmd, NvnState& s, const DrawArgs& d) {
     // programs and pipelines compiled, its depth and shadows drawn: a black silhouette. Most compile within a few ms; the
     // frame is held about that long at most (one build started may finish past it), not the 0.2-3 s an area's first programs
     // froze it when every draw waited. Clean first, then fast: the user's call. 0: left out at once, as before
-    const auto brief_wait = [&](const std::atomic<bool>& ready, const std::shared_ptr<JobClaim>* claim) {
-        static const double budget_ms = getenv("RX_VK_PIPE_WAIT_MS") ? atof(getenv("RX_VK_PIPE_WAIT_MS")) : 0.0;   // (off by default since 3.6.1, §81)
-        static thread_local uint64_t frame = ~0ull;
-        static thread_local double used_ms = 0;
-        if (budget_ms <= 0) return false;
-        const uint64_t f = texture_frame_no();
-        if (f != frame) frame = f, used_ms = 0;
-        if (used_ms >= budget_ms) return false;
-        const auto t0 = std::chrono::steady_clock::now();
-        if (claim) jobs_claim_run(*claim);
-        else jobs_steal(ready);
-        double ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-        while (!ready.load(std::memory_order_acquire) && ms < budget_ms - used_ms) {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
-            ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
-        }
-        used_ms += ms;
-        st_waits++;
-        st_wait_ms += ms;
-        return ready.load(std::memory_order_acquire);
-    };
+    // (its wait is pipe_wait_budget_ms's below, jobs_hurry: a lambda of its own from the merge, never called, was taken out)
     // (hookshot) RX_VK_TRANSLATE_WAIT_MS=<ms> (off unless set): a translation not ready, for a draw whose targets hold an
     // earlier frame's picture, is waited for at most this long a frame in all, on each recording thread, without taking the
     // job onto this thread, and the draw is then left out of the frame. Waiting it out (#1573, the default) can bring back
@@ -10103,7 +10085,7 @@ bool prepare_run(void (*progress)(size_t done, size_t total), bool background, b
             low = std::min(low, total);
             if (low > marked) {
                 marked = low;
-                if (FILE* w = fopen(warming.c_str(), "wb")) fprintf(w, "%llu 1\n", (unsigned long long)low), fclose(w);
+                crash_markers::mark(warming, std::to_string((unsigned long long)low) + " 1\n");   // (not after a close: crash_markers.h)
             }
         }
         if (next.load() >= total + threads.size()) break;

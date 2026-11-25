@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
@@ -33,6 +34,7 @@ struct {
     void* device = nullptr;
 } dev;
 struct Program { uint64_t key = 0x1234; };
+struct JobClaim {};   // (PipeEntry's claim on its build: not used by the code cut here)
 bool program_modules_dropped(const Program&) { return false; }
 struct NvnState {};
 struct Targets {};
