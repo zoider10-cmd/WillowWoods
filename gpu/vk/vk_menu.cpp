@@ -63,6 +63,7 @@
 #include "menu_restart.h"
 #include "threaded_rendering.h"   // (the Threaded rendering row's rule, and the one gate over its Auto)
 #include "vk_menu_i18n.h"
+#include "fog_row.h"   // ((HeyListen 5716afbf) the Volumetric fog row)
 #include "display_modes.h"   // (the Aspect ratio and Output resolution rows: the screen's sizes and their shapes)
 #ifndef HOOKSHOT_ENV_H   // (env_on: the switches' one rule)
 #include "hookshot_env.h"
@@ -2197,6 +2198,9 @@ Row rows[] = {
      "The size of the sun's shadow maps: higher keeps the shadows of thin things near you, such as chains, fences and "
      "leaves, smooth instead of stair-stepped, for more video memory and a little GPU time. Applies at once.",
      hn_shadow_res},
+    {TAB_GRAPHICS, "Volumetric fog", &opts.fog, 0, 1, 1, tx_onoff,   // ((HeyListen 5716afbf) fog_row.h, fog_runs)
+     "The haze in the distance and the mist of the forests. Off is lighter on weak GPUs (about 15% of the frame on integrated "
+     "graphics) and shows the distance crisper. Applies after a restart.", nullptr, true, true},
     // (the rows to change when something is wrong, or on a card short of memory: last)
     {TAB_GRAPHICS, "GPU and memory", nullptr, 0, 0, 0, nullptr, nullptr, nullptr, false, true, -1, true},
     {TAB_GRAPHICS, "GPU device", &opts.gpu_device, 0, 8, 1, tx_gpu,
@@ -6703,6 +6707,17 @@ bool intel_compiles_side_by_side() {   // (RX_VK_NO_INTEL_SERIAL in the row: men
 // compile time on an Iris Xe, its slow part register allocation at SIMD32)
 bool intel_quick_compute() { return opts.intel_quick != 0 && intel_compiler_row(); }   // (RX_VK_COMPUTE_QUICK_FIRST in it: menu_init)
 bool resolution_auto() { return opts.resolution == 0; }
+// ((HeyListen 5716afbf) the Volumetric fog row, RX_VK_FOG over it: fog_row.h; vk_draw.cpp dispatch asks at the fog's first dispatch)
+bool fog_runs() {
+    static const bool on = [] {
+        const char* e = getenv("RX_VK_FOG");
+        const int env = e && *e ? atoi(e) : -1;
+        const bool v = fog_row::fog_on(env, opts.fog);
+        logf("vk: volumetric fog %s%s", v ? "on" : "off", env >= 0 ? " (RX_VK_FOG)" : " (the Volumetric fog row)");
+        return v;
+    }();
+    return on;
+}
 int resolution_scale() {
     const float s = upscaler_rows::percent(ur::snap_render(upscaler(), opts.resolution)) / 100.0f;
     return s > 0 ? (int)(twelfths(s) * 10000.0f / 12.0f + 0.5f) : 0;   // (the twelfth game_size labels)

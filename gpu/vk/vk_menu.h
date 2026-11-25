@@ -51,6 +51,8 @@ struct Options {
                           // menu_shadow_res), 1 the game's (1600), 2 2200, 3 3072 (host/oot_shadow.c: HOS_OPT_SHADOW_RES, 56).
                           // The Quality presets set it back to Auto (apply_preset)
     int realtime = 1;     // game time follows the clock (host/nn_vi.c); 0: per frame (slower frames, slower game)
+    int fog = 1;          // (HeyListen 5716afbf) the volumetric fog: 1 on, 0 off (its programs left out: fog_row.h); read once, at
+                          // the first dispatch (fog_runs). RX_VK_FOG over it
     int handheld = 0;     // the game's handheld profile: ~4 fps, softer; read once, at the start (host/nn_applet.c)
     int ultrawide = 1;    // the Aspect ratio row. Saved as ultrawide=, read once, at the start (host/hos_main.c): 1 the monitor's own
                           // shape (the default), 0 the game's 16:9 (an older file's 0 on a screen narrower than 16:9 moves to 1,
@@ -162,6 +164,7 @@ bool menu_is_open();
 /// (hookshot) The game's scene tone mapped by PsychoV35: HDR set to Native on an HDR display, and the Tone mapper row so
 bool scene_tonemap_on();
 bool resolution_auto();       // (the game's dynamic resolution: Resolution Auto)
+bool fog_runs();              // ((HeyListen 5716afbf) the Volumetric fog row, RX_VK_FOG over it: fog_row.h; fixed at the first ask)
 int resolution_scale();       // (the fixed path's scale in 1/10000: the Resolution row's, as a twelfth of the output)
 void menu_option_set(int id, int value);   // (from the game's side: 7 the mouse's sensitivity, the - and = keys)
 int menu_setting(int index, MkwVkSetting* out);   // (the control bridge, host/control.c: the rows with a value)

@@ -102,6 +102,7 @@ extern "C" unsigned ZSTD_isError(size_t code);
 #include "warm_bounded.h"
 #include "crash_markers.h"   // (the files that count the starts that crashed in a step: a close puts them back)
 #include "foliage_shadow.h"   // ((Triforce v0.6.0) RX_VK_FOLIAGE_SHADOW_CULL: the foliage in the far shadow cascades, one face culled)
+#include "fog_row.h"   // ((HeyListen 5716afbf) the Volumetric fog row: the fog's programs)
 #include "vk_work.h"   // (after the others: counts the commands that do GPU work, for full_barrier)
 
 namespace mkwvk {
@@ -11279,6 +11280,11 @@ void dispatch(VkCommandBuffer cmd, NvnState& s, uint32_t x, uint32_t y, uint32_t
                 q = *e ? e + 1 : e;
             }
         }
+    }
+    if (fog_row::fog_program(cp->key) && !fog_runs()) {   // ((HeyListen 5716afbf) the Volumetric fog row Off, or RX_VK_FOG=0: fog_row.h)
+        static std::atomic<int> told{0};
+        if (!told++) logf("vk: volumetric fog off (the Volumetric fog row, RX_VK_FOG): its three programs' dispatches left out");
+        return;
     }
     dclock.key = cp->key;
     texture_watch_prog(cp->key);
