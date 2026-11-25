@@ -72,7 +72,7 @@ def main():
           "holds[gift_hash(MASTER_GIFT.key)] = frozenset(i for i in every if pedestal_holds(i))" in script and
           'if s[4] in ("shop", "scrub"):' in script,
           "the pedestal is not a place of the shuffle, the sword not a gating item, or it may be put on a shelf")
-    check("if MASTER_SHUFFLED:   # (the pedestal's few kinds before the shelves'" in script,
+    check("if MASTER_SHUFFLED or loose:   # (and with MAPS_LOOSE every spot but a chest is one: the fussiest first) (the pedestal's few kinds before the shelves'" in script,
           "the spots with few kinds are not filled first with the setting (the pedestal found nothing it may hold)")
 
     # ---- the game's side ----

@@ -453,6 +453,38 @@ SCENE_KEEP_IF = ("EventWaitForKeyInput", "EventOpenDoCommand",
 SWORD_EVENT = "Get_StoneOfForest_GetSword"
 SWORD_FLOW = "Event/EventFlow/Get_StoneOfForest.bfevfl.zs"
 DUNGEON_ITEMS = ("Item_Dungeon_SmallKey", "Item_Dungeon_BossKey", "Item_Dungeon_Map", "Item_Dungeon_Compass")
+# ---- Maps and compasses (rando_maps, asked 2026-11-23; share/dungeon-items-plan.md) ----
+# 0 with the keys (Dungeon keys' setting, as before), 1 Anywhere, 2 From the start. The save keeps each dungeon's own
+# DungeonInfo.<its Banc folder>.IsGetMap / IsGetCompass (and SmallKeyNum, IsGetBossKey); a chest's map or compass is one
+# item for every dungeon, counted by the pouch for the dungeon Link is in.
+# From the start: every dungeon's two flags start set (MAPS_START, the list of flags' defaults) and the chests that held
+# them hold rupees instead (MAPS_START_JUNK), which join the shuffle as any chest's item.
+# Anywhere: they go to any chest of the shuffle (not a gift, a shelf, a Skulltula or a piece: what gave it is then always
+# a chest), and each is told the dungeon it belongs to in DUNGEON_ITEMS_FILE (a chest's hash, the dungeon, the item):
+# the game's side, at a dungeon item's add from a chest of that file in another place than its dungeon, takes the add
+# away and sets that dungeon's flag (host/hos_main.c oot_dungeon_item). Maps and compasses gate nothing: no rule asks.
+MAP, COMPASS = "Item_Dungeon_Map", "Item_Dungeon_Compass"
+DUNGEON_FOLDERS = ("InsideTheDekuTree", "DodongoCavern", "InsideJabuJabuBelly", "BottomOfTheWell", "ForestTemple", "FireTemple",
+                   "IceCavern", "WaterTemple", "ShadowTemple", "SpiritTemple", "GerudoTrainingGround", "InsideGanonCastle")
+MAPS_START = {"DungeonInfo.%s.%s" % (d, f): True for d in DUNGEON_FOLDERS for f in ("IsGetMap", "IsGetCompass")}
+MAPS_START_JUNK = {MAP: "TBox_Rupee_Red", COMPASS: "TBox_Rupee_Blue"}
+MAPS_LOOSE = frozenset((MAP, COMPASS))
+DUNGEON_ITEMS_FILE = "dungeon_items.txt"
+
+
+def dungeon_owners(rng, spots, gives, loose):
+    """{a chest's hash: the dungeon (its area) the dungeon item it now gives belongs to} for the items of `loose` the
+    shuffle moved: each copy's dungeon is one of the chests that held that item before (spots: hash -> [area, item, ...]),
+    the same number for each dungeon; which copy is which does not matter (they gate nothing)."""
+    out = {}
+    for item in sorted(loose):
+        was = sorted(spots[h][0] for h in gives if spots[h][1] == item)
+        now = sorted(h for h in gives if gives[h] == item)
+        if len(was) != len(now):
+            raise ValueError("%s: %d were in the shuffle and %d are given" % (item, len(was), len(now)))
+        rng.shuffle(was)
+        out.update(zip(now, was))
+    return out
 Chest = collections.namedtuple("Chest", "hash gyaml dyn_where dyn_at item params pos event")
 
 # ---- the logic: what Link needs before a chest can be opened ----
@@ -5681,7 +5713,7 @@ def settings(game):
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
            "rando_ammo_pickups": 0, "rando_rupee_fill": 0, "rando_skulltulas_day": 0,
-           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0, "rando_house_hints": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
+           "rando_ganon_bridge": 0, "rando_hints": 0, "rando_ageless": 0, "rando_letter": 0, "rando_magic": 0, "rando_ageless_items": 0, "rando_ageless_tunics": 0, "rando_chest_size": 0, "rando_bridge_medallions": 0, "rando_master_sword": 0, "rando_dampe_hookshot": 0, "rando_epona_song": 0, "rando_ocarinas": 0, "rando_castle_guards": 0, "rando_free_scarecrow": 0, "rando_any_fish": 0, "rando_skull_kid_fast": 0, "rando_skip_tower": 0, "rando_fairy_prices": 0, "rando_archery_wins": 0, "rando_fast_push": 0, "rando_soil_bottle": 0, "rando_gerudo_guards": 0, "rando_house_hints": 0, "rando_maps": 0}   # (ammo, rupees and the bridge: the game's side's alone, host/hos_main.c oot_pickup_qol and oot_ganon_bridge)
     try:
         with open(os.path.join(game, "hookshot_options.ini"), encoding="utf-8", errors="replace") as f:
             for line in f:
@@ -7753,7 +7785,7 @@ def remove_old(mod):
     return n
 
 
-def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart=(), holds=None, counted=False, fixed_more=()):
+def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart=(), holds=None, counted=False, fixed_more=(), loose=frozenset()):
     """What each chest holds. spots: {hash: (area, item, is a dungeon's chest, why it stays or None)}, in a fixed order.
     needs: {hash: what the chest asks for} for the logic, or None: no logic.
     Returns ({hash: item} for the chests that take part, how many chests stay for each reason, the spheres or None).
@@ -7810,7 +7842,7 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
     for h, (area, item, dungeon, why) in spots.items():
         if not why and dungeon is not None and (which == 1 and dungeon or which == 2 and not dungeon):   # (None: a gift, of neither kind)
             why = "not this Chests setting's"
-        if not why and keys_mode == 0 and item in DUNGEON_ITEMS:
+        if not why and keys_mode == 0 and item in DUNGEON_ITEMS and item not in loose:   # (loose: anywhere, MAPS_LOOSE)
             why = "a dungeon's key, map or compass (Dungeon keys: Off)"
         if why:
             stays[why] += 1
@@ -7822,7 +7854,7 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
     for h in pool:
         by_area.setdefault(spots[h][0], []).append(h)
     for area, here in by_area.items():
-        own = [spots[h][1] for h in here if spots[h][1] in DUNGEON_ITEMS]
+        own = [spots[h][1] for h in here if spots[h][1] in DUNGEON_ITEMS and spots[h][1] not in loose]
         if bound or apart:   # (a lesson in a dungeon's area is not one of its chests)
             here = [h for h in here if h not in bound_spots and h not in apart]
         if holds:   # (a Gold Skulltula of a dungeon holds none of its keys)
@@ -7830,7 +7862,7 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
         for h, item in zip(rng.sample(here, len(own)), own):
             gives[h] = item
     rest = [h for h in pool if h not in gives]
-    items = [spots[h][1] for h in pool if spots[h][1] not in DUNGEON_ITEMS]
+    items = [spots[h][1] for h in pool if spots[h][1] not in DUNGEON_ITEMS or spots[h][1] in loose]
     spheres = None
     held = None   # (what the spots of `only` hold that the logic did not put there)
     if needs is not None:
@@ -7909,7 +7941,7 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
     rng.shuffle(items)
     if holds:   # (a spot of `holds` first: the first of the shuffled items it may hold; the others take the rest)
         order = [h for h in rest if h in holds]
-        if MASTER_SHUFFLED:   # (the pedestal's few kinds before the shelves', which take nearly anything: the fewest first)
+        if MASTER_SHUFFLED or loose:   # (and with MAPS_LOOSE every spot but a chest is one: the fussiest first) (the pedestal's few kinds before the shelves', which take nearly anything: the fewest first)
             order.sort(key=lambda h: len(holds[h]))
         for h in order:
             k = next((k for k, i in enumerate(items) if i in holds[h]), None)
@@ -8012,6 +8044,7 @@ def main():
     a.castle_guards = a.castle_guards or ini["rando_castle_guards"] != 0
     a.gerudo_guards = ini["rando_gerudo_guards"] != 0   # (GERUDO_GUARDS_FLOW, 2026-11-24: a Quality of life setting; moves no item)
     a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
+    a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0   # (Maps and compasses: MAPS_START, MAPS_LOOSE)
     a.soil_bottle = ini["rando_soil_bottle"] != 0       # (SOIL_FILES, 2026-11-24: a Quality of life setting; moves no item)
     a.fast_push = ini["rando_fast_push"] != 0           # (FAST_PUSH, 2026-11-24: the blocks' curves; moves no item)
     a.archery_wins = ini["rando_archery_wins"] != 0     # (ARCHERY_WINS, 2026-11-24: qol_flow; moves no item)
@@ -8115,7 +8148,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, min(keys_mode, 1), a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -8648,6 +8681,17 @@ def main():
                 if spots[h][1] == item:
                     spots[h][1] = START_JUNK
                     break
+    if a.maps == 2:   # (Maps and compasses: From the start: their chests hold rupees, MAPS_START_JUNK)
+        for h in spots:
+            if spots[h][1] in MAPS_START_JUNK and spots[h][4].startswith("Obj_TBox"):
+                spots[h][1] = MAPS_START_JUNK[spots[h][1]]
+    loose = MAPS_LOOSE if a.maps == 1 else frozenset()
+    if loose:   # (Anywhere: chests only, MAPS_LOOSE)
+        every = {s[1] for s in spots.values()}
+        holds = dict(holds or {})
+        for h, s in spots.items():
+            if not str(s[4]).startswith("Obj_TBox"):
+                holds[h] = frozenset(holds.get(h, every)) - loose
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,
@@ -8655,7 +8699,7 @@ def main():
                                                            (frozenset(REWARD_ITEMS), frozenset(endings)) if a.dungeon_rewards else None) if group]
                                       + pin_groups(spots, read_pins()) or None,
                                       only=lesson_only, apart=frozenset(lessons) if a.songs == 2 else (),
-                                      holds=holds or None, counted=counted, fixed_more=kept_tokens)
+                                      holds=holds or None, counted=counted, fixed_more=kept_tokens, loose=loose)
     except ValueError as e:
         if "a lesson has nothing left" in str(e) and fairies and not a.event_chests:   # (seen 2026-11-20: magic on, Major items off)
             sys.exit("%s: the Great Fairies may hold only items found once (a spell, the Lens, the Hammer...), and with Major items "
@@ -8672,6 +8716,10 @@ def main():
                 sys.exit("Magic and the fairies' gifts: magic on a shelf, and no place to trade it with. Nothing written.")
             gives[h], gives[mate] = gives[mate], gives[h]
 
+    # (Maps and compasses: Anywhere: the dungeon each now belongs to, DUNGEON_ITEMS_FILE)
+    owners = dungeon_owners(random.Random("dungeon items:%d" % seed), spots, gives, loose) if loose else {}
+    if any(not str(spots[h][4]).startswith("Obj_TBox") for h in owners):
+        sys.exit("a dungeon's map or compass is somewhere else than a chest: nothing written")
     # (the game's own count of each item is kept: every item given was some chest's)
     before = collections.Counter(spots[h][1] for h in gives)
     if before != collections.Counter(gives.values()):
@@ -8792,7 +8840,8 @@ def main():
             try:
                 was = unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
                 new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **SHUFFLED_FIRSTS, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),
-                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {})))
+                                                     **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {}),
+                                                     **(MAPS_START if a.maps == 2 else {})))
                 if shelf_flag:   # (the same file: the shelves' flags; a flag the game has not is an error)
                     assert not set(shelf_flag.values()) & set(FIRST_PICKUPS), "a shelf's flag is a first pick-up's"
                     flag_defaults(new if new is not None else was, {name: False for name in shelf_flag.values()})
@@ -9987,6 +10036,8 @@ def main():
         took = [h for h in able] if a.skulltulas else []
         f.write("\n".join(tracker_lines(collections.Counter(spots[h][0] for h in gives if h not in gifts), collections.Counter(skulls[h][0] for h in took),
                                         collections.Counter(g.area for g in gifts.values()), collections.Counter(p[0] for p in pieces.values()))) + "\n")
+    with open(os.path.join(mod, DUNGEON_ITEMS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: oot_dungeon_item)
+        f.write("".join("%016x|%s|%s\n" % (h, owners[h], gives[h]) for h in sorted(owners)))
     with open(os.path.join(mod, CHECKS), "w", encoding="utf-8", newline="\n") as f:   # (for the Tracker tab's Go there)
         skull_need = skull_asks
         gift_key = gift_keys([h for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES], list(spots))

@@ -2089,6 +2089,7 @@ static struct {
     char ages[4];     /* (C, A or CA: which Link has it in the game's maps) */
     uint64_t key;     /* (an actor of a map: its hash, by which the save keeps a truth value; 0: none) */
     uint32_t opened;  /* (a chest: the hash of the game's own flag IsTreasureBoxOpen.<key in decimal>, set when it is opened, bug 70; 0: none) */
+    char owner[24];   /* (a chest holding a dungeon item of another place: the dungeon it belongs to, dungeon_items.txt; "": none) */
 } oot_checks[OOT_TRACKER_MAX];
 static int oot_check_count = -1;
 static char oot_checks_seed[1024];   /* (the stamp the checks and the record are of: its whole first line. 200 cut a
@@ -2198,6 +2199,7 @@ static void oot_tracker_load(const char *stamp) {
         }
         oot_checks[oot_check_count].shelf = 0;
         oot_checks[oot_check_count].sold = 0;
+        oot_checks[oot_check_count].owner[0] = 0;
         {   /* (a shelf's price: tools/rando/rando_seed.py names it "<shop>: shelf <k>, <n> rupees") */
             const char *r = strstr(kind, " rupees");
             const char *d = r;
@@ -2223,6 +2225,22 @@ static void oot_tracker_load(const char *stamp) {
     }
     if (f) fclose(f);
     if (shelves) hos_log("rando: tracker: %d shop shelves wait for a flag of their own", shelves);
+    /* (Maps and compasses: Anywhere, tools/rando/rando_seed.py DUNGEON_ITEMS_FILE: <a chest's hash>|<the dungeon its
+       dungeon item belongs to>|<the item>. A seed without it, or with it empty, has none: oot_dungeon_item) */
+    int owned = 0;
+    f = oot_game_file(path, sizeof path, "mods/rando-seed/dungeon_items.txt") ? fopen(path, "r") : NULL;
+    while (f && fgets(line, sizeof line, f)) {
+        char hash[32], owner[24];
+        if (sscanf(line, "%31[0-9a-fA-F]|%23[A-Za-z]|", hash, owner) != 2) continue;
+        const uint64_t key = strtoull(hash, NULL, 16);
+        for (int i = 0; i < oot_check_count; i++)
+            if (oot_checks[i].key == key) {
+                snprintf(oot_checks[i].owner, sizeof oot_checks[i].owner, "%s", owner), owned++;
+                break;
+            }
+    }
+    if (f) fclose(f);
+    if (owned) hos_log("rando: tracker: %d chests hold a dungeon item that belongs to its own dungeon wherever it is", owned);
     int collected = 0;
     f = oot_game_file(path, sizeof path, "rando/collected.txt") ? fopen(path, "r") : NULL;
     if (f && fgets(line, sizeof line, f)) {
@@ -3497,6 +3515,41 @@ static int oot_flight_moved_away(Ctx *c, uint64_t actor, const float held[3]) {
 static int oot_banc_in_folder(const char *banc, const char *folder) {
     const size_t n = strlen(folder);
     return n && !strncmp(banc, folder, n) && (!banc[n] || banc[n] == '_');
+}
+
+/* (Maps and compasses: Anywhere, tools/rando/rando_seed.py MAPS_LOOSE) The pouch counts a chest's map, compass, Boss Key
+   or small key for the dungeon Link is in: the save's DungeonInfo.<the dungeon's Banc folder>.IsGetMap, .IsGetCompass,
+   .IsGetBossKey, .SmallKeyNum. One from a chest of dungeon_items.txt (the chest Link just opened: the nearest of them
+   within OOT_DUNGEON_NEAR metres of him, in his map, holding that item) in another place than its dungeon: its dungeon's
+   flag is set (a small key: its count raised) and the add is taken away (1). 0: the add goes on as it is. */
+#define OOT_DUNGEON_NEAR 4.0f
+static int oot_dungeon_item(Ctx *c, const char *name) {
+    const char *field = !strcmp(name, "Item_Dungeon_Map") ? "IsGetMap" : !strcmp(name, "Item_Dungeon_Compass") ? "IsGetCompass" :
+                        !strcmp(name, "Item_Dungeon_BossKey") ? "IsGetBossKey" : !strcmp(name, "Item_Dungeon_SmallKey") ? "SmallKeyNum" : NULL;
+    if (!field || c->x[30] != 0x828d50acULL || !hos_rando_on()) return 0;   /* (0x828d50ac: a chest's add, as a shop's) */
+    char owner[24] = "";
+    float nearest = OOT_DUNGEON_NEAR;
+    AcquireSRWLockShared(&oot_checks_lock);
+    for (int i = 0; i < oot_check_count; i++) {
+        if (!oot_checks[i].owner[0] || strcmp(oot_checks[i].item, name) || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
+        const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
+                    dz = oot_checks[i].place[2] - oot_link_place[2];
+        const float away = sqrtf(dx * dx + dy * dy + dz * dz);
+        if (away < nearest) nearest = away, snprintf(owner, sizeof owner, "%s", oot_checks[i].owner);
+    }
+    ReleaseSRWLockShared(&oot_checks_lock);
+    if (!owner[0] || oot_banc_in_folder(oot_link_map, owner)) return 0;   /* (in its own dungeon: the game counts it there) */
+    char flag[80];
+    snprintf(flag, sizeof flag, "DungeonInfo.%s.%s", owner, field);
+    int ok;
+    if (!strcmp(field, "SmallKeyNum")) {
+        int32_t n = 0;
+        ok = oot_gamedata_int(c, oot_flag_hash(flag), &n, 0);
+        n++;
+        ok = ok && oot_gamedata_int(c, oot_flag_hash(flag), &n, 1);
+    } else ok = oot_gamedata_set_bool(c, oot_flag_hash(flag), 1);
+    hos_log("rando: %s from a chest %.1f m away belongs to %s: %s %s", name, nearest, owner, flag, ok ? "set" : "NOT FOUND");
+    return ok;
 }
 
 /* (the randomizer's fork) <game folder>/rando/<name>, into out: 1, or 0 when the game's folder is not known */
@@ -5138,6 +5191,7 @@ int hos_oot_pouch_add(Ctx *c) {
             oot_tracker_item(name, shop, price);
         }
     }
+    if (oot_dungeon_item(c, name)) return 1;   /* (a dungeon's map or compass got in another place: its dungeon's flag) */
     /* (bug 42: with no Bomb Bag, the bombs that follow the bag the game is not let give made the inventory's bombs at
        0/0, a slot that can't be used: a bomb added while Link has no bag adds nothing. Here, after the tracker's record
        and a piece's or a container's item named: a check that gave bombs is still a check got) */

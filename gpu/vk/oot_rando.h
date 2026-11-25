@@ -189,7 +189,10 @@
       "Off", "On") \
     X(HOUSE_HINTS, "Skulltula House hints", "rando_house_hints", \
       "Talking to the cursed man in Kakariko's House of Skulltula, his line about the next reward goes on with what each reward (10, 20, 30, 40 and 50 tokens) gives in this seed, so you know which are worth collecting for. Words in English in every language, as the Gossip Stones' hints. Not tried in play yet. Moves no item: it can be turned on for a seed being played.", \
-      "Off", "On")
+      "Off", "On") \
+    X(MAPS, "Maps and compasses", "rando_maps", \
+      "With the keys: as Dungeon keys has them. Anywhere: each dungeon's map and compass can be in any chest of the game; found in another place, it still counts for its own dungeon. From the start: every dungeon's map and compass are had from a new game's start, and the chests that held them hold rupees instead. Maps and compasses open no way: no rule asks for them. Not tried in play yet.", \
+      "With the keys", "Anywhere", "From the start")
 
 enum {
 #define OOT_RANDO_ENUM(NAME, label, key, help, ...) OOT_RANDO_##NAME,

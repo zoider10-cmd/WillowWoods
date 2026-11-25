@@ -288,7 +288,7 @@ def placement_12():
           "if placement < SHUFFLED_FROM:\n            gives, skull_drops = mix_skulltulas(" in script and
           "if logic and placement < SHUFFLED_FROM:" in script and "if a.heart_pieces and pieces and placement < SHUFFLED_FROM:" in script,
           "the Skulltulas and the pieces take part as chests do in a seed made before placement 12, or not from it")
-    check("holds=holds or None, counted=counted, fixed_more=kept_tokens)" in script and
+    check("holds=holds or None, counted=counted, fixed_more=kept_tokens, loose=loose)" in script and
           "kept_tokens = [(skull_asks(h, every_skull[h][0]), TOKEN) for h in every_skull if h not in joined] if counted else []" in script and
           "gifts.update((h, g._replace(need=house_need(g.key, g.need, placement))) for h, g in list(gifts.items()) if g.key in HOUSE_TOKENS)" in script,
           "the placement is not given the Skulltulas' and the pieces' holds, the tokens kept in place, or the house's rules")
