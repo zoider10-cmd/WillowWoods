@@ -202,6 +202,7 @@ SW(HOS_VCORES, kill, bool, "on: guest threads are scheduled on virtual cores", "
 SW(HOS_VCORE_ESCAPE_EQ_US, tune, int, "2000000 us (2 s)", "Sets how long a waiter waits for a holder of equal priority before it runs without a core.")
 SW(HOS_VCORE_ESCAPE_US, tune, int, "2000000 us (2 s)", "Sets how long a better-priority waiter waits for a core before it runs without one.")
 SW(HOS_VCORE_LOG_MS, diag, int, "50 ms", "Sets how long a wait for a virtual core must last to be logged with its cause (0: none).")
+SW(HOS_VCORE_PIN_ESCAPE_MS, kill, int, "5000 ms", "Sets how long a waiter held to one virtual core, behind a holder of better priority there, waits before it runs anyway; 0: it escapes after HOS_VCORE_ESCAPE_EQ_US, as before.")
 SW(HOS_VCORE_SLICE_US, tune, int, "2000 us", "Sets the wait after which a holder as good as the waiter is asked to give its core up (a time slice).")
 SW(HOS_VCORE_STARVE_US, tune, int, "1000000 us (1 s)", "Sets the wait after which a waiter goes before every other at the next core release (0: never).")
 SW(HOS_VIDEO_ACQUIRE_TRIES, kill, bool, "off: the wait for a picture is ~100 ms by the clock", "A movie waits for a picture by 50 sleeps of 2 ms (~250 ms), as before.")

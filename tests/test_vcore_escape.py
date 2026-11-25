@@ -13,6 +13,11 @@ it goes before every other waiter at the next release of its core and asks the h
 holder's priority, so its wait ends in a grant. The same fixture with HOS_VCORE_STARVE_US=0 (the old rule) escapes after
 2 s in both cases. Before the starved time nothing changes: the better waiter still gets the core first.
 
+(Reborn bca2d83) A waiter held to one core, behind a better holder there that never gives it up, escapes only after
+HOS_VCORE_PIN_ESCAPE_MS (5 s): the game pins threads to another's core so the two never overlap, and an escape ran both at
+once. With HOS_VCORE_PIN_ESCAPE_MS=0 it escapes after 2 s as before, and a waiter allowed on two cores escapes after 2 s
+either way (both with HOS_VCORE_STARVE_US=0, so no boost ends the wait first).
+
 python -I -B tests/test_vcore_escape.py [--cxx clang++]
 """
 import argparse
@@ -193,7 +198,31 @@ static void bg_cap(void) {
     hos_vcore_checkpoint();
     check(vc_st.yields >= 1, "bg cap: it gives it up at its next checkpoint, with nobody queued");
 }
+/* (Reborn bca2d83) the holder of the one core sw may use is better and runs on: sw escapes after HARNESS_PIN_MS; a waiter
+   allowed on both cores, each held by a better thread, after 2 s whatever HOS_VCORE_PIN_ESCAPE_MS says */
+static void pinned(void) {
+    const int64_t want = atoi(getenv("HARNESS_PIN_MS"));
+    reset(1);
+    vc_take(&sa, 1);
+    int64_t t0 = now_ns;
+    hos_vcore_back();
+    int64_t ms = (now_ns - t0) / 1000000;
+    check(escapes_logged == 1 && !sw.vc_held, "pinned: the waiter escapes in the end");
+    check(ms >= want && ms < want + 50, "pinned: and only after HOS_VCORE_PIN_ESCAPE_MS (2 s with 0)");
+    reset(1);
+    thread(&sw, "wide", 28, 3);
+    vc_take(&sa, 0), vc_take(&sb, 1);
+    t0 = now_ns;
+    hos_vcore_back();
+    ms = (now_ns - t0) / 1000000;
+    check(escapes_logged == 1 && ms >= 2000 && ms < 2050, "a waiter allowed on two cores escapes after 2 s as before");
+}
 int main(int argc, char **argv) {
+    if (argc > 1 && !strcmp(argv[1], "pin")) {   /* HOS_VCORE_STARVE_US=0, HARNESS_PIN_MS the escape expected */
+        pinned();
+        if (!bad) puts("ok");
+        return bad;
+    }
     if (argc > 1 && !strcmp(argv[1], "cap")) {   /* HOS_BG_CAP=2, HARNESS_CORES=4 */
         bg_cap();
         if (!bad) puts("ok");
@@ -297,6 +326,17 @@ def main():
             raise SystemExit("a starved thread escapes, or an escaped thread does not take a core again (issues 262, 1929)")
         if old.returncode or "ok" not in old.stdout:
             raise SystemExit("with HOS_VCORE_STARVE_US=0 the fixture no longer shows the old escape (issue 262)")
+        # ((Reborn bca2d83) a waiter held to one core behind a better holder escapes after HOS_VCORE_PIN_ESCAPE_MS, 0: 2 s)
+        for pin_env, want in ((None, "5000"), ("0", "2000"), ("3000", "3000")):
+            env = {k: v for k, v in os.environ.items() if k != "HOS_VCORE_PIN_ESCAPE_MS"}
+            env.update(HOS_VCORE_STARVE_US="0", HARNESS_PIN_MS=want)
+            if pin_env is not None:
+                env["HOS_VCORE_PIN_ESCAPE_MS"] = pin_env
+            pin = subprocess.run([str(exe), "pin"], capture_output=True, text=True, timeout=30, env=env)
+            print(pin.stdout, end="")
+            if pin.returncode or "ok" not in pin.stdout:
+                raise SystemExit("a waiter held to one core behind a better holder must escape after %s ms "
+                                 "(HOS_VCORE_PIN_ESCAPE_MS=%s)" % (want, pin_env))
         # ((HeyListen e44c839d) HOS_BG_CAP: a background thread waits for a core while the cap is held, and gives one up past it)
         cap = subprocess.run([str(exe), "cap"], capture_output=True, text=True, timeout=30,
                              env={**os.environ, "HOS_BG_CAP": "2", "HARNESS_CORES": "4"})
