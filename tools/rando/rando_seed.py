@@ -128,7 +128,7 @@ DAMPE_HOOK_FROM = 19   # (the owner, 2026-11-21: "it should be randomized the sa
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
 # while it is shut: without the Bow the room is left by a warp song, as any other. Nothing new to learn for a player.
 FIXES = {0x74fb0489585fe0e2: {"IsDisableSaveAndWarp": False}}
-FIXES_VERSION = 94   # (93: before a boss's Heart Container that gives another item showed that item, CONTAINER_LOOK. 92: before a Piece of Heart lying in the world that gives another item showed that item, PIECE_LOOK. 91: before the Silver and Golden Gauntlets' shelves posed their pair as the get scene does, SHELF_OWN_POSE. 90: before the Silver and Golden Gauntlets' shelves showed their own pair a third its size, not the Bracelet. 89: before a Gold Skulltula's drop of a family was shown as the family's next, its tiers made pick-ups, SKULL_TIERS. 88: before the bean-soil Gold Skulltulas were there for a bottle got, no bugs, SOIL_FILES. 87: before Bombchu Bowling's first two wins gave its two checks, the bag's then the Piece of Heart's, BOWLING_FLOW. 86: before the climbing boxes over Lake Hylia's dead tree's vines, baked, were a Hookshot catch and its baked Wood was not, CLIMB_WALL_ENTRY (bug 119). 85: before Lake Hylia's dead tree was baked again, its climbing boxes as the game has them, and its baked Wood a Hookshot catch, BAKED_TREE_FILES (bug 119). 84: before Lake Hylia's dead tree was placed without Bakeable, a body of its own, TREE_NAME (bug 119). 83: before the climbing boxes over Lake Hylia's dead tree's vines were a Hookshot catch, TREE_CLIMB_SHAPE, and its mesh's Wood was left as it was (bug 119). 82: before Lake Hylia's dead tree's wood was a Hookshot catch (83 only). 81: before Lake Hylia's tree had its hookshot-stopping wall taken out again (its own HitOnlyHookshot: it stops the Hookshot; 79 had kept it). 80: before Darunia's gift was had after Dodongo's Cavern, DARUNIA_LATE (bug 128). 79: before Goron City's sign-order grotto gave its right chest after a wrong try, SIGN_GROTTO_LOGIC (bug 127). 78: before Lake Hylia's dead tree kept the Hookshot's catch along its vines, there always (TREE_WALL keep, bug 119; 73 had taken it out). 77: before a new game started with the mask salesman's trade done, MASK_TRADE (bug 133). 76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
+FIXES_VERSION = 95   # (94: before the pots taking part had an actor of their own, coloured and not lifted, POT_LOOK. 93: before a boss's Heart Container that gives another item showed that item, CONTAINER_LOOK. 92: before a Piece of Heart lying in the world that gives another item showed that item, PIECE_LOOK. 91: before the Silver and Golden Gauntlets' shelves posed their pair as the get scene does, SHELF_OWN_POSE. 90: before the Silver and Golden Gauntlets' shelves showed their own pair a third its size, not the Bracelet. 89: before a Gold Skulltula's drop of a family was shown as the family's next, its tiers made pick-ups, SKULL_TIERS. 88: before the bean-soil Gold Skulltulas were there for a bottle got, no bugs, SOIL_FILES. 87: before Bombchu Bowling's first two wins gave its two checks, the bag's then the Piece of Heart's, BOWLING_FLOW. 86: before the climbing boxes over Lake Hylia's dead tree's vines, baked, were a Hookshot catch and its baked Wood was not, CLIMB_WALL_ENTRY (bug 119). 85: before Lake Hylia's dead tree was baked again, its climbing boxes as the game has them, and its baked Wood a Hookshot catch, BAKED_TREE_FILES (bug 119). 84: before Lake Hylia's dead tree was placed without Bakeable, a body of its own, TREE_NAME (bug 119). 83: before the climbing boxes over Lake Hylia's dead tree's vines were a Hookshot catch, TREE_CLIMB_SHAPE, and its mesh's Wood was left as it was (bug 119). 82: before Lake Hylia's dead tree's wood was a Hookshot catch (83 only). 81: before Lake Hylia's tree had its hookshot-stopping wall taken out again (its own HitOnlyHookshot: it stops the Hookshot; 79 had kept it). 80: before Darunia's gift was had after Dodongo's Cavern, DARUNIA_LATE (bug 128). 79: before Goron City's sign-order grotto gave its right chest after a wrong try, SIGN_GROTTO_LOGIC (bug 127). 78: before Lake Hylia's dead tree kept the Hookshot's catch along its vines, there always (TREE_WALL keep, bug 119; 73 had taken it out). 77: before a new game started with the mask salesman's trade done, MASK_TRADE (bug 133). 76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
 # The forest's two closed ways. Each is a flag of the game that starts set and is put out by the story: Mido stands in
 # the way to the Deku Tree until Link has a sword and a shield (KokiriForest_Npc_Kokiri_Mido_Child_Blocker), and a
 # Kokiri in the forest's way out until the Deku Tree is done (KokiriForest_Npc_Kokiri_007_Child_Blocker_00). An
@@ -523,6 +523,115 @@ def pot_actors():
             if e.get("kind") == "pot":
                 out[int(h)] = e.get("folder")
     return out
+
+
+# (FIXES 95, asked 2026-11-25 from play) A pot taking part is an actor of its own (POT_LOOK: Obj_Pot_A_05 -> Obj_Pot_R_05),
+# made from its own: coloured (POT_HUE: its texture's colours turned to that hue, with POT_SATURATION at least, so the grey
+# stone pots are coloured too; light and shade as they were) and not lifted (its LiftableRef ""): it breaks where it stands,
+# by a sword, a roll or a bomb, and its item falls there. A thrown pot broke on a wall and its Deku Stick stayed up on a
+# ledge (the owner's picture, the Market guard house); and the pots taking part looked like the rest. Its model and
+# texture are copies under names of the same length (POT_FROM -> POT_TO in each: the model's and the texture's names
+# are each in their file's dictionaries, whose trees are built from the names' bits, and in the size table by their
+# path), so each copy is the game's own file with those letters changed. The pieces it breaks into keep their colour.
+POT_FROM, POT_TO = "Obj_Pot_A", "Obj_Pot_R"
+POT_TEX_FROM, POT_TEX_TO = b"Rock_Pot_A", b"Rock_Pot_R"
+POT_HUE, POT_SATURATION = 205.0, 0.55
+
+
+def pot_look_name(gyaml):
+    """the actor of its own of a pot of the game's (Obj_Pot_A_01 ... Obj_Pot_A_08, _Respawn, _Dream), or None"""
+    return POT_TO + gyaml[len(POT_FROM):] if gyaml.startswith(POT_FROM + "_") else None
+
+
+def pot_colour(rgb):
+    """(r, g, b) of 0..255 -> the same at POT_HUE, its saturation POT_SATURATION at least, its brightness kept"""
+    import colorsys
+    h, s, v = colorsys.rgb_to_hsv(*(min(255.0, max(0.0, c)) / 255.0 for c in rgb))
+    return tuple(c * 255.0 for c in colorsys.hsv_to_rgb(POT_HUE / 360.0, max(s, POT_SATURATION), v))
+
+
+def pot_look(gyaml, pack, read):
+    """A pot's actor of its own (pot_look_name): (its pack, the files of its pack only it has, {a new file's path in
+    romfs, without .zs: its bytes}, {that path: the path whose size table entry it takes}). pack: the pot's own pack
+    (bytes); read(rel): a file of the game's. ValueError: the pot is not made as these pots are."""
+    import re
+    here = os.path.dirname(os.path.abspath(__file__))   # (run with -I: the folder beside it, as the game's rando folder has it)
+    if here not in sys.path:
+        sys.path.insert(0, here)
+    import rando_cosmetics as C
+    name = pot_look_name(gyaml)
+    if not name:
+        raise ValueError("%s: not one of the game's pots" % gyaml)
+    files = sarc_read(pack)
+    chain = actor_chain(gyaml, files)
+    if not chain:
+        raise ValueError("%s: its pack has no actor of that name" % gyaml)
+    info = next((ref_file(t[1]["Components"][1]["ModelInfoRef"][1]) for _, t, _ in chain
+                 if t[1].get("Components", ("dict", {}))[1].get("ModelInfoRef", ("", ""))[1]), "")
+    if info not in files:
+        raise ValueError("%s: its model's file is not in its pack" % gyaml)
+    model, model_version = byml_parse(files[info])
+    project, fmdb = model[1]["ModelProjectName"][1], model[1]["FmdbName"][1]
+    if project != POT_FROM or not fmdb.startswith(POT_FROM + "_"):
+        raise ValueError("%s: its model is %s.%s, not a pot's" % (gyaml, project, fmdb))
+    new_fmdb = POT_TO + fmdb[len(POT_FROM):]
+    bfres = read("Model/%s.%s.bfres.zs" % (project, fmdb))
+    textures = sorted(set(re.findall(re.escape(POT_TEX_FROM) + rb"[0-9A-Za-z_]*_Alb", bfres)))
+    if len(textures) != 1 or bfres.count(textures[0]) != 1 or bfres.count(fmdb.encode()) != 2:
+        raise ValueError("%s: its model's names are not what they were (%s)" % (gyaml, textures))
+    texture = textures[0]
+    new_texture = POT_TEX_TO + texture[len(POT_TEX_FROM):]
+    bntx = read("Tex/%s.bntx.zs" % texture.decode())
+    if bntx.count(texture) != 1:
+        raise ValueError("%s: its texture's name is not once in its file" % gyaml)
+    coloured = C.turn(bntx, pot_colour, collections.Counter()).replace(texture, new_texture)
+    new_model = bfres.replace(texture, new_texture).replace(fmdb.encode(), new_fmdb.encode())
+    model[1]["FmdbName"] = ("string", new_fmdb)
+    own_info = MODEL_INFO_FILE % name
+    files[own_info] = byml_build(model, model_version)
+    tree, version = byml_parse(files[ACTOR_FILE % gyaml])
+    comps = tree[1].setdefault("Components", ("dict", collections.OrderedDict()))[1]
+    comps["ModelInfoRef"] = ("string", "?" + own_info)
+    comps["LiftableRef"] = ("string", "")
+    files[ACTOR_FILE % name] = byml_build(tree, version)
+    model_path = "Model/%s.%s.bfres" % (project, new_fmdb)
+    texture_path = "Tex/%s.bntx" % new_texture.decode()
+    return (sarc_write(files), [ACTOR_FILE % name, own_info], {model_path: new_model, texture_path: coloured},
+            {model_path: "Model/%s.%s.bfres" % (project, fmdb), texture_path: "Tex/%s.bntx" % texture.decode()})
+
+
+def pot_rows(data, kind, gyaml):
+    """one of the lists of actors (SHOP_TABLES) with a row for a pot's actor of its own: the pot's, its model's name its
+    own (FmdbName); the list as it was when it has no row of the pot's"""
+    name = pot_look_name(gyaml)
+    tree, version = byml_parse(data)
+    by = {r[1]["__RowId"][1]: r for r in tree[1]}
+    if gyaml not in by:
+        return data
+    row = ("dict", collections.OrderedDict(by[gyaml][1]))
+    row[1]["__RowId"] = ("string", name)
+    if row[1].get("FmdbName", ("", ""))[0] == "string" and row[1]["FmdbName"][1].startswith(POT_FROM + "_"):
+        row[1]["FmdbName"] = ("string", POT_TO + row[1]["FmdbName"][1][len(POT_FROM):])
+    rows = [r for r in tree[1] if r[1]["__RowId"][1] != name] + [row]
+    rows.sort(key=lambda r: r[1]["__RowId"][1])
+    return byml_build((tree[0], rows), version)
+
+
+def pot_named(data, hashes, only=None):
+    """a map file with the pots of these hashes naming their actor of their own (pot_look_name): (the file, how many,
+    the game's pot actors they were). only: the game's pot actors to rename (the others' are left), or None for all"""
+    tree, version = byml_parse(data)
+    n, was = 0, set()
+    for a in tree[1].get("Actors", ("array", []))[1]:
+        d = a[1]
+        h = d.get("Hash")
+        h = h[1] if h else None
+        h = struct.unpack("<Q", h)[0] if isinstance(h, bytes) and len(h) == 8 else h
+        gyaml = d.get("Gyaml", ("", ""))[1]
+        if h in hashes and pot_look_name(gyaml) and (only is None or gyaml in only):
+            d["Gyaml"] = ("string", pot_look_name(gyaml))
+            n, was = n + 1, was | {gyaml}
+    return byml_build(tree, version), n, was
 KEYLESS_FILE = "dungeon_keyless.json"
 
 
@@ -5601,6 +5710,13 @@ PACK_EXTRA = 312
 SHOP_EXTRA = 65536   # (for a list of the game's actors and a language's archive, whose entries follow no rule looked for: far more than either grows)
 
 
+def size_table_entry(tbl, path):
+    """the size table's entry of a path (without .zs), or None"""
+    count = struct.unpack_from("<I", tbl, 14)[0]
+    crc = zlib.crc32(path.encode()) & 0xffffffff
+    return next((struct.unpack_from("<I", tbl, 26 + k * 8)[0] for k in range(count) if struct.unpack_from("<I", tbl, 22 + k * 8)[0] == crc), None)
+
+
 def size_table_update(tbl, sizes, extra=264):
     """The size table ("RESTBL": a header of 22 bytes, then a path's CRC32 and a size for each file, sorted by the
     CRC32) with the entries of `sizes` ({path without .zs: bytes unpacked}) raised to fit."""
@@ -10015,11 +10131,66 @@ def main():
         except (OSError, ValueError, struct.error, IndexError, KeyError, StopIteration) as e:
             sys.exit("the Pieces of Heart's and Heart Containers' looks: %s. Nothing written." % e)
 
+    # ---- the pots taking part: an actor of their own each, coloured and not lifted (FIXES 95, POT_LOOK) ----
+    pot_size_as = {}   # (a new model's or texture's path: the game's file whose size table entry it takes)
+    if pot_drops:
+        try:
+            def game_file(rel):
+                return unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+            by_file = collections.defaultdict(set)
+            for h in pot_drops:
+                for file in maps.get(h, ()):
+                    by_file["Banc/%s/%s" % (pots[h][0], file)].add(h)
+            designs = set()
+            for rel, hashes in by_file.items():
+                if rel in changed or os.path.isfile(os.path.join(romfs, *rel.split("/"))):
+                    designs |= pot_named(changed[rel] if rel in changed else game_file(rel), hashes)[2]
+            made = set()
+            for gyaml in sorted(designs):
+                rel = "Pack/Actor/%s.pack.zs" % gyaml
+                try:
+                    new, own_parts, new_files, size_as = pot_look(gyaml, pack_files[rel] if rel in pack_files else game_file(rel), game_file)
+                except (OSError, ValueError) as e:
+                    print("the pots %s keep their look (%s)" % (gyaml, e))
+                    continue
+                made.add(gyaml)
+                shop_files["Pack/Actor/%s.pack.zs" % pot_look_name(gyaml)] = new
+                shop_packs["Pack/Actor/%s.pack" % pot_look_name(gyaml)] = len(new)
+                shop_new.update(own_parts)
+                for path, data in new_files.items():
+                    shop_files[path + ".zs"] = data
+                pot_size_as.update(size_as)
+            folder = os.path.join(romfs, "RSDB")
+            for kind in SHOP_TABLES if made else ():
+                n = next(n for n in sorted(os.listdir(folder)) if n.startswith(kind + ".") and ".byml" in n.lower())
+                table = shop_files.get("RSDB/" + n) or unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
+                for gyaml in sorted(made):
+                    table = pot_rows(table, kind, gyaml)
+                shop_files["RSDB/" + n] = table
+                shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
+            shown = 0
+            for rel, hashes in by_file.items() if made else ():
+                if rel in changed or os.path.isfile(os.path.join(romfs, *rel.split("/"))):
+                    data = changed[rel] if rel in changed else game_file(rel)
+                    keep = {h for h in hashes}
+                    new, k, was = pot_named(data, keep, made)
+                    if k:
+                        changed[rel], shown = new, shown + k
+                        sizes[rel[:-3]] = len(new)
+            print("Pots: %d map entries of their own look (coloured, not lifted), %d of the game's pots" % (shown, len(made)))
+        except (OSError, ValueError, struct.error, IndexError, KeyError, StopIteration) as e:
+            sys.exit("the pots' look: %s. Nothing written." % e)
+
     def shop_table(tbl):
         """the size table with the shops' files: the new packs and their own files added, the keepers' packs' goods
         lists raised, the lists of actors and the texts' archives made to fit"""
         for path, size in shop_packs.items():
             tbl = size_table_add(tbl, [path], size_entry(size, PACK_EXTRA))
+        for path, was in pot_size_as.items():   # (a pot's model and texture of its own: the game's own entry, POT_LOOK)
+            entry = size_table_entry(tbl, was)
+            if entry is None:
+                raise ValueError("%s is not in the size table" % was)
+            tbl = size_table_add(tbl, [path], entry)
         return size_table_update(size_table_raise(size_table_add(tbl, shop_new), shop_parts | song_parts), shop_sizes, SHOP_EXTRA)
 
     # ---- the shelves of a family's maps: each map once for each choice of its shelves' tiers, every other edit of it made ----

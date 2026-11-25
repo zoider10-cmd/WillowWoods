@@ -46,6 +46,25 @@ def main():
     assert "oot_checks[oot_check_count].broken = oot_checks[oot_check_count].pot ? oot_checks[oot_check_count].key : 0;" in host
     track = host[host.index("static void oot_tracker_item(const char *name, int shop, int price) {"):]
     assert "best = oot_pot_chosen;" in track[:track.index("\n}\n")], "the record does not mark the pot just broken"
+    # (FIXES 95, POT_LOOK: a pot taking part is an actor of its own, coloured and not lifted, its model and texture copies
+    #  under names of the same length)
+    assert S.pot_look_name("Obj_Pot_A_05_Respawn") == "Obj_Pot_R_05_Respawn" and S.pot_look_name("Obj_Pot_A_01") == "Obj_Pot_R_01"
+    assert S.pot_look_name("Obj_Pot_Big") is None and len(S.POT_FROM) == len(S.POT_TO) and len(S.POT_TEX_FROM) == len(S.POT_TEX_TO)
+    import colorsys
+    for rgb in ((180, 70, 40), (120, 118, 115), (20, 20, 20)):   # (red clay, grey stone, near black: the hue, a colour, the brightness kept)
+        h, s, v = colorsys.rgb_to_hsv(*(c / 255.0 for c in S.pot_colour(rgb)))
+        assert abs(h * 360 - S.POT_HUE) < 1 and s >= S.POT_SATURATION - 1e-6 and abs(v - max(rgb) / 255.0) < 1e-6, (rgb, h, s, v)
+    tree = ("dict", S.collections.OrderedDict([("Actors", ("array", [
+        ("dict", S.collections.OrderedDict([("Gyaml", ("string", g)), ("Hash", (0xD5, S.struct.pack("<Q", h)))]))
+        for g, h in (("Obj_Pot_A_01", 11), ("Obj_Pot_A_01", 12), ("Obj_Pot_A_05_Respawn", 13), ("Obj_TBox", 14))]))]))
+    data = S.byml_build(tree, 7)
+    out, n, was = S.pot_named(data, {11, 13, 14})
+    names = [a[1]["Gyaml"][1] for a in S.byml_parse(out)[0][1]["Actors"][1]]
+    assert n == 2 and was == {"Obj_Pot_A_01", "Obj_Pot_A_05_Respawn"} and names == ["Obj_Pot_R_01", "Obj_Pot_A_01", "Obj_Pot_R_05_Respawn", "Obj_TBox"], names
+    assert S.pot_named(data, {11, 13}, {"Obj_Pot_A_05_Respawn"})[1] == 1, "a pot whose look was not made is renamed"
+    look = src[src.index("\ndef pot_look("):src.index("\ndef pot_rows(")]
+    assert 'comps["LiftableRef"] = ("string", "")' in look, "a pot taking part can be lifted (its item thrown out of reach)"
+    assert "size_table_entry(tbl, was)" in main_src, "a pot's model and texture copies have no size table entry"
     header = open(os.path.join(ROOT, "gpu", "vk", "oot_rando.h"), encoding="utf-8").read()
     assert 'X(POTS, "Pots", "rando_pots",' in header
     print("PASS: Pots: the tables' pots take part")
