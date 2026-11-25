@@ -2287,11 +2287,22 @@ static void oot_tracker_load(const char *stamp) {
    as the flag says. (Until 2026-11-14 the flags were kept as the record said, and the record is the folder's, not a
    save's: reported from play, a quiver bought was not for sale again in a save from before it was bought, nor in a
    new game of the same seed.) Each second. Returns how many flags or marks were changed. */
+static int oot_pot_junk(const char *item);
 static int oot_shelf_flags(Ctx *c) {
     int changed = 0, marks = 0;
     AcquireSRWLockExclusive(&oot_checks_lock);
     for (int i = 0; i < oot_check_count; i++) {
         int now = 0;
+        /* (Pots, FIXES 98: a pot holding junk is collected once it is broken, whatever it dropped: the game drops a supply
+           only where Link has use for it, else a green rupee or nothing, by its own rules; seen in play 2026-11-25, every
+           junk pot of the guard house a green rupee with full bags, and its check left. oot_pot_junk) */
+        if (oot_checks[i].pot && oot_checks[i].broken && oot_checks[i].done != 1 && oot_pot_junk(oot_checks[i].item)) {
+            if (oot_gamedata_keyed_bool(c, oot_checks[i].broken, &now) && now) {
+                oot_checks[i].done = 1, marks++;
+                hos_log("rando: tracker: check %d, a pot holding %s, is broken: collected", i, oot_checks[i].item);
+            }
+            continue;
+        }
         if (oot_checks[i].shelf) {
             if (!oot_gamedata_bool(c, oot_checks[i].shelf, &now)) continue;
             if (oot_checks[i].sold) {
@@ -3584,6 +3595,11 @@ static const char *const oot_pot_world[][2] = {
     {"Obj_Bomb", "Item_BombBundle_Small"}, {"Obj_ArrowBundle_Medium", "TBox_ArrowBundle_Medium"},
     {"Obj_ArrowBundle_Large", "TBox_ArrowBundle_Large"}, {"Obj_MagicJar_Large", "Tbox_MagicJar_Large"},
 };
+static int oot_pot_junk(const char *item) {   /* (a pot's junk: collected when the pot breaks, oot_shelf_flags) */
+    for (unsigned k = 0; k < sizeof oot_pot_world / sizeof oot_pot_world[0]; k++)
+        if (!strcmp(item, oot_pot_world[k][1])) return 1;
+    return 0;
+}
 static const char *oot_pot_world_item(const char *name) {
     for (unsigned k = 0; k < sizeof oot_pot_world / sizeof oot_pot_world[0]; k++)
         if (!strcmp(name, oot_pot_world[k][0])) return oot_pot_world[k][1];

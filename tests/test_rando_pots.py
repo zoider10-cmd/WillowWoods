@@ -84,6 +84,10 @@ def main():
     pairs = dict((b, a) for a, b in re.findall(r'\{"(Obj_\w+)", "(\w+)"\}', host[host.index("static const char *const oot_pot_world[][2] = {"):
                                                                                    host.index("static const char *oot_pot_world_item(")]))
     assert pairs == S.POT_WORLD, (pairs, S.POT_WORLD)
+    assert "IsReplace" not in pack_src.split("# (IsReplace kept")[0], "a pot's drop is not the game's supply rule"
+    flags = host[host.index("static int oot_shelf_flags(Ctx *c) {"):]
+    assert "oot_checks[i].pot && oot_checks[i].broken && oot_checks[i].done != 1 && oot_pot_junk(oot_checks[i].item)" in flags[:flags.index("\n}\n")], \
+        "a junk pot is not collected when it breaks (it may drop a green rupee or nothing)"
     assert 'ACTOR_REF % POT_WORLD.get(item, item)' in pack_src and all(i in S.POT_WORLD for i in S.POT_OWNS), "a pot's own junk has a scene"
     assert "if (open >= 0 || oot_pot_world_item(name)) return 0;" in host, "a world pick-up (grass's too) can be refused"
     look = host[host.index("static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {"):]
