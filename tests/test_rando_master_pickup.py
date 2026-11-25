@@ -6,7 +6,7 @@ Sword's. Checked on a small pack and lists made here:
 - master_item_pack: every file under the new name, the actor named and equipped as the sword (both ages), its model
   file its own (the Biggoron's colour animations gone), nothing of the Biggoron's left;
 - master_rows: the new row is the Biggoron item's with the sword's names and model size, the other rows as they were;
-- a pot's and a Skulltula's drop of the sword name the new item (POT_AS), and the game's side adds the sword for it.
+- a pot's drop of the sword names the new item (POT_AS), the game's side adds the sword for it, and no Skulltula holds it.
 
     python -I -B tests/test_rando_master_pickup.py
 """
@@ -109,12 +109,13 @@ def main():
 
     check(S.POT_AS.get(master) == S.MASTER_PICKUP, "the sword has no pick-up of its own (POT_AS)")
     src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
-    check("drops.setdefault(h, POT_AS.get(item, item))" in src, "a Gold Skulltula's sword is dropped as the weapon (no pick-up)")
+    # (a Gold Skulltula never holds the sword: its drop of it was never seen, 2026-11-25)
+    check('(s[4] == "skulltula" or KEYS_ENDING_FROM <= placement < MASTER_POTS_FROM' in src, "a Gold Skulltula may hold the sword, which it was never seen to drop")
     check("drop = POT_AS.get(pot_drops[h], pot_drops[h])" in src, "a pot's sword is dropped as the weapon (no pick-up)")
     check("pickups = sorted({POT_AS.get(i, i) for i in pickups})" in src, "the sword's pick-up pack is not made")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     check('{"Item_Sword_Master", "Weapon_Sword_Master"}' in host, "the game's side adds the item, not the sword (the check is not found)")
-    check(S.MASTER_SKULLS_FROM > S.MASTER_POTS_FROM and S.PLACEMENT >= S.MASTER_SKULLS_FROM, "the placements are not in order")
+    check(S.PLACEMENT >= S.MASTER_POTS_FROM, "the placement is before the sword's pots")
     print("PASS: the Master Sword's pick-up is its own item, named, equipped and shown as the sword")
 
 
