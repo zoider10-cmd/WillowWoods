@@ -969,7 +969,6 @@ static int oot_gamedata_bool(Ctx *c, uint32_t hash, int *value);
 static int oot_gamedata_set_bool(Ctx *c, uint32_t hash, int value);
 static void oot_magic_fill_tick(Ctx *c);   /* (a magic found: its meter filled, below) */
 static void oot_infinite_magic(Ctx *c);    /* (the Debug tab's Infinite magic, below) */
-static void oot_pot_bag_switch(Ctx *c);   /* (POT_BAGGED, below) */
 static int oot_gamedata_string(Ctx *c, uint32_t hash, char *buf, size_t size);
 static int oot_event_playing(Ctx *c);
 
@@ -4057,7 +4056,6 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
     oot_teleport_followup(c);
     oot_piece_heal(c, now, recomp_load64(c, components + 800) - 0x1d50);   /* (Link's own actor: hos_oot_lift_player) */
     oot_inventory_refresh(c, now);
-    oot_pot_bag_switch(c);   /* (POT_BAGGED: bag-giving pots drop plain nuts and sticks once the bag is held) */
     oot_tracker_refresh(c, now, actor);
     oot_time_door(c, now, actor);
     oot_ganon_bridge(c, now);
@@ -4811,22 +4809,8 @@ void hos_oot_hook_switch(Ctx *c, int any) {
         recomp_store32(c, dc + 0x2c0, recomp_load32(c, dc + 0x2c0) | (1u << 16));
 }
 
-#if defined(_WIN32) || defined(__linux__)
-static void oot_pot_bag_note(Ctx *c, uint64_t owner, uint64_t keys, uint64_t values, int count);   /* (below, POT_BAGGED) */
-#endif
 void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made) {
 #if defined(_WIN32) || defined(__linux__)
-    if (self && made && hos_rando_on()) {   /* (POT_BAGGED: a bag-giving pot's list noted, oot_pot_bag_switch) */
-        const uint64_t owner = recomp_load64(c, made + 0x40);
-        uint64_t list = owner ? recomp_load64(c, owner + 0x270) : 0;
-        if (list) list = recomp_load64(c, list);
-        if (list) list = recomp_load64(c, list + 0x10);
-        if (list) {
-            const int names = (int)recomp_load32(c, list), values = (int)recomp_load32(c, list + 0x10);
-            const uint64_t keys = recomp_load64(c, list + 8), vals = recomp_load64(c, list + 0x18);
-            if (keys && vals && names > 0 && names <= 64 && values >= names) oot_pot_bag_note(c, owner, keys, vals, names);
-        }
-    }
     static int on = -1;
     if (on < 0) { const char *e = getenv("HOS_OOT_DROP_NAME"); on = !(e && *e == '0'); }
     int hos_rando_magic(void);   /* host/oot_rando.c (rando_magic: its tiers whatever Progressive items says) */
@@ -5230,19 +5214,6 @@ static int oot_pot_bag_held(Ctx *c, const char *const *sizes) {
     return 0;
 }
 #if defined(_WIN32) || defined(__linux__)
-/* (POT_BAGGED, reported 2026-11-25: the Deku Nuts and Sticks still played their get scene until Link left the area.) A pot
-   read as its bag-giving actor ("Obj_PotR<k>B", oot_pot_look_answer: no bag when its area was read) drops its bundle by its
-   own drop table, named in its list of values (Drop__DropTable "None", Drop__DropActor empty: seen in a test run, the list
-   hos_oot_drop_name reads; the game's function reads it again as the pot breaks). Each such pot's list is noted here as the
-   pot is made; once Link holds the bag (oot_pot_bag_switch, each update), the list is made a grass's: Drop__DropActor the
-   game's own pick-up (Obj_DekuNut, Obj_DekuStick: POT_WORLD's) and no table, so the next pot breaks into plain ones with no
-   scene. The notes are dropped when Link's map changes (the actors go with it), and each list is checked again before it is
-   written (its owner still the same pot, its two keys where they were). */
-#define OOT_BAG_NOTES 64
-static struct { uint64_t owner, keys, values; int table, actor; char plain[16]; } oot_bag_notes[OOT_BAG_NOTES];
-static int oot_bag_note_count;
-static char oot_bag_notes_map[80];
-static SRWLOCK oot_bag_notes_lock = SRWLOCK_INIT;
 static int oot_text_is(Ctx *c, uint64_t at, const char *text) {
     if (!at) return 0;
     for (int i = 0;; i++) {
@@ -5261,17 +5232,39 @@ static int oot_pot_index(const char *name, int *bagged) {   /* (k of "Obj_PotR<k
     *bagged = name[11] == 'B' && !name[12];
     return name[11] && !*bagged ? -1 : k;
 }
-static void oot_pot_bag_note(Ctx *c, uint64_t owner, uint64_t keys, uint64_t values, int count) {
-    char name[24] = "";
+#endif
+/* (POT_BAGGED, bug 139, reported 2026-11-25: the Deku Nuts and Sticks still played their get scene until Link left the area.)
+   A pot read as its bag-giving actor ("Obj_PotR<k>B", oot_pot_look_answer: no bag when its area was read) drops its bundle
+   by its own drop table, named in its list of values (Drop__DropTable "None", Drop__DropActor empty). The game's f_80bf1c00
+   reads that list into the pot's drop both as the pot is made and again as it breaks; this is called just before it reads
+   (nx2/oot_patches.py patch_drop_name, with the same self and made as hos_oot_drop_name). When Link holds the bag by then,
+   the list is made a grass's first: Drop__DropActor the game's own pick-up (Obj_DekuNut, Obj_DekuStick: POT_WORLD's) and no
+   table, so the pot breaks into plain ones with no scene. Nothing is kept between calls: the list is the one the game is
+   about to read. (Before: the lists were noted as the pots were made and rewritten from Link's update once the bag was
+   held; the notes were thrown away when Link's map name changed, which comes after a new area's pots are made, so in play
+   only a pot's own break noted it again, after its drop was read. The owner's log, 2026-11-25.) The registers are given
+   back as they were (oot_pouch_count calls the game). */
+void hos_oot_drop_list(Ctx *c, uint64_t self, uint64_t made) {
+#if defined(_WIN32) || defined(__linux__)
+    if (!self || !made || !hos_rando_on()) return;
+    const uint64_t owner = recomp_load64(c, made + 0x40);
     const uint64_t at = owner ? recomp_load64(c, owner + 0x260) : 0;
+    char name[24] = "";
     for (int i = 0; at && i < (int)sizeof name - 1; i++)
         if (!(name[i] = (char)recomp_load8(c, at + (unsigned)i))) break;
     name[sizeof name - 1] = 0;
     int bagged = 0;
     const int k = oot_pot_index(name, &bagged);
     if (k < 0 || !bagged || k >= oot_pot_look_count) return;
+    uint64_t list = recomp_load64(c, owner + 0x270);
+    if (list) list = recomp_load64(c, list);
+    if (list) list = recomp_load64(c, list + 0x10);
+    if (list + 1 < 2) return;   /* (none: the game reads its own empty one) */
+    const int names = (int)recomp_load32(c, list), count = (int)recomp_load32(c, list + 0x10);
+    const uint64_t keys = recomp_load64(c, list + 8), values = recomp_load64(c, list + 0x18);
+    if (!keys || !values || names <= 0 || names > 64 || count < names) return;
     int table = -1, actor = -1;
-    for (int i = 0; i < count && i < 64; i++) {
+    for (int i = 0; i < names; i++) {
         const uint64_t key = recomp_load64(c, keys + 8ULL * i);
         if (oot_text_is(c, key, "Drop__DropTable")) table = i;
         else if (oot_text_is(c, key, "Drop__DropActor")) actor = i;
@@ -5286,50 +5279,24 @@ static void oot_pot_bag_note(Ctx *c, uint64_t owner, uint64_t keys, uint64_t val
         }
     ReleaseSRWLockShared(&oot_checks_lock);
     const char *plain = !strcmp(item, "TBox_DekuNutBundle") ? "Obj_DekuNut" : !strcmp(item, "Item_DekuStickBundle_Small") ? "Obj_DekuStick" : NULL;
-    if (!plain) return;
-    AcquireSRWLockExclusive(&oot_bag_notes_lock);
-    if (strcmp(oot_bag_notes_map, oot_link_map)) oot_bag_note_count = 0, snprintf(oot_bag_notes_map, sizeof oot_bag_notes_map, "%s", oot_link_map);
-    int i = 0;
-    while (i < oot_bag_note_count && oot_bag_notes[i].owner != owner) i++;
-    if (i < OOT_BAG_NOTES) {
-        oot_bag_notes[i].owner = owner, oot_bag_notes[i].keys = keys, oot_bag_notes[i].values = values;
-        oot_bag_notes[i].table = table, oot_bag_notes[i].actor = actor;
-        snprintf(oot_bag_notes[i].plain, sizeof oot_bag_notes[i].plain, "%s", plain);
-        if (i == oot_bag_note_count) oot_bag_note_count++;
-    }
-    ReleaseSRWLockExclusive(&oot_bag_notes_lock);
-}
-static uint64_t oot_kept_name(const char *give);
-/* (each player update) the noted pots' lists made the plain pick-up's once Link holds the bag; a few times a second */
-static void oot_pot_bag_switch(Ctx *c) {
-    static int turn;
-    if (++turn % 8 || !oot_bag_note_count) return;
-    AcquireSRWLockExclusive(&oot_bag_notes_lock);
-    if (strcmp(oot_bag_notes_map, oot_link_map)) oot_bag_note_count = 0;   /* (another map: its actors are gone) */
-    for (int i = 0; i < oot_bag_note_count; i++) {
-        const int nuts = !strcmp(oot_bag_notes[i].plain, "Obj_DekuNut");
-        const char *const *sizes = NULL;
-        if (oot_bundle_holder(nuts ? "TBox_DekuNutBundle" : "Item_DekuStickBundle_Small", &sizes) != 1) continue;
-        uint64_t saved[31];
-        memcpy(saved, c->x, sizeof saved);   /* (oot_pouch_count calls the game) */
-        const int held = oot_pot_bag_held(c, sizes);
-        memcpy(c->x, saved, sizeof saved);
-        if (!held) continue;
-        const uint64_t keys = oot_bag_notes[i].keys, values = oot_bag_notes[i].values;
-        const int ok = oot_text_is(c, recomp_load64(c, keys + 8ULL * oot_bag_notes[i].table), "Drop__DropTable") &&
-                       oot_text_is(c, recomp_load64(c, keys + 8ULL * oot_bag_notes[i].actor), "Drop__DropActor");
-        const uint64_t plain = ok ? oot_kept_name(oot_bag_notes[i].plain) : 0, none = ok ? oot_kept_name("") : 0;
-        if (plain && none) {
-            recomp_store64(c, values + 8ULL * oot_bag_notes[i].actor, plain);
-            recomp_store64(c, values + 8ULL * oot_bag_notes[i].table, none);
-            static int told;
-            if (told++ < 20) hos_log("rando: pots: a bag-giving pot (list %#llx) drops %s now: the bag is held", (unsigned long long)values, oot_bag_notes[i].plain);
-        }
-        oot_bag_notes[i--] = oot_bag_notes[--oot_bag_note_count];   /* (done, or no longer this pot's: forgotten) */
-    }
-    ReleaseSRWLockExclusive(&oot_bag_notes_lock);
-}
+    const char *const *sizes = NULL;
+    if (!plain || oot_bundle_holder(item, &sizes) != 1) return;
+    if (oot_text_is(c, recomp_load64(c, values + 8ULL * actor), plain)) return;   /* (made plain at an earlier call) */
+    uint64_t saved[31];
+    memcpy(saved, c->x, sizeof saved);
+    const int held = oot_pot_bag_held(c, sizes);
+    memcpy(c->x, saved, sizeof saved);
+    if (!held) return;
+    const uint64_t kept = oot_kept_name(plain), none = oot_kept_name("");
+    if (!kept || !none) return;
+    recomp_store64(c, values + 8ULL * actor, kept);
+    recomp_store64(c, values + 8ULL * table, none);
+    static int told;
+    if (told++ < 40) hos_log("rando: pots: %s drops %s: the bag is held (its list made plain before the game reads it)", name, plain);
+#else
+    (void)c; (void)self; (void)made;
 #endif
+}
 static uint64_t oot_pot_look_answer(Ctx *c, uint64_t name_at) {
     static const char head[] = "Obj_PotR";
     for (int i = 0; head[i]; i++)

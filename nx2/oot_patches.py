@@ -321,9 +321,21 @@ def patch_model_swap(source):
     return source if found else None
 
 
+# Pots (bug 139): the host is also asked just before the function reads the list (hos_oot_drop_list: a bag-giving pot's
+# list made the plain pick-up's once Link holds the bag; the function reads it as the pot is made and again as it breaks).
+DROP_AFTER = "    %s(c);\n    hos_oot_drop_name(c, self, made);\n}\n" % DROP_BODY
+DROP_BEFORE = "    hos_oot_drop_list(c, self, made);   /* (Pots: a bag-giving pot's list, before it is read) */\n"
+DROP_LIST_EXTERN = "extern void hos_oot_drop_list(Ctx *c, uint64_t self, uint64_t made);\n"
+
+
 def patch_drop_name(source):
     if DROP_BODY in source:   # (made by an earlier run over this file)
-        return source
+        if DROP_BEFORE + DROP_AFTER in source:
+            return source
+        if source.count(DROP_AFTER) != 1:   # (an earlier run's, without the call before: that added)
+            return None
+        return source.replace(DROP_AFTER, DROP_BEFORE + DROP_AFTER, 1).replace(
+            '#include "a64.h"\n', '#include "a64.h"\n' + DROP_LIST_EXTERN, 1)
     if source.count(DROP_HEAD) != 1:
         return None
     start = source.find(DROP_HEAD)
@@ -332,10 +344,10 @@ def patch_drop_name(source):
         return None
     end += 3
     body = source[start:end].replace("void %s(" % DROP_NAME, "static void %s(" % DROP_BODY, 1)
-    wrapper = (DROP_HEAD + "    const uint64_t self = c->x[0], made = c->x[1];   /* (nx2/oot_patches.py: progressive items, what a chest shows) */\n"
-               "    %s(c);\n    hos_oot_drop_name(c, self, made);\n}\n" % DROP_BODY)
+    wrapper = (DROP_HEAD + "    const uint64_t self = c->x[0], made = c->x[1];   /* (nx2/oot_patches.py: progressive items, what a chest shows) */\n" +
+               DROP_BEFORE + DROP_AFTER)
     return (source[:start] + body + wrapper + source[end:]).replace(
-        '#include "a64.h"\n', '#include "a64.h"\nextern void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made);\n', 1)
+        '#include "a64.h"\n', '#include "a64.h"\n' + DROP_LIST_EXTERN + "extern void hos_oot_drop_name(Ctx *c, uint64_t self, uint64_t made);\n", 1)
 
 
 # The day's 15:00 cap (the randomizer's fork, bug 58: host/hos_main.c hos_oot_field_clock_free). The world's clock stops at

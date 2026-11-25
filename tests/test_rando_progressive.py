@@ -81,6 +81,16 @@ def main():
           "a chest's content name is not handed to the host after f_80bf1c00, or the function is cut wrong")
     check(oot_patches.patch_drop_name(dropped) == dropped and oot_patches.patch_drop_name(drop_src.replace("f_80bf1c00", "f_80bf1c01")) is None,
           "the chest name's patch is made twice, or made where the function is not")
+    # (Pots, bug 139: the host is asked before the function reads the list too, hos_oot_drop_list; an earlier run's file,
+    #  with the call after only, gets the call before added)
+    before = "    hos_oot_drop_list(c, self, made);"
+    check(dropped is not None and dropped.count(before) == 1 and dropped.index(before) < dropped.index("    f_80bf1c00_body(c);\n") and
+          dropped.index(before) > dropped.index(oot_patches.DROP_HEAD) and
+          dropped.count("extern void hos_oot_drop_list(Ctx *c, uint64_t self, uint64_t made);") == 1,
+          "a pot's list is not handed to the host before f_80bf1c00 reads it")
+    earlier = dropped.replace(oot_patches.DROP_BEFORE, "", 1).replace(oot_patches.DROP_LIST_EXTERN, "", 1)
+    check(before not in earlier and oot_patches.patch_drop_name(earlier) == dropped,
+          "an earlier run's file does not get the call before the list is read")
     check('done["progressive chest name"] = 0' in patches and "drop = patch_drop_name(out) if protect_hearts else None" in patches,
           "the lift does not make the chest name's patch, or does not count it made")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
