@@ -38,7 +38,7 @@ def main():
     assert main_src.index("DUNGEON_ITEMS_FILE") < main_src.index("with open(os.path.join(mod, CHECKS)")
     host = open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
     assert 'snprintf(flag, sizeof flag, "DungeonInfo.%s.%s", owner, field);' in host and '"mods/rando-seed/dungeon_items.txt"' in host
-    assert "if (oot_dungeon_item(c, name)) return 1;" in host and "if (!owner[0] || oot_banc_in_folder(oot_link_map, owner)) return 0;" in host
+    assert "if (oot_dungeon_item(c, name)) return 1;" in host and "if (!owner[0] || oot_banc_in_folder(oot_link_map, owner)) return owner[0] = 0, 0;" in host   # (oot_dungeon_owner, bug 141)
     header = open(os.path.join(ROOT, "gpu", "vk", "oot_rando.h"), encoding="utf-8").read()
     assert 'X(MAPS, "Maps and compasses", "rando_maps",' in header and '"With the keys", "Anywhere", "From the start")' in header
     launcher = open(os.path.join(ROOT, "launcher", "Launcher.cs"), encoding="utf-8").read()

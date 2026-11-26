@@ -2114,6 +2114,7 @@ static struct {
     uint64_t broken;  /* (a pot's hash: the game's truth value by it is "broken", oot_pot_again) */
 } oot_checks[OOT_TRACKER_MAX];
 static int oot_check_count = -1;
+static int oot_dungeon_words;   /* (the seed has each dungeon's "You found" words: dungeon_words.txt, bug 141) */
 static char oot_checks_seed[1024];   /* (the stamp the checks and the record are of: its whole first line. 200 cut a
    seed's 243-304 characters short, so a record written with the whole line was never this seed's, 2026-11-19) */
 static float oot_link_place[3];
@@ -2270,6 +2271,10 @@ static void oot_tracker_load(const char *stamp) {
     }
     if (f) fclose(f);
     if (owned) hos_log("rando: tracker: %d chests hold a dungeon item that belongs to its own dungeon wherever it is", owned);
+    /* (the seed's "You found" words for each dungeon's items, rando_seed.py DUNGEON_WORDS_FILE: oot_dungeon_window) */
+    f = oot_game_file(path, sizeof path, "mods/rando-seed/dungeon_words.txt") ? fopen(path, "r") : NULL;
+    oot_dungeon_words = f != NULL;
+    if (f) fclose(f);
     int collected = 0;
     f = oot_game_file(path, sizeof path, "rando/collected.txt") ? fopen(path, "r") : NULL;
     if (f && fgets(line, sizeof line, f)) {
@@ -3744,22 +3749,31 @@ static int oot_pot_again(Ctx *c, const char *name) {
     return broken > 0;
 }
 #define OOT_DUNGEON_NEAR 4.0f
-static int oot_dungeon_item(Ctx *c, const char *name) {
-    const char *field = !strcmp(name, "Item_Dungeon_Map") ? "IsGetMap" : !strcmp(name, "Item_Dungeon_Compass") ? "IsGetCompass" :
-                        !strcmp(name, "Item_Dungeon_BossKey") ? "IsGetBossKey" : !strcmp(name, "Item_Dungeon_SmallKey") ? "SmallKeyNum" : NULL;
-    if (!field || c->x[30] != 0x828d50acULL || !hos_rando_on()) return 0;   /* (0x828d50ac: a chest's add, as a shop's) */
-    char owner[24] = "";
+/* the dungeon a dungeon item (name) of the chest Link just opened belongs to: the nearest chest of dungeon_items.txt within
+   OOT_DUNGEON_NEAR in Link's map giving it. 0 (owner "") when none is, or when Link is in that dungeon (the game's own) */
+static int oot_dungeon_owner(const char *name, char *owner, size_t size, float *away_out) {
     float nearest = OOT_DUNGEON_NEAR;
+    owner[0] = 0;
     AcquireSRWLockShared(&oot_checks_lock);
     for (int i = 0; i < oot_check_count; i++) {
         if (!oot_checks[i].owner[0] || strcmp(oot_checks[i].item, name) || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
         const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
                     dz = oot_checks[i].place[2] - oot_link_place[2];
         const float away = sqrtf(dx * dx + dy * dy + dz * dz);
-        if (away < nearest) nearest = away, snprintf(owner, sizeof owner, "%s", oot_checks[i].owner);
+        if (away < nearest) nearest = away, snprintf(owner, size, "%s", oot_checks[i].owner);
     }
     ReleaseSRWLockShared(&oot_checks_lock);
-    if (!owner[0] || oot_banc_in_folder(oot_link_map, owner)) return 0;   /* (in its own dungeon: the game counts it there) */
+    if (away_out) *away_out = nearest;
+    if (!owner[0] || oot_banc_in_folder(oot_link_map, owner)) return owner[0] = 0, 0;   /* (in its own dungeon: the game counts it there) */
+    return 1;
+}
+static int oot_dungeon_item(Ctx *c, const char *name) {
+    const char *field = !strcmp(name, "Item_Dungeon_Map") ? "IsGetMap" : !strcmp(name, "Item_Dungeon_Compass") ? "IsGetCompass" :
+                        !strcmp(name, "Item_Dungeon_BossKey") ? "IsGetBossKey" : !strcmp(name, "Item_Dungeon_SmallKey") ? "SmallKeyNum" : NULL;
+    if (!field || c->x[30] != 0x828d50acULL || !hos_rando_on()) return 0;   /* (0x828d50ac: a chest's add, as a shop's) */
+    char owner[24];
+    float nearest;
+    if (!oot_dungeon_owner(name, owner, sizeof owner, &nearest)) return 0;
     char flag[80];
     snprintf(flag, sizeof flag, "DungeonInfo.%s.%s", owner, field);
     int ok;
@@ -4999,6 +5013,20 @@ void hos_oot_get_name(Ctx *c, uint64_t node, int kind) {
             hos_log("rando: progressive: %s set to %s", key, name);
         }
         if (shop) return;
+        /* (bug 141, the owner's run 2026-11-25: a small key found in Kokiri Forest said "You found a small key!", not whose.)
+           A dungeon item of a chest away from its dungeon: the window's words are the seed's for that dungeon's item,
+           "<item>_<dungeon>" (rando_seed.py DUNGEON_WORDS: "You found a small key for the Water Temple!"), when the seed
+           has them (dungeon_words.txt). Link stands at the chest as the window opens, before the add (oot_dungeon_item) */
+        if (oot_dungeon_words && (!strcmp(name, "Item_Dungeon_SmallKey") || !strcmp(name, "Item_Dungeon_BossKey") ||
+                                  !strcmp(name, "Item_Dungeon_Map") || !strcmp(name, "Item_Dungeon_Compass"))) {
+            char owner[24], word[64];
+            if (!oot_dungeon_owner(name, owner, sizeof owner, NULL)) return;
+            snprintf(word, sizeof word, "%s_%s", name, owner);
+            const uint64_t kept = oot_kept_name(word);
+            if (kept) recomp_store64(c, slot, kept);
+            hos_log("rando: a %s's window names its dungeon: %s%s", name, word, kept ? "" : " (NOT DONE: no kept name)");
+            return;
+        }
         /* (a Piece of Heart lying in the world, or a boss's Heart Container, that the seed made another item: the window
            names that item, as the add gives it (oot_piece_gives; with Progressive items the family's next), in the
            spelling with "You got" words. Seen without a window 2026-11-20: Zora's River's piece of a Gold Skulltula

@@ -63,6 +63,10 @@ def main():
     check("c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h" in draw and
           "tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]" in draw and "else if (in_ranch(lx, lz)) m = &kMiniRanch;" in draw,
           "the dots are not the checks left on the measured minimap, or the ranch's picture not within 100 of it")
+    # (the owner's run 2026-11-25: a child's pots collected kept their dots, the adult's pots at the same places)
+    check("const int age = link_age.load(std::memory_order_relaxed);" in draw and
+          "if (age == 0 ? !strchr(k.ages, 'C') : age == 1 ? !strchr(k.ages, 'A') : false) continue;" in draw,
+          "the minimap shows the other age's checks")
     check(menu.count("if (minimap) draw_minimap_checks(c);") == 2 and "next = now + 5000, tracker_load();" in menu,
           "the minimap's dots are not drawn on screen and on test pictures, or the seed's checks are never read with the menu shut")
     print("FAIL" if failed else "PASS: the Tracker's map")

@@ -8305,9 +8305,13 @@ void draw_minimap_checks(ui::Ctx& c) {
     }
     constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(230, 236, 248);
     const float r = std::max(2.5f, c.h / 1440.0f * 6);
+    const int age = link_age.load(std::memory_order_relaxed);
     for (int i = 0; i < tracker_check_count; i++) {
         const TrackerCheck& k = tracker_checks[i];
         if (strcmp(k.area, here) || tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]) continue;
+        // (the other age's checks are another map's: an adult's pot where a child's stands kept its dot once the child's
+        //  was collected, the owner's run 2026-11-25. Link's age: 0 the child, 1 the adult, -1 not known)
+        if (age == 0 ? !strchr(k.ages, 'C') : age == 1 ? !strchr(k.ages, 'A') : false) continue;
         const ImVec2 at(c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h);
         if (at.x < c.w - 0.5f * c.h || at.y < 0.55f * c.h || at.y > c.h) continue;   // (off the minimap's corner: another picture's part)
         if (tracker_in_logic(k) > 0) {
