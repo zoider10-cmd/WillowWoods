@@ -6344,8 +6344,8 @@ void present_image(VkImage src, uint32_t sw, uint32_t sh, const int crop[4], VkI
     // (NVIDIA Reflex: the frame this present shows; with frame generation the set's game frame, none for a made frame)
     si.pNext = reflex_submit_id(nullptr, reflex_present_frame);
     { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, f.done); }   // ((ProjectReLink 88e38c0) the reaper waits for it)
-    if (res != VK_SUCCESS) res = submit_again(res, si, f.done);   // ((Triforce) refused for want of memory: made again)
     if (res == VK_ERROR_DEVICE_LOST) device_lost();
+    if (res != VK_SUCCESS) res = submit_again(res, si, f.done);   // ((Triforce) refused for want of memory: made again)
     if (present_defer_into) {   // (present ahead: the copy is queued; present_commit shows it at its time)
         present_defer_into->used = true;
         present_defer_into->index = index;

@@ -56,7 +56,7 @@ HosThread* cur;
 volatile int hos_control_on;
 void hos_control_log(const char*) {}
 std::string queued;
-static int log_queue(const char* line) { queued = line; return 1; }
+static int log_queue(const char* line, int must) { (void)must; queued = line; return 1; }   // ((HeyListen 6016d2af) a fatal line's mark)
 // (host/log_redact.c's, for a player whose home folder is /home/al)
 static size_t hos_log_redact(char* out, size_t cap, const char* line) {
     return hookshot_redact_line(out, cap, line, std::strlen(line), "/home/al", "al", 0);

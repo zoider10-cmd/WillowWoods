@@ -87,7 +87,7 @@ def source_contract():
     # start generating unclean records. Declarations and comments are not calls.
     expected = {
         "control.c": ["ExitProcess(0);"],
-        "display.c": ["ExitProcess(1);"],
+        "display.c": ["ExitProcess(1);", "ExitProcess(1);"],   # ((Triforce v0.8.x) the renderer that did not start, after its message)
         "hos_main.c": ["ExitProcess(result);"],
         "hos_relaunch.c": ["ExitProcess(0);"],
         "hos_svc.c": ["ExitProcess(0);"],
