@@ -517,6 +517,42 @@ DUNGEON_DROPS_FROM = 36
 DROP_KINDS = ("skulltula", "pot")
 
 
+def anywhere_holds(spots, holds, needs, loose, caps, placement, logic):
+    """What each spot may hold (place's `holds`) once the dungeon items that are anywhere (loose) are in the shuffle: a
+    chest holds them, and from DUNGEON_DROPS_FROM a Gold Skulltula and a pot, beside what those may drop (not one that
+    holds junk only, JUNK_ONLY); every other spot holds none. caps: {a key's own name: what its boss asks for, or None for
+    anything}: with the logic a spot holds only the keys whose cap covers its rule (needs, boss_key_fits), and Lake
+    Hylia's chest there after the Water Temple none of that temple's (AFTER_WATER). spots: hash -> [area, item, a
+    dungeon's, why it stays, its kind, ...]. main's step, here so that a check can call it (2026-11-26, better ways H)."""
+    every = {s[1] for s in spots.values()}
+    holds = dict(holds or {})
+    for h, s in spots.items():
+        if not drop_holds(s[4], placement):
+            holds[h] = frozenset(holds.get(h, every)) - loose
+            continue
+        if s[4] in DROP_KINDS and h not in JUNK_ONLY:   # (a Gold Skulltula's or a pot's: what it may drop, and the dungeon items that are anywhere)
+            holds[h] = frozenset(holds[h]) | loose
+        if caps and logic:
+            unfit = frozenset(t for t, cap in caps.items() if not boss_key_fits(needs.get(h), cap))
+            if h in AFTER_WATER:   # (there only once the Water Temple is done: none of its own keys, whatever the items say)
+                unfit = unfit | frozenset(t for t in caps if t.split("@")[1].split("#")[0] == "WaterTemple")
+            if unfit:
+                holds[h] = frozenset(holds.get(h, every)) - unfit
+    return holds
+
+
+def anywhere_even(loose, gating, placement):
+    """the items that are anywhere which place spreads over every spot that may hold them (its `even`): those the logic
+    does not place, from DUNGEON_DROPS_FROM; none in a seed of an earlier placement"""
+    return frozenset(loose) - gating if placement >= DUNGEON_DROPS_FROM else frozenset()
+
+
+def drop_may(item, gating, pinned, told, placement):
+    """whether a Gold Skulltula or a pot may drop this item: what skulltula_holds allows, a test pin's (pinned), and from
+    DUNGEON_DROPS_FROM a dungeon item told its dungeon (told: the pick-up of that dungeon's own is made by it)"""
+    return skulltula_holds(item, gating) or pinned or placement >= DUNGEON_DROPS_FROM and item in DUNGEON_ITEMS and told
+
+
 def drop_holds(kind, placement):
     """whether a spot of this kind (a spot's s[4]) may hold the dungeon items that are anywhere, as a chest may"""
     return str(kind).startswith("Obj_TBox") or placement >= DUNGEON_DROPS_FROM and kind in DROP_KINDS
@@ -930,9 +966,12 @@ def key_tags(spots, which=3):
 POT_KEYLESS_FROM = 37
 
 
-def pots_keyless(free, sources, placed):
+def pots_keyless(free, sources, placed, placement=None):
     """the pots (hashes) that need no small key as the actor they borrow their rule from needs none (free: keyless_actors();
-    sources: RULE_AS; placed: a map file -> [(hash, place, dungeon room)]): only one of the pot's own room, a room named"""
+    sources: RULE_AS; placed: a map file -> [(hash, place, dungeon room)]): only one of the pot's own room, a room named.
+    placement: a seed's, when given: none in one before POT_KEYLESS_FROM"""
+    if placement is not None and placement < POT_KEYLESS_FROM:
+        return frozenset()
     room_of = {}
     for row in placed.values():
         for k, _, r in row:
@@ -9673,7 +9712,7 @@ def main():
         if not free:
             sys.exit("Small keys: Anywhere: %s is missing (tools/rando/dungeon_keyless.py writes it). Nothing written." % KEYLESS_FILE)
         if placement >= POT_KEYLESS_FROM:   # (a pot in a room reached with no key needs none: pots_keyless)
-            pots_free = pots_keyless(free, RULE_AS, placed)
+            pots_free = pots_keyless(free, RULE_AS, placed, placement)
             print("Small keys: Anywhere: %d pots in rooms reached with no small key ask for none" % len(pots_free))
             free = free | pots_free
         if logic:
@@ -9698,24 +9737,11 @@ def main():
     pinned = pin_groups(spots, read_pins())
     pinned_spots = frozenset(h for _, where in pinned for h in where)
     if loose:   # (Anywhere: chests, and from DUNGEON_DROPS_FROM Gold Skulltulas and pots, drop_holds; a Boss Key where its boss's rule covers, boss_key_fits)
-        every = {s[1] for s in spots.values()}
-        holds = dict(holds or {})
         caps = {t: (frozenset(boss_need(t.split("@")[1])) if t.split("@")[1] in BOSS_HEARTS else None) for t in set(boss_tags.values())}
         for t in small_tags.values() if placement < KEYS_ENDING_FROM else ():   # (a dungeon's keys where its ending's rule reaches, with its own keys; KEYS_ENDING_FROM: anywhere the logic reaches)
             d = t.split("@")[1].split("#")[0]
             caps[t] = frozenset(boss_need(d)) | key_sets[d] if d in BOSS_HEARTS else None
-        for h, s in spots.items():
-            if not drop_holds(s[4], placement):
-                holds[h] = frozenset(holds.get(h, every)) - loose
-                continue
-            if s[4] in DROP_KINDS and h not in JUNK_ONLY:   # (a Gold Skulltula's or a pot's: what it may drop, and the dungeon items that are anywhere)
-                holds[h] = frozenset(holds[h]) | loose
-            if caps and logic:
-                unfit = frozenset(t for t, cap in caps.items() if not boss_key_fits(needs.get(h), cap))
-                if h in AFTER_WATER:   # (there only once the Water Temple is done: none of its own keys, whatever the items say)
-                    unfit = unfit | frozenset(t for t in caps if t.split("@")[1].split("#")[0] == "WaterTemple")
-                if unfit:
-                    holds[h] = frozenset(holds.get(h, every)) - unfit
+        holds = anywhere_holds(spots, holds, needs, loose, caps, placement, logic)
     if holds and pinned_spots:   # (a test pin: its item wherever it is, a dungeon item on a Gold Skulltula or in a pot too)
         holds = {h: v for h, v in holds.items() if h not in pinned_spots}
     try:
@@ -9726,7 +9752,7 @@ def main():
                                       + pinned or None,
                                       only=lesson_only, apart=frozenset(lessons) if a.songs == 2 else (),
                                       holds=holds or None, counted=counted, fixed_more=kept_tokens, loose=loose,
-                                      even=loose - PROGRESSION if placement >= DUNGEON_DROPS_FROM else frozenset())
+                                      even=anywhere_even(loose, PROGRESSION, placement))
     except ValueError as e:
         if "a lesson has nothing left" in str(e) and fairies and not a.event_chests:   # (seen 2026-11-20: magic on, Major items off)
             sys.exit("%s: the Great Fairies may hold only items found once (a spell, the Lens, the Hammer...), and with Major items "
@@ -9765,7 +9791,7 @@ def main():
     if any(not drop_holds(spots[h][4], placement) and h not in pinned_all for h in owners):
         sys.exit("a dungeon's key, map or compass is somewhere it cannot be given from: nothing written")
     # (what a Gold Skulltula or a pot may drop: skulltula_holds, a dungeon item told its dungeon from DUNGEON_DROPS_FROM, a test pin's)
-    drop_ok = lambda h, i: skulltula_holds(i, PROGRESSION) or h in pinned_all or placement >= DUNGEON_DROPS_FROM and i in DUNGEON_ITEMS and h in owners
+    drop_ok = lambda h, i: drop_may(i, PROGRESSION, h in pinned_all, h in owners, placement)
     # (the game's own count of each item is kept: every item given was some chest's)
     before = collections.Counter(spots[h][1] for h in gives)
     if before != collections.Counter(gives.values()):

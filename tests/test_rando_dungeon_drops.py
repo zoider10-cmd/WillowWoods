@@ -81,16 +81,46 @@ def main():
     sources = {10: 1, 11: 1, 12: 2, 13: 3}
     check(S.pots_keyless(free, sources, placed) == frozenset((10,)),
           "a pot's 'needs no key' is not borrowed from its own room's keyless actor alone: %r" % sorted(S.pots_keyless(free, sources, placed)))
-    script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
-    check(S.PLACEMENT >= S.POT_KEYLESS_FROM == 37 and "if placement >= POT_KEYLESS_FROM:" in script and
-          "free = free | pots_free" in script, "placement 37 is not the pots' own 'needs no key', or an earlier seed takes it")
-    check("if not drop_holds(s[4], placement):" in script and
-          "if s[4] in DROP_KINDS and h not in JUNK_ONLY:" in script and "holds[h] = frozenset(holds[h]) | loose" in script,
-          "main does not let the dungeon items that are anywhere onto a Gold Skulltula's or a pot's spot")
-    check("even=loose - PROGRESSION if placement >= DUNGEON_DROPS_FROM else frozenset())" in script,
-          "the maps, compasses and Boss Keys are not spread evenly from placement 36, or are for an earlier seed")
-    check("placement >= DUNGEON_DROPS_FROM and i in DUNGEON_ITEMS and h in owners" in script,
-          "a drop's dungeon item is not asked to be told its dungeon (the pick-up of its dungeon's own is made by it)")
+    check(S.PLACEMENT >= S.POT_KEYLESS_FROM == 37 and S.pots_keyless(free, sources, placed, 37) == frozenset((10,)) and
+          S.pots_keyless(free, sources, placed, 36) == frozenset(), "placement 37 is not the pots' own 'needs no key', or an earlier seed takes it")
+
+    # main's step, called (anywhere_holds): what each spot may hold with a Boss Key and a map anywhere
+    boss = S.boss_key_tag("WaterTemple")
+    loose = frozenset((S.MAP, boss))
+    junk_pot = S.JUNK_ONLY[0]
+    spots = {1: ["Field", "TBox_Rupee_Blue", False, None, "Obj_TBox_A_01"], 2: ["Field", S.TOKEN, None, None, "skulltula"],
+             3: ["Field", "TBox_DekuNutBundle", None, None, "pot"], 4: ["Field", "Obj_Heart_Piece", None, None, "piece"],
+             5: ["Field", "TBox_Rupee_Red", None, None, "shop"], 6: ["Field", "TBox_Rupee_Red", None, None, "gift"],
+             7: ["Field", "TBox_DekuNutBundle", None, None, "pot"], junk_pot: ["Field", "TBox_DekuNutBundle", None, None, "pot"],
+             S.AFTER_WATER[0]: ["LakeHylia", "TBox_Rupee_Red", False, None, "Obj_TBox_A_01"], 9: ["Field", S.MAP, True, None, "Obj_TBox_A_02"],
+             10: ["Field", boss, True, None, "Obj_TBox_A_02"]}
+    every = {v[1] for v in spots.values()}
+    drop_may = frozenset((S.TOKEN, "TBox_DekuNutBundle"))
+    before = {2: drop_may, 3: drop_may, 7: drop_may, junk_pot: frozenset(("TBox_DekuNutBundle",)), 4: frozenset(every - {boss})}
+    cap = frozenset(("Item_HeavyBoot", "Item_Longshot"))
+    needs = {h: frozenset() for h in spots}
+    needs[7] = frozenset(("Item_Hammer",))   # (a pot the Water Temple's boss's rule does not cover)
+    needs[1] = frozenset(("Item_HeavyBoot",))
+    now = S.anywhere_holds(spots, before, needs, loose, {boss: cap}, 36, True)
+    check(now[2] == drop_may | loose and now[3] == drop_may | loose, "a Gold Skulltula or a pot does not hold the dungeon items that are anywhere, beside its own")
+    check(now[7] == drop_may | {S.MAP}, "a pot the boss's rule does not cover holds its Boss Key: %r" % sorted(now[7]))
+    check(not now[4] & loose and not now[5] & loose and not now[6] & loose, "a piece, a shelf or a gift holds a dungeon item that is anywhere")
+    check(now[junk_pot] == frozenset(("TBox_DekuNutBundle",)), "a spot that holds junk only is given dungeon items")
+    check(1 not in now and boss not in now[S.AFTER_WATER[0]] and S.MAP in now[S.AFTER_WATER[0]],
+          "a chest is held to less than everything, or Lake Hylia's chest after the Water Temple holds that temple's Boss Key")
+    old = S.anywhere_holds(spots, before, needs, loose, {boss: cap}, 35, True)
+    check(not old[2] & loose and not old[3] & loose and not old[7] & loose and 1 not in old,
+          "a seed of placement 35 lets its dungeon items onto a Gold Skulltula or into a pot")
+    free_fill = S.anywhere_holds(spots, before, needs, loose, {boss: cap}, 36, False)
+    check(free_fill[7] == drop_may | loose, "without the logic a Boss Key is still kept to where its boss's rule covers")
+    check(S.anywhere_even(loose | {"Item_Dungeon_SmallKey@WaterTemple#1"}, frozenset(("Item_Dungeon_SmallKey@WaterTemple#1",)), 36) == loose and
+          S.anywhere_even(loose, frozenset(), 35) == frozenset(),
+          "the maps, compasses and Boss Keys are not the ones spread evenly from placement 36, or are for an earlier seed")
+    # what a Gold Skulltula or a pot may drop in the end (drop_may): a dungeon item only when told its dungeon
+    check(S.drop_may(S.MAP, S.PROGRESSION, False, True, 36) and not S.drop_may(S.MAP, S.PROGRESSION, False, False, 36) and
+          not S.drop_may(S.MAP, S.PROGRESSION, False, True, 35) and S.drop_may(S.MAP, S.PROGRESSION, True, False, 35) and
+          S.drop_may(S.TOKEN, S.PROGRESSION, False, False, 35) and not S.drop_may("Item_Bottle", S.PROGRESSION, False, True, 36),
+          "a drop's dungeon item is not asked to be told its dungeon, or another item is let through with it")
     print("PASS: dungeon items on Gold Skulltulas and in pots (placement 36)")
 
 

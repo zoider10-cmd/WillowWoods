@@ -58,9 +58,9 @@ def main():
         check("the logic placed" in str(e), "a pinned map's spot holding a gating item is not refused: %s" % e)
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
     check("holds = {h: v for h, v in holds.items() if h not in pinned_spots}" in script and
-          "drop_ok = lambda h, i: skulltula_holds(i, PROGRESSION) or h in pinned_all or" in script and
-          "any(not drop_ok(h, i) for h, i in skull_drops.items())" in script and
-          "any(not drop_ok(h, i) for h, i in pot_drops.items())" in script and
+          S.drop_may(S.MAP, S.PROGRESSION, True, False, 35) and S.drop_may("Item_Dungeon_SmallKey", S.PROGRESSION, True, False, 35) and
+          not S.drop_may(S.MAP, S.PROGRESSION, False, False, 35) and
+          script.count("not drop_ok(h, i) for h, i in") == 2 and "drop_may(i, PROGRESSION, h in pinned_all, h in owners, placement)" in script and
           "gives.get(h) or skull_drops.get(h) or pot_drops.get(h)) for h in sorted(owners)" in script and
           'not drop_holds(spots[h][4], placement) and h not in pinned_all for h in owners' in script,
           "a pinned Skulltula's or pot's dungeon item is still refused somewhere, or not written to dungeon_items.txt")

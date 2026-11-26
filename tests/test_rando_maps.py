@@ -34,7 +34,10 @@ def main():
     assert '"rando_maps": 0' in src and 'a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0' in main_src
     assert '(" maps %d" % a.maps if a.maps else "")' in main_src, "the setting is not on the stamp (it moves items)"
     assert "**(MAPS_START if a.maps == 2 else {})" in main_src and "spots[h][1] = MAPS_START_JUNK[spots[h][1]]" in main_src
-    assert "loose = MAPS_LOOSE if a.maps == 1 else frozenset()" in main_src and "holds[h] = frozenset(holds.get(h, every)) - loose" in main_src
+    assert "loose = MAPS_LOOSE if a.maps == 1 else frozenset()" in main_src and "anywhere_holds(spots, holds, needs, loose, " in main_src
+    # (main's step, called: a map that is anywhere is held by a chest, by no gift)
+    places = {1: ["Field", S.MAP, True, None, "Obj_TBox_A_02"], 2: ["Field", "Item_Bottle", None, None, "gift"]}
+    assert S.anywhere_holds(places, {}, {}, S.MAPS_LOOSE, {}, S.PLACEMENT, True) == {2: frozenset(("Item_Bottle",))}
     assert main_src.index("DUNGEON_ITEMS_FILE") < main_src.index("with open(os.path.join(mod, CHECKS)")
     host = open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
     assert 'snprintf(flag, sizeof flag, "DungeonInfo.%s.%s", owner, field);' in host and '"mods/rando-seed/dungeon_items.txt"' in host

@@ -117,7 +117,7 @@ def main():
         "a collected pot is not read as the game's pot"
     assert host.index("const uint64_t pot = oot_pot_look_answer(c, name_at);") < host.index("if (!name_at || !__atomic_load_n(&oot_tier_shelf_count"), \
         "the pots are answered only where shelves of a family are"
-    assert "entry = index.get(zlib.crc32(was.encode()) & 0xffffffff)" in main_src and "tbl = size_table_add_each(tbl, own)" in main_src, "a pot's model and texture copies have no size table entry"
+    assert "for path, was in pot_size_as.items():" in main_src and "size_table_add_each(tbl, own)" in main_src, "a pot's model and texture copies have no size table entry"
     # (FIXES 102: a pot's unique item is an actor of its own that falls, the item's pick-up with the rupee's body)
     def actor(name, parent=None, **parts):
         d = collections.OrderedDict()
