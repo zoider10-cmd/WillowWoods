@@ -56,6 +56,8 @@
 #include "vk_fsr4.h"
 #include "vk_xess.h"
 #include "vk_temporal.h"
+#include "vk_wheel.h"         // (the Item buttons' icons: wheel_icon_rgba)
+#include "oot_wheel_state.h"   // (MkwVkSlots, MKWVK_SLOTS_QUERY)
 #include "vk_reflex.h"
 #include "vk_antilag.h"
 #include "upscaler_rows.h"
@@ -8036,6 +8038,66 @@ void menu_tick() {
 
 /// (Willow Woods) The In-game clock row: the game's time of day (game_clock, seconds since midnight) as "18:30" at the top of
 /// the screen, in its middle, white with a dark outline as the FPS counter's number; not while the menu is open or no save is loaded.
+/// (Willow Woods, 2026-11-25) The Item buttons row's L and R on the HUD: each one's item, as the game's icon in a dark circle
+/// left of the game's own ZR icon (top right, the HUD's corner: its size from the window's height), the button's letter under
+/// it and the item's count, as the game shows ZR's. host/oot_wheel.c hos_slots_state says what they hold and when they show
+/// (in play: no pause menu, no item wheel). An item whose icon is not known (yet) shows its circle and letter alone
+MkwVkSlots slots_now{};
+bool item_buttons_shows() {
+    const MkwVkSlots* src = host && host->mic_name ? (const MkwVkSlots*)(const void*)host->mic_name(MKWVK_SLOTS_QUERY) : nullptr;
+    if (!src) return false;
+    const uint32_t s1 = __atomic_load_n(&src->seq, __ATOMIC_ACQUIRE);
+    if (!(s1 & 1)) {
+        MkwVkSlots copy;
+        std::memcpy(&copy, (const void*)src, sizeof copy);
+        std::atomic_thread_fence(std::memory_order_acquire);
+        if (__atomic_load_n(&src->seq, __ATOMIC_ACQUIRE) == s1) {   // (else written meanwhile: the last frame's again)
+            copy.name[0][sizeof copy.name[0] - 1] = 0, copy.name[1][sizeof copy.name[1] - 1] = 0;
+            slots_now = copy;
+        }
+    }
+    return slots_now.shown && (slots_now.name[0][0] || slots_now.name[1][0]);
+}
+void outlined(ui::Ctx& c, float px, ImVec2 at, const char* text, float o) {   // (white with a dark outline, as the clock's)
+    for (int dy = -1; dy <= 1; dy++)
+        for (int dx = -1; dx <= 1; dx++)
+            if (dx || dy) c.d->AddText(c.f.strong, px, ImVec2(at.x + dx * o, at.y + dy * o), ui::rgba(0, 0, 0, 230), text);
+    c.d->AddText(c.f.strong, px, at, ui::rgba(255, 255, 255), text);
+}
+void draw_item_buttons(ui::Ctx& c) {
+    static ImTextureData* tex[2] = {nullptr, nullptr};
+    static std::string drawn[2];
+    static std::vector<uint8_t> rgba;
+    // (placed by a 2000 x 1125 picture of the game: its ZR icon's middle about 155 px from the right edge, 140 down)
+    const float u = c.h / 1125.0f;
+    const float y = 140 * u, r = 40 * u, o = std::max(1.0f, 1.5f * u);
+    for (int s = 0; s < 2; s++) {
+        const char* name = slots_now.name[s];
+        if (!name[0]) continue;
+        if (drawn[s] != name) {
+            int side = 0;
+            if (wheel_icon_rgba(name, &side, &rgba)) ui::picture(tex[s], side, side, rgba.data()), drawn[s] = name;
+        }
+        const float x = c.w - (s ? 265 : 370) * u;
+        c.d->AddCircleFilled(ImVec2(x, y), r, ui::rgba(10, 14, 10, 150), 48);
+        c.d->AddCircle(ImVec2(x, y), r, ui::rgba(230, 230, 230, 170), 48, std::max(1.0f, 2 * u));
+        if (tex[s] && drawn[s] == name) {
+            const float h = r * 1.45f;
+            c.d->AddImage(tex[s]->GetTexRef(), ImVec2(x - h * 0.5f, y - h * 0.5f), ImVec2(x + h * 0.5f, y + h * 0.5f));
+        }
+        const char* letter = s ? "R" : "L";
+        const float ls = 26 * u;
+        outlined(c, ls, ImVec2(x - ui::size_of(c.f.strong, ls, letter).x * 0.5f, y + r + 4 * u), letter, o);
+        if (slots_now.amount[s] >= 0) {
+            char text[8];
+            snprintf(text, sizeof text, "%d", slots_now.amount[s]);
+            const float ns = 24 * u;
+            const ImVec2 nsz = ui::size_of(c.f.strong, ns, text);
+            outlined(c, ns, ImVec2(x + r - nsz.x * 0.6f, y + r - nsz.y * 0.75f), text, o);
+        }
+    }
+}
+
 bool clock_shows() { return opts.show_clock && game_clock.load(std::memory_order_relaxed) >= 0; }
 void draw_clock(ui::Ctx& c) {
     const int secs = game_clock.load(std::memory_order_relaxed);
@@ -8266,7 +8328,8 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     const bool damage = damage_shows() && !start && !open;   // (the Damage numbers row)
     const bool health = health_shows() && !start && !open;   // (the Health bars row)
     const bool minimap = minimap_shows() && !start && !open;   // (the Minimap checks row)
-    if (!start && !fps && !open && !clock && !damage && !health && !minimap) {   // (nothing shows: no ImGui frame, no render pass)
+    const bool slots = !start && !open && item_buttons_shows();   // (the Item buttons row's L and R)
+    if (!start && !fps && !open && !clock && !damage && !health && !minimap && !slots) {   // (nothing shows: no ImGui frame, no render pass)
         // (but a new window size or Menu size since the last bake: one frame with nothing drawn that bakes the menu's glyphs
         // and measures its page for the new size, so the next open has no hitch whatever was resized while nothing showed)
         if (prebake_needed(w, h) && ui::begin(w, h)) {
@@ -8294,6 +8357,7 @@ void menu_record(VkCommandBuffer cmd, uint32_t index, uint32_t w, uint32_t h) {
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
     if (minimap) draw_minimap_checks(c);
+    if (slots) draw_item_buttons(c);
     if (health) draw_health(c);   // (under the numbers)
     if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)
@@ -8307,13 +8371,15 @@ void menu_record_image(VkCommandBuffer cmd, VkImage image, VkImageView view, uin
     const bool damage = damage_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Damage numbers row)
     const bool health = health_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Health bars row)
     const bool minimap = minimap_shows() && !open && !startup_on.load(std::memory_order_acquire);   // (the Minimap checks row)
-    if (!open && !fps && !clock && !damage && !health && !minimap) return;
+    const bool slots = !open && !startup_on.load(std::memory_order_acquire) && item_buttons_shows();   // (the Item buttons row's L and R)
+    if (!open && !fps && !clock && !damage && !health && !minimap && !slots) return;
     if (!ui::begin(w, h)) return;
     ui::Ctx c = ui_ctx(w, h);
     if (open) draw_menu(c);
     if (fps) draw_fps(c, open);
     if (clock) draw_clock(c);
     if (minimap) draw_minimap_checks(c);
+    if (slots) draw_item_buttons(c);
     if (health) draw_health(c);   // (under the numbers)
     if (damage) draw_damage(c);
     ::mkwvk::rec::boundary(::mkwvk::rec::B_DIRECT);   // (Dear ImGui records into cmd directly, its backend through its own pointers: what this thread recorded through vk_work.h reaches cmd first)

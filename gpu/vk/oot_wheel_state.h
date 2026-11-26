@@ -22,6 +22,17 @@ enum { HOS_OPT_ITEM_BUTTONS = 103 };
 /* the index of mic_name (MkwVkHost) that asks for the item wheel's state instead of a microphone's name: the answer is a
    const MkwVkWheel *, never null with the host of this build */
 #define MKWVK_WHEEL_QUERY 0x57484c00
+/* (Willow Woods, 2026-11-25) the index of mic_name that asks for the Item buttons' state (host/oot_wheel.c hos_slots_state):
+   a const MkwVkSlots *, never null with the host of this build */
+#define MKWVK_SLOTS_QUERY 0x57484c01
+/* The Item buttons' items, for the HUD's L and R icons (gpu/vk/vk_menu.cpp draw_item_buttons): shown while in play with
+   the row on (the HUD updating, no pause menu, no item wheel open). A seqlock as MkwVkWheel's: seq odd while written */
+typedef struct MkwVkSlots {
+    volatile uint32_t seq;
+    int32_t shown;
+    int32_t amount[2];   /* [0 L, 1 R]: the HUD's number for the item, -1 none */
+    char name[2][48];    /* [0 L, 1 R]: the game's name of the item (Item_Bomb, wheel/icons.bin's), "" none */
+} MkwVkSlots;
 
 /* The R button's item row shown as a wheel: one page of MKWVK_WHEEL_SLOTS fixed slots (slot 0 at the top, the rest
    clockwise, 45 degrees apart; an empty name is an empty slot), the equipped item's slot and the stick's pick. seq changes

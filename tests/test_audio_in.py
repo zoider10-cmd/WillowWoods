@@ -450,6 +450,7 @@ def main():
     check(re.search(r'hos_mic_count,\s*host_mic_name,\s*hos_mic_select', backend) and
           re.search(r'static const char \*host_mic_name\(int index\) \{\n'
                     r'    if \(index == MKWVK_WHEEL_QUERY\) return [^;]*;\n'
+                    r'    if \(index == MKWVK_SLOTS_QUERY\) return [^;]*;\n'   # (and the Item buttons' state, 2026-11-25)
                     r'    return hos_mic_name\(index\);\n\}', backend),
           'the menu is not given the microphones')
     check('mic_want = mic_key(eq + 1);' in (ROOT / 'gpu' / 'vk' / 'vk_menu.cpp').read_text(encoding='utf-8'),

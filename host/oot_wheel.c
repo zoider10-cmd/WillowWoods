@@ -904,16 +904,13 @@ static void cy_bottles(Ctx *c) {
                     found[1][0] ? found[1] : "-", found[2][0] ? found[2] : "-", found[3][0] ? found[3] : "-", found[4][0] ? found[4] : "-");
     }
 }
-/* the name (canonical()'s) of the item on ZR now, from the pouch slot that holds it; 0 when not found */
-static int cy_zr_name(Ctx *c, char *out, size_t cap) {
-    static const uint64_t calls[] = {CY_GETTER, CY_POUCH_ARRAY, CY_ARRAY_COUNT, CY_SLOT_ACTOR, CY_ACTOR_SHORT, CY_ITEM_OF_ACTOR};
+/* the name (canonical()'s) of an item (its number, as ZR's), from the pouch slot that holds it; 0 when not found */
+static int cy_item_name(Ctx *c, int cur, char *out, size_t cap) {
+    static const uint64_t calls[] = {CY_POUCH_ARRAY, CY_ARRAY_COUNT, CY_SLOT_ACTOR, CY_ACTOR_SHORT, CY_ITEM_OF_ACTOR};
     for (size_t i = 0; i < sizeof calls / sizeof calls[0]; i++)
         if (!a64_lookup(calls[i])) return 0;
-    const uint64_t mgr = cy_peek(CY_POUCH_SLOT, 8), ui = cy_peek(CY_UI_SLOT, 8);
-    if (!mgr || !ui) return 0;
-    const uint64_t g[3] = {mgr, cy_peek(ui + 0x5c0, 1) & 1, 1};
-    const int cur = (int32_t)cy_guest(c, CY_GETTER, 3, g);
-    if (cur < 0 || cur >= CY_ITEMS) return 0;
+    const uint64_t mgr = cy_peek(CY_POUCH_SLOT, 8);
+    if (!mgr || cur < 0 || cur >= CY_ITEMS) return 0;
     const uint64_t scr = (c->x[31] - 0x100) & ~0xfULL;
     const uint64_t kind[2] = {mgr, 0};
     const uint64_t array = cy_guest(c, CY_POUCH_ARRAY, 2, kind);
@@ -937,6 +934,14 @@ static int cy_zr_name(Ctx *c, char *out, size_t cap) {
         return out[0] != 0;
     }
     return 0;
+}
+/* the name (canonical()'s) of the item on ZR now; 0 when not found */
+static int cy_zr_name(Ctx *c, char *out, size_t cap) {
+    if (!a64_lookup(CY_GETTER)) return 0;
+    const uint64_t mgr = cy_peek(CY_POUCH_SLOT, 8), ui = cy_peek(CY_UI_SLOT, 8);
+    if (!mgr || !ui) return 0;
+    const uint64_t g[3] = {mgr, cy_peek(ui + 0x5c0, 1) & 1, 1};
+    return cy_item_name(c, (int32_t)cy_guest(c, CY_GETTER, 3, g), out, cap);
 }
 /* the row's places after the game put an item first (setAssignableItem with the quick-switch's reason sorts its row as a
    choice there does): the item's place moved to the front, a bottle's (whose content is not known here) all forgotten */
@@ -1165,6 +1170,45 @@ static int slots_ask(int item) {   /* (the input side: returns the ask's number,
     return __atomic_add_fetch(&swap_seq, 1, __ATOMIC_ACQ_REL);
 }
 
+/* the HUD's L and R icons (MKWVK_SLOTS_QUERY): the slots' item names, found from their numbers on the game's thread */
+static MkwVkSlots slots_state;
+static volatile int slots_lock;
+static void slots_publish(Ctx *c, int age) {
+    static int known[2] = {-3, -3}, known_age = -1, ticks;
+    const int l = slot_item[age][SLOT_L], r = slot_item[age][SLOT_R];
+    const int again = ++ticks % 30 == 0;   /* (the counts, and an item got since: twice a second or so) */
+    if (!again && l == known[0] && r == known[1] && age == known_age) return;
+    known[0] = l, known[1] = r, known_age = age;
+    MkwVkSlots next;
+    memset(&next, 0, sizeof next);
+    for (int s = 0; s < 2; s++) {
+        next.amount[s] = -1;
+        const int item = s ? r : l;
+        if (item >= 0 && cy_item_name(c, item, next.name[s], sizeof next.name[s])) next.amount[s] = amount_of(next.name[s]);
+        else next.name[s][0] = 0;
+    }
+    if (__atomic_exchange_n(&slots_lock, 1, __ATOMIC_ACQUIRE)) return;
+    next.shown = slots_state.shown;
+    if (memcmp(next.name, slots_state.name, sizeof next.name) || memcmp(next.amount, slots_state.amount, sizeof next.amount)) {
+        __atomic_add_fetch(&slots_state.seq, 1, __ATOMIC_ACQ_REL);
+        memcpy((char *)&slots_state + sizeof slots_state.seq, (const char *)&next + sizeof next.seq, sizeof next - sizeof next.seq);
+        __atomic_add_fetch(&slots_state.seq, 1, __ATOMIC_ACQ_REL);
+        if (wheel_trace()) hos_log("item buttons: the HUD shows L %s, R %s", next.name[0][0] ? next.name[0] : "-", next.name[1][0] ? next.name[1] : "-");
+    }
+    __atomic_store_n(&slots_lock, 0, __ATOMIC_RELEASE);
+}
+/* (the renderer's thread) the icons shown while in play: the HUD updating, no pause menu, the item wheel closed */
+const MkwVkSlots *hos_slots_state(void) {
+    const int shown = slots_on() && in_play(hos_now_ns()) && !wheel_state.open;
+    if (shown != slots_state.shown && !__atomic_exchange_n(&slots_lock, 1, __ATOMIC_ACQUIRE)) {
+        __atomic_add_fetch(&slots_state.seq, 1, __ATOMIC_ACQ_REL);
+        slots_state.shown = shown;
+        __atomic_add_fetch(&slots_state.seq, 1, __ATOMIC_ACQ_REL);
+        __atomic_store_n(&slots_lock, 0, __ATOMIC_RELEASE);
+    }
+    return &slots_state;
+}
+
 /* (the HUD's update, the game's thread) the item asked for put on ZR */
 static void slots_hud(Ctx *c) {
     static int zr_own[2] = {-1, -1}, zr_put = -1;   /* (ZR's own item for each age; the item put on ZR last, -1 ZR's own) */
@@ -1173,6 +1217,7 @@ static void slots_hud(Ctx *c) {
     if (!mgr || !ui || !a64_lookup(CY_GETTER) || !a64_lookup(CY_SETTER)) return;
     const int age = (int)(cy_peek(ui + 0x5c0, 1) & 1);
     __atomic_store_n(&slot_age, age, __ATOMIC_RELEASE);
+    slots_publish(c, age);
     const uint64_t g[3] = {mgr, (uint64_t)age, 1};
     const int cur = (int32_t)cy_guest(c, CY_GETTER, 3, g);
     if (zr_put >= 0 && cur != zr_put) {   /* (put there another way, or used up: ZR's own from now) */

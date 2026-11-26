@@ -6,6 +6,7 @@ Checks the wiring a change elsewhere could break, from the sources:
   off while the slots are on;
 - the HUD's update puts the asked item on ZR (slots_hud) and the pause menu's update reads an assigned one (slots_pause);
 - the pause menu's page is known to the wheel (hos_oot_pause_page), the Items page being 2;
+- the HUD's L and R icons: the slots' items published (MKWVK_SLOTS_QUERY) and drawn by the overlay;
 - and the input's state machine, compiled alone against a fake clock and a fake HUD: L with an item asks for it, holds ZR
   back until the HUD put it there, then holds ZR while L is held; ZR afterwards asks for ZR's own back first.
 
@@ -100,6 +101,12 @@ def main():
          "the HUD's or the pause menu's update does not run the slots")
     need("int hos_oot_pause_page(void) { return page_now; }" in pause and "hos_oot_pause_page() == 2" in wheel,
          "the pause menu's page is not known to the slots")
+    backend = (ROOT / "host" / "rx_backend.c").read_text(encoding="utf-8")
+    vkmenu_draw = menu.count("if (slots) draw_item_buttons(c);")
+    need("if (index == MKWVK_SLOTS_QUERY) return (const char *)hos_slots_state();" in backend and "slots_publish(c, age);" in wheel,
+         "the HUD's L and R icons are not told the slots' items")
+    need(vkmenu_draw == 2 and menu.count("&& item_buttons_shows();") == 2,
+         "the overlay does not draw the L and R icons (both of its drawings, with the window and the headless shots)")
     src = FAKE.replace("@ASK@", block(wheel, "static int slots_ask(int item) {")).replace(
         "@INPUT@", block(wheel, "static uint64_t slots_input(uint64_t buttons, int64_t now) {"))
     with tempfile.TemporaryDirectory() as d:

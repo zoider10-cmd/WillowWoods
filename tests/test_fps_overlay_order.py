@@ -60,9 +60,11 @@ bool clock_shows() { return false; }
 bool damage_shows() { return false; }
 bool health_shows() { return false; }
 bool minimap_shows() { return false; }
+bool item_buttons_shows() { return false; }   // (the Item buttons' L and R)
 void draw_perf(ui::Ctx&) { calls += "P"; }
 void draw_clock(ui::Ctx&) { calls += "C"; }
 void draw_minimap_checks(ui::Ctx&) { calls += "M"; }
+void draw_item_buttons(ui::Ctx&) { calls += "I"; }
 void draw_health(ui::Ctx&) { calls += "H"; }
 void draw_damage(ui::Ctx&) { calls += "D"; }
 ''' + fn + r'''

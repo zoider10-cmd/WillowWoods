@@ -684,6 +684,21 @@ uint64_t version = 0;
 
 }  // namespace
 
+bool wheel_icon_rgba(const char* name, int* side, std::vector<uint8_t>* rgba) {
+    assets_start();
+    const Icon* ic = name && *name ? icon_of(name) : nullptr;
+    if (!ic) return false;
+    *side = ic->size;
+    rgba->resize((size_t)ic->size * ic->size * 4);
+    for (size_t i = 0; i < (size_t)ic->size * ic->size; i++) {   // (premultiplied to straight)
+        const float a = ic->pm[i * 4 + 3];
+        for (int ch = 0; ch < 3; ch++)
+            (*rgba)[i * 4 + ch] = (uint8_t)std::lround(std::clamp(a > 0 ? ic->pm[i * 4 + ch] / a : 0.0f, 0.0f, 1.0f) * 255);
+        (*rgba)[i * 4 + 3] = (uint8_t)std::lround(std::clamp(a, 0.0f, 1.0f) * 255);
+    }
+    return true;
+}
+
 bool wheel_picture(uint32_t pw, uint32_t ph, WheelPicture* out) {
     bool changed = false;
     if (!pw || !ph || !wheel_update(&changed)) return false;

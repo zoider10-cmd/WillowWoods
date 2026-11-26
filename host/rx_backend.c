@@ -67,8 +67,10 @@ const char *hos_mic_name(int index);
    item wheel's state (host/oot_wheel.c), a pointer as a name is one. A call of its own in the host's table would change
    vk_api.h, the program cache's stamp */
 const MkwVkWheel *hos_wheel_state(void);
+const MkwVkSlots *hos_slots_state(void);   /* (Item buttons: MKWVK_SLOTS_QUERY) */
 static const char *host_mic_name(int index) {
     if (index == MKWVK_WHEEL_QUERY) return (const char *)hos_wheel_state();
+    if (index == MKWVK_SLOTS_QUERY) return (const char *)hos_slots_state();
     return hos_mic_name(index);
 }
 void hos_mic_select(int mode, const char *name, int index);

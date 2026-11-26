@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 namespace mkwvk {
 
@@ -19,5 +20,9 @@ struct WheelPicture {
 /// The item wheel for a game picture of pw x ph, this frame: false while it is closed (or the Item wheel row is off).
 /// The present's thread only
 bool wheel_picture(uint32_t pw, uint32_t ph, WheelPicture* out);
+
+/// (Willow Woods: the HUD's Item buttons, vk_menu.cpp draw_item_buttons) the game's icon of an item (Item_Bomb), side x side
+/// straight RGBA8; false while the icons are being read (it starts reading them) or for an item with none
+bool wheel_icon_rgba(const char* name, int* side, std::vector<uint8_t>* rgba);
 
 }  // namespace mkwvk

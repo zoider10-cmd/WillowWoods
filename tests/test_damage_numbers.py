@@ -46,7 +46,7 @@ def main():
     check('{TAB_GAMEPLAY, "Damage numbers", &opts.show_damage, 0, 1, 1, tx_onoff,' in menu, "the Gameplay tab has no Damage numbers row")
     check("if (id == OOT_DAMAGE_HIT) {" in menu and "damage_hit(value);" in menu, "the renderer does not keep the hits it is sent")
     check(menu.count("if (damage) draw_damage(c);") == 2, "the numbers are not drawn both on screen and on a test run's pictures")
-    check(menu.count("damage_shows() && !") == 2 and "!clock && !damage && !health && !minimap) {" in menu and "!clock && !damage && !health && !minimap) return;" in menu,
+    check(menu.count("damage_shows() && !") == 2 and "!clock && !damage && !health && !minimap && !slots) {" in menu and "!clock && !damage && !health && !minimap && !slots) return;" in menu,
           "nothing draws the numbers while nothing else shows, or they show under the open menu")
     body = menu[menu.index("void draw_damage(ui::Ctx& c) {"):]
     body = body[:body.index("\n}\n")]
