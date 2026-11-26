@@ -664,7 +664,25 @@ static DWORD WINAPI display_main(void *p) {
     RegisterRawInputDevices(&rid, 1, sizeof rid);
     pointer_update(hwnd, 0, 0);
     renderer = rx_start(hwnd);
-    if (!renderer) hos_log("display: no renderer: the window stays black");
+    if (!renderer) {
+        /* ((Triforce v0.8.x) No renderer started (Vulkan lists no graphics card it can use, or hookshot_vk.dll is not there):
+           the game ends at once and says why. Behind a black window it played on, sound and all, until the player closed it,
+           and nothing on screen said what was wrong. The renderer's own lines are in the log ("vk: no Vulkan 1.3 GPU",
+           "rx: ... did not load"). A test's window that takes no focus (HOS_WINDOW_NOACTIVATE) has nobody to read a message:
+           it only ends */
+        hos_log("display: the renderer did not start: the game ends");
+        hos_log_flush();
+        if (!noactivate)
+            MessageBoxA(hwnd, "The game could not start its renderer, so it cannot show a picture and ends here.\n\n"
+                        "It needs a graphics card with Vulkan 1.3 and a current driver: update your graphics driver and start "
+                        "the game again. If hookshot_vk.dll is missing from the game folder (an antivirus program may have "
+                        "taken it), build or install the game again.\n\nThe log in the game folder's logs folder says what was "
+                        "found.",
+                        "Willow Woods", MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+        void hos_crash_clean_end(void);   /* (said already: no unclean-end record, and no second window after it) */
+        hos_crash_clean_end();
+        ExitProcess(1);
+    }
     SetEvent(renderer_up);
     SetTimer(hwnd, 1, 250, NULL);
     MSG m;
