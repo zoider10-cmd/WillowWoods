@@ -356,8 +356,10 @@ static void poke_multiwait(Obj *o) {
 #include <emmintrin.h>
 static int spin_begin(Obj *o, int *misses) {
     if (hos_spin_ns() <= 0) return 0;
-    static int adaptive = -1;
-    if (adaptive < 0) adaptive = !env_on("HOS_SPIN_ALWAYS");
+    /* ((Triforce v0.8.x, Longshot) read once and kept atomically: every guest thread's sync calls come here at once) */
+    static int adaptive_seen = -1;
+    int adaptive = __atomic_load_n(&adaptive_seen, __ATOMIC_ACQUIRE);
+    if (adaptive < 0) adaptive = !env_on("HOS_SPIN_ALWAYS"), __atomic_store_n(&adaptive_seen, adaptive, __ATOMIC_RELEASE);
     *misses = __atomic_load_n(&o->spin_misses, __ATOMIC_RELAXED);
     return !(adaptive && *misses >= 4 && (__atomic_add_fetch(&o->spin_waits, 1, __ATOMIC_RELAXED) & 31));
 }
