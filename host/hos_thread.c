@@ -805,6 +805,20 @@ static uint64_t pick_cache_cores(const uint64_t *masks, const uint64_t *sizes, i
     if (physical < 8) return 0;
     return best;
 }
+/* (Triforce v0.8.x) The logical processors this process may run on (its affinity mask: `start /affinity`, a launcher's,
+   Process Lasso's), for the kept core's choice; every one when the mask cannot be read (Windows gives 0 for a process with
+   threads in more than one processor group). A core as a candidate for the kept core: its mask when all its logical
+   processors are among those, else 0, which pick_reserved_core takes for no core and does not count. A core outside the
+   process's mask is no place for the replay: Windows refuses the thread's pin there and the thread then runs beside the
+   game's (their report: a 7900X kept to one CCD, frames of 2-8 s). tests/test_reserved_core_mask.py */
+static uint64_t reserved_candidate(uint64_t core, uint64_t allowed) { return core & ~allowed ? 0 : core; }
+#if defined(_WIN32)
+static uint64_t process_cpus(void) {
+    DWORD_PTR proc = 0, sys = 0;
+    if (!GetProcessAffinityMask(GetCurrentProcess(), &proc, &sys) || !proc) return ~0ull;
+    return (uint64_t)proc;
+}
+#endif
 /* (the choice: the cores' logical processor masks and EfficiencyClass, n of them; 0 for none. tests/test_reserved_core.py) */
 static uint64_t pick_reserved_core(const uint64_t *masks, const unsigned char *classes, int n) {
     uint64_t last = 0;
@@ -919,7 +933,7 @@ static uint64_t last_fastest_core_legacy(int *cores) {
                 classes[current_core] = 0;  // E-core
                 ecore_candidates++;
             }
-            masks[current_core] = mask;
+            masks[current_core] = reserved_candidate(mask, process_cpus());   /* ((Triforce) inside the process's mask) */
             current_core++;
         }
     }
@@ -953,6 +967,7 @@ static uint64_t last_fastest_core(int *cores) {
     *cores = 0;
     GROUP_AFFINITY ga;
     const WORD group = GetThreadGroupAffinity(GetCurrentThread(), &ga) ? ga.Group : 0;
+    const uint64_t allowed = process_cpus();   /* ((Triforce) only a core the process may run on wholly: reserved_candidate) */
     if (GetLogicalProcessorInformationEx(RelationProcessorCore, NULL, &len) || GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
         hos_log("vk: GetLogicalProcessorInformationEx failed: %lu", GetLastError());
         return last_fastest_core_legacy(cores);
@@ -969,7 +984,7 @@ static uint64_t last_fastest_core(int *cores) {
             const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *e = (const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *)(buf + at);
             if (!e->Size) break;
             if (e->Relationship == RelationProcessorCore && e->Processor.GroupCount && e->Processor.GroupMask[0].Group == group) {
-                masks[n] = (uint64_t)e->Processor.GroupMask[0].Mask;
+                masks[n] = reserved_candidate((uint64_t)e->Processor.GroupMask[0].Mask, allowed);   /* ((Triforce) counted as before) */
                 classes[n] = e->Processor.EfficiencyClass;
                 n++;
             }
@@ -1027,13 +1042,15 @@ static uint64_t last_fastest_core(int *cores) {
     SYSTEM_LOGICAL_PROCESSOR_INFORMATION info[64];
     DWORD len = sizeof info;
     if (!GetLogicalProcessorInformation(info, &len)) return 0;
+    DWORD_PTR proc = 0, sys = 0;
+    if (!GetProcessAffinityMask(GetCurrentProcess(), &proc, &sys) || !proc) proc = ~(DWORD_PTR)0;
     uint64_t masks[64];
     unsigned char classes[64];
     int n = 0;
     for (DWORD i = 0; i < len / sizeof info[0] && n < 64; i++)
         if (info[i].Relationship == RelationProcessorCore) {
-            masks[n] = (uint64_t)info[i].ProcessorMask;
-            classes[n] = (masks[n] & fast) != 0;
+            masks[n] = reserved_candidate((uint64_t)info[i].ProcessorMask, (uint64_t)proc);   /* ((Triforce) the process's own mask) */
+            classes[n] = ((uint64_t)info[i].ProcessorMask & fast) != 0;
             n++;
         }
     *cores = n;
