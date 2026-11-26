@@ -28,7 +28,10 @@ inline unsigned count(unsigned half, unsigned usable, uint64_t avail_mb, bool se
     if (!segment || usable <= base) return base;
     const uint64_t room = avail_mb > kReserveMB ? (avail_mb - kReserveMB) / kPerWorkerMB : 0;
     const uint64_t extra = std::min<uint64_t>(room, (uint64_t)(usable - base));
-    return (unsigned)std::min<uint64_t>(base + extra, kMaxWorkers);
+    // ((Triforce v0.8.3) at most three quarters of the CPUs, never fewer than half: a quarter left to the rest of the PC. Two
+    // of their players' PCs in one day under a cold prepare, one at 100 C and one that switched itself off)
+    const uint64_t most = std::max<uint64_t>(base, usable - usable / 4);
+    return (unsigned)std::min<uint64_t>(std::min<uint64_t>(base + extra, most), kMaxWorkers);
 }
 
 /// The process heap's header (GetProcessHeap()): the segment heap's has 0xDDEEDDEE at byte 16, the NT heap's 0xFFEEFFEE (Windows'

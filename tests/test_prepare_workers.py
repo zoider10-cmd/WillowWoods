@@ -37,7 +37,7 @@ int main() {
     assert(count(0, 1, 64 * 1024, false) == 1);
     assert(count(40, 80, 1 << 20, false) == kMaxWorkers);
     // (the segment heap: every usable CPU when the memory allows it, measured on a 6-core, 12-thread Ryzen with ~10 GB free)
-    assert(count(6, 12, 10 * 1024, true) == 12);
+    assert(count(6, 12, 10 * 1024, true) == 9);   // ((Triforce v0.8.3) three quarters of 12 at most)
     // (a worker more for each kPerWorkerMB past kReserveMB)
     assert(count(6, 12, kReserveMB, true) == 6);
     assert(count(6, 12, kReserveMB - 1, true) == 6);
@@ -46,11 +46,11 @@ int main() {
     assert(count(6, 12, kReserveMB + kPerWorkerMB, true) == 7);
     assert(count(6, 12, kReserveMB + 3 * kPerWorkerMB, true) == 9);
     // (never more than the usable CPUs, nor kMaxWorkers)
-    assert(count(6, 12, 1 << 30, true) == 12);
+    assert(count(6, 12, 1 << 30, true) == 9);
     assert(count(6, 6, 1 << 30, true) == 6);
     assert(count(6, 4, 1 << 30, true) == 6);    // (half_cpus is already capped at usable_cpus: as given)
     assert(count(16, 64, 1 << 30, true) == kMaxWorkers);
-    assert(count(0, 8, 1 << 30, true) == 8);
+    assert(count(0, 8, 1 << 30, true) == 6);
 
     unsigned char heap[32];
     std::memset(heap, 0, sizeof heap);
@@ -92,7 +92,7 @@ def main():
         subprocess.run([args.cxx, "-std=c++17", "-Wall", "-Wextra", "-Werror", "-I", str(ROOT / "gpu/vk"), str(source),
                         "-o", str(exe)], check=True)
         subprocess.run([str(exe)], check=True)
-    print("PASS: prepare workers: half the CPUs on the NT heap; with the segment heap every usable CPU the free memory allows")
+    print("PASS: prepare workers: half the CPUs on the NT heap; with the segment heap up to three quarters of them, as the free memory allows")
 
 
 if __name__ == "__main__":
