@@ -36,9 +36,19 @@ static const wchar_t *fs_wide(const char *p, wchar_t *w, size_t cap) {
         if (unc) p++;   /* (\\server\share -> \\?\UNC\server\share) */
     }
     if (MultiByteToWideChar(CP_UTF8, 0, p, -1, w + at, (int)(cap - at)) <= 0) w[0] = 0;
-    if (extended)
-        for (wchar_t *q = w; *q; q++)
-            if (*q == L'/') *q = L'\\';
+    if (extended) {
+        /* ((Triforce v0.8.x) under the prefix Windows takes a path as it is: a / is no separator, and a doubled one is an
+           invalid name (ERROR_INVALID_NAME), where a short path has both tidied. The game doubles one itself, in its streamed
+           voices' "Voice/Resource//Stream/...": in a game folder long enough their files were "not found" and the cutscenes
+           silent. So here every / is a \, and a run of them one) */
+        wchar_t *d = w + at;
+        for (const wchar_t *q = w + at; *q; q++) {
+            const wchar_t c = *q == L'/' ? L'\\' : *q;
+            if (c == L'\\' && d > w + at && d[-1] == L'\\') continue;
+            *d++ = c;
+        }
+        *d = 0;
+    }
     return w;
 }
 #define FS_W(p) fs_wide((p), (wchar_t[HOS_FS_PATH + 8]){0}, HOS_FS_PATH + 8)
