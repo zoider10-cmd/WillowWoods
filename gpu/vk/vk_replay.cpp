@@ -49,6 +49,7 @@
 #include "vk_jobs.h"
 #include "vk_shader.h"
 #include "vk_state.h"
+#include "submit_retry.h"   // ((Triforce v0.8.x) a submit refused for want of memory, made again)
 #include "vk_texture.h"
 #include "wait_own.h"   // ((HeyListen 51e533a8) RX_VK_WAIT_OWN)
 #include "vk_xfer.h"
@@ -212,6 +213,53 @@ uint64_t completed() {
     vkGetSemaphoreCounterValue(dev.device, timeline, &v);
     return v;
 }
+// ---- ((Triforce v0.8.x) a submit the driver refused for want of memory: the GPU's work before it waited for and the submit
+// made again (submit_retry.h). The replay's vkQueueSubmit2 calls ask submit_again when they are refused, each with the
+// queue held. RX_VK_SUBMIT_RETRY=0: dropped, as before ----
+bool submit_retry_on() {
+    static const bool on = [] {
+        const char* e = getenv("RX_VK_SUBMIT_RETRY");
+        const bool v = !(e && atoi(e) == 0);   // (unset is on)
+        if (!v) logf("vk: a submit refused for want of memory is dropped, as before (RX_VK_SUBMIT_RETRY=0)");
+        return v;
+    }();
+    return on;
+}
+/// What a refused submit does before it is made again (the queue held): it waits for the GPU's work before it, so nothing
+/// in flight holds memory resident. Nothing is destroyed here: under the queue's lock a destroy's boundary could wait on
+/// work that waits for this lock
+void submit_give_back(int tried, VkResult res) {
+    const auto t0 = std::chrono::steady_clock::now();
+    vkQueueWaitIdle(dev.queue);
+    static std::atomic<int> told{0};
+    if (told.fetch_add(1, std::memory_order_relaxed) < 16)
+        logf("vk: a submit refused for want of memory (%d): the GPU's work before it waited for (%.1f ms); made again (try %d "
+             "of %d)", (int)res, std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count(),
+             tried + 1, submit_retry::kTries);
+}
+/// A submit vkQueueSubmit2 answered `first` for (the queue held): made again after submit_give_back while the driver refuses
+/// it for want of memory; any other answer comes back as it is (a device lost at a later try ends the game here, as at the
+/// first). Before, the replay logged the refusal and went on without the work: on a Legion Go (Radeon 780M, 8 GB UMA) every
+/// submit after a save load was refused that way, a black screen with the sound going on
+VkResult submit_again(VkResult first, const VkSubmitInfo2& si, VkFence fence) {
+    if (!submit_retry::refused_for_memory((int)first)) return first;
+    int tries = 1;
+    VkResult last = first;
+    const auto again = [&] {
+        tries++;
+        { DriverTurn turn; last = vkQueueSubmit2(dev.queue, 1, &si, fence); }
+        if (last == VK_ERROR_DEVICE_LOST) device_lost();
+        return last;
+    };
+    const VkResult res = submit_retry::after(first, again, [&](int tried) { submit_give_back(tried, last); },
+                                             [] { return submit_retry_on(); });
+    if (tries > 1) {
+        static std::atomic<int> told{0};
+        if (told.fetch_add(1, std::memory_order_relaxed) < 16)
+            logf("vk: the refused submit %s on try %d", res == VK_SUCCESS ? "was taken" : "was refused again, dropped", tries);
+    }
+    return res;
+}
 // ---- (test) RX_VK_BATCH=1: the replay's submits held and sent as one vkQueueSubmit2 ----
 // On amdgpu every command submission pays for all imported host memory (userptr) again; the replay made ~6 a frame.
 // Held submits go out at the next point that needs the GPU's results or the queue's order: a wait, a readback, a
@@ -271,6 +319,7 @@ void queue_flush_locked() {   // (dev.present_mu held)
     if (memory_sparse_wait(&sparse_wait)) si.waitSemaphoreInfoCount = 1, si.pWaitSemaphoreInfos = &sparse_wait;
     VkResult res;
     { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, VK_NULL_HANDLE); }   // ((ProjectReLink 88e38c0) the reaper waits for it)
+    if (res != VK_SUCCESS) res = submit_again(res, si, VK_NULL_HANDLE);   // ((Triforce) refused for want of memory: made again)
     static int failures;
     if (res != VK_SUCCESS && failures++ < 8) logf("vk: batched submit %llu failed (%d)", (unsigned long long)batch_next, (int)res);
     if (res == VK_ERROR_DEVICE_LOST) device_lost();
@@ -1004,6 +1053,7 @@ void submit_recording(Recording& r, bool signal_value = true, uint64_t signal_at
     if (memory_sparse_wait(&sparse_wait)) si.waitSemaphoreInfoCount = 1, si.pWaitSemaphoreInfos = &sparse_wait;
     VkResult res;
     { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, r.fence); }   // ((ProjectReLink 88e38c0) the reaper waits for it)
+    if (res != VK_SUCCESS) res = submit_again(res, si, r.fence);   // ((Triforce) refused for want of memory: made again)
     r.submitted = res == VK_SUCCESS;
     static int failures;
     if (res != VK_SUCCESS && failures++ < 8) logf("vk: submit %llu failed (%d)", (unsigned long long)r.value, (int)res);
@@ -2644,6 +2694,7 @@ const uint8_t* replay_handle(VkCommandBuffer& cmd, const uint8_t* h, bool may_st
         if (memory_sparse_wait(&sparse_wait)) si.waitSemaphoreInfoCount = 1, si.pWaitSemaphoreInfos = &sparse_wait;
         VkResult res;
         { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, j->r->fence); }   // ((ProjectReLink 88e38c0))
+        if (res != VK_SUCCESS) res = submit_again(res, si, j->r->fence);   // ((Triforce) refused for want of memory: made again)
         j->r->submitted = res == VK_SUCCESS;
         if (res != VK_SUCCESS) logf("vk: segment submit %llu failed (%d)", (unsigned long long)j->r->value, (int)res);
         if (res == VK_ERROR_DEVICE_LOST) device_lost();
@@ -6293,6 +6344,7 @@ void present_image(VkImage src, uint32_t sw, uint32_t sh, const int crop[4], VkI
     // (NVIDIA Reflex: the frame this present shows; with frame generation the set's game frame, none for a made frame)
     si.pNext = reflex_submit_id(nullptr, reflex_present_frame);
     { DriverTurn turn; res = vkQueueSubmit2(dev.queue, 1, &si, f.done); }   // ((ProjectReLink 88e38c0) the reaper waits for it)
+    if (res != VK_SUCCESS) res = submit_again(res, si, f.done);   // ((Triforce) refused for want of memory: made again)
     if (res == VK_ERROR_DEVICE_LOST) device_lost();
     if (present_defer_into) {   // (present ahead: the copy is queued; present_commit shows it at its time)
         present_defer_into->used = true;

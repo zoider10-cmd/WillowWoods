@@ -798,6 +798,7 @@ SW(RX_VK_STREAM_KEEP, kill, bool, "off: extra stream buffers are freed after 120
 SW(RX_VK_STREAM_MB, tune, int, "2 MB (24 with RX_VK_STREAM_GROW_OFF=1)", "Size in MB of each recording's first stream buffer.")
 SW(RX_VK_SUBMITTED_PAGES, kill, bool, "off: 32 per-thread slots for as-submitted pages", "1 uses one slot for every as-submitted page, as before #1762.")
 SW(RX_VK_SUBMIT_DELAY_US, diag, int, "0: no delay", "Spins for that many microseconds before each submit is replayed, to test for data arriving late.")
+SW(RX_VK_SUBMIT_RETRY, kill, bool, "on: a submit refused for want of memory is made again after the GPU is idle, 3 tries (Triforce)", "0 drops a submit the driver refused for want of memory, as before.")
 SW(RX_VK_SYNC_CAPTURE, kill, bool, "on: guest memory captured at each submit", "=0 stops capturing guest memory at the submit, so mirror syncs read memory as it is at the replay.")
 SW(RX_VK_SYNC_LIVE, kill, bool, "off: dirty pages come from kept captures where one holds them", "1 reads dirty pages not in their submission's capture from live guest memory, as before.")
 SW(RX_VK_SYNC_PIPELINES, attempt, bool, "off (a new pipeline is queued for a worker)", "1 builds each new graphics pipeline in the draw that needs it, not on a worker.")
