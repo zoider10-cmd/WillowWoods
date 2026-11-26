@@ -283,6 +283,7 @@ SW(RX_VK_BLOCK_AHEAD, kill, bool, "on: once less than half a texture pool block 
 SW(RX_VK_BLOCK_BUFFERS, kill, bool, "off: buffers asked as dedicated get a memory object of their own", "Puts buffers asked as dedicated into VMA's shared blocks instead, as before.")
 SW(RX_VK_BLOCK_PROBE, diag, bool, "off (512-byte miss-log slices)", "Set, counts entries into each IR block of the probed programs (16 KB slices) and writes them in the stats dump.")
 SW(RX_VK_BUDGET_BY_BLOCKS, kill, bool, "off: the budget's excess is measured less the free space in VMA's blocks", "Measures VRAM pressure by the allocator's blocks alone, as before, and turns off the compaction's hold line.")
+SW(RX_VK_BUFFER_BUDGET, kill, bool, "on: a host-visible buffer first where its heap's budget has room (Triforce)", "0 makes host-visible buffers where the allocator prefers them whatever that heap's budget, as before.")
 SW(RX_VK_CAPTURE, kill, bool, "on: written pages are captured at each submit", "0 turns off the submit-time capture of written pages; the replay collects them itself, as before.")
 SW(RX_VK_CAPTURE_EAGER, tune, int, "0: new pools stay in the captures with no limit", "Keeps a newly made pool in the captures only for its first n captures.")
 SW(RX_VK_CAPTURE_KEEP_OLD, kill, bool, "off: buffers up to 256 MB reused, size classes 32/64/128/192/256 MB", "1 goes back to the former capture buffer size classes and the 64 MB reuse limit.")
