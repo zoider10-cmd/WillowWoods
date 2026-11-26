@@ -157,6 +157,7 @@ def main():
         "static int oot_bundle_holder(const char *name, const char *const **sizes) {",
         "static int oot_drop_check_near(const char *name) {")) + '\n#define OOT_POT_FALL "_Fall"\n' + re.search(
         r"^static const char \*const oot_pot_as\[\]\[2\] = .*$", host, re.M).group(0) + "\n" + block(
+        host, "static int oot_dungeon_pickup(char *name, char *folder, size_t size) {") + "\n" + block(
         host, "static int oot_pot_fall(char *name) {") + "\n" + block(
         host, "int hos_oot_pickup_room(Ctx *c) {")
     add = block(host, "int hos_oot_pouch_add(Ctx *c) {")
