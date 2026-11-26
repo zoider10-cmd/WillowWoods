@@ -40,6 +40,7 @@ static int pouch_reads, pouch_writes, flag_writes;
 static bool reject_flag_write;
 static void hos_log(const char *, ...) {}
 static int oot_pouch_count(Ctx *, const char *name) { ++pouch_reads; return pouch[name]; }
+int hos_oot_bottles(Ctx *) { return -1; }   // (bug 156: the bottles are counted from their slots, host/oot_wheel.c; none of this check's)
 static int oot_pouch_change(Ctx *, const char *name, int delta) { ++pouch_writes; pouch[name] += delta; return 2; }
 static int oot_gamedata_bool(Ctx *, uint32_t hash, int *value) {
     const auto i = flags.find(hash);

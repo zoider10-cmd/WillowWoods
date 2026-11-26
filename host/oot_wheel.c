@@ -869,19 +869,30 @@ static int cy_item_of_name(Ctx *c, const char *want) {
 }
 /* the bottles in the inventory's order: the pouch's bottle slots (items 14 to 17 and 50, its Items page's bottom row from
    the left) and each one's content's name; left as they were when the pouch cannot be walked now */
-static void cy_bottles(Ctx *c) {
+/* how many bottles Link has: the bottle slots that name one (found: cy_bottle_walk's, "" a slot with none) and that the
+   game would list for either age (owned: a bit a slot), whatever is in it. The pouch names a bottle in all five slots of a
+   save that has none (seen without a window 2026-11-26, a save before the owl: five of Item_Bottle) */
+static int bottles_had(const char found[5][48], uint32_t owned) {
+    int had = 0;
+    for (int i = 0; i < 5; i++) had += found[i][0] != 0 && (owned >> i & 1);
+    return had;
+}
+/* the walk: found filled, 1; 0 when the pouch cannot be walked now. owned (or NULL): a bit for each slot whose bottle the
+   game would list in its row, for a child or an adult (CY_LISTABLE, as cy_listable asks it of every item) */
+static int cy_bottle_walk(Ctx *c, char found[5][48], uint32_t *owned) {
     static const uint64_t calls[] = {CY_POUCH_ARRAY, CY_ARRAY_COUNT, CY_SLOT_ACTOR, CY_ACTOR_SHORT};
     for (size_t i = 0; i < sizeof calls / sizeof calls[0]; i++)
-        if (!a64_lookup(calls[i])) return;
+        if (!a64_lookup(calls[i])) return 0;
     const uint64_t mgr = cy_peek(CY_POUCH_SLOT, 8);
-    if (!mgr) return;
+    if (!mgr) return 0;
     const uint64_t scr = (c->x[31] - 0x100) & ~0xfULL;
     const uint64_t kind[2] = {mgr, 0};
     const uint64_t array = cy_guest(c, CY_POUCH_ARRAY, 2, kind);
     const int n = array ? (int32_t)cy_guest(c, CY_ARRAY_COUNT, 1, &array) : 0;
-    if (n < 1 || n > 64) return;
-    char found[5][48];
-    memset(found, 0, sizeof found);
+    if (n < 1 || n > 64) return 0;
+    if (owned && !a64_lookup(CY_LISTABLE)) return 0;
+    if (owned) *owned = 0;
+    memset(found, 0, 5 * sizeof found[0]);
     for (int i = 0; i < n; i++) {
         recomp_store32_sp(c, scr, 0xffffffffu), recomp_store32_sp(c, scr + 4, 0);
         const uint64_t at[5] = {mgr, 0, (uint32_t)i, scr, scr + 4};
@@ -896,7 +907,34 @@ static void cy_bottles(Ctx *c) {
             if (!(found[slot][k] = *(const char *)GP(text + k))) break;
         found[slot][k] = 0;
         canonical(found[slot], sizeof found[slot]);
+        for (int age = 0; owned && age < 2; age++) {
+            const uint64_t list[5] = {mgr, name, (uint32_t)bottle, actor, (uint64_t)age};
+            if (cy_guest(c, CY_LISTABLE, 5, list) & 1) *owned |= 1u << slot;
+        }
     }
+    return 1;
+}
+/* (bug 156, the owner's run 2026-11-26: "Still asked for: a bottle" with an empty bottle held) The pouch keeps a bottle in a
+   slot of its own, not as a count of Item_Bottle: that count stayed 0 with a bottle got (the log: "pouch add Item_Bottle
+   x1", then the inventory's Item_Bottle=0), so the Tracker's "a bottle", the Debug tab's Empty Bottle and Item buttons'
+   slots_owned all saw none. How many bottles Link has, empty or filled, for host/hos_main.c's oot_item_count; -1 when the
+   pouch cannot be walked now */
+int hos_oot_bottles(Ctx *c) {
+    char found[5][48];
+    uint32_t owned = 0;
+    if (!cy_bottle_walk(c, found, &owned)) return -1;
+    static int said = -2;
+    const int had = bottles_had(found, owned);
+    if (had != said) {
+        said = had;
+        hos_log("rando: bottles: Link has %d (the slots listed: %#x; %s, %s, %s, %s, %s)", had, (unsigned)owned, found[0][0] ? found[0] : "-", found[1][0] ? found[1] : "-",
+                found[2][0] ? found[2] : "-", found[3][0] ? found[3] : "-", found[4][0] ? found[4] : "-");
+    }
+    return had;
+}
+static void cy_bottles(Ctx *c) {
+    char found[5][48];
+    if (!cy_bottle_walk(c, found, NULL)) return;
     if (memcmp(found, bottle_slots, sizeof found)) {
         memcpy(bottle_slots, found, sizeof found);
         if (wheel_trace())

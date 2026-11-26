@@ -1124,6 +1124,11 @@ static int oot_item_count(Ctx *c, const char *name) {
     }
     char alias[64];
     const int n = oot_pouch_count(c, name);
+    if (!strcmp(name, "Item_Bottle")) {   /* (bug 156: a bottle is a slot of its own, no count of this name: host/oot_wheel.c) */
+        int hos_oot_bottles(Ctx *c);
+        const int had = hos_oot_bottles(c);
+        return had > n ? had : n;
+    }
     if (!oot_mask_alias(name, alias, sizeof alias)) return n;
     const int m = oot_pouch_count(c, alias);
     return n > m ? n : m;
