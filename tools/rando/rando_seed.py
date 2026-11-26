@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 37  # 37: with Small keys: Anywhere, a pot that borrows the rule of an actor of its own dungeon room reached with no small key asks for none either (POT_KEYLESS_FROM); 36: with Dungeon keys, Boss Keys or Maps and compasses: Anywhere, a Gold Skulltula and a pot may hold them too, a drop of the dungeon's own (DUNGEON_DROPS_FROM); 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 38  # 38: an overworld pot the tables don't rule takes its area's easiest ruled check's rule for its age, an adult-only pot an adult-only check's, not the nearest actor's (POT_AREA_FROM, bugs 151 and 154); 37: with Small keys: Anywhere, a pot that borrows the rule of an actor of its own dungeon room reached with no small key asks for none either (POT_KEYLESS_FROM); 36: with Dungeon keys, Boss Keys or Maps and compasses: Anywhere, a Gold Skulltula and a pot may hold them too, a drop of the dungeon's own (DUNGEON_DROPS_FROM); 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -614,6 +614,75 @@ def rule_sources(pots, placed, ruled, folder_wide=False):
                 best = (key, k)
         if best is not None:
             out[h] = best[1]
+    return out
+# (bugs 151 and 154, the owner's run 2026-11-26) The nearest ruled actor is a poor guide outside a dungeon's rooms: 32 pots
+# only an adult has (Kakariko's, the Market's, Kokiri Forest's, Zora's River's) asked for nothing or the Boomerang alone,
+# the rule of an actor a child reaches too, so a young Link's Tracker had them in logic and the shuffle could put what an
+# adult's way needs in them; and Kakariko's pots on the ground asked for the Boomerang, the watchtower Skulltula's. From
+# placement POT_AREA_FROM an overworld pot the tables don't rule takes the rule of its area's easiest ruled check for its
+# age (area_sources): what reaching that area takes, and for a pot only an adult has, a check only an adult has (its rule
+# has the way to an adult in it, as every such rule of the tables does); with none in its area, the easiest such check of
+# the whole overworld. A dungeon's pot keeps the nearest of its room: there the room is the guide.
+POT_AREA_FROM = 38
+# (the same run: the Market's, Kokiri Forest's and the crater's pots only an adult has still asked for nothing: the tables
+#  rule some of them themselves, by a place of the other logic that a child reaches, where the remake has the pot in the
+#  adult's map alone.) So a pot only an adult has also asks for the way to an adult: the easiest of these checks of the
+#  tables, each an adult's alone by its name (and Kakariko's gate, or the lake: a little too much, never too little).
+ADULT_NAMED = ("Kak Bazaar Item 1", "Kak Potion Shop Item 1", "Kak Shooting Gallery Reward", "LH Adult Fishing", "GC Rolling Goron as Adult")
+
+
+def actor_ages(placed):
+    """{an actor's hash: "C", "A" or "CA"} by the map files that have it (placed: file -> [(hash, place, room)]; check_ages)"""
+    files_of = collections.defaultdict(set)
+    for rel, row in placed.items():
+        for k, _, _ in row:
+            files_of[k].add(rel)
+    return {k: check_ages(files) for k, files in files_of.items()}
+
+
+def with_way(need, way):
+    """a rule with another's asked for too: each way of the one with each way of the other. None (everything) stays"""
+    if need is None or way is None:
+        return need
+    return each(lambda w: each(lambda v: frozenset(w) | v, way), need)
+
+
+def rule_weight(need):
+    """how much a rule asks for, to choose the easiest: (the fewest items of its ways, the most); None: more than any"""
+    if need is None:
+        return (1 << 30, 1 << 30)
+    ways = list(need) if isinstance(need, Either) else [need]
+    return (min(len(w) for w in ways), max(len(w) for w in ways))
+
+
+def area_sources(pots, placed, rules, skip=()):
+    """{a pot's hash: the hash of the actor whose rule it takes} for the overworld pots with no rule of their own (pots:
+    hash -> [area, place, file], not in rules; skip: areas left as they are, the dungeons'): the easiest (rule_weight)
+    of the ruled actors (rules: hash -> its rule) in the pot's folder of map files that its age has. placed: file ->
+    [(hash, place, room)]; an actor's ages are its files' (check_ages). A pot only an adult has takes an actor only an
+    adult has, from the whole overworld when its folder has none; another pot one a child has."""
+    files_of = collections.defaultdict(set)
+    for rel, row in placed.items():
+        for k, _, _ in row:
+            files_of[k].add(rel)
+    ages = {k: check_ages(files) for k, files in files_of.items()}
+    by_folder = collections.defaultdict(set)
+    for k in rules:
+        for rel in files_of.get(k, ()):
+            by_folder[rel.rsplit("/", 1)[0]].add(k)
+    easiest = lambda ks: min(sorted(ks), key=lambda k: rule_weight(rules[k])) if ks else None
+    adults = easiest([k for k in rules if ages.get(k) == "A"])
+    out = {}
+    for h, (area, _, rel) in pots.items():
+        if h in rules or area in skip:
+            continue
+        mine = ages.get(h) or check_ages([rel])
+        here = by_folder.get(rel.rsplit("/", 1)[0], ())
+        best = easiest([k for k in here if (ages[k] == "A") if mine == "A"] if mine == "A" else [k for k in here if "C" in ages[k]])
+        if best is None and mine == "A":
+            best = adults
+        if best is not None:
+            out[h] = best
     return out
 POT_TABLES = ("overworld_rules.json", "dungeon_rules.json")
 
@@ -9508,6 +9577,13 @@ def main():
     RULE_AS.clear()
     if pots and placement >= POTS_ALL_FROM:   # (Pots: a pot the tables don't rule borrows the nearest ruled actor's rule)
         RULE_AS.update(rule_sources(pots, placed, set(dungeon_table()) | set(over) | set(over_own) | set(pot_table), placement >= POTS_FOLDER_FROM))
+        if placement >= POT_AREA_FROM and over:   # (an overworld pot: its area's easiest check for its age, area_sources)
+            table_rules = {k: overworld_rule(over_own[k] if placement >= OWN_FROM and k in over_own else over[k], PROGRESSION)
+                           for k in set(over) | (set(over_own) if placement >= OWN_FROM else set())}
+            by_area = area_sources(pots, placed, {k: r for k, r in table_rules.items() if r is not None}, DUNGEON_FOLDERS)
+            for h in [h for h in RULE_AS if pots[h][0] not in DUNGEON_FOLDERS and h not in by_area]:
+                del RULE_AS[h]   # (none of its age in its area: its area's rule, not a neighbour's)
+            RULE_AS.update(by_area)
         print("Pots: %d pots, %d of them ruled by the tables, %d by the nearest ruled actor's rule, %d by their area's" % (
             len(pots), sum(1 for h in pots if h in pot_table), len(RULE_AS), len(pots) - len(RULE_AS) - sum(1 for h in pots if h in pot_table)))
     song_lessons = {g.item: g.need for g in SONGS if g.item not in PROGRESSION}
@@ -9598,8 +9674,16 @@ def main():
                 made = soil_need(made, about.get(h, {}).get("soil"), bottles)
             return skull_old(h, at) if made is None else over_done(made)
 
+        # (a pot only an adult has asks for the way to an adult too: ADULT_NAMED, POT_AREA_FROM)
+        adult_ways = [w for w in (over_rule(None, "KakarikoVillage", name=n) for n in ADULT_NAMED if n in over_named) if w is not None] if placement >= POT_AREA_FROM else []
+        adult_way = min(adult_ways, key=rule_weight) if adult_ways else None
+        pot_ages = actor_ages(placed) if adult_way is not None else {}
+        adult_pot = lambda h: h in pots and pot_ages.get(h) == "A"
+
         def heart_over(h):
             made = over_rule(h, lying[h][0]) if h not in bosses else None
+            if adult_pot(h):
+                return fit_rule(with_way(heart_old(h), adult_way)) if made is None else over_done(with_way(made, adult_way))
             return heart_old(h) if made is None else over_done(made)
         skull_asks, heart_asks = skull_over, heart_over
     if a.start:   # (Starting items held: start_need, on what every step above made)
