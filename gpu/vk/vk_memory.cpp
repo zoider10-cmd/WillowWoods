@@ -1384,17 +1384,14 @@ void refresh_pool_ranges_locked() {   // (cap_ranges_mu held)
             v.push_back({list[i][0] & ~4095ull, (list[i][0] + list[i][1] + 4095) & ~4095ull});
     }
     pool_first_seen.swap(seen);
+    cap_ranges_ver++;
     std::sort(v.begin(), v.end());
     std::vector<std::pair<uint64_t, uint64_t>> m;
     for (const auto& r : v) {
         if (!m.empty() && r.first <= m.back().second) m.back().second = std::max(m.back().second, r.second);
         else m.push_back(r);
     }
-    // ((Triforce v0.8.x) the lists' version moves only when the list changed, RX_VK_CAP_RANGES_SAME=0: at every look, as before.
-    // Each move has the captures' union of the lists made again (capture_ranges_merged), and the look comes every 64 captures
-    // and at every change of the pool table, mostly to find the same pools)
-    static const bool same_kept = !(getenv("RX_VK_CAP_RANGES_SAME") && atoi(getenv("RX_VK_CAP_RANGES_SAME")) == 0);
-    if (!same_kept || m != pool_cap_ranges) pool_cap_ranges.swap(m), cap_ranges_ver++;
+    pool_cap_ranges.swap(m);
 }
 bool capture_on() {
     static const bool on = [] {
