@@ -1733,7 +1733,12 @@ BOOTS_CHILD_CALLS = (("c->x[30] = 0x82e16d88ULL; f_804d6db0(c);", BOOTS_CHILD_HO
 # seeds" (traced 2026-11-25: with the Slingshot out these two calls are the ones made each frame). The answers at those
 # two calls go through hos_oot_slots_item, which gives the forced item while one is forced.
 SLOTS_ITEM_HOOK = " c->x[0] = hos_oot_slots_item(c->x[0]);   /* (nx2/oot_patches.py patch_slots_item) */"
-SLOTS_ITEM_CALLS = ("c->x[30] = 0x833c784cULL; f_8019b6e0(c);", "c->x[30] = 0x80c23ab4ULL; f_8019b6e0(c);")
+# (and a bottle's use: the event's query of ZR's item, f_82a3d940, whose answer names the bottle to empty, and two bottle
+#  actions, f_828e2ca0 and f_829364c0, which go on only when ZR's item is a bottle. Traced 2026-11-25: a bottle of bugs
+#  forced played its release scene, which then never ended, the bottle still full)
+SLOTS_ITEM_CALLS = ("c->x[30] = 0x833c784cULL; f_8019b6e0(c);", "c->x[30] = 0x80c23ab4ULL; f_8019b6e0(c);",
+                    "c->x[30] = 0x82a3d97cULL; f_8019b6e0(c);", "c->x[30] = 0x828e2ce0ULL; f_8019b6e0(c);",
+                    "c->x[30] = 0x8293650cULL; f_8019b6e0(c);")
 
 
 def patch_slots_item(source):

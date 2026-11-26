@@ -10,7 +10,7 @@ Checks the wiring a change elsewhere could break, from the sources:
 - and the input's state machine, compiled alone against a fake clock and a fake HUD: L with an item asks for it, holds ZR
   back until the HUD put it there, then holds ZR while L is held; ZR afterwards asks for ZR's own back first; an item seen
   to work so is forced on Link at his update and ZR keeps its own (the Slingshot and the Bow with it: the game's two
-  lookups of their ammunition are given the forced item), the bottles go on ZR; the put-back made on
+  lookups of their ammunition are given the forced item, and the bottles' three), an item not tried forced goes on ZR; the put-back made on
   its own waits while Link holds an item (a Deku Stick taken out stays out).
 
     python -I -B tests/test_item_buttons.py [--cc clang]
@@ -42,7 +42,8 @@ enum { B_A = 0, B_B, B_X, B_Y, B_LS, B_RS, B_L, B_R, B_ZL, B_ZR, B_PLUS, B_MINUS
 #define CY_ITEMS 54
 #define SLOTS_RESTORE_NS 1500000000LL
 static int64_t pause_tick_ns;
-static int in_play(int64_t now) { (void)now; return 1; }
+static int playing = 1;
+static int in_play(int64_t now) { (void)now; return playing; }
 static int wheel_trace(void) { return 0; }
 static void hos_log(const char *f, ...) { (void)f; }
 int hos_oot_pause_page(void) { return 2; }
@@ -104,7 +105,7 @@ int main(void) {
        holds it, taken off once his hand is empty; an item the game forces itself is left alone; the Slingshot (4) is
        never forced */
     swap_done = link_done = swap_seq;
-    if (!slots_forced(0) || !slots_forced(6) || !slots_forced(7) || !slots_forced(4) || !slots_forced(30) || !slots_forced(47) || slots_forced(14) || slots_forced(50)) return printf("the forced items are not all but the bottles\n"), 1;
+    if (!slots_forced(0) || !slots_forced(6) || !slots_forced(7) || !slots_forced(4) || !slots_forced(30) || !slots_forced(47) || !slots_forced(14) || !slots_forced(50) || slots_forced(2) || slots_forced(1)) return printf("the forced items are not the ones seen to work\n"), 1;
     slots_ask(0);
     if (hos_oot_slots_link(-1, -1) != 0 || link_done != swap_seq || link_own_on) return printf("L's item not forced\n"), 1;
     if (hos_oot_slots_link(0, 0) != -2) return printf("the forced item written twice\n"), 1;
@@ -119,8 +120,8 @@ int main(void) {
     slots_ask(0);
     hos_oot_slots_link(-1, -1);
     if (hos_oot_slots_item(2) != 0) return printf("the ammunition's lookup is not given the forced item\n"), 1;
-    slots_ask(14);   /* (a bottle after a forced item: the forced one taken off, ZR's the HUD's to change) */
-    if (hos_oot_slots_link(-1, 0) != -1 || link_done != swap_seq || !link_own_on) return printf("the forced item kept under a bottle\n"), 1;
+    slots_ask(2);   /* (an item not forced after a forced one: the forced one taken off, ZR's the HUD's to change) */
+    if (hos_oot_slots_link(-1, 0) != -1 || link_done != swap_seq || !link_own_on) return printf("the forced item kept under an item that goes on ZR\n"), 1;
     hos_oot_slots_link(-1, -1);
     if (hos_oot_slots_item(2) != 2) return printf("the ammunition's lookup is given an item with none forced\n"), 1;
     /* the input waits for both answers before it holds ZR, and ZR is not its own while an item is forced */
@@ -145,6 +146,20 @@ int main(void) {
     const int before_r = swap_seq;
     out = slots_input(1ULL << B_R, t += 16000000);   /* R with no item: nothing asked, R kept from the game */
     if (swap_seq != before_r || (out & (1ULL << B_R))) return printf("R with no item asked or reached the game\n"), 1;
+    slots_input(0, t += 300000000);
+    /* a scene takes over while L is held (a bottle's bugs let out): the put-back is asked once play is back */
+    swap_done = link_done = swap_seq, zr_own_on = 1, link_own_on = 1;
+    slots_input(L, t += 16000000);
+    swap_done = link_done = swap_seq, link_own_on = 0;
+    slots_input(L, t += 16000000);
+    playing = 0;
+    slots_input(L, t += 16000000);
+    slots_input(0, t += 16000000);
+    playing = 1;
+    const int scene_seq = swap_seq;
+    slots_input(0, t += 2000000000LL);
+    if (swap_seq != scene_seq + 1 || swap_want != SLOTS_WHEN_FREE) return printf("no put-back after a scene took over L's item (%d, %d)\n", swap_seq - scene_seq, swap_want), 1;
+    swap_done = link_done = swap_seq, link_own_on = 1;
     slots_input(0, t += 300000000);
     slot_had[0] = 0;   /* (L's item gone from the pouch: nothing asked) */
     const int before_gone = swap_seq;
@@ -193,7 +208,7 @@ def main():
     need("want == SLOTS_OWN || want == SLOTS_WHEN_FREE || slots_forced(want)" in hud and "target = zr_put >= 0 ? zr_own[age] : cur, zr_put = -1;" in hud,
          "the HUD's update puts a forced item on ZR, or does not give ZR its own back under one")
     patches = (ROOT / "nx2" / "oot_patches.py").read_text(encoding="utf-8")
-    need('SLOTS_ITEM_CALLS = ("c->x[30] = 0x833c784cULL; f_8019b6e0(c);", "c->x[30] = 0x80c23ab4ULL; f_8019b6e0(c);")' in patches and
+    need(all('"c->x[30] = 0x%sULL; f_8019b6e0(c);"' % lr in patches for lr in ("833c784c", "80c23ab4", "82a3d97c", "828e2ce0", "8293650c")) and
          "patch_slots_item(out)" in patches and 'total["slots item answers"] != len(SLOTS_ITEM_CALLS)' in patches,
          "the game's two lookups of a shooting item's ammunition are not given the forced item")
     src = FAKE.replace("@WAITS@", block(wheel, "static int slots_waits(int want, int hand) {")).replace(

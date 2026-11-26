@@ -1182,8 +1182,9 @@ static int slots_waits(int want, int hand) {   /* (the put-back made on its own,
 /* The forced item (the mix, 2026-11-25; share/design-item-slots.md). Link's item record has an item the game uses in place
    of ZR's (its +0x1c, -1 none: f_830350a0 reads it before asking the pouch). For the items seen to work so
    (slots_forced), L's or R's item is written there and ZR's own item is never changed: the HUD's ZR icon, the pouch and
-   the item row stay as they are. The others (the bottles) go on ZR as before (slots_hud). A forced Slingshot or Bow
-   finds its ammunition through hos_oot_slots_item (the game looks it up from ZR's item). Each ask (slots_ask) is
+   the item row stay as they are. The others (items not tried forced) go on ZR as before (slots_hud). A forced Slingshot
+   or Bow finds its ammunition, and a bottle's scene its bottle, through hos_oot_slots_item (the game looks them up from
+   ZR's item). Each ask (slots_ask) is
    answered twice, at Link's update for the forced item (link_done) and at the HUD's for ZR (swap_done): one puts its
    side back while the other gives the item.
    HOS_ITEM_BUTTONS_FORCE=0: none forced (all on ZR); =all: every item forced (to try one). */
@@ -1197,13 +1198,14 @@ static int slots_forced(int item) {
     if (mode == 2) return 1;
     /* (seen to work forced, without a window 2026-11-25: the Deku Stick, the Boomerang, the Slingshot, the Longshot (the
        Hookshot taken to be the same), the Hammer, Bombchus, Din's Fire, Nayru's Love, the Bow and the Fire Arrow (the
-       Ice and Light Arrows taken to be the same). Not the bottles (14 to 17, 50): a bottle of bugs used forced kept its
-       bugs by its name and left Link's hand record empty with a bottle in it, where the swap let them out and emptied
-       it) */
-    return item == 0 || (item >= 3 && item <= 7) || item == 9 || item == 10 || item == 12 || item == 30 || (item >= 46 && item <= 48);
+       Ice and Light Arrows taken to be the same), and the five bottle slots (14 to 17, 50: an empty bottle and a bottle of
+       bugs seen; the game's bottle scenes ask for ZR's item, hos_oot_slots_item)) */
+    return item == 0 || (item >= 3 && item <= 7) || item == 9 || item == 10 || item == 12 || (item >= 14 && item <= 17) ||
+           item == 30 || (item >= 46 && item <= 48) || item == 50;
 }
-/* The item forced on Link now, -1 none, for the game's two lookups of a shooting item's ammunition, which ask for ZR's
-   item (nx2/oot_patches.py patch_slots_item: a forced Slingshot found no seeds without it) */
+/* The item forced on Link now, -1 none, for the game's lookups that ask for ZR's item where they mean the item in use:
+   a shooting item's ammunition (two) and a bottle's use (three). nx2/oot_patches.py patch_slots_item: without it a forced
+   Slingshot found no seeds, and a forced bottle of bugs never emptied, its scene never ending */
 static volatile int forced_now = -1;
 unsigned long long hos_oot_slots_item(unsigned long long item) {
     const int forced = __atomic_load_n(&forced_now, __ATOMIC_ACQUIRE);
@@ -1383,6 +1385,7 @@ static uint64_t slots_input(uint64_t buttons, int64_t now) {
     const int64_t pause = __atomic_load_n(&pause_tick_ns, __ATOMIC_ACQUIRE);
     if (pause && now - pause < 150000000LL) {   /* the pause menu */
         int hos_oot_pause_page(void);
+        if (active == SLOT_L || active == SLOT_R) restore_at = now + SLOTS_RESTORE_NS;   /* (as a scene, below) */
         active = -1, tap_until = 0;
         if ((pressed & lr) && hos_oot_pause_page() == 2 && !__atomic_load_n(&assign_state, __ATOMIC_ACQUIRE)) {
             __atomic_store_n(&assign_which, pressed & (1ULL << B_R) ? SLOT_R : SLOT_L, __ATOMIC_RELEASE);
@@ -1398,6 +1401,9 @@ static uint64_t slots_input(uint64_t buttons, int64_t now) {
     }
     if (__atomic_load_n(&assign_state, __ATOMIC_ACQUIRE)) __atomic_store_n(&assign_state, 0, __ATOMIC_RELEASE), a_until = 0;
     if (!in_play(now)) {
+        /* (a scene took over while L's or R's item was in use, a bottle's bugs let out: what was given goes back once
+           play is back, when Link's hand is empty. Seen 2026-11-25: the item stayed until the next press) */
+        if (active == SLOT_L || active == SLOT_R) restore_at = now + SLOTS_RESTORE_NS;
         active = -1, tap_until = 0;
         return buttons & ~blocked;
     }
