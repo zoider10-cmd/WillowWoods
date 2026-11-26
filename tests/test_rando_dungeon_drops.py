@@ -73,7 +73,17 @@ def main():
     finally:
         S.PROGRESSION = gating
 
+    # (placement 37, POT_KEYLESS_FROM) a pot needs no small key as the actor it borrows its rule from needs none, when that
+    # actor is of the pot's own dungeon room: not one of another room, of no room, or one that needs keys
+    placed = {"a": [(1, (0, 0, 0), 3), (10, (1, 0, 0), 3), (11, (2, 0, 0), 4), (2, (9, 0, 0), 5), (12, (9, 1, 0), 5)],
+              "b": [(3, (0, 0, 0), None), (13, (1, 0, 0), None)]}
+    free = frozenset((1, 3))   # (2: behind a locked door)
+    sources = {10: 1, 11: 1, 12: 2, 13: 3}
+    check(S.pots_keyless(free, sources, placed) == frozenset((10,)),
+          "a pot's 'needs no key' is not borrowed from its own room's keyless actor alone: %r" % sorted(S.pots_keyless(free, sources, placed)))
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
+    check(S.PLACEMENT >= S.POT_KEYLESS_FROM == 37 and "if placement >= POT_KEYLESS_FROM:" in script and
+          "free = free | pots_free" in script, "placement 37 is not the pots' own 'needs no key', or an earlier seed takes it")
     check("if not drop_holds(s[4], placement):" in script and
           "if s[4] in DROP_KINDS and h not in JUNK_ONLY:" in script and "holds[h] = frozenset(holds[h]) | loose" in script,
           "main does not let the dungeon items that are anywhere onto a Gold Skulltula's or a pot's spot")
