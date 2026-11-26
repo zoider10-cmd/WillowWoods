@@ -63,6 +63,7 @@ QUINT_AT, QUINT_N = (0, 3, 5), (3, 2, 2)
 
 
 # ---- bounded integer sequences (the spec's C.2.12): values of 3 * 2^n or 5 * 2^n steps, packed 5 or 3 together ----
+@functools.lru_cache(maxsize=None)   # (asked 5 million times for a seed's 13 pot looks, of 256 values: 8 s)
 def encoding(max_value):
     """how values of 0..max_value are stored: ("bits" | "trit" | "quint", bits each)"""
     while max_value > 0:

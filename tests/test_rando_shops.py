@@ -433,7 +433,7 @@ def main():
           "if g.key in SHOP_WALLET_GIFTS and gift_hash(g.key) not in gifts:" in script and "(tuple(SHOP_GATES) if a.shops else ())" in script,
           "the prices are not rolled by the seed, a shelf does not ask for its price's wallet, or the wallets are not shuffled as gating items kept from the Skulltulas")
     check('on_sale = collections.OrderedDict((shop_actor("%s_%d" % (shop.key, index)), (gives[h], shelf_prices[h]))' in script and
-          "table = shop_rows(table, kind, item, price, actor)" in script, "a shelf has not an actor of its own, with its own price")
+          "table = shop_rows_many(table, kind, [(item, price, actor) for actor, (item, price) in on_sale.items()])" in script, "a shelf has not an actor of its own, with its own price")
     check("[(shop.areas[0], shop.place, shop.ages, needs[h], gifts[h].name, None, gives[h])" in script and "for h, (shop, _, _) in shelves.items() if h in gives]" in script,
           "the shelves are not among the tracker's checks")
     # ---- Every shop shelf, and Shuffle sword and shield: which shelves take part ----

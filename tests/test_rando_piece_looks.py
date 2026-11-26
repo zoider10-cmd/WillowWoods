@@ -82,7 +82,7 @@ def main():
     src = open(S.__file__, encoding="utf-8").read()
     main_src = src[src.index("\ndef main():"):]
     check("new, own_parts = piece_variant_pack(item, actor_pack(base), actor_pack(item), name, base)" in main_src and
-          "table = piece_rows(table, kind, item, name, base)" in main_src and "new, k = piece_named(data, {h: renamed[h]}, base)" in main_src and
+          "table = piece_rows_many(table, kind, list(made.items()), base)" in main_src and "new, k = piece_named(data, {h: renamed[h]}, base)" in main_src and
           "for base, look, of_boss in ((HEART, PIECE_LOOK, False), (CONTAINER, CONTAINER_LOOK, True)):" in main_src and
           main_src.index("piece_variant_pack(item") < main_src.index("    def shop_table(tbl):"),
           "the seed does not make the pieces' looks before the size table")

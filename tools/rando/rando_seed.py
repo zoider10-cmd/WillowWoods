@@ -1539,29 +1539,42 @@ def shelf_lift(item, floor):
     return round(-floor, 2) if floor is not None and -0.5 < floor < -0.02 else 0.0
 
 
+_MODEL_ROWS = [None, {}]   # (the list of actors last asked about, and its rows by name: model_rows)
+
+
+def model_rows(data):
+    """{a row's name: the row} of the game's list of actors, the first of a name; the list read once while the same one
+    is asked about (2026-11-26: each of a seed's 73 shelves read the whole list for one row, 14 s of a seed's making)"""
+    key = (len(data), zlib.crc32(data))
+    if _MODEL_ROWS[0] != key:
+        rows = {}
+        for row in byml_parse(data)[0][1]:
+            rows.setdefault(row[1].get("__RowId", ("", ""))[1], row)
+        _MODEL_ROWS[:] = [key, rows]
+    return _MODEL_ROWS[1]
+
+
 def model_floor(data, item):
     """the lowest of an item's model's box in the game's list of actors (ActorInfo: ModelAabbMin.Y), or None"""
-    tree, _ = byml_parse(data)
-    for row in tree[1]:
-        if row[1].get("__RowId", ("", ""))[1] == item:
-            low = row[1].get("ModelAabbMin", ("dict", {}))[1].get("Y")
-            return struct.unpack("<f", low[1])[0] if low and low[0] == 0xD2 else None
+    row = model_rows(data).get(item)
+    if row is not None:
+        low = row[1].get("ModelAabbMin", ("dict", {}))[1].get("Y")
+        return struct.unpack("<f", low[1])[0] if low and low[0] == 0xD2 else None
     return None
 
 
 def model_box(data, item):
     """an item's model's box in the game's list of actors (ActorInfo: ModelAabbMin, ModelAabbMax): ((x, y, z) the
     lowest, (x, y, z) the highest), or None"""
-    tree, _ = byml_parse(data)
-    for row in tree[1]:
-        if row[1].get("__RowId", ("", ""))[1] == item:
-            ends = []
-            for key in ("ModelAabbMin", "ModelAabbMax"):
-                at = row[1].get(key, ("dict", {}))[1]
-                if not all(axis in at and at[axis][0] == 0xD2 for axis in "XYZ"):
-                    return None
-                ends.append(tuple(struct.unpack("<f", at[axis][1])[0] for axis in "XYZ"))
-            return tuple(ends)
+    row = model_rows(data).get(item)
+    if row is not None:
+        ends = []
+        for key in ("ModelAabbMin", "ModelAabbMax"):
+            at = row[1].get(key, ("dict", {}))[1]
+            if not all(axis in at and at[axis][0] == 0xD2 for axis in "XYZ"):
+                return None
+            ends.append(tuple(struct.unpack("<f", at[axis][1])[0] for axis in "XYZ"))
+        return tuple(ends)
     return None
 
 
@@ -1988,9 +2001,23 @@ def shop_rows(data, kind, item, price, name=None):
     actor's, shop_actor(item) when not given), in its place
     by name: the item's own row in the list of actors (its model, with a shelf's heaps where they are larger) and
     in the pouch's (with what it costs), a shelf's in the game's."""
+    return shop_rows_many(data, kind, [(item, price, name)])
+
+
+def shop_rows_many(data, kind, sales):
+    """shop_rows for each of sales ([(item, price, the actor's name or None)]) in turn, the list read and written once
+    (2026-11-26: a seed's 219 shelves each read and wrote the whole list, 45 s of a seed's making)"""
     tree, version = byml_parse(data)
+    rows = tree[1]
+    for item, price, name in sales:
+        rows = shop_rows_in(rows, kind, item, price, name)
+    return byml_build((tree[0], rows), version)
+
+
+def shop_rows_in(rows, kind, item, price, name=None):
+    """shop_rows on the list's rows (a list of ("dict", fields)): the new list of rows"""
     name = name or shop_actor(item)
-    by = {r[1]["__RowId"][1]: r for r in tree[1]}
+    by = {r[1]["__RowId"][1]: r for r in rows}
     need = (SHOP_ROW,) if kind == "GameActorInfo" else (item, SHOP_ROW_HEAPS if kind == "ActorInfo" else SHOP_ROW) + (
         (SHELF_MODEL_AS[item],) if kind == "ActorInfo" and item in SHELF_MODEL_AS else ())
     if any(n not in by for n in need):
@@ -2011,9 +2038,9 @@ def shop_rows(data, kind, item, price, name=None):
         row["SellingPrice"] = number(by[SHOP_ROW][1]["SellingPrice"], 1)
         row = ("dict", collections.OrderedDict(sorted(row.items())))
     row[1]["__RowId"] = ("string", name)
-    rows = [r for r in tree[1] if r[1]["__RowId"][1] != name] + [row]
+    rows = [r for r in rows if r[1]["__RowId"][1] != name] + [row]
     rows.sort(key=lambda r: r[1]["__RowId"][1])
-    return byml_build((tree[0], rows), version)
+    return rows
 
 
 # ---- Bombchus: a limit of their own ----
@@ -6162,15 +6189,35 @@ PART_NEW = 8192
 def size_table_add(tbl, paths, size=PART_NEW):
     """the size table with an entry of `size` for each of `paths` that it does not have: put in its place among the
     CRC32s, which are sorted, and the count raised. A path whose CRC32 the table has is left as it is."""
+    return size_table_add_each(tbl, [(path, size) for path in paths])
+
+
+def size_table_index(tbl):
+    """{a path's CRC32: its entry} of the size table"""
+    count = struct.unpack_from("<I", tbl, 14)[0]
+    words = struct.unpack_from("<%dI" % (count * 2), tbl, 22)
+    return dict(zip(words[0::2], words[1::2]))
+
+
+def size_table_add_each(tbl, entries):
+    """size_table_add for each of entries ([(path, size)]) in turn, each with a size of its own, the table read and
+    written once (2026-11-26: a seed's 870 additions each read, sorted and wrote the table's 220,000 rows, 110 s of a
+    seed's making). The first of two paths with one CRC32 is the one added, as when they were added one by one."""
     count = struct.unpack_from("<I", tbl, 14)[0]
     end = 22 + count * 8
-    have = {struct.unpack_from("<I", tbl, 22 + k * 8)[0] for k in range(count)}
-    new = sorted({zlib.crc32(path.encode()) & 0xffffffff for path in paths} - have)
+    words = struct.unpack_from("<%dI" % (count * 2), tbl, 22)
+    have = set(words[0::2])
+    new = collections.OrderedDict()
+    for path, size in entries:
+        crc = zlib.crc32(path.encode()) & 0xffffffff
+        if crc not in have and crc not in new:
+            new[crc] = size
     if not new:
         return tbl
-    rows = [bytes(tbl[22 + k * 8:30 + k * 8]) for k in range(count)] + [struct.pack("<II", crc, size) for crc in new]
-    rows.sort(key=lambda r: struct.unpack_from("<I", r)[0])
-    return bytes(tbl[:14]) + struct.pack("<I", len(rows)) + bytes(tbl[18:22]) + b"".join(rows) + bytes(tbl[end:])
+    rows = list(zip(words[0::2], words[1::2])) + list(new.items())
+    rows.sort(key=lambda r: r[0])   # (the game's rows first among equals, as they were: none is equal, `have`)
+    return bytes(tbl[:14]) + struct.pack("<I", len(rows)) + bytes(tbl[18:22]) + struct.pack(
+        "<%dI" % (len(rows) * 2), *(w for r in rows for w in r)) + bytes(tbl[end:])
 
 
 def unpack(data, zs, dicts):
@@ -7152,9 +7199,22 @@ def piece_variant_pack(item, piece_pack, item_pack, name, base=None):
 def piece_rows(data, kind, item, name, base=None):
     """one of the three lists of actors (SHOP_TABLES) with a row for a piece's actor of its own (name): the piece's row,
     its model's fields (ActorInfo) the item's"""
-    base = base or HEART
+    return piece_rows_many(data, kind, [(item, name)], base)
+
+
+def piece_rows_many(data, kind, made, base=None):
+    """piece_rows for each of made ([(item, its actor's name)]) in turn, the list read and written once"""
     tree, version = byml_parse(data)
-    by = {r[1]["__RowId"][1]: r for r in tree[1]}
+    rows = tree[1]
+    for item, name in made:
+        rows = piece_rows_in(rows, kind, item, name, base)
+    return byml_build((tree[0], rows), version)
+
+
+def piece_rows_in(rows, kind, item, name, base=None):
+    """piece_rows on the list's rows: the new list of rows"""
+    base = base or HEART
+    by = {r[1]["__RowId"][1]: r for r in rows}
     if base not in by or (kind == "ActorInfo" and item not in by):
         raise ValueError("the game's %s has no row of %s" % (kind, base if base not in by else item))
     row = ("dict", collections.OrderedDict(by[base][1]))
@@ -7165,9 +7225,9 @@ def piece_rows(data, kind, item, name, base=None):
                 row[1][k] = (row[1][k][0], struct.pack("<I", max(struct.unpack("<I", row[1][k][1])[0],
                                                                   struct.unpack("<I", by[item][1][k][1])[0]) + 32768))
     row[1]["__RowId"] = ("string", name)
-    rows = [r for r in tree[1] if r[1]["__RowId"][1] != name] + [row]
+    rows = [r for r in rows if r[1]["__RowId"][1] != name] + [row]
     rows.sort(key=lambda r: r[1]["__RowId"][1])
-    return byml_build((tree[0], rows), version)
+    return rows
 
 
 def piece_named(data, renamed, base=None):
@@ -10197,8 +10257,7 @@ def main():
                     for (shop, index, _), lift in zip(shelves.values(), os.environ.get("RANDO_TEST_LIFTS", "").split()):
                         if lift != "-":
                             lifts[shop_actor("%s_%d" % (shop.key, index))] = float(lift)
-                for actor, (item, price) in on_sale.items():
-                    table = shop_rows(table, kind, item, price, actor)
+                table = shop_rows_many(table, kind, [(item, price, actor) for actor, (item, price) in on_sale.items()])
                 shop_files["RSDB/" + n] = table
                 shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
             packs = sorted(n[:-len(".pack.zs")] for n in os.listdir(os.path.join(romfs, "Pack", "Actor")) if "Shop" in n and n.startswith("Npc_") and n.endswith(".pack.zs"))
@@ -10722,8 +10781,7 @@ def main():
                 for kind in SHOP_TABLES if made else ():
                     n = next(n for n in sorted(os.listdir(folder)) if n.startswith(kind + ".") and ".byml" in n.lower())
                     table = shop_files.get("RSDB/" + n) or unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
-                    for item, name in made.items():
-                        table = piece_rows(table, kind, item, name, base)
+                    table = piece_rows_many(table, kind, list(made.items()), base)
                     shop_files["RSDB/" + n] = table
                     shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
                 renamed = {h: made[i] for h, i in heart_drops.items() if i in made and (h in bosses) == of_boss and h not in suns}
@@ -10839,13 +10897,16 @@ def main():
     def shop_table(tbl):
         """the size table with the shops' files: the new packs and their own files added, the keepers' packs' goods
         lists raised, the lists of actors and the texts' archives made to fit"""
-        for path, size in shop_packs.items():
-            tbl = size_table_add(tbl, [path], size_entry(size, PACK_EXTRA))
-        for path, was in pot_size_as.items():   # (a pot's model and texture of its own: the game's own entry, POT_LOOK)
-            entry = size_table_entry(tbl, was)
+        tbl = size_table_add_each(tbl, [(path, size_entry(size, PACK_EXTRA)) for path, size in shop_packs.items()])
+        index = size_table_index(tbl)   # (a pot's model and texture of its own: the game's own entry, POT_LOOK)
+        own = []
+        for path, was in pot_size_as.items():
+            entry = index.get(zlib.crc32(was.encode()) & 0xffffffff)
             if entry is None:
                 raise ValueError("%s is not in the size table" % was)
-            tbl = size_table_add(tbl, [path], entry)
+            own.append((path, entry))
+            index.setdefault(zlib.crc32(path.encode()) & 0xffffffff, entry)   # (one added here may be another's `was`, as one by one)
+        tbl = size_table_add_each(tbl, own)
         tbl = size_table_add(tbl, pot_fall_parts, POT_FALL_PART)   # (before the others: an entry there is left as it is)
         return size_table_update(size_table_raise(size_table_add(tbl, shop_new), shop_parts | song_parts), shop_sizes, SHOP_EXTRA)
 
@@ -10927,8 +10988,7 @@ def main():
     for n in tables:
         try:
             first = unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
-            for path, size in pack_added.items():   # (a pack of our own: MASTER_PICKUP)
-                first = size_table_add(first, [path], size_entry(size, PACK_EXTRA))
+            first = size_table_add_each(first, [(path, size_entry(size, PACK_EXTRA)) for path, size in pack_added.items()])   # (a pack of our own: MASTER_PICKUP)
             new_tables["System/Resource/" + n] = shop_table(size_table_update(size_table_add(size_table_raise(size_table_update(
                 size_table_update(first, sizes), pack_sizes, PACK_EXTRA),
                 pack_parts - pack_new), pack_new | gift_new), gift_sizes, FLOW_EXTRA))
