@@ -1165,6 +1165,9 @@ static void slots_save(void) {
         for (int s = 0; s < 2; s++) fprintf(f, "%d %d %d\n", a, s, slot_item[a][s]);
     fclose(f);
 }
+#define SLOTS_RESTORE_NS 1500000000LL   /* (ZR's own item back this long after L or R is let go) */
+/* (a bomb still carried then is no matter: seen without a window 2026-11-25, ZR put back to the Bottle under a lit bomb from
+   L, and ZR threw the bomb all the same) */
 static int slots_ask(int item) {   /* (the input side: returns the ask's number, for slots_hud's answer) */
     __atomic_store_n(&swap_want, item, __ATOMIC_RELEASE);
     return __atomic_add_fetch(&swap_seq, 1, __ATOMIC_ACQ_REL);
@@ -1282,7 +1285,7 @@ static void slots_pause(Ctx *c) {
 static uint64_t slots_input(uint64_t buttons, int64_t now) {
     static uint64_t prev, blocked;
     static int active = -1, want_seq, pending_tap;   /* (active: SLOT_L, SLOT_R, 2 ZR's own being put back; -1 none) */
-    static int64_t asked_at, tap_until, a_until;
+    static int64_t asked_at, tap_until, a_until, restore_at;   /* (restore_at: when ZR's own item goes back after L's or R's use) */
     const uint64_t lr = HOLD_BUTTONS, zr = 1ULL << B_ZR;
     if (!slots_on()) {
         prev = buttons, blocked = 0, active = -1;
@@ -1314,6 +1317,7 @@ static uint64_t slots_input(uint64_t buttons, int64_t now) {
     }
     buttons &= ~lr;   /* (in play L and R are the slots', never the game's item row) */
     const int age = __atomic_load_n(&slot_age, __ATOMIC_ACQUIRE) & 1;
+    if (pressed & (lr | zr)) restore_at = 0;
     if (pressed & lr) {
         const int w = pressed & (1ULL << B_R) ? SLOT_R : SLOT_L;
         const int item = slot_item[age][w];
@@ -1334,8 +1338,15 @@ static uint64_t slots_input(uint64_t buttons, int64_t now) {
             buttons |= zr;
         } else {
             if (pending_tap) tap_until = now + 100000000LL;   /* (let go before the item was there: a short press of it) */
+            if (active != 2) restore_at = now + SLOTS_RESTORE_NS;
             active = -1;
         }
+    }
+    /* (the owner's run 2026-11-25: after L or R, the HUD's ZR showed their item until ZR was pressed. Once the button has been
+       let go a while (a bomb thrown, a seed fired) and nothing is pressed, ZR's own item is put back: slots_hud's -2) */
+    if (restore_at && now >= restore_at) {
+        restore_at = 0;
+        if (active < 0 && !(raw & (lr | zr)) && !__atomic_load_n(&zr_own_on, __ATOMIC_ACQUIRE)) slots_ask(-2);
     }
     if (now < tap_until) buttons |= zr;
     return buttons;

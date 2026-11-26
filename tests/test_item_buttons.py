@@ -37,6 +37,7 @@ FAKE = r"""
 enum { B_A = 0, B_B, B_X, B_Y, B_LS, B_RS, B_L, B_R, B_ZL, B_ZR, B_PLUS, B_MINUS };
 #define HOLD_BUTTONS ((1ULL << B_R) | (1ULL << B_L))
 #define CY_ITEMS 54
+#define SLOTS_RESTORE_NS 1500000000LL
 static int64_t pause_tick_ns;
 static int in_play(int64_t now) { (void)now; return 1; }
 static int wheel_trace(void) { return 0; }
@@ -70,10 +71,22 @@ int main(void) {
     out = slots_input(ZR, t += 16000000);
     if (!(out & ZR)) return printf("ZR not given once its own item was back\n"), 1;
     slots_input(0, t += 16000000);
+    /* L used and let go: ZR's own item back on its own once nothing is pressed for a while, ZR not pressed for the game */
+    slots_input(L, t += 16000000);
+    swap_done = swap_seq, zr_own_on = 0;
+    slots_input(L, t += 16000000);
+    slots_input(0, t += 16000000);
+    const int asked = swap_seq;
+    out = slots_input(0, t += 1000000000LL);
+    if (swap_seq != asked) return printf("ZR's own asked back too soon\n"), 1;
+    out = slots_input(0, t += 600000000LL);
+    if (swap_seq != asked + 1 || swap_want != -2 || (out & ZR)) return printf("ZR's own not put back after L (%d, %d)\n", swap_seq, swap_want), 1;
+    swap_done = swap_seq, zr_own_on = 1;
+    slots_input(0, t += 16000000);
     slot_item[1][1] = -1;
     out = slots_input(1ULL << B_R, t += 16000000);   /* R with no item: nothing asked, R kept from the game */
-    if (swap_seq != 2 || (out & (1ULL << B_R))) return printf("R with no item asked or reached the game\n"), 1;
-    puts("PASS: L's item put on ZR before ZR is held, ZR's own back before its use");
+    if (swap_seq != asked + 1 || (out & (1ULL << B_R))) return printf("R with no item asked or reached the game\n"), 1;
+    puts("PASS: L's item put on ZR before ZR is held, ZR's own back before its use and after L's");
     return 0;
 }
 """
