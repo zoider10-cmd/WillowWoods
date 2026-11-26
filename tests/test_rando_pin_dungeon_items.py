@@ -69,6 +69,9 @@ def main():
     check("oot_dungeon_check = best, oot_dungeon_check_at = hos_now_ns();" in host and
           "if (oot_dungeon_recent(name)) nearest = 0" in host and "const int from_check = oot_dungeon_recent(name);" in host,
           "a dungeon item that is not a chest's add is not its check's dungeon's")
+    check("if (away < (chest ? OOT_DUNGEON_NEAR : OOT_CHECK_NEAR) && away < best)" in host and
+          "if (!chest && oot_checks[i].done == 1) continue;" in host,
+          "a Skulltula's dungeon item's window is looked for within a chest's 4 m (the owner's test: 8 m away, not named)")
     print("PASS: test pins: dungeon items on Gold Skulltulas and in pots")
 
 

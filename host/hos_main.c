@@ -3802,13 +3802,20 @@ static int oot_dungeon_owner(const char *name, char *owner, size_t size, float *
     /* (2026-11-26: a test pin's dungeon item on a Gold Skulltula or in a pot. The check its add was just found to be
        (oot_tracker_item: the pot broken, the Skulltula nearest) says whose, before any chest near) */
     if (oot_dungeon_recent(name)) nearest = 0, snprintf(owner, size, "%s", oot_checks[oot_dungeon_check].owner);
+    /* (the owner's test 2026-11-26: a Skulltula's key, its window opened before the add 8 m from the Skulltula's place, up
+       a tree, said only "You found a small key!". A check that is no chest (a Skulltula's, a pot's: no .opened) is
+       looked for as the tracker looks for it, within OOT_CHECK_NEAR and not yet collected; a chest within OOT_DUNGEON_NEAR) */
+    float best = nearest > 0 ? 1e30f : 0;
     for (int i = 0; i < oot_check_count && nearest > 0; i++) {
         if (!oot_checks[i].owner[0] || strcmp(oot_checks[i].item, name) || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
+        const int chest = oot_checks[i].opened != 0;
+        if (!chest && oot_checks[i].done == 1) continue;
         const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
                     dz = oot_checks[i].place[2] - oot_link_place[2];
         const float away = sqrtf(dx * dx + dy * dy + dz * dz);
-        if (away < nearest) nearest = away, snprintf(owner, size, "%s", oot_checks[i].owner);
+        if (away < (chest ? OOT_DUNGEON_NEAR : OOT_CHECK_NEAR) && away < best) best = away, snprintf(owner, size, "%s", oot_checks[i].owner);
     }
+    if (nearest > 0) nearest = owner[0] ? best : OOT_DUNGEON_NEAR;
     ReleaseSRWLockShared(&oot_checks_lock);
     if (away_out) *away_out = nearest;
     if (!owner[0] || oot_banc_in_folder(oot_link_map, owner)) return owner[0] = 0, 0;   /* (in its own dungeon: the game counts it there) */
