@@ -14,6 +14,8 @@ The usage gate of make_view is compiled with it, so each case also checks which 
 
 python -I -B tests/test_sparse_bc_usage.py [--cxx g++] [--source ROOT]
 """
+RUN_ALL_ARGS = ["--cxx", "{cxx}"]   # (tests/run_all.py: the C++ compiler it found)
+
 import argparse
 import subprocess
 import tempfile
