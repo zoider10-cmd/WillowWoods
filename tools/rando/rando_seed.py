@@ -8624,6 +8624,53 @@ def remove_old(mod):
     return n
 
 
+def holds_match(kinds, items):
+    """Whether every fussy spot can be given an item it may hold, exactly (share/better-ways-2026-11-26.md G). kinds: {a set
+    of items a spot may hold: how many spots hold just that}; items: the items to give (a list: an item once for each copy).
+    Returns {a set: {an item: how many of its spots take it}} when all the spots can be filled at once, else None. place's
+    holds_short asks the same by counting, taking the sets as nested (a Gold Skulltula's within a piece's): right while they
+    were, only roughly so since a Skulltula and a pot may hold dungeon items a piece may not, and a Boss Key's spots differ
+    by key. This is a flow from the sets to the items, each spot one unit, each item as many as it has copies."""
+    stock = collections.Counter(items)
+    sets = sorted(kinds, key=lambda k: (len(k), sorted(k)))
+    names = sorted(stock)
+    need = {k: kinds[k] for k in sets if kinds[k] > 0}
+    flow = {k: collections.Counter() for k in need}   # (a set -> an item -> its spots given that item)
+    left = dict(stock)                                # (an item -> copies not given yet)
+    for k in need:
+        while need[k]:
+            # (a way from this set to an item with a copy left: over items other sets hold, each handing one on)
+            came, queue, end = {("set", k): None}, [("set", k)], None
+            while queue and end is None:
+                node = queue.pop(0)
+                if node[0] == "set":
+                    for i in names:
+                        if i in node[1] and ("item", i) not in came:
+                            came[("item", i)] = node
+                            if left[i] > 0:
+                                end = ("item", i)
+                                break
+                            queue.append(("item", i))
+                else:
+                    for other in flow:
+                        if flow[other][node[1]] > 0 and ("set", other) not in came:
+                            came[("set", other)] = node
+                            queue.append(("set", other))
+            if end is None:
+                return None
+            left[end[1]] -= 1
+            node = end
+            while came[node] is not None:   # (back along the way: an item to the set before it, a set's item handed on)
+                before = came[node]
+                if node[0] == "item":
+                    flow[before[1]][node[1]] += 1
+                else:
+                    flow[node[1]][before[1]] -= 1
+                node = before
+            need[k] -= 1
+    return {k: {i: n for i, n in given.items() if n > 0} for k, given in flow.items()}
+
+
 def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart=(), holds=None, counted=False, fixed_more=(), loose=frozenset(), even=frozenset()):
     """What each chest holds. spots: {hash: (area, item, is a dungeon's chest, why it stays or None)}, in a fixed order.
     needs: {hash: what the chest asks for} for the logic, or None: no logic.
@@ -8755,6 +8802,12 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
                 for i in (held or {}).values():
                     left_items.remove(i)
                 ok = not holds_short([h for h in rest if h not in placed and h not in (held or {})], left_items)
+                # (and exactly, holds_match: an arrangement the count let through that the filling below could not end
+                #  is tried again, not a seed lost. The groups' spots and items are filled apart, below: not these)
+                if ok and holds_match(collections.Counter(holds[h] for h in rest if h in holds and h not in placed and h not in (held or {})
+                                                          and h not in bound_spots),
+                                      [i for i in left_items if i not in bound_items]) is None:
+                    ok = False
             if ok:
                 spheres = collect(fixed + [(needs[h], i) for h, i in placed.items()])
                 if {i for sphere in spheres for i in sphere} >= {i for _, i in fixed if i in PROGRESSION} | set(gating):   # (a token kept in place is counted, not a sphere's)
@@ -8792,11 +8845,28 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
         order = [h for h in rest if h in holds]
         if MASTER_SHUFFLED or loose:   # (and with MAPS_LOOSE every spot but a chest is one: the fussiest first) (the pedestal's few kinds before the shelves', which take nearly anything: the fewest first)
             order.sort(key=lambda h: len(holds[h]))
+        took, pile = {}, list(items)
         for h in order:
-            k = next((k for k, i in enumerate(items) if i in holds[h]), None)
+            k = next((k for k, i in enumerate(pile) if i in holds[h]), None)
             if k is None:
+                took = None
+                break
+            took[h] = pile.pop(k)
+        if took is None:
+            # (each taking the first it may hold left a later spot with nothing, though they can all be filled: by
+            #  holds_match's sharing, each spot one of its set's items, whichever comes. A seed that failed here before)
+            shared = holds_match(collections.Counter(holds[h] for h in order), items)
+            if shared is None:
                 raise ValueError("a Gold Skulltula or a Piece of Heart has nothing left that it may hold")
-            gives[h] = items.pop(k)
+            took, pile = {}, list(items)
+            for h in order:
+                mine = shared[holds[h]]
+                item = rng.choice(sorted(i for i, n in mine.items() if n > 0))
+                mine[item] -= 1
+                took[h] = item
+                pile.remove(item)
+        gives.update(took)
+        items = pile
         rest = [h for h in rest if h not in holds]
     for h, item in zip(rest, items):
         gives[h] = item
