@@ -1129,7 +1129,7 @@ static int slots_on(void) {
 #define SLOT_R 1
 static volatile int slot_item[2][2] = {{-1, -1}, {-1, -1}};   /* [age: 0 the adult, 1 the child][SLOT_L, SLOT_R]: an item, -1 none */
 static volatile int slot_age;                                  /* (the HUD's: 1 the child) */
-static volatile int swap_want = -1, swap_seq, swap_done;       /* (the input's ask of the HUD: an item to put on ZR, -2 ZR's own) */
+static volatile int swap_want = -1, swap_seq, swap_done;       /* (the input's ask of the HUD: an item to put on ZR, -2 ZR's own, -3 ZR's own once Link's hand is empty) */
 static volatile int zr_own_on = 1;                             /* (ZR holds its own item, not L's or R's) */
 static volatile int assign_state, assign_which;   /* (0 none; 1 L or R pressed on the Items page; 2 ZR read, A to be sent; 3 A sent) */
 
@@ -1168,6 +1168,20 @@ static void slots_save(void) {
 #define SLOTS_RESTORE_NS 1500000000LL   /* (ZR's own item back this long after L or R is let go) */
 /* (a bomb still carried then is no matter: seen without a window 2026-11-25, ZR put back to the Bottle under a lit bomb from
    L, and ZR threw the bomb all the same) */
+/* What Link has in his hand, from his update (host/hos_main.c hos_oot_lift_player): the game's item number, -1 nothing.
+   The owner's run 2026-11-25: a Deku Stick taken out with L was put away 1.5 s later, when ZR's own item went back. The
+   game's watcher of ZR's item (f_830350a0, each of Link's updates) puts away what he holds when ZR's item is another. So
+   the put-back made on its own (SLOTS_WHEN_FREE) waits for his hand to be empty; ZR's own press still has it at once. */
+#define SLOTS_OWN -2         /* (an ask: ZR's own item back now) */
+#define SLOTS_WHEN_FREE -3   /* (an ask: ZR's own item back once Link holds nothing) */
+static volatile int hand_item = -1;
+void hos_oot_note_hand(int item) {
+    const int before = __atomic_exchange_n(&hand_item, item, __ATOMIC_ACQ_REL);
+    if (before != item && wheel_trace()) hos_log("item buttons: Link's hand had %d, now %d", before, item);
+}
+static int slots_waits(int want, int hand) {   /* (the put-back made on its own, while Link holds an item) */
+    return want == SLOTS_WHEN_FREE && hand >= 0;
+}
 static int slots_ask(int item) {   /* (the input side: returns the ask's number, for slots_hud's answer) */
     __atomic_store_n(&swap_want, item, __ATOMIC_RELEASE);
     return __atomic_add_fetch(&swap_seq, 1, __ATOMIC_ACQ_REL);
@@ -1230,8 +1244,9 @@ static void slots_hud(Ctx *c) {
     const int seq = __atomic_load_n(&swap_seq, __ATOMIC_ACQUIRE);
     if (seq == __atomic_load_n(&swap_done, __ATOMIC_ACQUIRE)) return;
     const int want = __atomic_load_n(&swap_want, __ATOMIC_ACQUIRE);
+    if (slots_waits(want, __atomic_load_n(&hand_item, __ATOMIC_ACQUIRE))) return;   /* (asked again at the next update) */
     int target;
-    if (want == -2) {
+    if (want == SLOTS_OWN || want == SLOTS_WHEN_FREE) {
         target = zr_own[age], zr_put = -1;
     } else {
         if (zr_put < 0) zr_own[age] = cur;
@@ -1242,7 +1257,8 @@ static void slots_hud(Ctx *c) {
         const uint64_t s[4] = {mgr, (uint64_t)age, (uint64_t)target, 1};
         cy_guest(c, CY_SETTER, 4, s);
     }
-    if (wheel_trace()) hos_log("item buttons: ZR had %d, now %d (%s)", cur, target, want == -2 ? "its own back" : "a button's");
+    if (wheel_trace()) hos_log("item buttons: ZR had %d, now %d (%s)", cur, target,
+                               want == SLOTS_OWN ? "its own back" : want == SLOTS_WHEN_FREE ? "its own back, Link's hand empty" : "a button's");
     __atomic_store_n(&swap_done, seq, __ATOMIC_RELEASE);
 }
 
@@ -1324,7 +1340,7 @@ static uint64_t slots_input(uint64_t buttons, int64_t now) {
         if (item >= 0) want_seq = slots_ask(item), active = w, asked_at = now, pending_tap = 0;
         else if (wheel_trace()) hos_log("item buttons: %s has no item (choose one in the pause menu's Items page)", w == SLOT_R ? "R" : "L");
     } else if ((pressed & zr) && !__atomic_load_n(&zr_own_on, __ATOMIC_ACQUIRE)) {
-        want_seq = slots_ask(-2), active = 2, asked_at = now, pending_tap = 0;
+        want_seq = slots_ask(SLOTS_OWN), active = 2, asked_at = now, pending_tap = 0;
     }
     if (active >= 0) {
         const uint64_t mine = active == 2 ? zr : active == SLOT_R ? 1ULL << B_R : 1ULL << B_L;
@@ -1343,10 +1359,11 @@ static uint64_t slots_input(uint64_t buttons, int64_t now) {
         }
     }
     /* (the owner's run 2026-11-25: after L or R, the HUD's ZR showed their item until ZR was pressed. Once the button has been
-       let go a while (a bomb thrown, a seed fired) and nothing is pressed, ZR's own item is put back: slots_hud's -2) */
+       let go a while (a bomb thrown, a seed fired) and nothing is pressed, ZR's own item is put back, when Link holds
+       nothing: slots_hud's SLOTS_WHEN_FREE. A Deku Stick stays out until he puts it away) */
     if (restore_at && now >= restore_at) {
         restore_at = 0;
-        if (active < 0 && !(raw & (lr | zr)) && !__atomic_load_n(&zr_own_on, __ATOMIC_ACQUIRE)) slots_ask(-2);
+        if (active < 0 && !(raw & (lr | zr)) && !__atomic_load_n(&zr_own_on, __ATOMIC_ACQUIRE)) slots_ask(SLOTS_WHEN_FREE);
     }
     if (now < tap_until) buttons |= zr;
     return buttons;

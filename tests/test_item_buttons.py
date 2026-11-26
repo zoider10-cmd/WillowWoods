@@ -8,7 +8,8 @@ Checks the wiring a change elsewhere could break, from the sources:
 - the pause menu's page is known to the wheel (hos_oot_pause_page), the Items page being 2;
 - the HUD's L and R icons: the slots' items published (MKWVK_SLOTS_QUERY) and drawn by the overlay;
 - and the input's state machine, compiled alone against a fake clock and a fake HUD: L with an item asks for it, holds ZR
-  back until the HUD put it there, then holds ZR while L is held; ZR afterwards asks for ZR's own back first.
+  back until the HUD put it there, then holds ZR while L is held; ZR afterwards asks for ZR's own back first; the put-back made on
+  its own waits while Link holds an item (a Deku Stick taken out stays out).
 
     python -I -B tests/test_item_buttons.py [--cc clang]
 """
@@ -51,6 +52,9 @@ static volatile int slot_age = 1;
 static volatile int swap_want = -1, swap_seq, swap_done;
 static volatile int zr_own_on = 1;
 static volatile int assign_state, assign_which;
+#define SLOTS_OWN -2
+#define SLOTS_WHEN_FREE -3
+@WAITS@
 @ASK@
 @INPUT@
 int main(void) {
@@ -66,7 +70,7 @@ int main(void) {
     out = slots_input(0, t += 16000000);
     if (out & ZR) return printf("ZR still held after L was let go\n"), 1;
     out = slots_input(ZR, t += 16000000);   /* ZR pressed: its own item first */
-    if (swap_want != -2 || swap_seq != 2 || (out & ZR)) return printf("ZR did not ask for its own item first (%d, %llx)\n", swap_want, (unsigned long long)out), 1;
+    if (swap_want != SLOTS_OWN || swap_seq != 2 || (out & ZR)) return printf("ZR did not ask for its own item first (%d, %llx)\n", swap_want, (unsigned long long)out), 1;
     swap_done = swap_seq, zr_own_on = 1;
     out = slots_input(ZR, t += 16000000);
     if (!(out & ZR)) return printf("ZR not given once its own item was back\n"), 1;
@@ -80,7 +84,10 @@ int main(void) {
     out = slots_input(0, t += 1000000000LL);
     if (swap_seq != asked) return printf("ZR's own asked back too soon\n"), 1;
     out = slots_input(0, t += 600000000LL);
-    if (swap_seq != asked + 1 || swap_want != -2 || (out & ZR)) return printf("ZR's own not put back after L (%d, %d)\n", swap_seq, swap_want), 1;
+    /* (the put-back made on its own is the one that waits for Link's hand: a Deku Stick out stays out) */
+    if (swap_seq != asked + 1 || swap_want != SLOTS_WHEN_FREE || (out & ZR)) return printf("ZR's own not put back after L (%d, %d)\n", swap_seq, swap_want), 1;
+    if (!slots_waits(SLOTS_WHEN_FREE, 0) || slots_waits(SLOTS_WHEN_FREE, -1)) return printf("the put-back made on its own does not wait for Link's empty hand\n"), 1;
+    if (slots_waits(SLOTS_OWN, 0) || slots_waits(7, 0)) return printf("ZR's press or a button's item waits for Link's hand\n"), 1;
     swap_done = swap_seq, zr_own_on = 1;
     slots_input(0, t += 16000000);
     slot_item[1][1] = -1;
@@ -120,7 +127,13 @@ def main():
          "the HUD's L and R icons are not told the slots' items")
     need(vkmenu_draw == 2 and menu.count("&& item_buttons_shows();") == 2,
          "the overlay does not draw the L and R icons (both of its drawings, with the window and the headless shots)")
-    src = FAKE.replace("@ASK@", block(wheel, "static int slots_ask(int item) {")).replace(
+    hud = block(wheel, "static void slots_hud(Ctx *c) {")
+    need("if (slots_waits(want, __atomic_load_n(&hand_item, __ATOMIC_ACQUIRE))) return;" in hud and
+         hud.index("slots_waits(") < hud.index("cy_guest(c, CY_SETTER") and hud.index("slots_waits(") < hud.index("&swap_done, seq"),
+         "the HUD's update puts ZR's own item back under an item Link holds")
+    need("hos_oot_note_hand(" in block((ROOT / "host" / "hos_main.c").read_text(encoding="utf-8"), "void hos_oot_lift_player(Ctx *c, uint64_t actor) {"),
+         "Link's update does not tell the slots what he holds")
+    src = FAKE.replace("@WAITS@", block(wheel, "static int slots_waits(int want, int hand) {")).replace("@ASK@", block(wheel, "static int slots_ask(int item) {")).replace(
         "@INPUT@", block(wheel, "static uint64_t slots_input(uint64_t buttons, int64_t now) {"))
     with tempfile.TemporaryDirectory() as d:
         c, exe = Path(d) / "t.c", Path(d) / "t.exe"
