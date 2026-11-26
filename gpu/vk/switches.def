@@ -405,6 +405,7 @@ SW(RX_VK_FALLBACK_PHI_LIMIT, tune, int, "50000 phis; applied only on RADV GCN 1-
 SW(RX_VK_FAULT_INFO, diag, bool, "off: device fault info is read only when there are no checkpoints or buffer markers", "At a device loss, also queries the driver's fault info, before and after the checkpoint report.")
 SW(RX_VK_FETCH_BOUNDS, hw, bool, "on for every GPU but NVIDIA's (vendor id != 0x10DE), off on NVIDIA", "Forces the shader-side zero answer for out-of-bounds texel fetches off (0) or on (non-zero), whatever the GPU.")
 SW(RX_VK_FG_MOTION, kill, bool, "on: the built-in frame generation (when FSR 3.1's is not used) makes its frames with the game's scene motion", "=0 makes them without it.")
+SW(RX_VK_FG_TIMELINE, kill, bool, "on: a fixed multiplier's frames are spaced with Frame pacing Off too (Triforce)", "0 sends a fixed multiplier's set as it comes with Frame pacing Off, as before.")
 SW(RX_VK_FIFO, player, bool, "the menu's V-Sync row", "V-Sync On (FIFO) for one run, over the menu's V-Sync row.")
 SW(RX_VK_FLASH, diag, bool, "off", "=1 runs the flash detector on shots: writes the three frames around a one-frame flash and dumps the next.")
 SW(RX_VK_FLASH_CELLS, diag, int, "40", "How many cells must flash for the detector to report one.")

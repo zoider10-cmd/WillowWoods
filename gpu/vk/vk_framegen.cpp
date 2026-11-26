@@ -576,6 +576,13 @@ void display_main() {
         const bool timed = j.set->shown >= 0;   // (Auto: each frame at its own refresh's time)
         const int shown = timed ? j.set->shown : j.set->made + 1;
         const int64_t step = interval / std::max(shown, 1);
+        // ((Triforce v0.8.x) a fixed multiplier's set with made frames: each frame at its own time, a step apart on the same
+        // line, whatever the Frame pacing row says. With the row Off the set went out as it came, all within a millisecond: a
+        // swapchain that does not wait for a refresh (VSync Off: immediate, mailbox) shows each present at once, so the game's
+        // frame covered the made ones, and the picture moved at the game's own rate with the made frames paid for.
+        // RX_VK_FG_TIMELINE=0: as they come with the row Off, as before)
+        static const bool fg_spaced = !(getenv("RX_VK_FG_TIMELINE") && atoi(getenv("RX_VK_FG_TIMELINE")) == 0);
+        const bool spaced = pace || (fg_spaced && !timed && j.set->made > 0);
         if (timed) menu_note_frame(true, 0);   // (the overlay's game rate: Auto counts each game frame, given a refresh or not)
         // (hookshot) Present ahead (#1702; RX_VK_PRESENT_AHEAD=0: off). Each frame's copy into the window was submitted at its
         // time, behind the game's next frame on the same queue, and shown only once that frame's rendering was done: at 2x the
@@ -603,7 +610,7 @@ void display_main() {
             if (pending[0].used) vkWaitForFences(dev.device, 1, &pending[0].done, VK_TRUE, 100000000ull);   // (100 ms at most)
         }
         for (int k = 0; k < shown; k++) {
-            int64_t due = timed ? j.set->due[k] : pace ? next_show : 0;
+            int64_t due = timed ? j.set->due[k] : spaced ? next_show : 0;   // ((Triforce) spaced: with pacing Off too)
             const int64_t now = now_ns();
             if (due < now) due = now;
             if (!timed && due > j.at + interval + step) due = j.at + interval + step;
