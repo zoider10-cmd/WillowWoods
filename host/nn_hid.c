@@ -965,12 +965,25 @@ uint64_t hos_free_camera_input(int *height) {
 }
 
 static int flight_jump_shortcut(uint64_t *buttons, int mode, int menu_open, int free_camera) {
+#define FLIGHT_TAPS_NS 400000000LL   /* (the two taps' starts at most this far apart: 300 ms before bug 147) */
     int hos_oot_flight_shortcut_ready(void);
     static int64_t first_press;
     static int held, consume_jump;
     const uint64_t jump = 1ULL << B_B;
     const int down = !!(*buttons & jump);
-    if (mode < 0 || menu_open || free_camera || !hos_oot_flight_shortcut_ready() || !game_in_front()) {
+    /* (bug 147: the owner's double tap did nothing. Why a tap is not taken is logged as it changes; a test's
+       HOS_FLIGHT_ANY_WINDOW=1 takes it with the window behind, as a run without one has it) */
+    static int any_window = -1, why_was = -1;
+    if (any_window < 0) any_window = env_on("HOS_FLIGHT_ANY_WINDOW");
+    const int why = mode < 0 ? 1 : menu_open ? 2 : free_camera ? 3 : !hos_oot_flight_shortcut_ready() ? 4 :
+                    !any_window && !game_in_front() ? 5 : 0;
+    if (why != why_was && (down || why == 0)) {   /* (a reason once a tap meets it; taken once it is) */
+        static const char *const whys[] = {"taken", "the row is Off (or the debug tools)", "the menu is open", "the free camera is on",
+                                           "Link is not being updated", "the game's window is not in front"};
+        if (why != 5) hos_log("hid: no-clip flight's double tap: %s", whys[why]);   /* (5: game_in_front logs it) */
+        why_was = why;
+    }
+    if (why) {
         first_press = 0;
         held = 1;
         consume_jump = 0;
@@ -978,10 +991,15 @@ static int flight_jump_shortcut(uint64_t *buttons, int mode, int menu_open, int 
     }
     if (down && !held) {
         const int64_t now = hos_now_ns();
-        if (first_press && now - first_press <= 300000000) {
+        if (first_press && now - first_press > FLIGHT_TAPS_NS && now - first_press < 1000000000)
+            hos_log("hid: no-clip flight's double tap: two taps %.0f ms apart, more than %d: not taken", (now - first_press) / 1e6,
+                    (int)(FLIGHT_TAPS_NS / 1000000));
+        if (first_press && now - first_press <= FLIGHT_TAPS_NS) {
             mode = !mode;
             rx_option_set(HOS_OPT_CHEAT_FLIGHT, mode);
+            const int asked = mode;
             mode = rx_option(HOS_OPT_CHEAT_FLIGHT, -1);
+            hos_log("hid: no-clip flight's double tap: flight %s (asked %d, the row now %d)", mode > 0 ? "on" : "off", asked, mode);
             first_press = 0;
             consume_jump = mode == 0;
         } else {
