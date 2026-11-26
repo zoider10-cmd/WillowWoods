@@ -1197,8 +1197,10 @@ static int slots_forced(int item) {
     if (item == 4 || item == 30 || (item >= 46 && item <= 48)) return 0;   /* (the Slingshot, the Bow, its arrows) */
     if (mode == 2) return 1;
     /* (seen to work forced, without a window 2026-11-25: the Deku Stick, the Boomerang, Bombchus, Din's Fire, Nayru's
-       Love. Taken in hand so by the log but not seen used: the Hookshot 5, the Hammer 7, a bottle 50) */
-    return item == 0 || item == 3 || item == 9 || item == 10 || item == 12;
+       Love, the Longshot (the Hookshot taken to be the same), the Hammer. Not the bottles (14 to 17, 50): a bottle of
+       bugs used forced kept its bugs by its name and left Link's hand record empty with a bottle in it, where the swap
+       let them out and emptied it) */
+    return item == 0 || item == 3 || (item >= 5 && item <= 7) || item == 9 || item == 10 || item == 12;
 }
 /* The item to force for an ask, -1 none; *answered 0 while the ask waits for Link's hand */
 static int slots_force_target(int want, int hand, int forced, int *answered) {
@@ -1409,7 +1411,10 @@ static uint64_t slots_input(uint64_t buttons, int64_t now) {
         if (!done) {
             buttons &= ~zr;   /* (ZR waits for the item it is to use) */
             if (!held) pending_tap = 1;
-            if (now - asked_at > 600000000LL) active = -1;   /* (no HUD update: a scene, a load) */
+            if (now - asked_at > 600000000LL) {   /* (no answer: a scene, a load. What was given goes back later) */
+                if (active != 2) restore_at = now + SLOTS_RESTORE_NS;
+                active = -1;
+            }
         } else if (held) {
             buttons |= zr;
         } else {

@@ -101,7 +101,7 @@ int main(void) {
        holds it, taken off once his hand is empty; an item the game forces itself is left alone; the Slingshot (4) is
        never forced */
     swap_done = link_done = swap_seq;
-    if (!slots_forced(0) || slots_forced(4) || slots_forced(30) || slots_forced(47)) return printf("the forced items are not the Deku Stick's kind alone\n"), 1;
+    if (!slots_forced(0) || !slots_forced(6) || !slots_forced(7) || slots_forced(4) || slots_forced(30) || slots_forced(47) || slots_forced(14) || slots_forced(50)) return printf("the forced items are not the Deku Stick's kind alone\n"), 1;
     slots_ask(0);
     if (hos_oot_slots_link(-1, -1) != 0 || link_done != swap_seq || link_own_on) return printf("L's item not forced\n"), 1;
     if (hos_oot_slots_link(0, 0) != -2) return printf("the forced item written twice\n"), 1;
