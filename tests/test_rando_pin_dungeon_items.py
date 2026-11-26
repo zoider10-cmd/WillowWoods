@@ -87,6 +87,26 @@ def main():
     check("if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder))" in host and
           "if (oot_pickup_folder[0]) {" in host and "if (oot_pickup_folder[0] && strcmp(oot_checks[i].owner, oot_pickup_folder))" in host,
           "the game's side does not count a dungeon's own pick-up for its dungeon, or marks another pot for it")
+    # a Gold Skulltula's dungeon item: a drop of its dungeon's own too, with the dropped items' death (asked 2026-11-26)
+    check("if item in DUNGEON_ITEMS and owners.get(h) and drops[h] == item:" in script and
+          "drops[h] = DUNGEON_PICKUP % (item, owners[h])" in script and "death=rupee[POT_FALL_DEATH]" in script and
+          "pot_fall_rows(table, {k: (i, k) for k, i in skull_dungeon.items()})" in script and
+          "pot_fall_parts = {}, set(skull_dungeon_parts)" in script,
+          "a Gold Skulltula's dungeon item is not a drop of its dungeon's own, its rows, its death or its size entries")
+    pouch = S.byml_build(("dict", collections.OrderedDict((("PouchActor", ("string", S.ACTOR_REF % "Item_K")),))), 7)
+    actor_k = S.byml_build(("dict", collections.OrderedDict((("Components", ("dict", collections.OrderedDict((
+        ("PouchContentRef", ("string", "?Work/Component/PouchContentParam/K.game__component__PouchContentParam.gyml")),)))),))), 7)
+    pack = S.sarc_write(collections.OrderedDict(((S.ACTOR_FILE % "Item_K", actor_k),
+                                                  ("Component/PouchContentParam/K.game__component__PouchContentParam.bgyml", pouch))))
+    made = S.sarc_read(S.dungeon_pickup_pack("Item_K", pack, "Item_K_WaterTemple", death=b"dies as a rupee"))
+    own = S.byml_parse(made[S.ACTOR_FILE % "Item_K_WaterTemple"])[0][1]
+    comps = dict(own["Components"][1])
+    check(own["$parent"][1] == S.ACTOR_REF % "Item_K" and comps.get("DeathRef") == ("string", "?" + S.POT_FALL_DEATH) and
+          made[S.POT_FALL_DEATH] == b"dies as a rupee" and
+          S.byml_parse(made[S.OWN_POUCH % "Item_K_WaterTemple"])[0][1]["PouchActor"][1] == S.ACTOR_REF % "Item_K_WaterTemple",
+          "a dungeon's own pick-up is not made from the item, naming itself, dying as a rupee: %r" % comps)
+    check('} else if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder)) {' in host,
+          "the game's side does not count a Gold Skulltula's drop of a dungeon's own for its dungeon")
     print("PASS: test pins: dungeon items on Gold Skulltulas and in pots")
 
 

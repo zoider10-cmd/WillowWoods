@@ -690,9 +690,10 @@ def pot_fall_pack(item, pack, body_pack, name):
 DUNGEON_PICKUP = "%s_%s"
 
 
-def dungeon_pickup_pack(item, pack, name):
+def dungeon_pickup_pack(item, pack, name, death=None):
     """an item's pick-up pack (pickup_pack's) with an actor `name` of its own (DUNGEON_PICKUP), made from the item, whose
-    pouch file is a copy of the item's naming it as its PouchActor"""
+    pouch file is a copy of the item's naming it as its PouchActor. death: the dropped items' death file (POT_FALL_DEATH's
+    data), given to it in place of the Gold Skulltula token's (a Skulltula's drop, as a pot's falling pick-up has it)"""
     files = sarc_read(pack)
     tree, version = byml_parse(files[ACTOR_FILE % item])
     ref = None
@@ -707,9 +708,13 @@ def dungeon_pickup_pack(item, pack, name):
     own = collections.OrderedDict(pouch[1])
     own["PouchActor"] = ("string", ACTOR_REF % name)
     files[OWN_POUCH % name] = byml_build(("dict", own), pouch_version)
+    parts = [("PouchContentRef", ("string", "?" + OWN_POUCH % name))]
+    if death is not None:
+        files.setdefault(POT_FALL_DEATH, death)
+        parts.append(("DeathRef", ("string", "?" + POT_FALL_DEATH)))
     files[ACTOR_FILE % name] = byml_build(("dict", collections.OrderedDict((
         ("$parent", ("string", ACTOR_REF % item)),
-        ("Components", ("dict", collections.OrderedDict((("PouchContentRef", ("string", "?" + OWN_POUCH % name)),))))))), version)
+        ("Components", ("dict", collections.OrderedDict(parts)))))), version)
     return sarc_write(files)
 
 
@@ -9395,6 +9400,7 @@ def main():
     # (placement 12, SHUFFLED_FROM: the Gold Skulltulas of the setting and the Pieces of Heart lying in the world are
     #  spots of the placement, with their token and their piece in the pool, each holding what it can: holds)
     skull_drops, able, mine = {}, [], []
+    skull_dungeon = {}   # (a Gold Skulltula's dungeon item: a drop of its dungeon's own, DUNGEON_PICKUP -> the item)
     pot_drops = {}   # (Pots: a pot's hash -> the item it drops now)
     heart_drops = {}   # a piece's hash -> the item it gives now
     if a.skulltulas:
@@ -9587,6 +9593,9 @@ def main():
             print("Gold Skulltulas: %d gating item%s now dropped by one" % (gated, "" if gated == 1 else "s"))
         for h, item in skull_drops.items():
             drops.setdefault(h, POT_AS.get(item, item))   # (a test's drop for the same Skulltula stays; the Master Sword: its own pick-up, POT_AS)
+            if item in DUNGEON_ITEMS and owners.get(h) and drops[h] == item:   # (a dungeon item told its dungeon: that dungeon's own drop)
+                drops[h] = DUNGEON_PICKUP % (item, owners[h])
+                skull_dungeon[drops[h]] = item
         skull_tier_list = skull_tiers(skull_drops.values()) if a.progressive else []
         pickups = sorted(set(pickups) | set(skull_drops.values()) | set(skull_tier_list))
         print("Gold Skulltulas %s: %d take part (%d more cannot be given a drop: their map file is not read whole; the map files have %d), %d now drop a "
@@ -10030,6 +10039,26 @@ def main():
                 shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
         except (OSError, ValueError, struct.error, StopIteration) as e:
             sys.exit("the Master Sword's pick-up's rows: %s. Nothing written." % e)
+    # (asked 2026-11-26: a Gold Skulltula's dungeon item a drop of its dungeon's own, as a pot's: its words and its count by
+    #  its name, DUNGEON_PICKUP; the dropped items' death, POT_FALL_DEATH. Its rows the item's, ActorName its own)
+    skull_dungeon_parts = set()
+    if skull_dungeon:
+        try:
+            rupee = sarc_read(unpack(open(os.path.join(romfs, "Pack", "Actor", POT_FALL_FROM + ".pack.zs"), "rb").read(), zs, dicts))
+            for key, item in sorted(skull_dungeon.items()):
+                new = dungeon_pickup_pack(item, pack_files["Pack/Actor/%s.pack.zs" % item], key, death=rupee[POT_FALL_DEATH])
+                shop_files["Pack/Actor/%s.pack.zs" % key] = new
+                shop_packs["Pack/Actor/%s.pack" % key] = len(new)
+                skull_dungeon_parts.update((ACTOR_FILE % key, OWN_POUCH % key))
+            folder = os.path.join(romfs, "RSDB")
+            for kind in SHOP_TABLES:
+                n = next(n for n in sorted(os.listdir(folder)) if n.startswith(kind + ".") and ".byml" in n.lower())
+                table = shop_files.get("RSDB/" + n) or unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
+                shop_files["RSDB/" + n] = table = pot_fall_rows(table, {k: (i, k) for k, i in skull_dungeon.items()})
+                shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
+            print("Gold Skulltulas: %d dungeon items dropped as their dungeon's own (%s)" % (len(skull_dungeon), ", ".join(sorted(skull_dungeon))))
+        except (OSError, ValueError, struct.error, StopIteration, KeyError) as e:
+            sys.exit("the Gold Skulltulas' dungeon drops: %s. Nothing written." % e)
     tier_files, tier_maps = {}, {}   # (a shelf of a family: its map for each tier, SHELF_TIERS; a map: its shelves of a family)
     if shelves:
         def pack(name):
@@ -10645,7 +10674,7 @@ def main():
     # ---- the pots taking part: an actor of their own each, coloured, dropping its item to Link (FIXES 96, POT_ACTOR) ----
     pot_size_as = {}   # (a new model's or texture's path: the game's file whose size table entry it takes)
     pot_looks = []     # (POT_LOOKS' lines: the game's side answers a collected pot's actor with the game's pot)
-    pot_falls, pot_fall_parts = {}, set()   # (an item -> its falling pick-up, POT_FALL_AS; the files only those have)
+    pot_falls, pot_fall_parts = {}, set(skull_dungeon_parts)   # (an item -> its falling pick-up, POT_FALL_AS; the files only those have, and the Skulltulas' dungeon drops')
     pot_rows_more = {}   # (an actor of the pots' own -> the item whose rows in the lists of actors it takes: the falls, DUNGEON_PICKUP's)
     if pot_drops:
         try:

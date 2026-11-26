@@ -5791,6 +5791,9 @@ int hos_oot_pouch_add(Ctx *c) {
             hos_log("rando: pots: the pick-up is %s's own", oot_pickup_folder);
         hos_log("rando: pots: a pot's pick-up is the seed's %s: that is added", name);
         view = oot_pouch_name(c, view, name);
+    } else if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder)) {   /* (a Gold Skulltula's drop of a dungeon's own) */
+        hos_log("rando: a Gold Skulltula's drop is %s's own %s: that is added", oot_pickup_folder, name);
+        view = oot_pouch_name(c, view, name);
     }
     /* (every content added, with where the call came from and its other arguments: the game gives a Bomb Bag with a
        chest's bombs when Link has none, seen in play, and that add is to be told from a chest's own Bomb Bag) */
