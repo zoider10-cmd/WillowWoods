@@ -72,6 +72,21 @@ def main():
     check("if (away < (chest ? OOT_DUNGEON_NEAR : OOT_CHECK_NEAR) && away < best)" in host and
           "if (!chest && oot_checks[i].done == 1) continue;" in host,
           "a Skulltula's dungeon item's window is looked for within a chest's 4 m (the owner's test: 8 m away, not named)")
+    # a pot's dungeon item: a pick-up of its dungeon's own, its rows' ActorName its own (the get scene's words by it)
+    import collections
+    row = ("dict", collections.OrderedDict([("ActorName", ("string", "Item_Dungeon_SmallKey")), ("__RowId", ("string", "Item_Dungeon_SmallKey"))]))
+    table = S.byml_build(("array", [row]), 7)
+    out, _ = S.byml_parse(S.pot_fall_rows(table, {"Item_Dungeon_SmallKey_WaterTemple_Fall": ("Item_Dungeon_SmallKey", "Item_Dungeon_SmallKey_WaterTemple"),
+                                                  "Other_Fall": "Item_Dungeon_SmallKey"}))
+    names = {r[1]["__RowId"][1]: r[1]["ActorName"][1] for r in out[1]}
+    check(names.get("Item_Dungeon_SmallKey_WaterTemple_Fall") == "Item_Dungeon_SmallKey_WaterTemple" and names.get("Other_Fall") == "Item_Dungeon_SmallKey",
+          "a dungeon's own pick-up's row does not name it, or another fall's row is changed: %r" % names)
+    check(S.DUNGEON_PICKUP % ("Item_Dungeon_SmallKey", "WaterTemple") == "Item_Dungeon_SmallKey_WaterTemple" and
+          "fall_of(drop, owners.get(h) if drop in DUNGEON_ITEMS else None)" in script and "pot_rows_more[fall] = (item, key) if folder else item" in script,
+          "a pot's dungeon item is not a pick-up of its dungeon's own, named as the seed's words are")
+    check("if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder))" in host and
+          "if (oot_pickup_folder[0]) {" in host and "if (oot_pickup_folder[0] && strcmp(oot_checks[i].owner, oot_pickup_folder))" in host,
+          "the game's side does not count a dungeon's own pick-up for its dungeon, or marks another pot for it")
     print("PASS: test pins: dungeon items on Gold Skulltulas and in pots")
 
 

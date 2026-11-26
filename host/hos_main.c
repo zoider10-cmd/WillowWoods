@@ -2528,6 +2528,7 @@ static _Thread_local int oot_pot_chosen = -1;
 static int oot_dungeon_check = -1;
 static int64_t oot_dungeon_check_at;
 #define OOT_DUNGEON_CHECK_NS 3000000000LL
+static _Thread_local char oot_pickup_folder[24];   /* (the dungeon of a pick-up of a dungeon's own being added: oot_dungeon_pickup) */
 static void oot_tracker_item(const char *name, int shop, int price) {
     static int read;
     if (!read) {
@@ -3754,7 +3755,7 @@ static const char *oot_pot_world_item(const char *name) {
    broken: how many broken ones give it. A world pick-up's name (oot_pot_world_item) stands for its check's item, from a
    pot within OOT_POT_WORLD_NEAR of Link) */
 static int oot_pot_open(Ctx *c, const char *name, int *broken) {
-    int open = -1;
+    int open = -1, alike = -1;
     const char *world = oot_pot_world_item(name);
     if (world) name = world;
     const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
@@ -3771,8 +3772,14 @@ static int oot_pot_open(Ctx *c, const char *name, int *broken) {
         }
         if (!oot_gamedata_keyed_bool(c, oot_checks[i].broken, &now) || !now) continue;
         if (broken) ++*broken;
-        if (oot_checks[i].done != 1) open = i;
+        if (oot_checks[i].done != 1) {
+            /* (a dungeon's own pick-up, oot_pickup_folder: the broken pot of its dungeon. Two broken by one swing, the
+               first in the list was marked for the other's key, seen without a window 2026-11-26) */
+            if (oot_pickup_folder[0] && strcmp(oot_checks[i].owner, oot_pickup_folder)) { if (alike < 0) alike = i; continue; }
+            open = i;
+        }
     }
+    if (open < 0) open = alike;   /* (none of its dungeon: as before) */
     ReleaseSRWLockShared(&oot_checks_lock);
     return open;
 }
@@ -3825,6 +3832,12 @@ static int oot_dungeon_item(Ctx *c, const char *name) {
     const char *field = !strcmp(name, "Item_Dungeon_Map") ? "IsGetMap" : !strcmp(name, "Item_Dungeon_Compass") ? "IsGetCompass" :
                         !strcmp(name, "Item_Dungeon_BossKey") ? "IsGetBossKey" : !strcmp(name, "Item_Dungeon_SmallKey") ? "SmallKeyNum" : NULL;
     if (!field || !hos_rando_on()) return 0;
+    char owner[24];
+    float nearest;
+    if (oot_pickup_folder[0]) {   /* (the pick-up of a dungeon's own, from a pot: its dungeon is in its name, oot_dungeon_pickup) */
+        snprintf(owner, sizeof owner, "%s", oot_pickup_folder), oot_pickup_folder[0] = 0, nearest = 0;
+        if (oot_banc_in_folder(oot_link_map, owner)) return 0;   /* (in its own dungeon: the game counts it there) */
+    } else {
     if (c->x[30] != 0x828d50acULL) {   /* (0x828d50ac: a chest's add, as a shop's. Another add, a pick-up's: a Gold Skulltula's
                                           or a pot's drop whose check the tracker has just found, with a dungeon told: test pins) */
         AcquireSRWLockShared(&oot_checks_lock);
@@ -3832,9 +3845,8 @@ static int oot_dungeon_item(Ctx *c, const char *name) {
         ReleaseSRWLockShared(&oot_checks_lock);
         if (!from_check) return 0;
     }
-    char owner[24];
-    float nearest;
     if (!oot_dungeon_owner(name, owner, sizeof owner, &nearest)) return 0;
+    }
     char flag[80];
     snprintf(flag, sizeof flag, "DungeonInfo.%s.%s", owner, field);
     int ok;
@@ -5683,6 +5695,25 @@ static int oot_pot_open(Ctx *c, const char *name, int *broken);
 /* (tools/rando/rando_seed.py POT_AS, asked 2026-11-25) A pick-up the seed made for an item that has no chest's item of its
    own, and the item it stands for: the Master Sword's (MASTER_PICKUP, made from the Biggoron's item) */
 static const char *const oot_pot_as[][2] = {{"Item_Sword_Master", "Weapon_Sword_Master"}};
+/* (tools/rando/rando_seed.py DUNGEON_PICKUP, asked 2026-11-26) A pot's dungeon item is a pick-up of its dungeon's own,
+   "<the item>_<its dungeon>": the get scene's words are the seed's for that name, and the add here is made the item's again,
+   its dungeon kept for oot_dungeon_item (oot_pickup_folder). Two pots broken by one swing, each with a small key of another
+   dungeon, named one dungeon twice when it was chosen by the nearest pot (the owner's test). 1 when the name was one */
+static int oot_dungeon_pickup(char *name, char *folder, size_t size) {
+    static const char *const items[] = {"Item_Dungeon_SmallKey", "Item_Dungeon_BossKey", "Item_Dungeon_Map", "Item_Dungeon_Compass"};
+    for (unsigned i = 0; i < sizeof items / sizeof items[0]; i++) {
+        const size_t n = strlen(items[i]);
+        if (strncmp(name, items[i], n) || name[n] != '_' || !name[n + 1]) continue;
+        const char *rest = name + n + 1;
+        for (const char *k = rest; *k; k++)
+            if (!((*k >= 'A' && *k <= 'Z') || (*k >= 'a' && *k <= 'z'))) return 0;
+        if (strlen(rest) >= size) return 0;
+        snprintf(folder, size, "%s", rest);
+        name[n] = 0;
+        return 1;
+    }
+    return 0;
+}
 static int oot_pot_fall(char *name) {
     const size_t length = strlen(name), tail = sizeof OOT_POT_FALL - 1;
     int changed = 0;
@@ -5707,6 +5738,10 @@ int hos_oot_pickup_room(Ctx *c) {
     }
     name[length] = 0;
     oot_pot_fall(name);   /* (a pot's falling pick-up: its item) */
+    {
+        char folder[24];
+        oot_dungeon_pickup(name, folder, sizeof folder);   /* (a dungeon's own: the item's name, DUNGEON_PICKUP) */
+    }
     const char *const *sizes;
     const int rule = oot_bundle_holder(name, &sizes);
     int broken_pots = 0;   /* (a junk pot's bundle: its pot is collected when it breaks, so any broken pot giving it, POT_BAGGED) */
@@ -5750,7 +5785,10 @@ int hos_oot_pouch_add(Ctx *c) {
         if (!name[length]) break;
     }
     name[length] = 0;
+    oot_pickup_folder[0] = 0;
     if (oot_pot_fall(name)) {   /* (a pot's falling pick-up, POT_FALL_AS: the add is its item's) */
+        if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder))
+            hos_log("rando: pots: the pick-up is %s's own", oot_pickup_folder);
         hos_log("rando: pots: a pot's pick-up is the seed's %s: that is added", name);
         view = oot_pouch_name(c, view, name);
     }

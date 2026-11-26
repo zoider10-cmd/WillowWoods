@@ -673,16 +673,53 @@ def pot_fall_pack(item, pack, body_pack, name):
     return sarc_write(files), [ACTOR_FILE % name, POT_FALL_BODY, POT_FALL_SET, POT_FALL_PHYSICS]
 
 
+# (asked 2026-11-26, the owner's test of two pots broken by one swing, each with a small key of another dungeon: both
+# windows named one dungeon, the game's side choosing the nearest pot before the add) A dungeon item from a pot is a pick-up
+# of its dungeon's own: "<the item>_<its dungeon>" (DUNGEON_PICKUP), an actor made from the item whose pouch file's
+# PouchActor is itself. The get scene's words are looked up by that name, and the seed has words of that name for each
+# dungeon (DUNGEON_WORDS: "You found a small key for the Water Temple!"); its falling pick-up's name, and so the pouch's add,
+# carries the dungeon too (host/hos_main.c oot_dungeon_pickup), which the game's side counts it for.
+DUNGEON_PICKUP = "%s_%s"
+
+
+def dungeon_pickup_pack(item, pack, name):
+    """an item's pick-up pack (pickup_pack's) with an actor `name` of its own (DUNGEON_PICKUP), made from the item, whose
+    pouch file is a copy of the item's naming it as its PouchActor"""
+    files = sarc_read(pack)
+    tree, version = byml_parse(files[ACTOR_FILE % item])
+    ref = None
+    for _, t, _ in actor_chain(item, files):
+        ref = t[1].get("Components", ("dict", {}))[1].get("PouchContentRef")
+        if ref and ref[0] == "string" and ref[1] and ref_file(ref[1]) in files:
+            break
+        ref = None
+    if ref is None:
+        raise ValueError("%s: no pouch file in its pack" % item)
+    pouch, pouch_version = byml_parse(files[ref_file(ref[1])])
+    own = collections.OrderedDict(pouch[1])
+    own["PouchActor"] = ("string", ACTOR_REF % name)
+    files[OWN_POUCH % name] = byml_build(("dict", own), pouch_version)
+    files[ACTOR_FILE % name] = byml_build(("dict", collections.OrderedDict((
+        ("$parent", ("string", ACTOR_REF % item)),
+        ("Components", ("dict", collections.OrderedDict((("PouchContentRef", ("string", "?" + OWN_POUCH % name)),))))))), version)
+    return sarc_write(files)
+
+
 def pot_fall_rows(data, made):
-    """one of the lists of actors (SHOP_TABLES) with a row for each falling pick-up (made: {its name: its item}): the
-    item's row under its name; none where the list has no row of the item"""
+    """one of the lists of actors (SHOP_TABLES) with a row for each falling pick-up (made: {its name: its item, or (its
+    item, the ActorName its row gives)}): the item's row under its name; none where the list has no row of the item.
+    (A dungeon's own pick-up, DUNGEON_PICKUP: its ActorName is its own, by which the get scene's words are looked up: the
+    window said the item's plain words with the item's, seen without a window 2026-11-26)"""
     tree, version = byml_parse(data)
     by = {r[1]["__RowId"][1]: r for r in tree[1]}
     rows = [r for r in tree[1] if r[1]["__RowId"][1] not in made]
     for name, item in made.items():
+        item, said = item if isinstance(item, tuple) else (item, None)
         if item in by:
             row = ("dict", collections.OrderedDict(by[item][1]))
             row[1]["__RowId"] = ("string", name)
+            if said and "ActorName" in row[1]:
+                row[1]["ActorName"] = ("string", said)
             rows.append(row)
     rows.sort(key=lambda r: r[1]["__RowId"][1])
     return byml_build((tree[0], rows), version)
@@ -10601,6 +10638,7 @@ def main():
     pot_size_as = {}   # (a new model's or texture's path: the game's file whose size table entry it takes)
     pot_looks = []     # (POT_LOOKS' lines: the game's side answers a collected pot's actor with the game's pot)
     pot_falls, pot_fall_parts = {}, set()   # (an item -> its falling pick-up, POT_FALL_AS; the files only those have)
+    pot_rows_more = {}   # (an actor of the pots' own -> the item whose rows in the lists of actors it takes: the falls, DUNGEON_PICKUP's)
     if pot_drops:
         try:
             def game_file(rel):
@@ -10629,25 +10667,35 @@ def main():
             made = {}
             fall_body = None
 
-            def fall_of(item):
-                """the falling pick-up of a pot's item (POT_FALL_AS), made once; None for one that is no pick-up"""
+            def fall_of(item, folder=None):
+                """the falling pick-up of a pot's item (POT_FALL_AS), made once; None for one that is no pick-up. folder: a
+                dungeon item's dungeon, its pick-up the dungeon's own (DUNGEON_PICKUP)"""
                 nonlocal fall_body
                 rel = "Pack/Actor/%s.pack.zs" % item
                 if rel not in pack_files:
                     return None
-                if item not in pot_falls:
+                key = DUNGEON_PICKUP % (item, folder) if folder else item
+                if key not in pot_falls:
                     fall_body = fall_body or game_file("Pack/Actor/%s.pack.zs" % POT_FALL_FROM)
-                    fall = POT_FALL_AS % item
-                    new, own_parts = pot_fall_pack(item, pack_files[rel], fall_body, fall)
+                    fall = POT_FALL_AS % key
+                    source = pack_files[rel]
+                    if folder:
+                        source = dungeon_pickup_pack(item, source, key)
+                        shop_files["Pack/Actor/%s.pack.zs" % key] = source
+                        shop_packs["Pack/Actor/%s.pack" % key] = len(source)
+                        pot_rows_more[key] = (item, key)
+                        pot_fall_parts.update((ACTOR_FILE % key, OWN_POUCH % key))   # (new files: a size table entry each)
+                    new, own_parts = pot_fall_pack(key, source, fall_body, fall)
                     shop_files["Pack/Actor/%s.pack.zs" % fall] = new
                     shop_packs["Pack/Actor/%s.pack" % fall] = len(new)
                     pot_fall_parts.update(own_parts)
-                    pot_falls[item] = fall
-                return pot_falls[item]
+                    pot_falls[key] = fall
+                    pot_rows_more[fall] = (item, key) if folder else item
+                return pot_falls[key]
             for h, name in names.items():
                 drop = POT_AS.get(pot_drops[h], pot_drops[h])   # (the Master Sword: its own pick-up, MASTER_PICKUP)
                 new, own_parts = pot_pack(kind[h], designs[kind[h]], name, drop,
-                                           fall=None if drop in POT_WORLD else fall_of(drop))   # (junk: the game's own pick-up)
+                                           fall=None if drop in POT_WORLD else fall_of(drop, owners.get(h) if drop in DUNGEON_ITEMS else None))   # (junk: the game's own pick-up)
                 shop_files["Pack/Actor/%s.pack.zs" % name] = new
                 shop_packs["Pack/Actor/%s.pack" % name] = len(new)
                 shop_new.update(own_parts)
@@ -10665,7 +10713,7 @@ def main():
             for table_kind in SHOP_TABLES if made else ():
                 n = next(n for n in sorted(os.listdir(folder)) if n.startswith(table_kind + ".") and ".byml" in n.lower())
                 table = shop_files.get("RSDB/" + n) or unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
-                shop_files["RSDB/" + n] = table = pot_fall_rows(pot_rows(table, table_kind, made), {f: i for i, f in pot_falls.items()})
+                shop_files["RSDB/" + n] = table = pot_fall_rows(pot_rows(table, table_kind, made), pot_rows_more)
                 shop_sizes["RSDB/" + (n[:-3] if n.lower().endswith(".zs") else n)] = len(table)
             shown = 0
             for rel, hashes in by_file.items() if made else ():
