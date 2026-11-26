@@ -1182,25 +1182,32 @@ static int slots_waits(int want, int hand) {   /* (the put-back made on its own,
 /* The forced item (the mix, 2026-11-25; share/design-item-slots.md). Link's item record has an item the game uses in place
    of ZR's (its +0x1c, -1 none: f_830350a0 reads it before asking the pouch). For the items seen to work so
    (slots_forced), L's or R's item is written there and ZR's own item is never changed: the HUD's ZR icon, the pouch and
-   the item row stay as they are. The others go on ZR as before (slots_hud): a forced Slingshot does not fire ("You don't
-   have any Deku seeds", seen 2026-11-25), and the Bow and its arrows are taken to be the same. Each ask (slots_ask) is
+   the item row stay as they are. The others (the bottles) go on ZR as before (slots_hud). A forced Slingshot or Bow
+   finds its ammunition through hos_oot_slots_item (the game looks it up from ZR's item). Each ask (slots_ask) is
    answered twice, at Link's update for the forced item (link_done) and at the HUD's for ZR (swap_done): one puts its
    side back while the other gives the item.
-   HOS_ITEM_BUTTONS_FORCE=0: none forced (all on ZR); =all: all but the Slingshot, the Bow and the arrows (to try one). */
+   HOS_ITEM_BUTTONS_FORCE=0: none forced (all on ZR); =all: every item forced (to try one). */
 static int slots_forced(int item) {
-    static int mode = -1;   /* (0 none, 1 the items seen to work, 2 all but the ammunition's) */
+    static int mode = -1;   /* (0 none, 1 the items seen to work, 2 all) */
     if (mode < 0) {
         const char *e = getenv("HOS_ITEM_BUTTONS_FORCE");
         mode = !e || !*e ? 1 : !strcmp(e, "all") ? 2 : env_on("HOS_ITEM_BUTTONS_FORCE") ? 1 : 0;
     }
     if (!mode || item < 0 || item >= CY_ITEMS) return 0;
-    if (item == 4 || item == 30 || (item >= 46 && item <= 48)) return 0;   /* (the Slingshot, the Bow, its arrows) */
     if (mode == 2) return 1;
-    /* (seen to work forced, without a window 2026-11-25: the Deku Stick, the Boomerang, Bombchus, Din's Fire, Nayru's
-       Love, the Longshot (the Hookshot taken to be the same), the Hammer. Not the bottles (14 to 17, 50): a bottle of
-       bugs used forced kept its bugs by its name and left Link's hand record empty with a bottle in it, where the swap
-       let them out and emptied it) */
-    return item == 0 || item == 3 || (item >= 5 && item <= 7) || item == 9 || item == 10 || item == 12;
+    /* (seen to work forced, without a window 2026-11-25: the Deku Stick, the Boomerang, the Slingshot, the Longshot (the
+       Hookshot taken to be the same), the Hammer, Bombchus, Din's Fire, Nayru's Love, the Bow and the Fire Arrow (the
+       Ice and Light Arrows taken to be the same). Not the bottles (14 to 17, 50): a bottle of bugs used forced kept its
+       bugs by its name and left Link's hand record empty with a bottle in it, where the swap let them out and emptied
+       it) */
+    return item == 0 || (item >= 3 && item <= 7) || item == 9 || item == 10 || item == 12 || item == 30 || (item >= 46 && item <= 48);
+}
+/* The item forced on Link now, -1 none, for the game's two lookups of a shooting item's ammunition, which ask for ZR's
+   item (nx2/oot_patches.py patch_slots_item: a forced Slingshot found no seeds without it) */
+static volatile int forced_now = -1;
+unsigned long long hos_oot_slots_item(unsigned long long item) {
+    const int forced = __atomic_load_n(&forced_now, __ATOMIC_ACQUIRE);
+    return forced >= 0 ? (unsigned long long)(unsigned)forced : item;
 }
 /* The item to force for an ask, -1 none; *answered 0 while the ask waits for Link's hand */
 static int slots_force_target(int want, int hand, int forced, int *answered) {
@@ -1226,14 +1233,18 @@ int hos_oot_slots_link(int hand, int forced) {
             __atomic_store_n(&link_done, seq, __ATOMIC_RELEASE);
         }
     }
+    int write = -2;
     if (ours >= 0) {
-        if (forced == ours) return written = ours, -2;
-        if (forced != -1 && forced != written) return -2;   /* (the game forces an item of its own: left alone) */
-        return written = ours;
+        if (forced == ours) written = ours;
+        else if (forced == -1 || forced == written) write = written = ours;
+        /* (else the game forces an item of its own: left alone) */
+    } else {
+        if (written >= 0 && forced == written) write = -1;
+        written = -1;
     }
-    if (written >= 0 && forced == written) return written = -1, -1;
-    written = -1;
-    return -2;
+    /* (ours while it is the one on him: the ammunition's lookups, hos_oot_slots_item) */
+    __atomic_store_n(&forced_now, ours >= 0 && written == ours && (forced == ours || write == ours) ? ours : -1, __ATOMIC_RELEASE);
+    return write;
 }
 
 static int slots_ask(int item) {   /* (the input side: returns the ask's number, for slots_hud's and Link's answers) */

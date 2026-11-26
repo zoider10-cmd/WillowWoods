@@ -1726,6 +1726,33 @@ BOOTS_CHILD_CALLS = (("c->x[30] = 0x82e16d88ULL; f_804d6db0(c);", BOOTS_CHILD_HO
                      ("c->x[30] = 0x804d6ed8ULL; f_804d6db0(c);", BOOTS_CHILD_HOOK % "9"))
 
 
+# (Willow Woods, Item buttons) The Slingshot's and the Bow's ammunition for an item forced on Link (host/oot_wheel.c
+# hos_oot_slots_link). The game finds a shooting item's ammunition from ZR's item: f_833c7810 (the ammunition's count) and
+# f_80c225d0 (Link's use of the item) each ask PouchMgr::getAssignableItem (f_8019b6e0) and look for a Slingshot, a Bow or
+# an arrow in the answer. With L's or R's Slingshot forced, ZR's item is another and the game said "You don't have any Deku
+# seeds" (traced 2026-11-25: with the Slingshot out these two calls are the ones made each frame). The answers at those
+# two calls go through hos_oot_slots_item, which gives the forced item while one is forced.
+SLOTS_ITEM_HOOK = " c->x[0] = hos_oot_slots_item(c->x[0]);   /* (nx2/oot_patches.py patch_slots_item) */"
+SLOTS_ITEM_CALLS = ("c->x[30] = 0x833c784cULL; f_8019b6e0(c);", "c->x[30] = 0x80c23ab4ULL; f_8019b6e0(c);")
+
+
+def patch_slots_item(source):
+    """the answers above; (the source, how many hooked), or None when this file has neither call"""
+    hooked = 0
+    for call in SLOTS_ITEM_CALLS:
+        if call + SLOTS_ITEM_HOOK in source:
+            hooked += 1
+            continue
+        if source.count(call) == 1:
+            source = source.replace(call, call + SLOTS_ITEM_HOOK)
+            hooked += 1
+    if not hooked:
+        return None
+    if "extern unsigned long long hos_oot_slots_item(" not in source:
+        source = source.replace('#include "a64.h"\n', '#include "a64.h"\nextern unsigned long long hos_oot_slots_item(unsigned long long item);\n', 1)
+    return source, hooked
+
+
 def patch_boots_child(source):
     """the IsChild answers above; (the source, how many hooked), or None when this file has neither call"""
     hooked = 0
@@ -1965,6 +1992,12 @@ def patch_file(s, name, protect_hearts=False):
             lines.append("oot_patches: young Link's boots (%d IsChild answers) in %s" % (boots[1], name))
         out = boots[0]
         counts["boots child answers"] += boots[1]
+    slots = patch_slots_item(out)   # (Item buttons: a forced Slingshot's or Bow's ammunition)
+    if slots is not None:
+        if slots[0] != out:
+            lines.append("oot_patches: a forced item's ammunition (%d answers) in %s" % (slots[1], name))
+        out = slots[0]
+        counts["slots item answers"] += slots[1]
     hook = patch_hook_switch(out)   # (bug 91: a switch that asks for a Hookshot hit, the Water Temple's gate switch)
     if hook is not None:
         if hook[0] != out:
@@ -2202,6 +2235,9 @@ def report(paths, counts, protect_hearts=False):
     if protect_hearts and total["boots child answers"] != len(BOOTS_CHILD_CALLS):   # (Either age's items: young Link's boots)
         print("oot_patches: WARNING: the boots' IsChild answers were hooked %d times, not %d: young Link's boots do nothing"
               % (total["boots child answers"], len(BOOTS_CHILD_CALLS)))
+    if total["slots item answers"] != len(SLOTS_ITEM_CALLS):   # (Item buttons: the Slingshot and the Bow from L or R)
+        print("oot_patches: WARNING: the ammunition's item answers were hooked %d times, not %d: a Slingshot or a Bow forced "
+              "from L or R finds no ammunition" % (total["slots item answers"], len(SLOTS_ITEM_CALLS)))
     if total["hook switch queries"] != len(HOOK_SWITCH_HEADS):   # (bug 91: the Water Temple's gate switch)
         print("oot_patches: WARNING: the damage queries were hooked %d times, not %d: the Water Temple's gate switch does not "
               "take the Hookshot's hit" % (total["hook switch queries"], len(HOOK_SWITCH_HEADS)))

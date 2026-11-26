@@ -9,7 +9,8 @@ Checks the wiring a change elsewhere could break, from the sources:
 - the HUD's L and R icons: the slots' items published (MKWVK_SLOTS_QUERY) and drawn by the overlay;
 - and the input's state machine, compiled alone against a fake clock and a fake HUD: L with an item asks for it, holds ZR
   back until the HUD put it there, then holds ZR while L is held; ZR afterwards asks for ZR's own back first; an item seen
-  to work so is forced on Link at his update and ZR keeps its own, the Slingshot and the Bow go on ZR; the put-back made on
+  to work so is forced on Link at his update and ZR keeps its own (the Slingshot and the Bow with it: the game's two
+  lookups of their ammunition are given the forced item), the bottles go on ZR; the put-back made on
   its own waits while Link holds an item (a Deku Stick taken out stays out).
 
     python -I -B tests/test_item_buttons.py [--cc clang]
@@ -58,10 +59,12 @@ static volatile int zr_own_on = 1;
 static volatile int link_done, link_own_on = 1;
 static volatile int assign_state, assign_which;
 static volatile int hand_item = -1;
+static volatile int forced_now = -1;
 #define SLOTS_OWN -2
 #define SLOTS_WHEN_FREE -3
 @WAITS@
 @FORCE@
+@ITEM@
 @TARGET@
 @LINK@
 @ASK@
@@ -101,7 +104,7 @@ int main(void) {
        holds it, taken off once his hand is empty; an item the game forces itself is left alone; the Slingshot (4) is
        never forced */
     swap_done = link_done = swap_seq;
-    if (!slots_forced(0) || !slots_forced(6) || !slots_forced(7) || slots_forced(4) || slots_forced(30) || slots_forced(47) || slots_forced(14) || slots_forced(50)) return printf("the forced items are not the Deku Stick's kind alone\n"), 1;
+    if (!slots_forced(0) || !slots_forced(6) || !slots_forced(7) || !slots_forced(4) || !slots_forced(30) || !slots_forced(47) || slots_forced(14) || slots_forced(50)) return printf("the forced items are not all but the bottles\n"), 1;
     slots_ask(0);
     if (hos_oot_slots_link(-1, -1) != 0 || link_done != swap_seq || link_own_on) return printf("L's item not forced\n"), 1;
     if (hos_oot_slots_link(0, 0) != -2) return printf("the forced item written twice\n"), 1;
@@ -115,8 +118,11 @@ int main(void) {
     if (hos_oot_slots_link(-1, 30) != -2) return printf("the game's own forced item taken off\n"), 1;
     slots_ask(0);
     hos_oot_slots_link(-1, -1);
-    slots_ask(4);   /* (the Slingshot after a forced item: the forced one taken off, ZR's the HUD's to change) */
-    if (hos_oot_slots_link(-1, 0) != -1 || link_done != swap_seq || !link_own_on) return printf("the forced item kept under the Slingshot\n"), 1;
+    if (hos_oot_slots_item(2) != 0) return printf("the ammunition's lookup is not given the forced item\n"), 1;
+    slots_ask(14);   /* (a bottle after a forced item: the forced one taken off, ZR's the HUD's to change) */
+    if (hos_oot_slots_link(-1, 0) != -1 || link_done != swap_seq || !link_own_on) return printf("the forced item kept under a bottle\n"), 1;
+    hos_oot_slots_link(-1, -1);
+    if (hos_oot_slots_item(2) != 2) return printf("the ammunition's lookup is given an item with none forced\n"), 1;
     /* the input waits for both answers before it holds ZR, and ZR is not its own while an item is forced */
     swap_done = link_done = swap_seq, zr_own_on = 1, link_own_on = 1;
     slots_input(0, t += 16000000);
@@ -186,9 +192,14 @@ def main():
          "Link's update does not tell the slots what he holds")
     need("want == SLOTS_OWN || want == SLOTS_WHEN_FREE || slots_forced(want)" in hud and "target = zr_put >= 0 ? zr_own[age] : cur, zr_put = -1;" in hud,
          "the HUD's update puts a forced item on ZR, or does not give ZR its own back under one")
+    patches = (ROOT / "nx2" / "oot_patches.py").read_text(encoding="utf-8")
+    need('SLOTS_ITEM_CALLS = ("c->x[30] = 0x833c784cULL; f_8019b6e0(c);", "c->x[30] = 0x80c23ab4ULL; f_8019b6e0(c);")' in patches and
+         "patch_slots_item(out)" in patches and 'total["slots item answers"] != len(SLOTS_ITEM_CALLS)' in patches,
+         "the game's two lookups of a shooting item's ammunition are not given the forced item")
     src = FAKE.replace("@WAITS@", block(wheel, "static int slots_waits(int want, int hand) {")).replace(
         "@FORCE@", block(wheel, "static int slots_forced(int item) {")).replace(
         "@TARGET@", block(wheel, "static int slots_force_target(int want, int hand, int forced, int *answered) {")).replace(
+        "@ITEM@", block(wheel, "unsigned long long hos_oot_slots_item(unsigned long long item) {")).replace(
         "@LINK@", block(wheel, "int hos_oot_slots_link(int hand, int forced) {")).replace("@ASK@", block(wheel, "static int slots_ask(int item) {")).replace(
         "@INPUT@", block(wheel, "static uint64_t slots_input(uint64_t buttons, int64_t now) {"))
     with tempfile.TemporaryDirectory() as d:
