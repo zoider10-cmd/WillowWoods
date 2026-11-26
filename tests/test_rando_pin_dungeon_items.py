@@ -106,6 +106,22 @@ def main():
           made[S.POT_FALL_DEATH] == b"dies as a rupee" and
           S.byml_parse(made[S.OWN_POUCH % "Item_K_WaterTemple"])[0][1]["PouchActor"][1] == S.ACTOR_REF % "Item_K_WaterTemple",
           "a dungeon's own pick-up is not made from the item, naming itself, dying as a rupee: %r" % comps)
+    # one place writes a pick-up's own actor, a pot's falling one and a dungeon's own alike (drop_actor): the dropped
+    # items' death is given there
+    files = {S.ACTOR_FILE % "Item_K": actor_k}
+    S.drop_actor(files, "Item_K", "Item_K_Own", [("PhysicsRef", ("string", "?falls"))], death=b"dies as a rupee")
+    S.drop_actor(files, "Item_K", "Item_K_Plain", [("PhysicsRef", ("string", "?falls"))])
+    S.drop_actor(files, "Item_K", "Item_K_Again", [], death=b"another death")
+    own_comps = S.byml_parse(files[S.ACTOR_FILE % "Item_K_Own"])[0][1]["Components"][1]
+    plain = S.byml_parse(files[S.ACTOR_FILE % "Item_K_Plain"])[0][1]
+    check(sorted(own_comps) == ["DeathRef", "PhysicsRef"] and own_comps["DeathRef"] == ("string", "?" + S.POT_FALL_DEATH) and
+          list(plain["Components"][1]) == ["PhysicsRef"] and plain["$parent"][1] == S.ACTOR_REF % "Item_K" and
+          files[S.POT_FALL_DEATH] == b"dies as a rupee",
+          "a pick-up's own actor is not made from its item with its parts and the dropped items' death: %r" % list(own_comps))
+    check('drop_actor(files, item, name, [("PhysicsRef", ("string", "?" + POT_FALL_PHYSICS))], death=body[POT_FALL_DEATH])' in script and
+          'drop_actor(files, item, name, [("PouchContentRef", ("string", "?" + OWN_POUCH % name))], death=death)' in script and
+          script.count('("DeathRef", ("string", "?" + POT_FALL_DEATH))') == 1,
+          "a falling pick-up or a dungeon's own writes its actor, or its death, in a place of its own again")
     check('} else if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder)) {' in host,
           "the game's side does not count a Gold Skulltula's drop of a dungeon's own for its dungeon")
     # a seed made with pins, rewritten after the pin file changed or went: said (it comes back another seed)

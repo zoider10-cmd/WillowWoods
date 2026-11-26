@@ -667,6 +667,21 @@ POT_FALL_PART = 16384
 POT_FALL_DEATH = "Component/DeathParam/DropItem.game__component__DeathParam.bgyml"
 
 
+def drop_actor(files, item, name, parts, death=None):
+    """In a pack's files, an actor `name` of its own made from the item's (its $parent), with these Components of its own
+    (parts: [(key, node)]); death: the dropped items' death file (POT_FALL_DEATH's data), which it is then given in place of
+    the one it is made with (the Gold Skulltula token's: bug 148). The one place a pick-up's own actor is written, a pot's
+    falling one and a dungeon's own alike (share/better-ways-2026-11-26.md D): what all of them need is changed here."""
+    parts = list(parts)
+    if death is not None:
+        files.setdefault(POT_FALL_DEATH, death)
+        parts.append(("DeathRef", ("string", "?" + POT_FALL_DEATH)))
+    _, version = byml_parse(files[ACTOR_FILE % item])
+    files[ACTOR_FILE % name] = byml_build(("dict", collections.OrderedDict((
+        ("$parent", ("string", ACTOR_REF % item)),
+        ("Components", ("dict", collections.OrderedDict(parts)))))), version)
+
+
 def pot_fall_pack(item, pack, body_pack, name):
     """An item's pick-up (pack: pickup_pack's) made an actor of its own (name) that falls to the ground: (its pack, the
     files only it has). body_pack: the pack of POT_FALL_FROM. ValueError: the pick-up is not made from the token."""
@@ -679,7 +694,6 @@ def pot_fall_pack(item, pack, body_pack, name):
     files[POT_FALL_BODY] = body[POT_FALL_BODY_FROM]
     if POT_FALL_DEATH not in body:
         raise ValueError("%s's pack has no %s" % (POT_FALL_FROM, POT_FALL_DEATH))
-    files.setdefault(POT_FALL_DEATH, body[POT_FALL_DEATH])
     tree, version = byml_parse(files[token_set])
     bodies = tree[1]["RigidBodyEntityNamePathAry"][1]
     if len(bodies) != 1:
@@ -689,11 +703,7 @@ def pot_fall_pack(item, pack, body_pack, name):
     tree, version = byml_parse(files[token_physics])
     tree[1]["ControllerSetPath"] = ("string", ref_of(POT_FALL_SET))
     files[POT_FALL_PHYSICS] = byml_build(tree, version)
-    _, version = byml_parse(files[ACTOR_FILE % item])
-    files[ACTOR_FILE % name] = byml_build(("dict", collections.OrderedDict((
-        ("$parent", ("string", ACTOR_REF % item)),
-        ("Components", ("dict", collections.OrderedDict((("PhysicsRef", ("string", "?" + POT_FALL_PHYSICS)),
-                                                         ("DeathRef", ("string", "?" + POT_FALL_DEATH))))))))), version)
+    drop_actor(files, item, name, [("PhysicsRef", ("string", "?" + POT_FALL_PHYSICS))], death=body[POT_FALL_DEATH])
     return sarc_write(files), [ACTOR_FILE % name, POT_FALL_BODY, POT_FALL_SET, POT_FALL_PHYSICS]
 
 
@@ -711,7 +721,6 @@ def dungeon_pickup_pack(item, pack, name, death=None):
     pouch file is a copy of the item's naming it as its PouchActor. death: the dropped items' death file (POT_FALL_DEATH's
     data), given to it in place of the Gold Skulltula token's (a Skulltula's drop, as a pot's falling pick-up has it)"""
     files = sarc_read(pack)
-    tree, version = byml_parse(files[ACTOR_FILE % item])
     ref = None
     for _, t, _ in actor_chain(item, files):
         ref = t[1].get("Components", ("dict", {}))[1].get("PouchContentRef")
@@ -724,13 +733,7 @@ def dungeon_pickup_pack(item, pack, name, death=None):
     own = collections.OrderedDict(pouch[1])
     own["PouchActor"] = ("string", ACTOR_REF % name)
     files[OWN_POUCH % name] = byml_build(("dict", own), pouch_version)
-    parts = [("PouchContentRef", ("string", "?" + OWN_POUCH % name))]
-    if death is not None:
-        files.setdefault(POT_FALL_DEATH, death)
-        parts.append(("DeathRef", ("string", "?" + POT_FALL_DEATH)))
-    files[ACTOR_FILE % name] = byml_build(("dict", collections.OrderedDict((
-        ("$parent", ("string", ACTOR_REF % item)),
-        ("Components", ("dict", collections.OrderedDict(parts)))))), version)
+    drop_actor(files, item, name, [("PouchContentRef", ("string", "?" + OWN_POUCH % name))], death=death)
     return sarc_write(files)
 
 
