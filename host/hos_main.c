@@ -966,6 +966,7 @@ static const unsigned char oot_item_kinds[] = {OOT_CHEAT_ITEMS(OOT_NO_SECTION, O
 static int oot_item_count(Ctx *c, const char *name);
 static int oot_gamedata_int(Ctx *c, uint32_t hash, int32_t *value, int set);
 static int oot_gamedata_bool(Ctx *c, uint32_t hash, int *value);
+static uint32_t oot_flag_hash(const char *s);
 static int oot_gamedata_set_bool(Ctx *c, uint32_t hash, int value);
 static void oot_magic_fill_tick(Ctx *c);   /* (a magic found: its meter filled, below) */
 static void oot_infinite_magic(Ctx *c);    /* (the Debug tab's Infinite magic, below) */
@@ -1002,6 +1003,26 @@ static void oot_inventory_refresh(Ctx *c, int64_t now) {
         const int count = oot_item_count(c, oot_item_names[i]);
         if (!i) loaded = count >= 0;
         rx_option_set(OOT_CHEAT_ITEM_BASE + (int)i, count);
+    }
+    {   /* (Willow Woods, asked 2026-11-26) each dungeon's small keys in hand, map, compass and boss key, for the Tracker's
+           Dungeon items row: OOT_DUNGEON_BASE */
+        static const char *const dungeons[OOT_DUNGEON_COUNT] = {OOT_DUNGEONS};
+        for (int d = 0; d < OOT_DUNGEON_COUNT; d++) {
+            int value = -1;
+            char flag[96];
+            int32_t keys = 0;
+            snprintf(flag, sizeof flag, "DungeonInfo.%s.SmallKeyNum", dungeons[d]);
+            if (loaded && oot_gamedata_int(c, oot_flag_hash(flag), &keys, 0)) {
+                value = keys < 0 ? 0 : keys > 255 ? 255 : keys;
+                static const char *const fields[3] = {"IsGetMap", "IsGetCompass", "IsGetBossKey"};
+                for (int k = 0; k < 3; k++) {
+                    int got = 0;
+                    snprintf(flag, sizeof flag, "DungeonInfo.%s.%s", dungeons[d], fields[k]);
+                    if (oot_gamedata_bool(c, oot_flag_hash(flag), &got) && got) value |= 256 << k;
+                }
+            }
+            rx_option_set(OOT_DUNGEON_BASE + d, value);
+        }
     }
     {   /* Link's age for the Debug tab's Switch age row: 0 child, 1 adult, -1 no save loaded (Sequence_IsChildhood) */
         int child = 1;

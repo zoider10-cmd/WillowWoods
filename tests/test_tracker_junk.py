@@ -69,6 +69,7 @@ int tracker_stone_total = 0;
 void tracker_stones_load(const std::string&, bool) {}
 int tracker_area_hint(const char*) { return 0; }
 std::string tracker_after(const TrackerCheck&) { return std::string(); }
+std::string dungeon_says() { return std::string(); }   // (the Dungeon items row's words: not this check's)
 // JUNK
 // SHOW
 // FUNCTIONS
@@ -98,9 +99,9 @@ static bool press_on(int row, int which) {
 int main(int argc, char** argv) {
     CHECK(argc == 2);
     folder = std::string(argv[1]) + "/";
-    const char* names[] = {"The whole game", "Show", "Return home", "Gossip Stones", "Market", "Kokiri Forest"};
-    static_assert(kTrackerStoneRow == 3 && kTrackerFirstArea == 4, "the rows before the areas are not these");
-    for (int r = 0; r < 6; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
+    const char* names[] = {"The whole game", "Show", "Return home", "Gossip Stones", "Dungeon items", "Market", "Kokiri Forest"};
+    static_assert(kTrackerStoneRow == 3 && kTrackerDungeonRow == 4 && kTrackerFirstArea == 5, "the rows before the areas are not these");
+    for (int r = 0; r < 7; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
     const int market = kTrackerFirstArea;
     put(0, "Market", "Chest A", 0, 1);
     put(1, "Market", "Chest B", 0, 1);

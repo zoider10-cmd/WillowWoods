@@ -163,7 +163,8 @@ constexpr int kTrackerShowRow = 1;    // (the tab's second row: what it lists)
 // randomizer's own, not a debug tool: there with the debug tools off)
 constexpr int kTrackerHomeRow = 2;
 constexpr int kTrackerStoneRow = 3;   // (the Gossip Stones' hints heard: tracker_stone_lines)
-constexpr int kTrackerFirstArea = 4;  // (the first of the areas' rows, after the whole game's and those three)
+constexpr int kTrackerDungeonRow = 4;   // (Willow Woods, asked 2026-11-26: each dungeon's keys and items, dungeon_panel)
+constexpr int kTrackerFirstArea = 5;  // (the first of the areas' rows, after the whole game's and those four)
 const char kTrackerHomeHelp[] =
     "Takes Link home: to the Kokiri Forest as a child, to the Market as an adult; in a dungeon, to its entrance. For when "
     "there is no way back from where he is, a warp song played with no other to leave by. Confirm twice.";
@@ -178,6 +179,24 @@ int tracker_stone_total = 0;                    // (how many hints the seed has:
 const char kTrackerStoneHelp[] =
     "Talk to a Gossip Stone and what it says is kept here. Left and Right scroll the list.";
 std::string tracker_stone_help;
+// (Willow Woods, asked 2026-11-26) The Dungeon items row: for each dungeon, the small keys Link has (in hand: the save's
+// DungeonInfo.<dungeon>.SmallKeyNum, a key used on a door is gone) and how many the dungeon has in all, and whether its map,
+// compass and Boss Key are found (the save's IsGetMap, IsGetCompass, IsGetBossKey). The game side sends them twice a second
+// (OOT_DUNGEON_BASE: dungeon_state). The totals and what each dungeon has are the game's own, read from its map files
+// 2026-11-26 (the chests' contents and the keys lying on the floor: one each in the Bottom of the Well and the Shadow
+// Temple). With Small keys: Anywhere a dungeon's keys are found elsewhere, but they are still its own.
+std::atomic<int> dungeon_state[OOT_DUNGEON_COUNT] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+std::string dungeon_says();   // (below: the row's words)
+constexpr const char* kDungeonTitles[OOT_DUNGEON_COUNT] = {"Deku Tree", "Dodongo's Cavern", "Jabu-Jabu's Belly", "Bottom of the Well",
+                                                           "Forest Temple", "Fire Temple", "Ice Cavern", "Water Temple", "Shadow Temple",
+                                                           "Spirit Temple", "Training Ground", "Ganon's Castle"};
+constexpr int kDungeonKeys[OOT_DUNGEON_COUNT] = {0, 0, 0, 2, 5, 8, 0, 4, 5, 5, 9, 1};
+constexpr bool kDungeonMaps[OOT_DUNGEON_COUNT] = {true, true, true, true, true, true, true, true, true, true, false, false};   // (and a compass)
+constexpr bool kDungeonBossKey[OOT_DUNGEON_COUNT] = {false, false, false, false, true, true, false, true, true, true, false, true};
+const char kTrackerDungeonHelp[] =
+    "Each dungeon's small keys and items. Keys: the ones Link has now (a key used on a door is gone), of how many the dungeon "
+    "has in all. A tick: the map, compass or Boss Key is found; a circle: not yet; a dash: the dungeon has none. With Dungeon "
+    "keys: Anywhere, a dungeon's keys can be found anywhere, and still count for their own dungeon.";
 // (the areas the hints heard name, asked 2026-11-21: {the area's name in lower case, without "the ": 1 foolish to look in,
 //  2 hinted (on the way of the hero, or an item found there)}. An area's row says so first: tracker_says)
 std::vector<std::pair<std::string, int>> tracker_area_hints;
@@ -414,6 +433,7 @@ std::string tracker_says(int row) {
             if (!tracker_stone_total) return "No hints in this seed";
             return std::to_string(tracker_stone_lines.size()) + " of " + std::to_string(tracker_stone_total) + " hints heard";
         }
+        if (row == kTrackerDungeonRow && tracker_check_count) return dungeon_says();
         if (row == kTrackerHomeRow && tracker_check_count)
             return tracker_home_asked && GetTickCount64() - tracker_home_asked < kTrackerForgetMs ? "Press again to go home" : "Kokiri Forest, the Market, or the dungeon's entrance";
         int in = 0, known = 0, left = 0, told = 0, all = 0, junk = 0;
@@ -535,6 +555,81 @@ float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int r
     }
     c.d->PopClipRect();
     return y1;   // (where it ended: the area's map goes under it, tracker_area_map)
+}
+/// The Dungeon items row's panel (kTrackerDungeonRow): a line for each dungeon, the small keys Link has of the dungeon's
+/// total, and a mark each for its map, compass and Boss Key (a tick found, a circle not yet, a dash none in that dungeon).
+/// From y0 down, no lower than y_max; returns where it ended
+float dungeon_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max) {
+    const float s = c.s, px = 17 * s, pitch = 28 * s, w = x1 - x0 - 48 * s;
+    constexpr ImU32 kGot = ui::rgba(120, 224, 150), kNot = ui::rgba(138, 156, 184), kNone = ui::rgba(92, 102, 120);
+    const float y1 = std::min(y0 + 22 * s + 32 * s + 28 * s + OOT_DUNGEON_COUNT * pitch + 14 * s, y_max);
+    ui::box(c, ImVec2(x0, y0), ImVec2(x1, y1));
+    c.d->PushClipRect(ImVec2(x0, y0), ImVec2(x1, y1), true);
+    float y = y0 + 22 * s;
+    ui::text(c, c.f.heading, 21 * s, ImVec2(x0 + 24 * s, y), ui::kInk, "Dungeon items");
+    y += 32 * s;
+    const float lx = x0 + 24 * s, col[4] = {lx + w * 0.50f, lx + w * 0.67f, lx + w * 0.81f, lx + w * 0.95f};
+    const auto centred = [&](float cx, float cy, ImU32 ink, float size, const char* t) {
+        ui::text_mid(c, c.f.body, size, cx - ui::size_of(c.f.body, size, t).x * 0.5f, cy, ink, t);
+    };
+    const char* const heads[4] = {"Keys", "Map", "Compass", "Boss Key"};
+    for (int k = 0; k < 4; k++) centred(col[k], y + 8 * s, ui::kDim, 14 * s, heads[k]);
+    y += 28 * s;
+    const auto mark = [&](float mx, float my, int state) {   // (1 found: a tick; 0 not yet: a circle; -1 none: a dash)
+        if (state == 1) {
+            c.d->AddLine(ImVec2(mx - 6 * s, my), ImVec2(mx - 2 * s, my + 4.5f * s), kGot, 2.2f * s);
+            c.d->AddLine(ImVec2(mx - 2 * s, my + 4.5f * s), ImVec2(mx + 6.5f * s, my - 5 * s), kGot, 2.2f * s);
+        } else if (state == 0) c.d->AddCircle(ImVec2(mx, my), 5 * s, kNot, 0, 1.6f * s);
+        else c.d->AddLine(ImVec2(mx - 5 * s, my), ImVec2(mx + 5 * s, my), kNone, 1.6f * s);
+    };
+    for (int d = 0; d < OOT_DUNGEON_COUNT; d++, y += pitch) {
+        const int state = dungeon_state[d].load(std::memory_order_relaxed);
+        const float my = y + pitch * 0.5f - 3 * s;
+        if (d & 1) c.d->AddRectFilled(ImVec2(x0 + 14 * s, y - 2 * s), ImVec2(x1 - 14 * s, y + pitch - 4 * s), ui::rgba(255, 255, 255, 8), 4 * s);
+        ui::text_mid(c, c.f.body, px, lx, my, ui::kSoft, kDungeonTitles[d]);
+        if (kDungeonKeys[d]) {
+            char keys[24];
+            if (state >= 0) snprintf(keys, sizeof keys, "%d of %d", state & 255, kDungeonKeys[d]);
+            else snprintf(keys, sizeof keys, "? of %d", kDungeonKeys[d]);
+            centred(col[0], my, state > 0 && (state & 255) ? ui::kInkBright : ui::kSoft, px, keys);
+        } else mark(col[0], my, -1);
+        const bool has[3] = {kDungeonMaps[d], kDungeonMaps[d], kDungeonBossKey[d]};
+        for (int k = 0; k < 3; k++) {
+            const bool got = state >= 0 && (state & (256 << k));
+            mark(col[k + 1], my, has[k] || got ? (got ? 1 : 0) : -1);
+        }
+    }
+    c.d->PopClipRect();
+    return y1;
+}
+/// The Dungeon items row's words: the keys in hand in all, and how many of the maps, compasses and Boss Keys are found
+std::string dungeon_says() {
+    int keys = 0, found = 0, all = 0;
+    bool known = false;
+    for (int d = 0; d < OOT_DUNGEON_COUNT; d++) {
+        const int state = dungeon_state[d].load(std::memory_order_relaxed);
+        all += 2 * kDungeonMaps[d] + kDungeonBossKey[d];
+        if (state < 0) continue;
+        known = true, keys += state & 255;
+        for (int k = 0; k < 3; k++) found += (state & (256 << k)) != 0;
+    }
+    if (!known) return "Load a save to see them";
+    return std::to_string(keys) + (keys == 1 ? " key" : " keys") + " in hand, " + std::to_string(found) + " of " + std::to_string(all) + " items";
+}
+/// The same as words, for a narrow window (the help where the panel would be)
+std::string dungeon_words() {
+    std::string out;
+    for (int d = 0; d < OOT_DUNGEON_COUNT; d++) {
+        const int state = dungeon_state[d].load(std::memory_order_relaxed);
+        out += std::string(kDungeonTitles[d]) + ": ";
+        out += kDungeonKeys[d] ? (state >= 0 ? std::to_string(state & 255) : std::string("?")) + " of " + std::to_string(kDungeonKeys[d]) + " keys" : "no keys";
+        const char* const names[3] = {"map", "compass", "Boss Key"};
+        const bool has[3] = {kDungeonMaps[d], kDungeonMaps[d], kDungeonBossKey[d]};
+        for (int k = 0; k < 3; k++)
+            if (has[k]) out += std::string(", ") + names[k] + (state >= 0 && (state & (256 << k)) ? " found" : " not yet");
+        out += "\n";
+    }
+    return out + "\n" + kTrackerDungeonHelp;
 }
 /// (Willow Woods, asked 2026-11-23) The Tracker's map. The whole game's row: an overview of Hyrule, each area a box where it
 /// lies, joined to the ones it leads to, its dungeons small chips beside it (kWorldMap, laid out by a sketch: no two boxes
@@ -3184,15 +3279,17 @@ void tracker_load() {
     }
     const bool seed = on && n > 0 && strcmp(tracker_name[0], "No seed");
     if (seed) {   // (the second to fourth rows are the tab's own: what it lists, the way home, the hints heard. The areas follow them)
-        n = std::min(n + 3, kTrackerRows);
-        for (int i = n - 1; i > kTrackerStoneRow; i--)
-            memcpy(tracker_name[i], tracker_name[i - 3], sizeof tracker_name[i]), memcpy(tracker_value[i], tracker_value[i - 3], sizeof tracker_value[i]);
+        n = std::min(n + 4, kTrackerRows);
+        for (int i = n - 1; i > kTrackerDungeonRow; i--)
+            memcpy(tracker_name[i], tracker_name[i - 4], sizeof tracker_name[i]), memcpy(tracker_value[i], tracker_value[i - 4], sizeof tracker_value[i]);
         snprintf(tracker_name[kTrackerShowRow], sizeof tracker_name[0], "Show");
         tracker_value[kTrackerShowRow][0] = 0;
         snprintf(tracker_name[kTrackerHomeRow], sizeof tracker_name[0], "Return home");
         tracker_value[kTrackerHomeRow][0] = 0;
         snprintf(tracker_name[kTrackerStoneRow], sizeof tracker_name[0], "Gossip Stones");
         tracker_value[kTrackerStoneRow][0] = 0;
+        snprintf(tracker_name[kTrackerDungeonRow], sizeof tracker_name[0], "Dungeon items");
+        tracker_value[kTrackerDungeonRow][0] = 0;
     }
     tracker_count = n;
     tracker_stones_load(path.substr(0, path.find_last_of("\\/") + 1), on);
@@ -5164,9 +5261,12 @@ void draw_options(ui::Ctx& c) {
     // (the Tracker tab: an area's row shows its checks where the help is; the tab's second row has words of its own)
     const bool area_panel = selr.tracker >= kTrackerFirstArea && tracker_check_count > 0 && tracker_row_checks(selr.tracker, true) > 0;
     const std::string stats_help = selr.tracker == 0 && tracker_check_count ? tracker_stats_help() : std::string();   // (the run's stats)
+    const bool dungeon_row = selr.tracker == kTrackerDungeonRow && tracker_check_count && cur_tab == TAB_TRACKER;
+    const std::string dungeon_help = dungeon_row && narrow ? dungeon_words() : std::string();   // (narrow: the list as words)
     const char* row_help = selr.tracker == kTrackerShowRow && tracker_check_count ? kTrackerShowHelp :
                            selr.tracker == kTrackerHomeRow && tracker_check_count ? kTrackerHomeHelp :
                            selr.tracker == kTrackerStoneRow && tracker_check_count ? tracker_stone_help.c_str() :
+                           dungeon_row ? (narrow ? dungeon_help.c_str() : kTrackerDungeonHelp) :
                            selr.tracker == 0 && tracker_check_count ? stats_help.c_str() : selr.help;
     if (narrow) {   // (help over the column's foot: normally half the room, up to 65% for the mic meter and its explanation)
         const float help_h = std::min(22 * s + 32 * s + help_tall + (after ? 30 * s : 0) + (pending_line.empty() ? 0 : 52 * s) + 22 * s,
@@ -5180,6 +5280,11 @@ void draw_options(ui::Ctx& c) {
         const float top = hh + 18 * s, room = bar_top - 12 * s - top;
         const float end = tracker_panel(c, hx0, hx1, top, top + std::max(room * 0.55f, room - 420 * s), selr.tracker, hint);
         if (bar_top - 12 * s - end >= 150 * s) tracker_area_map(c, hx0, hx1, end + 10 * s, bar_top - 12 * s, selr.tracker);
+    } else if (dungeon_row) {   // (the Dungeon items row: each dungeon's keys and items, what they mean under them)
+        const float top = hh + 18 * s, end = dungeon_panel(c, hx0, hx1, top, bar_top - 12 * s);
+        if (bar_top - 12 * s - end >= 120 * s)
+            help_box(c, hx0, hx1, end + 10 * s, selr.name, row_help, hint, pending_line.empty() ? nullptr : pending_line.c_str(), 0, after,
+                     end + 10 * s, bar_top - 12 * s, mic_help);
     } else if (selr.tracker == 0 && tracker_check_count && cur_tab == TAB_TRACKER) {   // (the whole game's row: the map of Hyrule, its stats under it)
         const float top = hh + 18 * s, room = bar_top - 12 * s - top, map_h = std::min(room * 0.68f, (hx1 - hx0) * 0.78f);
         tracker_world_map(c, hx0, hx1, top, top + map_h);
@@ -6956,6 +7061,11 @@ void menu_option_set(int id, int value) {
     }
     if (id == OOT_DAMAGE_HIT) {   // (the Damage numbers row: a hit, kept with when it came)
         damage_hit(value);
+        return;
+    }
+    if (id >= OOT_DUNGEON_BASE && id < OOT_DUNGEON_BASE + OOT_DUNGEON_COUNT) {   // (the Tracker's Dungeon items row)
+        if (dungeon_state[id - OOT_DUNGEON_BASE].exchange(value, std::memory_order_relaxed) != value && page == 0 && cur_tab == TAB_TRACKER)
+            menu_refresh = true;
         return;
     }
     if (id == OOT_CLOCK_ID) {   // (the In-game clock row's time)

@@ -151,6 +151,14 @@
 #define OOT_HEALTH_AT 4048
 #define OOT_HEALTH_LIFE 4056
 #define OOT_HEALTH_KIND 4064
+/* (Willow Woods, asked 2026-11-26) the Tracker's Dungeon items row: each dungeon's small keys and items in the save, twice a
+   second from the game side (host/hos_main.c, with the inventory's counts): rx_option_set(OOT_DUNGEON_BASE + d, the small keys
+   in hand (DungeonInfo.<d>.SmallKeyNum, 0 to 255) | 256 the map | 512 the compass | 1024 the boss key), d the dungeon's place
+   in OOT_DUNGEONS; -1 no save loaded */
+#define OOT_DUNGEON_BASE 4073
+#define OOT_DUNGEON_COUNT 12
+#define OOT_DUNGEONS "InsideTheDekuTree", "DodongoCavern", "InsideJabuJabuBelly", "BottomOfTheWell", "ForestTemple", "FireTemple", \
+    "IceCavern", "WaterTemple", "ShadowTemple", "SpiritTemple", "GerudoTrainingGround", "InsideGanonCastle"
 /* (the bosses and mini-bosses by their actors, and the names their bars show; the boss parts that keep a life of their own,
    Morpha's tentacle, Barinade's jellyfish, Meg's copies, Flare Dancer's fire body, have none and show as enemies) */
 #define OOT_BOSSES(B) \
