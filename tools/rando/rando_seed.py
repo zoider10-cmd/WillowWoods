@@ -61,7 +61,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 35  # 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 36  # 36: with Dungeon keys, Boss Keys or Maps and compasses: Anywhere, a Gold Skulltula and a pot may hold them too, a drop of the dungeon's own (DUNGEON_DROPS_FROM); 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -463,6 +463,7 @@ DUNGEON_ITEMS = ("Item_Dungeon_SmallKey", "Item_Dungeon_BossKey", "Item_Dungeon_
 # a chest), and each is told the dungeon it belongs to in DUNGEON_ITEMS_FILE (a chest's hash, the dungeon, the item):
 # the game's side, at a dungeon item's add from a chest of that file in another place than its dungeon, takes the add
 # away and sets that dungeon's flag (host/hos_main.c oot_dungeon_item). Maps and compasses gate nothing: no rule asks.
+# (From placement 36 a Gold Skulltula and a pot may hold them too, and the keys: DUNGEON_DROPS_FROM.)
 MAP, COMPASS = "Item_Dungeon_Map", "Item_Dungeon_Compass"
 DUNGEON_FOLDERS = ("InsideTheDekuTree", "DodongoCavern", "InsideJabuJabuBelly", "BottomOfTheWell", "ForestTemple", "FireTemple",
                    "IceCavern", "WaterTemple", "ShadowTemple", "SpiritTemple", "GerudoTrainingGround", "InsideGanonCastle")
@@ -504,6 +505,21 @@ SMALL_KEY = "Item_Dungeon_SmallKey"
 # for their temples' keys too, and a dungeon's small keys may be in any chest the logic reaches, as any other item (the
 # Boss Keys keep boss_key_fits).
 KEYS_ENDING_FROM = 32
+# ---- Dungeon items on Gold Skulltulas and in pots (asked 2026-11-26; share/handoff-dungeon-items-anywhere.md) ----
+# From placement DUNGEON_DROPS_FROM the small keys, Boss Keys, maps and compasses that are "Anywhere" (`loose` in main) may
+# be a Gold Skulltula's drop or a pot's too, where those take part (rando_skulltulas, rando_pots): a spot as a chest is, by
+# its own rule (skull_asks, a pot's table's or its nearest ruled actor's), a small key placed by the logic as any gating
+# item, a Boss Key only where its boss's rule covers the spot's (boss_key_fits, as in a chest). What drops is a pick-up of
+# the dungeon's own (DUNGEON_PICKUP, "<item>_<dungeon>"), which the game's side counts for that dungeon by its name
+# (host/hos_main.c oot_dungeon_pickup; inside its own dungeon the game counts it itself). Not a gift, a shelf, a scrub or
+# a Piece of Heart lying in the world: those give by an add's name, which says no dungeon.
+DUNGEON_DROPS_FROM = 36
+DROP_KINDS = ("skulltula", "pot")
+
+
+def drop_holds(kind, placement):
+    """whether a spot of this kind (a spot's s[4]) may hold the dungeon items that are anywhere, as a chest may"""
+    return str(kind).startswith("Obj_TBox") or placement >= DUNGEON_DROPS_FROM and kind in DROP_KINDS
 # ---- Pots (rando_pots, "Potsanity", asked 2026-11-23; share/todo.md) ----
 # The pots the logic's tables know (POT_TABLES' actors of kind "pot": a house's, a grotto's, a dungeon room's, 67 in all)
 # take part as a Gold Skulltula does: each a spot holding its own item (POT_OWN, a Deku Nut bundle) in the pool, giving
@@ -3044,7 +3060,8 @@ SKULLTULA_ITEMS_NOT_YET = ("TBox_Rupee_Green", "TBox_Rupee_Blue", "TBox_Rupee_Re
 # the same make as those gating items (SKULLTULA_MORE: the Stone of Agony, the magic arrows and spells, the bigger
 # bags, quivers and bullet bags, the shields), which no Skulltula has dropped yet: to be seen in play.
 # Not a Skulltula's: the Pieces of Heart and the rupees (above: seen not to work), a dungeon's keys, map and compass
-# (counted for the dungeon they are got in, and the rules know no Skulltula's place in a dungeon well enough), the
+# (counted for the dungeon they are got in, and the rules know no Skulltula's place in a dungeon well enough; from
+# placement 36 the ones that are "Anywhere" are, added to what skulltula_holds allows: DUNGEON_DROPS_FROM), the
 # songs (none got from a pick-up yet), the bottles, the scales and the wallets (never tried on one), the Heart
 # Containers, the dungeons' stones and medallions, and anything else not named: they go to chests, gifts, shelves and
 # the pieces.
@@ -6216,6 +6233,15 @@ def read_pins():
     return pins
 
 
+def pins_gone(stamp_was, pins):
+    """whether the seed in the game folder (its stamp's text, or None) was made with test pins that are not the pin
+    file's now (pins: read_pins()): a rewrite then places its items anew, though no setting changed (seen 2026-11-26: the
+    owner's test seed, its pin file deleted after the test, came back another seed from a rewrite, with no word of it)"""
+    if not stamp_was or " pins " not in stamp_was:
+        return False
+    return stamp_was.split(" pins ", 1)[1].split("\n")[0].strip() != (repr(pins) if pins else "")
+
+
 def pin_item(item):
     """a pin's item as the shuffle names it, and the dungeon a map or compass pinned is told ("Item_Dungeon_Map@DodongoCavern":
     the map, "DodongoCavern"; None for any other item, whose tag, a key's, is its own name)"""
@@ -8519,7 +8545,7 @@ def remove_old(mod):
     return n
 
 
-def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart=(), holds=None, counted=False, fixed_more=(), loose=frozenset()):
+def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart=(), holds=None, counted=False, fixed_more=(), loose=frozenset(), even=frozenset()):
     """What each chest holds. spots: {hash: (area, item, is a dungeon's chest, why it stays or None)}, in a fixed order.
     needs: {hash: what the chest asks for} for the logic, or None: no logic.
     Returns ({hash: item} for the chests that take part, how many chests stay for each reason, the spheres or None).
@@ -8538,7 +8564,10 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
     counted: the tokens are placed by the logic too, after the gating items, for the rules that count them (tokens):
     each where it can be reached with the items still to be placed, as a gating item is.
     fixed_more: [(what it asks for, its item)] of places that are not spots and keep an item the logic counts (a Gold
-    Skulltula that keeps its token)."""
+    Skulltula that keeps its token).
+    even: items the logic does not place that go to any spot that may hold them, each as likely as another (the maps,
+    compasses and Boss Keys that are anywhere, from DUNGEON_DROPS_FROM: left to the filling below, the Gold Skulltulas and
+    the pots, which choose first, took nearly all of them, 37 Boss Keys of 48 on the hundred Skulltulas)."""
     only = only or {}
     groups = [g for g in ([bound] if isinstance(bound, tuple) else bound or []) if g]
     bound = groups or None
@@ -8673,6 +8702,13 @@ def place(rng, spots, which, keys_mode, needs=None, bound=None, only=None, apart
         rest, items = [h for h in rest if h not in group_spots], [i for i in items if i not in group_items]
     # everything else among the chests that are left, wherever they are
     rng.shuffle(items)
+    for item in [i for i in items if i in even]:
+        free = [h for h in rest if not holds or h not in holds or item in holds[h]]
+        if free:   # (none: left to the filling below, which says so)
+            h = rng.choice(free)
+            gives[h] = item
+            rest.remove(h)
+            items.remove(item)
     if holds:   # (a spot of `holds` first: the first of the shuffled items it may hold; the others take the rest)
         order = [h for h in rest if h in holds]
         if MASTER_SHUFFLED or loose:   # (and with MAPS_LOOSE every spot but a chest is one: the fussiest first) (the pedestal's few kinds before the shelves', which take nearly anything: the fewest first)
@@ -8936,6 +8972,12 @@ def main():
         stamp = stamp[:-1] + " ageless %d\n" % a.ageless
     if read_pins():   # (test pins: another file, another seed)
         stamp = stamp[:-1] + " pins %r\n" % (read_pins(),)
+    try:
+        if pins_gone(open(stamp_path, encoding="utf-8").read(), read_pins()):
+            print("NOTE: the seed in the game folder was made with test pins (rando\\%s) that are not the file's now: its items are "
+                  "placed anew, as another seed. A save begun on it no longer matches." % PIN_FILE)
+    except OSError:
+        pass
     print("randomizer %s, seed %d, chests %s, dungeon keys %s, major items %s" % (
         "on" if on else "off", seed, ("off", "overworld", "dungeons", "all")[which],
         ("off", "own dungeon", "anywhere")[keys_mode], "on" if a.event_chests else "off"))
@@ -9499,7 +9541,7 @@ def main():
         loose = loose | frozenset(small_tags.values())
     pinned = pin_groups(spots, read_pins())
     pinned_spots = frozenset(h for _, where in pinned for h in where)
-    if loose:   # (Anywhere: chests only, MAPS_LOOSE; a Boss Key to a chest its boss's rule covers, boss_key_fits)
+    if loose:   # (Anywhere: chests, and from DUNGEON_DROPS_FROM Gold Skulltulas and pots, drop_holds; a Boss Key where its boss's rule covers, boss_key_fits)
         every = {s[1] for s in spots.values()}
         holds = dict(holds or {})
         caps = {t: (frozenset(boss_need(t.split("@")[1])) if t.split("@")[1] in BOSS_HEARTS else None) for t in set(boss_tags.values())}
@@ -9507,9 +9549,12 @@ def main():
             d = t.split("@")[1].split("#")[0]
             caps[t] = frozenset(boss_need(d)) | key_sets[d] if d in BOSS_HEARTS else None
         for h, s in spots.items():
-            if not str(s[4]).startswith("Obj_TBox"):
+            if not drop_holds(s[4], placement):
                 holds[h] = frozenset(holds.get(h, every)) - loose
-            elif caps and logic:
+                continue
+            if s[4] in DROP_KINDS and h not in JUNK_ONLY:   # (a Gold Skulltula's or a pot's: what it may drop, and the dungeon items that are anywhere)
+                holds[h] = frozenset(holds[h]) | loose
+            if caps and logic:
                 unfit = frozenset(t for t, cap in caps.items() if not boss_key_fits(needs.get(h), cap))
                 if h in AFTER_WATER:   # (there only once the Water Temple is done: none of its own keys, whatever the items say)
                     unfit = unfit | frozenset(t for t in caps if t.split("@")[1].split("#")[0] == "WaterTemple")
@@ -9524,7 +9569,8 @@ def main():
                                                            (frozenset(REWARD_ITEMS), frozenset(endings)) if a.dungeon_rewards else None) if group]
                                       + pinned or None,
                                       only=lesson_only, apart=frozenset(lessons) if a.songs == 2 else (),
-                                      holds=holds or None, counted=counted, fixed_more=kept_tokens, loose=loose)
+                                      holds=holds or None, counted=counted, fixed_more=kept_tokens, loose=loose,
+                                      even=loose - PROGRESSION if placement >= DUNGEON_DROPS_FROM else frozenset())
     except ValueError as e:
         if "a lesson has nothing left" in str(e) and fairies and not a.event_chests:   # (seen 2026-11-20: magic on, Major items off)
             sys.exit("%s: the Great Fairies may hold only items found once (a spell, the Lens, the Hammer...), and with Major items "
@@ -9560,8 +9606,10 @@ def main():
     for h in list(boss_tags) + list(small_tags):
         spots[h][1] = spots[h][1].split("@")[0]
     pinned_all = frozenset(pin_spot(spots, area, where) for area, where, _ in read_pins())   # (a test pin's spot may be a Skulltula's or a pot's)
-    if any(not str(spots[h][4]).startswith("Obj_TBox") and h not in pinned_all for h in owners):
-        sys.exit("a dungeon's map or compass is somewhere else than a chest: nothing written")
+    if any(not drop_holds(spots[h][4], placement) and h not in pinned_all for h in owners):
+        sys.exit("a dungeon's key, map or compass is somewhere it cannot be given from: nothing written")
+    # (what a Gold Skulltula or a pot may drop: skulltula_holds, a dungeon item told its dungeon from DUNGEON_DROPS_FROM, a test pin's)
+    drop_ok = lambda h, i: skulltula_holds(i, PROGRESSION) or h in pinned_all or placement >= DUNGEON_DROPS_FROM and i in DUNGEON_ITEMS and h in owners
     # (the game's own count of each item is kept: every item given was some chest's)
     before = collections.Counter(spots[h][1] for h in gives)
     if before != collections.Counter(gives.values()):
@@ -9576,7 +9624,7 @@ def main():
             heart_drops[h] = item
         elif s[4] == "pot":   # (every pot taking part drops its item, its own a Deku Nut bundle: POT_OWN)
             pot_drops[h] = item
-    if joined and any(not skulltula_holds(i, PROGRESSION) and h not in pinned_all for h, i in skull_drops.items()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER or h in suns and i == SUN_ITEM) for h, i in heart_drops.items()):
+    if joined and any(not drop_ok(h, i) for h, i in skull_drops.items()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER or h in suns and i == SUN_ITEM) for h, i in heart_drops.items()):
         sys.exit("a Gold Skulltula or a Piece of Heart was given what it may not hold: nothing written")
 
     # ---- the Gold Skulltulas: their tokens and the chests' rupees and supplies change places ----
@@ -9631,7 +9679,7 @@ def main():
         print("Lake Hylia's Fire Arrows: a check, giving %s" % next((heart_drops.get(h, SUN_ITEM) for h in suns)))
 
     if pot_drops:   # (Pots: their drops, pick-ups as a Skulltula's are, with their families' tiers)
-        if any(not skulltula_holds(i, PROGRESSION) and h not in pinned_all for h, i in pot_drops.items()):
+        if any(not drop_ok(h, i) for h, i in pot_drops.items()):
             sys.exit("a pot was given what it may not drop: nothing written")
         for h, item in pot_drops.items():
             drops.setdefault(h, item)

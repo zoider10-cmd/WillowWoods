@@ -58,10 +58,11 @@ def main():
         check("the logic placed" in str(e), "a pinned map's spot holding a gating item is not refused: %s" % e)
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
     check("holds = {h: v for h, v in holds.items() if h not in pinned_spots}" in script and
-          "any(not skulltula_holds(i, PROGRESSION) and h not in pinned_all for h, i in skull_drops.items())" in script and
-          "any(not skulltula_holds(i, PROGRESSION) and h not in pinned_all for h, i in pot_drops.items())" in script and
+          "drop_ok = lambda h, i: skulltula_holds(i, PROGRESSION) or h in pinned_all or" in script and
+          "any(not drop_ok(h, i) for h, i in skull_drops.items())" in script and
+          "any(not drop_ok(h, i) for h, i in pot_drops.items())" in script and
           "gives.get(h) or skull_drops.get(h) or pot_drops.get(h)) for h in sorted(owners)" in script and
-          'not str(spots[h][4]).startswith("Obj_TBox") and h not in pinned_all for h in owners' in script,
+          'not drop_holds(spots[h][4], placement) and h not in pinned_all for h in owners' in script,
           "a pinned Skulltula's or pot's dungeon item is still refused somewhere, or not written to dungeon_items.txt")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     check("oot_checks[i].key == key || (oot_checks[i].pot && oot_checks[i].broken == key)" in host,
@@ -107,6 +108,12 @@ def main():
           "a dungeon's own pick-up is not made from the item, naming itself, dying as a rupee: %r" % comps)
     check('} else if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder)) {' in host,
           "the game's side does not count a Gold Skulltula's drop of a dungeon's own for its dungeon")
+    # a seed made with pins, rewritten after the pin file changed or went: said (it comes back another seed)
+    stamp = "placement 35 seed 1 chests 3\nfixes 105 hints 1 pins %r\n" % (pins,)
+    check(S.pins_gone(stamp, []) and S.pins_gone(stamp, pins[:1]) and not S.pins_gone(stamp, pins) and
+          not S.pins_gone("placement 35 seed 1\nfixes 105\n", []) and not S.pins_gone(None, pins) and
+          'if pins_gone(open(stamp_path, encoding="utf-8").read(), read_pins()):' in script,
+          "a rewrite of a seed made with other test pins is not told apart, or not said")
     print("PASS: test pins: dungeon items on Gold Skulltulas and in pots")
 
 
