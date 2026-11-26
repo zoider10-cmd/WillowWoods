@@ -1175,12 +1175,53 @@ static void slots_save(void) {
 #define SLOTS_OWN -2         /* (an ask: ZR's own item back now) */
 #define SLOTS_WHEN_FREE -3   /* (an ask: ZR's own item back once Link holds nothing) */
 static volatile int hand_item = -1;
-void hos_oot_note_hand(int item) {
-    const int before = __atomic_exchange_n(&hand_item, item, __ATOMIC_ACQ_REL);
-    if (before != item && wheel_trace()) hos_log("item buttons: Link's hand had %d, now %d", before, item);
-}
 static int slots_waits(int want, int hand) {   /* (the put-back made on its own, while Link holds an item) */
     return want == SLOTS_WHEN_FREE && hand >= 0;
+}
+/* The forced item (HOS_ITEM_BUTTONS_FORCE=1, tried 2026-11-25): Link's item record has an item the game uses in place of
+   ZR's (its +0x1c, -1 none: f_830350a0 reads it before asking the pouch). L's or R's item is written there and ZR's own
+   item is never changed: the HUD's ZR icon, the pouch and the item row stay as they are. The asks are the same
+   (slots_ask); Link's update answers them here and slots_hud leaves them alone. */
+static int slots_force(void) {
+    static int on = -1;
+    if (on < 0) on = env_on("HOS_ITEM_BUTTONS_FORCE");
+    return on;
+}
+/* The item to force for an ask, -1 none; *answered 0 while the ask waits for Link's hand */
+static int slots_force_target(int want, int hand, int forced, int *answered) {
+    *answered = !slots_waits(want, hand);
+    if (!*answered) return forced;
+    return want == SLOTS_OWN || want == SLOTS_WHEN_FREE ? -1 : want;
+}
+/* Link's update (host/hos_main.c hos_oot_lift_player): what he has in his hand and the item forced on him now. Returns the
+   item to force (-1 none), or -2 to leave the game's own as it is */
+int hos_oot_slots_link(int hand, int forced) {
+    static int ours = -1, written = -1;   /* (the item the slots want forced; the one written last) */
+    const int before = __atomic_exchange_n(&hand_item, hand, __ATOMIC_ACQ_REL);
+    if (before != hand && wheel_trace()) hos_log("item buttons: Link's hand had %d, now %d", before, hand);
+    if (!slots_on() || !slots_force()) ours = -1;
+    else {
+        const int seq = __atomic_load_n(&swap_seq, __ATOMIC_ACQUIRE);
+        if (seq != __atomic_load_n(&swap_done, __ATOMIC_ACQUIRE)) {
+            int answered;
+            const int want = __atomic_load_n(&swap_want, __ATOMIC_ACQUIRE);
+            const int target = slots_force_target(want, hand, ours, &answered);
+            if (answered) {
+                if (wheel_trace()) hos_log("item buttons: Link's forced item was %d, now %d", ours, target);
+                ours = target;
+                __atomic_store_n(&swap_done, seq, __ATOMIC_RELEASE);
+            }
+        }
+        __atomic_store_n(&zr_own_on, ours < 0, __ATOMIC_RELEASE);
+    }
+    if (ours >= 0) {
+        if (forced == ours) return written = ours, -2;
+        if (forced != -1 && forced != written) return -2;   /* (the game forces an item of its own: left alone) */
+        return written = ours;
+    }
+    if (written >= 0 && forced == written) return written = -1, -1;
+    written = -1;
+    return -2;
 }
 static int slots_ask(int item) {   /* (the input side: returns the ask's number, for slots_hud's answer) */
     __atomic_store_n(&swap_want, item, __ATOMIC_RELEASE);
@@ -1241,6 +1282,7 @@ static void slots_hud(Ctx *c) {
         zr_put = -1;
         __atomic_store_n(&zr_own_on, 1, __ATOMIC_RELEASE);
     }
+    if (slots_force()) return;   /* (the asks are answered at Link's update: hos_oot_slots_link) */
     const int seq = __atomic_load_n(&swap_seq, __ATOMIC_ACQUIRE);
     if (seq == __atomic_load_n(&swap_done, __ATOMIC_ACQUIRE)) return;
     const int want = __atomic_load_n(&swap_want, __ATOMIC_ACQUIRE);

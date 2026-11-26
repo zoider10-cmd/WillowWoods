@@ -52,9 +52,14 @@ static volatile int slot_age = 1;
 static volatile int swap_want = -1, swap_seq, swap_done;
 static volatile int zr_own_on = 1;
 static volatile int assign_state, assign_which;
+static volatile int hand_item = -1;
 #define SLOTS_OWN -2
 #define SLOTS_WHEN_FREE -3
 @WAITS@
+static int env_on(const char *name) { (void)name; return 1; }
+@FORCE@
+@TARGET@
+@LINK@
 @ASK@
 @INPUT@
 int main(void) {
@@ -88,11 +93,26 @@ int main(void) {
     if (swap_seq != asked + 1 || swap_want != SLOTS_WHEN_FREE || (out & ZR)) return printf("ZR's own not put back after L (%d, %d)\n", swap_seq, swap_want), 1;
     if (!slots_waits(SLOTS_WHEN_FREE, 0) || slots_waits(SLOTS_WHEN_FREE, -1)) return printf("the put-back made on its own does not wait for Link's empty hand\n"), 1;
     if (slots_waits(SLOTS_OWN, 0) || slots_waits(7, 0)) return printf("ZR's press or a button's item waits for Link's hand\n"), 1;
+    /* the forced item (Link's update): L's item written over none, kept while he holds it, taken off once his hand is
+       empty; an item the game forces itself is left alone */
+    swap_done = swap_seq;
+    slots_ask(7);
+    if (hos_oot_slots_link(-1, -1) != 7 || swap_done != swap_seq || zr_own_on) return printf("L's item not forced\n"), 1;
+    if (hos_oot_slots_link(7, 7) != -2) return printf("the forced item written twice\n"), 1;
+    slots_ask(SLOTS_WHEN_FREE);
+    if (hos_oot_slots_link(7, 7) != -2 || swap_done == swap_seq) return printf("the forced item taken off under an item Link holds\n"), 1;
+    if (hos_oot_slots_link(-1, 7) != -1 || swap_done != swap_seq || !zr_own_on) return printf("the forced item not taken off once his hand is empty\n"), 1;
+    if (hos_oot_slots_link(-1, -1) != -2) return printf("no forced item written again\n"), 1;
+    slots_ask(7);
+    if (hos_oot_slots_link(-1, 30) != -2) return printf("the game's own forced item written over\n"), 1;
+    slots_ask(SLOTS_OWN);
+    if (hos_oot_slots_link(-1, 30) != -2) return printf("the game's own forced item taken off\n"), 1;
     swap_done = swap_seq, zr_own_on = 1;
     slots_input(0, t += 16000000);
     slot_item[1][1] = -1;
+    const int before_r = swap_seq;
     out = slots_input(1ULL << B_R, t += 16000000);   /* R with no item: nothing asked, R kept from the game */
-    if (swap_seq != asked + 1 || (out & (1ULL << B_R))) return printf("R with no item asked or reached the game\n"), 1;
+    if (swap_seq != before_r || (out & (1ULL << B_R))) return printf("R with no item asked or reached the game\n"), 1;
     puts("PASS: L's item put on ZR before ZR is held, ZR's own back before its use and after L's");
     return 0;
 }
@@ -131,9 +151,14 @@ def main():
     need("if (slots_waits(want, __atomic_load_n(&hand_item, __ATOMIC_ACQUIRE))) return;" in hud and
          hud.index("slots_waits(") < hud.index("cy_guest(c, CY_SETTER") and hud.index("slots_waits(") < hud.index("&swap_done, seq"),
          "the HUD's update puts ZR's own item back under an item Link holds")
-    need("hos_oot_note_hand(" in block((ROOT / "host" / "hos_main.c").read_text(encoding="utf-8"), "void hos_oot_lift_player(Ctx *c, uint64_t actor) {"),
+    need("hos_oot_slots_link(" in block((ROOT / "host" / "hos_main.c").read_text(encoding="utf-8"), "void hos_oot_lift_player(Ctx *c, uint64_t actor) {"),
          "Link's update does not tell the slots what he holds")
-    src = FAKE.replace("@WAITS@", block(wheel, "static int slots_waits(int want, int hand) {")).replace("@ASK@", block(wheel, "static int slots_ask(int item) {")).replace(
+    need("if (slots_force()) return;" in hud and hud.index("if (slots_force()) return;") < hud.index("slots_waits("),
+         "the HUD's update changes ZR's item while the forced item is the way")
+    src = FAKE.replace("@WAITS@", block(wheel, "static int slots_waits(int want, int hand) {")).replace(
+        "@FORCE@", block(wheel, "static int slots_force(void) {")).replace(
+        "@TARGET@", block(wheel, "static int slots_force_target(int want, int hand, int forced, int *answered) {")).replace(
+        "@LINK@", block(wheel, "int hos_oot_slots_link(int hand, int forced) {")).replace("@ASK@", block(wheel, "static int slots_ask(int item) {")).replace(
         "@INPUT@", block(wheel, "static uint64_t slots_input(uint64_t buttons, int64_t now) {"))
     with tempfile.TemporaryDirectory() as d:
         c, exe = Path(d) / "t.c", Path(d) / "t.exe"

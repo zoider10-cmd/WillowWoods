@@ -5884,12 +5884,13 @@ void hos_oot_lift_player(Ctx *c, uint64_t actor) {
     hos_oot_note_link(components);
     {   /* (Item buttons, host/oot_wheel.c: what Link has in his hand. His item record is at his components' +0x358, +0x7c0
            (f_827ff39c reads it so); its +0x18 the item in hand, -1 none (f_83034d30), its +0x110 his actor) */
-        void hos_oot_note_hand(int item);
+        int hos_oot_slots_link(int hand, int forced);   /* (its +0x1c: an item forced on him, used in place of ZR's) */
         const uint64_t record = recomp_load64(c, components + 0x358);
-        int hand = -1;
-        if (record >= HOS_HEAP_BASE && hos_guest_range(record + 0x7c0, 0x118) && recomp_load64(c, record + 0x7c0 + 0x110) == actor)
-            hand = (int32_t)recomp_load32(c, record + 0x7c0 + 0x18);
-        hos_oot_note_hand(hand >= 0 && hand < 64 ? hand : -1);
+        if (record >= HOS_HEAP_BASE && hos_guest_range(record + 0x7c0, 0x118) && recomp_load64(c, record + 0x7c0 + 0x110) == actor) {
+            const int hand = (int32_t)recomp_load32(c, record + 0x7c0 + 0x18);
+            const int force = hos_oot_slots_link(hand >= 0 && hand < 64 ? hand : -1, (int32_t)recomp_load32(c, record + 0x7c0 + 0x1c));
+            if (force >= -1) recomp_store32(c, record + 0x7c0 + 0x1c, (uint32_t)force);
+        }
     }
 
     // Link can be updated by different guest workers on successive frames.
