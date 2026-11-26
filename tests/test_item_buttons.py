@@ -105,7 +105,7 @@ int main(void) {
        holds it, taken off once his hand is empty; an item the game forces itself is left alone; the Slingshot (4) is
        never forced */
     swap_done = link_done = swap_seq;
-    if (!slots_forced(0) || !slots_forced(6) || !slots_forced(7) || !slots_forced(4) || !slots_forced(30) || !slots_forced(47) || !slots_forced(14) || !slots_forced(50) || slots_forced(2) || slots_forced(1)) return printf("the forced items are not the ones seen to work\n"), 1;
+    if (!slots_forced(0) || !slots_forced(6) || !slots_forced(7) || !slots_forced(4) || !slots_forced(30) || !slots_forced(47) || !slots_forced(14) || !slots_forced(50) || !slots_forced(1) || !slots_forced(2) || !slots_forced(11) || slots_forced(8) || slots_forced(20)) return printf("the forced items are not the ones seen to work\n"), 1;
     slots_ask(0);
     if (hos_oot_slots_link(-1, -1) != 0 || link_done != swap_seq || link_own_on) return printf("L's item not forced\n"), 1;
     if (hos_oot_slots_link(0, 0) != -2) return printf("the forced item written twice\n"), 1;
@@ -120,7 +120,7 @@ int main(void) {
     slots_ask(0);
     hos_oot_slots_link(-1, -1);
     if (hos_oot_slots_item(2) != 0) return printf("the ammunition's lookup is not given the forced item\n"), 1;
-    slots_ask(2);   /* (an item not forced after a forced one: the forced one taken off, ZR's the HUD's to change) */
+    slots_ask(20);   /* (an item not forced after a forced one: the forced one taken off, ZR's the HUD's to change) */
     if (hos_oot_slots_link(-1, 0) != -1 || link_done != swap_seq || !link_own_on) return printf("the forced item kept under an item that goes on ZR\n"), 1;
     hos_oot_slots_link(-1, -1);
     if (hos_oot_slots_item(2) != 2) return printf("the ammunition's lookup is given an item with none forced\n"), 1;

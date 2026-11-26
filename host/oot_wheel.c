@@ -1196,12 +1196,13 @@ static int slots_forced(int item) {
     }
     if (!mode || item < 0 || item >= CY_ITEMS) return 0;
     if (mode == 2) return 1;
-    /* (seen to work forced, without a window 2026-11-25: the Deku Stick, the Boomerang, the Slingshot, the Longshot (the
-       Hookshot taken to be the same), the Hammer, Bombchus, Din's Fire, Nayru's Love, the Bow and the Fire Arrow (the
-       Ice and Light Arrows taken to be the same), and the five bottle slots (14 to 17, 50: an empty bottle and a bottle of
-       bugs seen; the game's bottle scenes ask for ZR's item, hos_oot_slots_item)) */
-    return item == 0 || (item >= 3 && item <= 7) || item == 9 || item == 10 || item == 12 || (item >= 14 && item <= 17) ||
-           item == 30 || (item >= 46 && item <= 48) || item == 50;
+    /* (seen to work forced, without a window 2026-11-25 and 26: the Deku Stick, Deku Nuts, Bombs, the Boomerang, the
+       Slingshot, the Longshot (the Hookshot taken to be the same), the Hammer, Bombchus, Din's Fire, Farore's Wind (a warp
+       point placed and warped to in Ganon's Castle), Nayru's Love, the Bow and the Fire Arrow (the Ice and Light Arrows
+       taken to be the same), and the five bottle slots (14 to 17, 50: an empty bottle and a bottle of bugs seen; the game's
+       bottle scenes ask for ZR's item, hos_oot_slots_item)) */
+    return (item >= 0 && item <= 7) || (item >= 9 && item <= 12) || (item >= 14 && item <= 17) || item == 30 ||
+           (item >= 46 && item <= 48) || item == 50;
 }
 /* The item forced on Link now, -1 none, for the game's lookups that ask for ZR's item where they mean the item in use:
    a shooting item's ammunition (two) and a bottle's use (three). nx2/oot_patches.py patch_slots_item: without it a forced
