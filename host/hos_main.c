@@ -2297,13 +2297,13 @@ static void oot_tracker_load(const char *stamp) {
         if (sscanf(line, "%31[0-9a-fA-F]|%23[A-Za-z]|", hash, owner) != 2) continue;
         const uint64_t key = strtoull(hash, NULL, 16);
         for (int i = 0; i < oot_check_count; i++)
-            if (oot_checks[i].key == key) {
+            if (oot_checks[i].key == key || (oot_checks[i].pot && oot_checks[i].broken == key)) {   /* (a pot's hash is its .broken) */
                 snprintf(oot_checks[i].owner, sizeof oot_checks[i].owner, "%s", owner), owned++;
                 break;
             }
     }
     if (f) fclose(f);
-    if (owned) hos_log("rando: tracker: %d chests hold a dungeon item that belongs to its own dungeon wherever it is", owned);
+    if (owned) hos_log("rando: tracker: %d checks hold a dungeon item that belongs to its own dungeon wherever it is", owned);
     /* (the seed's "You found" words for each dungeon's items, rando_seed.py DUNGEON_WORDS_FILE: oot_dungeon_window) */
     f = oot_game_file(path, sizeof path, "mods/rando-seed/dungeon_words.txt") ? fopen(path, "r") : NULL;
     oot_dungeon_words = f != NULL;
@@ -2523,6 +2523,11 @@ static int oot_tracker_shop_on = 1;
    Shop_SelectItemPrice at the sale (-1: not read), which tells the shelves of one item apart. */
 /* (the pot a pick-up came from, oot_pot_again, for the record that follows on the same thread; -1: none) */
 static _Thread_local int oot_pot_chosen = -1;
+/* (the check the last item given was found to be, and when: a dungeon item from a Gold Skulltula or a pot is that check's
+   dungeon's, oot_dungeon_owner. Written under oot_checks_lock) */
+static int oot_dungeon_check = -1;
+static int64_t oot_dungeon_check_at;
+#define OOT_DUNGEON_CHECK_NS 3000000000LL
 static void oot_tracker_item(const char *name, int shop, int price) {
     static int read;
     if (!read) {
@@ -2592,6 +2597,7 @@ static void oot_tracker_item(const char *name, int shop, int price) {
     }
     if (best >= 0) {
         oot_checks[best].done = 1;
+        oot_dungeon_check = best, oot_dungeon_check_at = hos_now_ns();   /* (its dungeon item's dungeon: oot_dungeon_owner) */
         if (oot_checks[best].shelf || oot_checks[best].key) oot_checks[best].sold = 1;
         oot_tracker_save();
         if (nearest < 1e29f) hos_log("rando: tracker: %s got: check %d is collected (%.1f m from Link)", name, best, nearest);
@@ -3784,11 +3790,19 @@ static int oot_pot_again(Ctx *c, const char *name) {
 #define OOT_DUNGEON_NEAR 4.0f
 /* the dungeon a dungeon item (name) of the chest Link just opened belongs to: the nearest chest of dungeon_items.txt within
    OOT_DUNGEON_NEAR in Link's map giving it. 0 (owner "") when none is, or when Link is in that dungeon (the game's own) */
+static int oot_dungeon_recent(const char *name) {   /* (oot_checks_lock held: the check just collected gives name, its dungeon told) */
+    const int recent = oot_dungeon_check;
+    return recent >= 0 && recent < oot_check_count && hos_now_ns() - oot_dungeon_check_at < OOT_DUNGEON_CHECK_NS &&
+           oot_checks[recent].owner[0] && !strcmp(oot_checks[recent].item, name);
+}
 static int oot_dungeon_owner(const char *name, char *owner, size_t size, float *away_out) {
     float nearest = OOT_DUNGEON_NEAR;
     owner[0] = 0;
     AcquireSRWLockShared(&oot_checks_lock);
-    for (int i = 0; i < oot_check_count; i++) {
+    /* (2026-11-26: a test pin's dungeon item on a Gold Skulltula or in a pot. The check its add was just found to be
+       (oot_tracker_item: the pot broken, the Skulltula nearest) says whose, before any chest near) */
+    if (oot_dungeon_recent(name)) nearest = 0, snprintf(owner, size, "%s", oot_checks[oot_dungeon_check].owner);
+    for (int i = 0; i < oot_check_count && nearest > 0; i++) {
         if (!oot_checks[i].owner[0] || strcmp(oot_checks[i].item, name) || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
         const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
                     dz = oot_checks[i].place[2] - oot_link_place[2];
@@ -3803,7 +3817,14 @@ static int oot_dungeon_owner(const char *name, char *owner, size_t size, float *
 static int oot_dungeon_item(Ctx *c, const char *name) {
     const char *field = !strcmp(name, "Item_Dungeon_Map") ? "IsGetMap" : !strcmp(name, "Item_Dungeon_Compass") ? "IsGetCompass" :
                         !strcmp(name, "Item_Dungeon_BossKey") ? "IsGetBossKey" : !strcmp(name, "Item_Dungeon_SmallKey") ? "SmallKeyNum" : NULL;
-    if (!field || c->x[30] != 0x828d50acULL || !hos_rando_on()) return 0;   /* (0x828d50ac: a chest's add, as a shop's) */
+    if (!field || !hos_rando_on()) return 0;
+    if (c->x[30] != 0x828d50acULL) {   /* (0x828d50ac: a chest's add, as a shop's. Another add, a pick-up's: a Gold Skulltula's
+                                          or a pot's drop whose check the tracker has just found, with a dungeon told: test pins) */
+        AcquireSRWLockShared(&oot_checks_lock);
+        const int from_check = oot_dungeon_recent(name);
+        ReleaseSRWLockShared(&oot_checks_lock);
+        if (!from_check) return 0;
+    }
     char owner[24];
     float nearest;
     if (!oot_dungeon_owner(name, owner, sizeof owner, &nearest)) return 0;
@@ -3816,7 +3837,7 @@ static int oot_dungeon_item(Ctx *c, const char *name) {
         n++;
         ok = ok && oot_gamedata_int(c, oot_flag_hash(flag), &n, 1);
     } else ok = oot_gamedata_set_bool(c, oot_flag_hash(flag), 1);
-    hos_log("rando: %s from a chest %.1f m away belongs to %s: %s %s", name, nearest, owner, flag, ok ? "set" : "NOT FOUND");
+    hos_log("rando: %s from a check %.1f m away (0: the one just collected) belongs to %s: %s %s", name, nearest, owner, flag, ok ? "set" : "NOT FOUND");
     return ok;
 }
 

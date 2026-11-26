@@ -6165,11 +6165,57 @@ def read_pins():
     return pins
 
 
+def pin_item(item):
+    """a pin's item as the shuffle names it, and the dungeon a map or compass pinned is told ("Item_Dungeon_Map@DodongoCavern":
+    the map, "DodongoCavern"; None for any other item, whose tag, a key's, is its own name)"""
+    base, at, folder = item.partition("@")
+    return (base, folder) if at and base in MAPS_LOOSE else (item, None)
+
+
+def pin_owners(spots, pins):
+    """{a pinned spot's hash: its map's or compass's dungeon} for the pins that name one (pin_item)"""
+    out = {}
+    for area, where, item in pins:
+        base, folder = pin_item(item)
+        if folder:
+            out[pin_spot(spots, area, where)] = folder
+    return out
+
+
+def pin_swaps(spots, gives, pins):
+    """a map or compass pinned (pin_item) put in its spot after the shuffle: traded with a spot the shuffle gave one of
+    them, which takes the pinned spot's item (refused when that is a gating item: the logic placed it there)"""
+    for area, where, item in pins:
+        base, folder = pin_item(item)
+        if not folder:
+            continue
+        h = pin_spot(spots, area, where)
+        if gives.get(h) == base:
+            continue
+        if h not in gives or gives[h] in PROGRESSION:
+            sys.exit("test pin %s | %s: its spot holds %s, which the logic placed: pin another spot" % (area, where, gives.get(h)))
+        other = next(o for o in sorted(gives) if gives[o] == base and o not in pin_owners(spots, pins))
+        gives[h], gives[other] = base, gives[h]
+        print("test pin: %s at %s %s (its %s to %s)" % (base, area, where, gives[other], spots[other][5]))
+
+
+def pin_spot(spots, area, where):
+    """the one spot of a pin: its position as the spoiler says it, whole, else its start"""
+    found = [h for h in sorted(spots) if spots[h][0] == area and str(spots[h][5]) == where] or         [h for h in sorted(spots) if spots[h][0] == area and str(spots[h][5]).startswith(where)]
+    if len(found) != 1:
+        sys.exit("test pin %s | %s: %d spots match (one is needed)" % (area, where, len(found)))
+    return found[0]
+
+
 def pin_groups(spots, pins):
-    """place's bound groups for the pins: ({item}, {the spot's hash}); a pin whose spot is not found stops the seed"""
+    """place's bound groups for the pins: ({item}, {the spot's hash}); a pin whose spot is not found stops the seed.
+    (2026-11-26) A dungeon item may be pinned to a Gold Skulltula or a pot too (main lets the pinned spots hold one), and
+    a map or compass told its dungeon (pin_item)"""
     groups = []
     for area, where, item in pins:
-        found = [h for h in sorted(spots) if spots[h][0] == area and str(spots[h][5]).startswith(where)]
+        if pin_item(item)[1]:   # (a map or compass: one of several alike, put there after the shuffle, pin_swaps)
+            continue
+        found = [pin_spot(spots, area, where)]
         if len(found) != 1:
             sys.exit("test pin %s | %s: %d spots match (one is needed)" % (area, where, len(found)))
         groups.append((frozenset({item}), frozenset(found)))
@@ -9399,6 +9445,8 @@ def main():
                 print("Small keys: Anywhere: %d checks held back until temples are done ask for their keys too" % more)
         PROGRESSION = PROGRESSION | frozenset(small_tags.values())
         loose = loose | frozenset(small_tags.values())
+    pinned = pin_groups(spots, read_pins())
+    pinned_spots = frozenset(h for _, where in pinned for h in where)
     if loose:   # (Anywhere: chests only, MAPS_LOOSE; a Boss Key to a chest its boss's rule covers, boss_key_fits)
         every = {s[1] for s in spots.values()}
         holds = dict(holds or {})
@@ -9415,12 +9463,14 @@ def main():
                     unfit = unfit | frozenset(t for t in caps if t.split("@")[1].split("#")[0] == "WaterTemple")
                 if unfit:
                     holds[h] = frozenset(holds.get(h, every)) - unfit
+    if holds and pinned_spots:   # (a test pin: its item wherever it is, a dungeon item on a Gold Skulltula or in a pot too)
+        holds = {h: v for h, v in holds.items() if h not in pinned_spots}
     try:
         gives, stays, spheres = place(rng, collections.OrderedDict((h, tuple(s[:4])) for h, s in spots.items()), which, keys_mode,
                                       needs if logic else None,
                                       [group for group in ((frozenset(SONG_ITEMS), frozenset(lessons)) if a.songs == 1 else None,
                                                            (frozenset(REWARD_ITEMS), frozenset(endings)) if a.dungeon_rewards else None) if group]
-                                      + pin_groups(spots, read_pins()) or None,
+                                      + pinned or None,
                                       only=lesson_only, apart=frozenset(lessons) if a.songs == 2 else (),
                                       holds=holds or None, counted=counted, fixed_more=kept_tokens, loose=loose)
     except ValueError as e:
@@ -9439,14 +9489,26 @@ def main():
                 sys.exit("Magic and the fairies' gifts: magic on a shelf, and no place to trade it with. Nothing written.")
             gives[h], gives[mate] = gives[mate], gives[h]
 
+    pin_swaps(spots, gives, read_pins())   # (a map or compass pinned: there now)
     # (Maps and compasses: Anywhere: the dungeon each now belongs to, DUNGEON_ITEMS_FILE)
     owners = dungeon_owners(random.Random("dungeon items:%d" % seed), spots, gives, loose & MAPS_LOOSE) if loose & MAPS_LOOSE else {}
+    for h, folder in pin_owners(spots, read_pins()).items():   # (a pinned map's or compass's dungeon: traded with the one that had it)
+        other = next((o for o in sorted(owners) if owners[o] == folder and gives.get(o) == gives.get(h) and o != h), None)
+        if h not in owners:
+            sys.exit("test pin: %s holds no map or compass the shuffle placed (Maps and compasses: Anywhere?)" % (spots[h][5],))
+        if other is not None:
+            owners[other] = owners[h]
+        else:   # (that dungeon's stays in its own chest: a second one, and the dungeon it was told has one less. They gate nothing)
+            print("test pin: no other %s of %s was shuffled: %s's is a second one" % (gives[h], folder, folder))
+        owners[h] = folder
+        print("test pin: %s's %s is %s's" % (spots[h][5], gives[h], folder))
     for h in [h for h in gives if "@" in gives[h]]:   # (Boss Keys and small keys: Anywhere: each chest's, and the tags taken off)
         owners[h] = gives[h].split("@")[1].split("#")[0]
         gives[h] = gives[h].split("@")[0]
     for h in list(boss_tags) + list(small_tags):
         spots[h][1] = spots[h][1].split("@")[0]
-    if any(not str(spots[h][4]).startswith("Obj_TBox") for h in owners):
+    pinned_all = frozenset(pin_spot(spots, area, where) for area, where, _ in read_pins())   # (a test pin's spot may be a Skulltula's or a pot's)
+    if any(not str(spots[h][4]).startswith("Obj_TBox") and h not in pinned_all for h in owners):
         sys.exit("a dungeon's map or compass is somewhere else than a chest: nothing written")
     # (the game's own count of each item is kept: every item given was some chest's)
     before = collections.Counter(spots[h][1] for h in gives)
@@ -9462,7 +9524,7 @@ def main():
             heart_drops[h] = item
         elif s[4] == "pot":   # (every pot taking part drops its item, its own a Deku Nut bundle: POT_OWN)
             pot_drops[h] = item
-    if joined and any(not skulltula_holds(i, PROGRESSION) for i in skull_drops.values()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER or h in suns and i == SUN_ITEM) for h, i in heart_drops.items()):
+    if joined and any(not skulltula_holds(i, PROGRESSION) and h not in pinned_all for h, i in skull_drops.items()) | any(not (piece_holds(i) or h in bosses and i == CONTAINER or h in suns and i == SUN_ITEM) for h, i in heart_drops.items()):
         sys.exit("a Gold Skulltula or a Piece of Heart was given what it may not hold: nothing written")
 
     # ---- the Gold Skulltulas: their tokens and the chests' rupees and supplies change places ----
@@ -9514,7 +9576,7 @@ def main():
         print("Lake Hylia's Fire Arrows: a check, giving %s" % next((heart_drops.get(h, SUN_ITEM) for h in suns)))
 
     if pot_drops:   # (Pots: their drops, pick-ups as a Skulltula's are, with their families' tiers)
-        if any(not skulltula_holds(i, PROGRESSION) for i in pot_drops.values()):
+        if any(not skulltula_holds(i, PROGRESSION) and h not in pinned_all for h, i in pot_drops.items()):
             sys.exit("a pot was given what it may not drop: nothing written")
         for h, item in pot_drops.items():
             drops.setdefault(h, item)
@@ -10901,13 +10963,13 @@ def main():
         f.write("\n".join(tracker_lines(collections.Counter(spots[h][0] for h in gives if h not in gifts), collections.Counter(skulls[h][0] for h in took),
                                         collections.Counter(g.area for g in gifts.values()), collections.Counter(p[0] for p in list(pieces.values()) + list(pots.values())))) + "\n")
     with open(os.path.join(mod, DUNGEON_ITEMS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: oot_dungeon_item)
-        f.write("".join("%016x|%s|%s\n" % (h, owners[h], gives[h]) for h in sorted(owners)))
+        f.write("".join("%016x|%s|%s\n" % (h, owners[h], gives.get(h) or skull_drops.get(h) or pot_drops.get(h)) for h in sorted(owners)))   # (a test pin's on a Skulltula or in a pot: its drop)
     with open(os.path.join(mod, DUNGEON_WORDS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: the words are there)
         f.write("# each dungeon's small key, boss key, map and compass have words of their own: <item>_<dungeon> (DUNGEON_WORDS)\n")
     written.append(DUNGEON_WORDS_FILE)
     # (the Tracker's rules only: a boss's Heart Container and its ending ask for its Boss Key when it moved, key_codes. The
     #  placement's rules never named it: boss_key_fits put it where the boss's rule reaches)
-    moved_boss = {d for d in set(owners.values()) if any(gives.get(h) == BOSS_KEY and owners.get(h) == d for h in owners)}
+    moved_boss = {d for d in set(owners.values()) if any((gives.get(h) or skull_drops.get(h) or pot_drops.get(h)) == BOSS_KEY and owners.get(h) == d for h in owners)}
     tracked = lambda h, n, d: fit_rule(each(lambda way: frozenset(way) | {boss_key_tag(d)}, n) if d in moved_boss and n is not None else n)   # (fit again: the keys' letters)
     ending_of = {gift_hash(BOSS_HEARTS[d][0]): d for d in BOSS_HEARTS}
     # (and a Gold Skulltula in bean soil a bottle, for its bugs, at any placement: bug 140, SOIL_OVER_FROM)
