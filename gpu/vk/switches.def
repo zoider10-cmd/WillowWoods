@@ -298,6 +298,7 @@ SW(RX_VK_CAP_BLOCKS, attempt, bool, "off: capture buffers of 16 MB and up each g
 SW(RX_VK_CAP_FREE_HERE, kill, bool, "off: a capture buffer not kept for reuse is destroyed on the image reaper's thread", "=1 destroys it on the thread that let it go, as before (ProjectReLink 88e38c0).")
 SW(RX_VK_CAP_MIN_MB, tune, int, "2 MB", "The smallest capture buffer size class in MB; 16 is the old behaviour.")
 SW(RX_VK_CAP_PREWARM, kill, bool, "on: 32, 64 and 128 MB spare capture buffers are made ahead on a worker thread", "0 stops making big capture buffers ahead, so they are allocated on the game's thread at scene loads.")
+SW(RX_VK_CAP_RANGES_SAME, kill, bool, "on: the captures' range lists' version moves only when the pool list changed (Triforce)", "0 moves it at every look, as before (the union made again each time).")
 SW(RX_VK_CAP_SPARE_FIT, kill, bool, "on: a capture takes the smallest spare that fits, a load's big spare made again once taken, buffers made and destroyed off the spares' lock", "=0: any spare that fits is taken, a big spare is made once, and buffers are made and destroyed with the lock held, as before (Triforce cap_spare.h).")
 SW(RX_VK_CAP_SPARE_MB, hw, int, "32 MB of spare capture buffers on cards allowing 6.5 GB or less; no byte limit elsewhere", "Sets how many MB of spare capture buffers are kept for reuse; 0 means no limit, as before.")
 SW(RX_VK_CASCADE_BIAS, tune, string, "0,0: nothing added", "Adds a depth bias <units>,<slope> to the sun's shadow cascades.")
