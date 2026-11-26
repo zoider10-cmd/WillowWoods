@@ -11,7 +11,9 @@ Checks the wiring a change elsewhere could break, from the sources:
   back until the HUD put it there, then holds ZR while L is held; ZR afterwards asks for ZR's own back first; an item seen
   to work so is forced on Link at his update and ZR keeps its own (the Slingshot and the Bow with it: the game's two
   lookups of their ammunition are given the forced item, and the bottles' three), an item not tried forced goes on ZR; the put-back made on
-  its own waits while Link holds an item (a Deku Stick taken out stays out).
+  its own waits while Link holds an item (a Deku Stick taken out stays out);
+- a slot's item counts only when Link owns it (slots_owned, compiled alone against a fake inventory): the owner's run
+  2026-11-26, a new game's adult was shown and given L's Bottle and R's Longshot, which the pouch lists unowned.
 
     python -I -B tests/test_item_buttons.py [--cc clang]
 """
@@ -224,7 +226,52 @@ def main():
         r = subprocess.run([str(exe)], capture_output=True, text=True)
         print(r.stdout.strip())
         need(r.returncode == 0, "the slots' input")
+    need("cy_item_name(c, item, next.name[s], sizeof next.name[s]) && slots_owned(next.name[s])" in block(wheel, "static void slots_publish(Ctx *c, int age) {"),
+         "the HUD's icons and the buttons count an item Link does not own")
+    owned = OWNED.replace("@OWNED@", block(wheel, "static int slots_owned(const char *name_in) {"))
+    with tempfile.TemporaryDirectory() as d:
+        c, exe = Path(d) / "o.c", Path(d) / "o.exe"
+        c.write_text(owned, encoding="utf-8")
+        subprocess.run([a.cc, "-std=gnu11", "-Wall", "-Werror", "-Wno-unused-function", str(c), "-o", str(exe)], check=True)
+        r = subprocess.run([str(exe)], capture_output=True, text=True)
+        need(r.returncode == 0, "slots_owned: " + r.stdout.strip())
     print("PASS: Item buttons: the row, the wiring and the input")
+
+
+OWNED = r"""
+#include <stdio.h>
+#include <string.h>
+#define OOT_CHEAT_ITEM_BASE 1000
+static const struct { const char *name, *label; } item_labels[] = {
+    {"Item_Bomb", "Bombs"}, {"Item_Longshot", "Longshot"}, {"Item_Bottle", "Empty Bottle"}, {"Item_BombBag_Small", "Bomb Bag"},
+    {"Item_BombBag_Medium", "Big Bomb Bag"}, {"Item_BombBag_Large", "Biggest Bomb Bag"}, {"Item_DekuStick", "Deku Sticks"},
+    {"Item_StickBag_Small", "x"}, {"Item_StickBag_Medium", "x"}, {"Item_StickBag_Large", "x"}, {"Item_DekuNut", "x"},
+    {"Item_NutBag_Small", "x"}, {"Item_NutBag_Medium", "x"}, {"Item_NutBag_Large", "x"},
+};
+static int counts[sizeof item_labels / sizeof item_labels[0]];
+int rx_option(int id, int otherwise) {
+    const int i = id - OOT_CHEAT_ITEM_BASE;
+    return i >= 0 && i < (int)(sizeof counts / sizeof counts[0]) ? counts[i] : otherwise;
+}
+static void plain_name(const char *name, char *out, size_t cap) {
+    snprintf(out, cap, "%s", name);
+    char *mark = strchr(out, '#');
+    if (mark) *mark = 0;
+}
+@OWNED@
+int main(void) {
+    if (slots_owned("Item_Longshot") || slots_owned("Item_Bottle")) return puts("an item with a count of 0 is owned"), 1;
+    if (!slots_owned("Item_Bottle_Fairy")) return puts("an item the inventory does not count is not owned"), 1;
+    counts[1] = 1;
+    if (!slots_owned("Item_Longshot")) return puts("the Longshot held is not owned"), 1;
+    if (slots_owned("Item_Bomb")) return puts("Bombs with no bag are owned"), 1;
+    counts[4] = 1;
+    if (!slots_owned("Item_Bomb#2")) return puts("Bombs with a bag and none left are not owned"), 1;
+    counts[1] = -1;
+    if (!slots_owned("Item_Longshot")) return puts("an item before the first count is not owned"), 1;
+    return 0;
+}
+"""
 
 
 if __name__ == "__main__":

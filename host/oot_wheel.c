@@ -1250,6 +1250,33 @@ int hos_oot_slots_link(int hand, int forced) {
     return write;
 }
 
+/* Link owns the item of that name (canonical()'s), as the Debug tab's inventory counts it (host/hos_main.c's refresh, twice
+   a second): 0 when its count there is 0, 1 when more or when that count is not known (a bottle's content, before the first
+   refresh). The pouch lists items Link has not got: the owner's run 2026-11-26, a new game's adult had L's Bottle and R's
+   Longshot (the slots of an earlier game) shown and used. A counted item (Bombs, Deku Sticks...) is owned with its bag
+   (or a count): its icon stays with none left, as the game's own */
+static int slots_owned(const char *name_in) {
+    static const char *const bags[][4] = {
+        {"Item_Bomb", "Item_BombBag_Small", "Item_BombBag_Medium", "Item_BombBag_Large"},
+        {"Item_DekuStick", "Item_StickBag_Small", "Item_StickBag_Medium", "Item_StickBag_Large"},
+        {"Item_DekuNut", "Item_NutBag_Small", "Item_NutBag_Medium", "Item_NutBag_Large"},
+    };
+    int rx_option(int id, int otherwise);
+    char name[48];
+    plain_name(name_in, name, sizeof name);
+    int count = -1;
+    for (size_t i = 0; i < sizeof item_labels / sizeof item_labels[0]; i++)
+        if (!strcmp(item_labels[i].name, name)) count = rx_option(OOT_CHEAT_ITEM_BASE + (int)i, -1);
+    if (count != 0) return 1;
+    for (size_t b = 0; b < sizeof bags / sizeof bags[0]; b++) {
+        if (strcmp(bags[b][0], name)) continue;
+        for (int k = 1; k < 4; k++)
+            for (size_t i = 0; i < sizeof item_labels / sizeof item_labels[0]; i++)
+                if (!strcmp(item_labels[i].name, bags[b][k]) && rx_option(OOT_CHEAT_ITEM_BASE + (int)i, -1) > 0) return 1;
+    }
+    return 0;
+}
+
 static int slots_ask(int item) {   /* (the input side: returns the ask's number, for slots_hud's and Link's answers) */
     __atomic_store_n(&swap_want, item, __ATOMIC_RELEASE);
     return __atomic_add_fetch(&swap_seq, 1, __ATOMIC_ACQ_REL);
@@ -1269,7 +1296,7 @@ static void slots_publish(Ctx *c, int age) {
     for (int s = 0; s < 2; s++) {
         next.amount[s] = -1;
         const int item = s ? r : l;
-        if (item >= 0 && cy_item_name(c, item, next.name[s], sizeof next.name[s])) next.amount[s] = amount_of(next.name[s]);
+        if (item >= 0 && cy_item_name(c, item, next.name[s], sizeof next.name[s]) && slots_owned(next.name[s])) next.amount[s] = amount_of(next.name[s]);
         else next.name[s][0] = 0;
     }
     if (__atomic_exchange_n(&slots_lock, 1, __ATOMIC_ACQUIRE)) return;
