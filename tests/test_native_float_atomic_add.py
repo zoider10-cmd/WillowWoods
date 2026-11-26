@@ -236,7 +236,12 @@ INTEL_WIN = "INTEL_PROPRIETARY_WINDOWS"
 SWITCH_CASES = ([(None, "NVIDIA_PROPRIETARY", 0x2684, 0, 1)] +
                 [(None, INTEL_WIN, MTL, MEASURED, 1), (None, INTEL_WIN, ARL, MEASURED + 100, 1),
                  (None, INTEL_WIN, MTL, 101 << 14 | 9174, 0), (None, INTEL_WIN, MTL, 101 << 14 | 6000, 0)] +
-                [(None, INTEL_WIN, g, MEASURED, 0) for g in (LNL, IRIS_XE, ARC_A770)] +
+                [(None, INTEL_WIN, g, MEASURED, 0) for g in (IRIS_XE, ARC_A770)] +
+                # ((Triforce v0.8.x) Lunar Lake from 101.8991, and AMD's Windows driver on the Radeon 860M / 840M (0x1114) from
+                # 0x8001a0: no other AMD GPU, and not that one under an older driver)
+                [(None, INTEL_WIN, LNL, 101 << 14 | 8991, 1), (None, INTEL_WIN, LNL, 101 << 14 | 8990, 0),
+                 (None, "AMD_PROPRIETARY", 0x1114, 0x8001a0, 1), (None, "AMD_PROPRIETARY", 0x1114, 0x80019f, 0),
+                 (None, "AMD_PROPRIETARY", 0x7550, 0x8001a0, 0)] +
                 [(None, INTEL_WIN, BMG, BMG_MEASURED, 1), (None, INTEL_WIN, BMG_B570, MEASURED, 1),
                  (None, INTEL_WIN, BMG, 101 << 14 | 9153, 0), (None, INTEL_WIN, ARC_A770, BMG_MEASURED, 0),
                  (None, "INTEL_OPEN_SOURCE_MESA", BMG, BMG_MEASURED, 0), ("0", INTEL_WIN, BMG, BMG_MEASURED, 0)] +

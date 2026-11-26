@@ -478,10 +478,16 @@ bool pick_device() {
 static bool native_fadd_wanted(const char* env, VkDriverId driver, uint32_t device, uint32_t version) {
     if (env) return !env_value_off(env);
     if (driver == VK_DRIVER_ID_NVIDIA_PROPRIETARY) return true;
+#if defined(_WIN32)
+    // ((Triforce v0.8.x) AMD's Windows driver on the Radeon 860M / 840M (Strix Point, PCI device 0x1114) from Adrenalin 26.10.1:
+    // the loop lost adds there (a white haze in the sky's light sums). AMD's other GPUs, the owner's among them, keep the loop)
+    if (driver == VK_DRIVER_ID_AMD_PROPRIETARY) return device == 0x1114u && version >= 0x8001a0u;
+#endif
     if (driver != VK_DRIVER_ID_INTEL_PROPRIETARY_WINDOWS) return false;
     return ((device & 0xFF00u) == 0x7D00u && version >= (101u << 14 | 9175u)) ||   // (Meteor Lake, Arrow Lake)
            ((device & 0xFF00u) == 0xE200u && version >= (101u << 14 | 9154u)) ||   // (Battlemage)
-           ((device & 0xFF00u) == 0xB000u && version >= (101u << 14 | 9150u));     // (Panther Lake)
+           ((device & 0xFF00u) == 0xB000u && version >= (101u << 14 | 9150u)) ||   // (Panther Lake)
+           ((device & 0xFF00u) == 0x6400u && version >= (101u << 14 | 8991u));     // ((Triforce v0.8.x) Lunar Lake: a lost device)
 }
 
 bool create_device() {
