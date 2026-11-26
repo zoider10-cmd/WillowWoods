@@ -645,6 +645,10 @@ POT_FALL_SET = POT_FALL_SET_FROM % "Rando_Fall"
 POT_FALL_PHYSICS_FROM = "Component/Physics/%s.engine__component__PhysicsParam.bgyml"
 POT_FALL_PHYSICS = POT_FALL_PHYSICS_FROM % "Rando_Fall"
 POT_FALL_PART = 16384
+# (the owner's test 2026-11-26: a small key fallen from a pot was gone at once after the upgraded spin attack; a swing or
+#  the plain spin left it. The pick-up is made from the Gold Skulltula's token, whose death (DeathRef, Item_Token_Gold's
+#  table of reasons) a world rupee has not: a rupee's is the dropped items' own, DropItem's. A falling pick-up takes that)
+POT_FALL_DEATH = "Component/DeathParam/DropItem.game__component__DeathParam.bgyml"
 
 
 def pot_fall_pack(item, pack, body_pack, name):
@@ -657,6 +661,9 @@ def pot_fall_pack(item, pack, body_pack, name):
     if POT_FALL_BODY_FROM not in body:
         raise ValueError("%s's pack has no %s" % (POT_FALL_FROM, POT_FALL_BODY_FROM))
     files[POT_FALL_BODY] = body[POT_FALL_BODY_FROM]
+    if POT_FALL_DEATH not in body:
+        raise ValueError("%s's pack has no %s" % (POT_FALL_FROM, POT_FALL_DEATH))
+    files.setdefault(POT_FALL_DEATH, body[POT_FALL_DEATH])
     tree, version = byml_parse(files[token_set])
     bodies = tree[1]["RigidBodyEntityNamePathAry"][1]
     if len(bodies) != 1:
@@ -669,7 +676,8 @@ def pot_fall_pack(item, pack, body_pack, name):
     _, version = byml_parse(files[ACTOR_FILE % item])
     files[ACTOR_FILE % name] = byml_build(("dict", collections.OrderedDict((
         ("$parent", ("string", ACTOR_REF % item)),
-        ("Components", ("dict", collections.OrderedDict((("PhysicsRef", ("string", "?" + POT_FALL_PHYSICS)),))))))), version)
+        ("Components", ("dict", collections.OrderedDict((("PhysicsRef", ("string", "?" + POT_FALL_PHYSICS)),
+                                                         ("DeathRef", ("string", "?" + POT_FALL_DEATH))))))))), version)
     return sarc_write(files), [ACTOR_FILE % name, POT_FALL_BODY, POT_FALL_SET, POT_FALL_PHYSICS]
 
 

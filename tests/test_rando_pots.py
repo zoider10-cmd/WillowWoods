@@ -131,11 +131,13 @@ def main():
         (token_set, S.byml_build(("dict", collections.OrderedDict((("RigidBodyEntityNamePathAry", ("array", [("dict", collections.OrderedDict((
             ("FilePath", ("string", "Work/Phive/RigidBodyEntityParam/Token_Gold_0.phive__RigidBodyEntityParam.gyml")), ("Name", ("string", "Body")))))])),))), 7)),
         (token_physics, S.byml_build(("dict", collections.OrderedDict((("ControllerSetPath", ("string", S.ref_of(token_set))),))), 7)))))
-    body = S.sarc_write(collections.OrderedDict(((S.POT_FALL_BODY_FROM, b"the body that falls"),)))
+    body = S.sarc_write(collections.OrderedDict(((S.POT_FALL_BODY_FROM, b"the body that falls"), (S.POT_FALL_DEATH, b"a dropped item's death"))))
     fall, own = S.pot_fall_pack("Item_X", pickup, body, S.POT_FALL_AS % "Item_X")
     parts = S.sarc_read(fall)
     mine = S.byml_parse(parts[S.ACTOR_FILE % "Item_X_Fall"])[0][1]
-    assert mine["$parent"][1] == S.ACTOR_REF % "Item_X" and dict(mine["Components"][1]) == {"PhysicsRef": ("string", "?" + S.POT_FALL_PHYSICS)}, mine
+    assert mine["$parent"][1] == S.ACTOR_REF % "Item_X" and dict(mine["Components"][1]) == {"PhysicsRef": ("string", "?" + S.POT_FALL_PHYSICS), "DeathRef": ("string", "?" + S.POT_FALL_DEATH)}, mine
+    # (the owner's test 2026-11-26: the upgraded spin attack took a fallen key away; the token's death left for a rupee's)
+    assert S.sarc_read(fall)[S.POT_FALL_DEATH] == b"a dropped item's death", "a falling pick-up does not die as a dropped item"
     assert S.byml_parse(parts[S.POT_FALL_PHYSICS])[0][1]["ControllerSetPath"][1] == S.ref_of(S.POT_FALL_SET)
     assert S.byml_parse(parts[S.POT_FALL_SET])[0][1]["RigidBodyEntityNamePathAry"][1][0][1]["FilePath"][1] == S.ref_of(S.POT_FALL_BODY)
     assert parts[S.POT_FALL_BODY] == b"the body that falls" and parts[token_set] == S.sarc_read(pickup)[token_set], "the token's own set was changed"
