@@ -91,7 +91,7 @@ def check_vk_symbols(so):
     globals written inside an anonymous namespace, which makes a different symbol that nothing
     defines.
     """
-    nm = shutil.which("nm") or shutil.which("llvm-nm")
+    nm = shutil.which("llvm-nm") or shutil.which("nm")   # ((Triforce v0.8.x) llvm-nm first: GNU nm drops the version suffixes on some distros)
     if not nm:
         return True   # (not a reason to fail a build; the check is a guard, not a dependency)
     try:
