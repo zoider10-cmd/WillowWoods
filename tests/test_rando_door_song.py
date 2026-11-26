@@ -6,16 +6,22 @@ oot_time_door and hos_oot_shelf_actor; asked for 2026-11-16): no game data.
 - with the songs shuffled the places only an adult has ask for the Song of Time in place of what it takes to be one;
 - the game's side opens the door once Link holds the Song of Time and an ocarina (read as the Debug tab reads them),
   by answering the door's name with the temple's own invisible effect marker, and only then does Open Door of Time's
-  work (seen without a window 2026-11-19: through the doorway with the song, stopped at the door without it).
+  work (seen without a window 2026-11-19: through the doorway with the song, stopped at the door without it);
+- a save made in the temple: its map is read before the game's thread first asks for the song, so the door's read asks for
+  the song itself (oot_door_answer, compiled alone): the owner's run 2026-11-26, an adult who saved there was shut in.
 
-    python -I -B tests/test_rando_door_song.py
+    python -I -B tests/test_rando_door_song.py [--cc clang]
 """
+import argparse
 import collections
+import subprocess
+import tempfile
 import importlib.util
 import struct
 import sys
 from pathlib import Path
 
+RUN_ALL_ARGS = ["--cc", "{cc}"]
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("rando_seed", ROOT / "tools" / "rando" / "rando_seed.py")
 seed = importlib.util.module_from_spec(spec)
@@ -59,15 +65,57 @@ def main():
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     check('#define OOT_DOOR_STAND_IN "EftLoc_TimeTemple_Fog_HideOutside_00"' in host and
           'oot_item_count(c, "Item_Melody_TimeSong") > 0' in host and 'oot_item_count(c, "Item_Ocarina_Fairy") > 0 || oot_item_count(c, "Item_Ocarina_Time") > 0' in host and
-          "__atomic_load_n(&oot_door_song_open, __ATOMIC_ACQUIRE) ? OOT_DOOR_STAND_IN : NULL" in host and
+          "const char *as = same ? oot_door_answer(c, test) : NULL;" in host and
           "if (!__atomic_load_n(&oot_door_song_open, __ATOMIC_RELAXED)) return;" in host and "if (open != __atomic_load_n(&oot_door_song_open, __ATOMIC_RELAXED)) {" in host,
           "the game's side does not open the door by the song, or does Open Door of Time's work before it")
     rando_c = (ROOT / "host" / "oot_rando.c").read_text(encoding="utf-8")
     header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
     check("return rando_active ? (test ? test : rando.v[OOT_RANDO_OPEN_DOOR]) : 0;" in rando_c and
           '"Off", "On", "With the Song of Time")' in header, "the setting's third choice is not the game's side's")
+    door_answer(host)
     print("PASS: the Door of Time by the Song of Time")
 
 
+FAKE = r"""
+#include <stdio.h>
+#include <string.h>
+typedef struct Ctx Ctx;
+#define OOT_DOOR_STAND_IN "stand-in"
+static int oot_door_song_open, held, mode = 2, asked;
+static int oot_door_song_held(Ctx *c) { (void)c; asked++; return held; }
+int hos_rando_open_door(void) { return mode; }
+static void hos_log(const char *f, ...) { (void)f; }
+@ANSWER@
+int main(void) {
+    const char *a = oot_door_answer(0, NULL);
+    if (a || oot_door_song_open) return puts("the door answered open with no song"), 1;
+    held = 1;   /* (a save loaded in the temple: the song held, not yet seen by the game's thread) */
+    a = oot_door_answer(0, NULL);
+    if (!a || strcmp(a, OOT_DOOR_STAND_IN) || !oot_door_song_open) return puts("the door's read of a save in the temple does not ask for the song"), 1;
+    oot_door_song_open = 0, mode = 1, asked = 0;
+    if (oot_door_answer(0, NULL) || asked) return puts("the song is asked for with the setting not the song's"), 1;
+    if (strcmp(oot_door_answer(0, "Test_Actor"), "Test_Actor")) return puts("a test's actor is not answered"), 1;
+    return 0;
+}
+"""
+
+
+def door_answer(host):
+    import sys as _s
+    _s.path.insert(0, str(ROOT / "tests"))
+    from srccut import block
+    cc = ARGS.cc
+    with tempfile.TemporaryDirectory() as d:
+        c = Path(d) / "door.c"
+        exe = Path(d) / "door.exe"
+        c.write_text(FAKE.replace("@ANSWER@", block(host, "static const char *oot_door_answer(Ctx *c, const char *test) {")), encoding="utf-8")
+        subprocess.run([cc, "-std=gnu11", "-Wall", "-Werror", str(c), "-o", str(exe)], check=True)
+        r = subprocess.run([str(exe)], capture_output=True, text=True)
+        check(r.returncode == 0, r.stdout.strip() or "the door's answer check failed")
+
+
 if __name__ == "__main__":
+    _p = argparse.ArgumentParser()
+    _p.add_argument("--cc", default="cc")
+    ARGS = _p.parse_args()
     main()
