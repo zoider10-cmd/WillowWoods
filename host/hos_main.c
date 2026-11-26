@@ -697,6 +697,15 @@ static void load_hookshot_env(void) {
         if (!len || *s == '#' || !strchr(s, '=')) continue;
         char *eq = strchr(s, '=');
         *eq = 0;
+        /* ((Triforce v0.8.x) a note after the value ("HOS_AUDIO=0  # mute"): cut at a '#' that follows a space or a tab, and
+           the spaces before it, so the note is not read as part of the value: the renderer's switch rule read "0  # mute" as
+           on) */
+        for (char *v = eq + 1; *v; v++)
+            if (*v == '#' && v > eq + 1 && (v[-1] == ' ' || v[-1] == 9)) {
+                *v = 0;
+                while (v > eq + 1 && (v[-1] == ' ' || v[-1] == 9)) *--v = 0;
+                break;
+            }
         if (!(other && *other) && !env_line_allowed(s, eq + 1)) {
             fprintf(stderr, "env: hookshot_env.txt: %s left out (only the game's switches, and no paths, are taken from it)\n", s);
             continue;
