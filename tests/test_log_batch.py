@@ -21,7 +21,7 @@ RUN_ALL_SKIP = {"linux": "the Windows log writer: SRW locks and threads"}
 
 ROOT = Path(__file__).resolve().parents[1]
 # (the batch case on a 1 s wait: its 120 ms of lines and checks stay well inside it on a busy runner)
-CASES = {"batch": "1000", "default": None, "off": "0", "burst": "2000", "flush": "2000"}
+CASES = {"batch": "1000", "default": None, "off": "0", "burst": "2000", "flush": "2000", "full": "0"}
 
 
 def log_block(source):

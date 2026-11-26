@@ -134,7 +134,8 @@ static LONG WINAPI report_crash(EXCEPTION_POINTERS *info) {
     return EXCEPTION_CONTINUE_SEARCH;
 }
 /* REPORT_FATAL */
-static int log_queue(const char *line) { (void)line; return 0; }
+static int log_queue(const char *line, int must) { (void)line; (void)must; return 0; }
+long hos_log_dropped_total(void) { return 0; }   /* (host/hos_thread.c: the log lines a full queue left out, HeyListen 6016d2af) */
 volatile int hos_control_on;
 void hos_control_log(const char *line) { (void)line; }
 void hos_log_flush(void) {}

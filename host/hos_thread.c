@@ -162,7 +162,10 @@ int hos_thread_priority(HosThread *t, int set, int value) {
 #if defined(_WIN32) && !defined(__EMSCRIPTEN__)
 static SRWLOCK log_lock = SRWLOCK_INIT, log_write_lock = SRWLOCK_INIT;
 static CONDITION_VARIABLE log_cv = CONDITION_VARIABLE_INIT;
-static char *log_q[2048];
+/* (HeyListen 6016d2af, STUT3) 16384 lines: a writer stuck in a slow write (the PC 3050's 2-12 s writes with the system's commit at its limit) no
+   longer fills it in a second of the stall watch's or the hitch log's lines; see log_queue for a full one */
+enum { LOG_Q = 16384 };
+static char *log_q[LOG_Q];
 static int log_head, log_count;
 static volatile LONG log_async = -1;
 static volatile DWORD log_writer;   /* log_main's thread */
@@ -171,7 +174,7 @@ static int log_take_locked(char **out) {
     int n = 0;
     while (log_count) {
         out[n++] = log_q[log_head];
-        log_head = (log_head + 1) % 2048;
+        log_head = (log_head + 1) % LOG_Q;
         log_count--;
     }
     return n;
@@ -222,7 +225,7 @@ static DWORD log_batch_ms(void) {
 
 static DWORD WINAPI log_main(void *p) {
     (void)p;
-    static char *batch[2048];
+    static char *batch[LOG_Q];
     log_writer = GetCurrentThreadId();
     for (;;) {
         AcquireSRWLockExclusive(&log_lock);
@@ -247,7 +250,7 @@ static void log_drain_raw(void) {
         const char *line = log_q[log_head];
         DWORD written;
         WriteFile(err, line, (DWORD)strlen(line), &written, NULL);
-        log_head = (log_head + 1) % 2048;
+        log_head = (log_head + 1) % LOG_Q;
         log_count--;
     }
     ReleaseSRWLockExclusive(&log_lock);
@@ -257,7 +260,7 @@ static void log_flush(void) {
     if (log_async <= 0) return;
     /* (a crash report on the writer itself, in its own write: it holds log_write_lock) */
     if (GetCurrentThreadId() == log_writer) { log_drain_raw(); return; }
-    static char *batch[2048];
+    static char *batch[LOG_Q];
     AcquireSRWLockExclusive(&log_write_lock);
     AcquireSRWLockExclusive(&log_lock);
     const int n = log_take_locked(batch);
@@ -286,7 +289,10 @@ static LONG WINAPI log_crash_filter(EXCEPTION_POINTERS *e) {
    lost when the game ends or crashes: hos_fatal, report_crash/report_fatal (mkw_glue.c), log_crash_filter,
    svcExitProcess, the window's close and the process's exit (atexit) write the queue first. HOS_LOG_SYNC=1: each line
    written by the thread that logs it, as files and pipes were before */
-static int log_queue(const char *line) {
+static volatile LONG log_dropped;   /* (HeyListen 6016d2af, STUT3: lines a full queue left out, not yet said) */
+static volatile LONG log_dropped_total;   /* (HeyListen 6016d2af, STUT3: all of them, for the crash record's header: hos_log_dropped_total) */
+long hos_log_dropped_total(void) { return (long)log_dropped_total; }
+static int log_queue(const char *line, int must) {
     if (log_async < 0) {
         AcquireSRWLockExclusive(&log_lock);
         if (log_async < 0) {
@@ -302,20 +308,40 @@ static int log_queue(const char *line) {
     char *s = _strdup(line);
     if (!s) return 0;
     AcquireSRWLockExclusive(&log_lock);
-    if (log_count < 2048) {
-        log_q[(log_head + log_count) % 2048] = s;
+    if (log_count < LOG_Q - 1) {
+        /* (HeyListen 6016d2af, STUT3) the lines a full queue left out, said once there is room again */
+        if (log_dropped && log_count < LOG_Q - 2) {
+            char note[160];
+            snprintf(note, sizeof note, "[hos host] log: %ld lines left out: the queue was full while the writer waited on the disk\n",
+                     (long)log_dropped);
+            char *d = _strdup(note);
+            if (d) log_q[(log_head + log_count) % LOG_Q] = d, log_count++, log_dropped = 0;
+        }
+        log_q[(log_head + log_count) % LOG_Q] = s;
         log_count++;
         ReleaseSRWLockExclusive(&log_lock);
         WakeConditionVariable(&log_cv);
         return 1;
     }
     ReleaseSRWLockExclusive(&log_lock);
+    /* (HeyListen 6016d2af, STUT3) Full: the writer is in a slow write. The thread that logs used to write the whole queue itself (log_flush), holding
+       its guest core through the write and through the wait for the writer's lock: on the PC 3050 the presenting thread sat 2-12 s
+       in WriteFile with core 4 (the vcore escape lines, "held 12027 ms at ntdll.dll+0x1664e4"). It cannot give the core up here
+       (the virtual cores' own code logs under their lock), so the line is left out and counted; a fatal line still goes out at
+       once, as before (hos_fatal and the crash paths write the queue themselves) */
+    if (!must) {
+        free(s);
+        InterlockedIncrement(&log_dropped);
+        InterlockedIncrement(&log_dropped_total);
+        return 1;
+    }
     free(s);
     log_flush();
     return 0;
 }
 #else
-static int log_queue(const char *line) { (void)line; return 0; }
+static int log_queue(const char *line, int must) { (void)line; (void)must; return 0; }
+long hos_log_dropped_total(void) { return 0; }
 static void log_flush(void) {}
 #endif
 
@@ -336,10 +362,11 @@ static const char *log_level_tag(int level) {
 static void hos_vlog(int level, const char *fmt, va_list ap) {
     char buf[1024], raw[1100], line[2200];
     vsnprintf(buf, sizeof buf, fmt, ap);
+    int must = 0;   /* (HeyListen 6016d2af: a fatal line is never left out by a full queue) */
     if (!strncmp(buf, HOS_REPORT_DEVICE_LOST_PREFIX, sizeof HOS_REPORT_DEVICE_LOST_PREFIX - 1))
-        hos_crash_record_fatal(NULL, "device lost");
+        hos_crash_record_fatal(NULL, "device lost"), must = 1;
     else if (!strncmp(buf, HOS_REPORT_FATAL_PREFIX, sizeof HOS_REPORT_FATAL_PREFIX - 1))
-        hos_crash_record_fatal(NULL, strstr(buf, "VK_ERROR_DEVICE_LOST") ? "device lost" : "Vulkan fatal");
+        hos_crash_record_fatal(NULL, strstr(buf, "VK_ERROR_DEVICE_LOST") ? "device lost" : "Vulkan fatal"), must = 1;
     snprintf(raw, sizeof raw, "[hos %s] %s%s\n", cur ? cur->name : "host", log_level_tag(level), buf);
     /* (hookshot) the player's user name out before anything has the line: players send their log in (host/log_redact.h) */
     hos_log_redact(line, sizeof line, raw);
@@ -348,7 +375,7 @@ static void hos_vlog(int level, const char *fmt, va_list ap) {
         void hos_control_log(const char *line);
         hos_control_log(line);
     }
-    if (log_queue(line)) return;
+    if (log_queue(line, must)) return;
     fputs(line, stderr);
     fflush(stderr);
 }

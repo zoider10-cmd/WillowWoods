@@ -273,7 +273,7 @@ def source_checks():
     threads = (ROOT / "host/hos_thread.c").read_text(encoding="utf-8")
     vlog = threads[threads.index("static void hos_vlog("):threads.index("void hos_log(const char *fmt, ...) {")]
     assert vlog.index("snprintf(raw,") < vlog.index("hos_log_redact(line, sizeof line, raw);") < vlog.index("hos_control_log(line)")
-    assert vlog.index("hos_log_redact(line,") < vlog.index("log_queue(line)") < vlog.index("fputs(line, stderr)")
+    assert vlog.index("hos_log_redact(line,") < vlog.index("log_queue(line, must)") < vlog.index("fputs(line, stderr)")
     fatal = threads[threads.index("void hos_fatal("):threads.index("void a64_on_trap(")]
     assert fatal.index("hos_log_redact(clean, sizeof clean, buf);") < fatal.index('"[hos %s] FATAL: %s"')
     main = (ROOT / "host/hos_main.c").read_text(encoding="utf-8")

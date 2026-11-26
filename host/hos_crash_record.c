@@ -441,6 +441,11 @@ static void format_record(Text *b, const Session *s, const HosCrashContext *c, u
         const uint64_t ms = monotonic_now();
         decimal_field(b, "uptime_s", ms >= s->monotonic_ms ? (ms - s->monotonic_ms) / 1000 : 0);
     } else field(b, "uptime_s", "unknown");
+    {   /* (HeyListen 6016d2af, STUT3: log lines a full queue left out in this run: a record whose log looks thin says why) */
+        long hos_log_dropped_total(void);
+        const long dropped = hos_log_dropped_total();
+        decimal_field(b, "log_lines_dropped", dropped > 0 ? (uint64_t)dropped : 0);
+    }
     /* Callers supply a fixed label. Never print a guest/driver's formatted error. */
     field(b, "reason", c ? fixed_reason(c->reason) : "ended without a clean exit");
     char thread[96] = "";

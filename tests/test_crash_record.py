@@ -54,7 +54,7 @@ def source_contract():
     logger = block(threads, "static void hos_vlog(")
     assert logger.index("hos_crash_record_fatal(") < logger.index("snprintf(raw,")
     # (the line without the player's user name before anything has it: host/log_redact.h)
-    assert logger.index("snprintf(raw,") < logger.index("hos_log_redact(line, sizeof line, raw);") < logger.index("log_queue(line)")
+    assert logger.index("snprintf(raw,") < logger.index("hos_log_redact(line, sizeof line, raw);") < logger.index("log_queue(line, must)")
     assert "hos_log_redact(clean, sizeof clean, buf);" in fatal
     for marker in ("void hos_log(", "void hos_log_at("):
         wrapper = block(threads, marker)

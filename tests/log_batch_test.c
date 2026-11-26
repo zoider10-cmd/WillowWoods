@@ -10,8 +10,14 @@ static SRWLOCK spy_lock = SRWLOCK_INIT;
 static char out[1 << 20];
 static size_t out_len;
 static volatile LONG writes;
+static volatile LONG stall_ms;               /* (the "full" case: a write that waits on the disk) */
+static volatile DWORD writer_tid;            /* (the thread of the first write: the writer) */
+static volatile LONG other_thread_writes;    /* (writes made by any other thread: the logging thread writing itself) */
 
 static void spy_append(const void *p, size_t n) {
+    if (!writer_tid) writer_tid = GetCurrentThreadId();
+    else if (writer_tid != GetCurrentThreadId()) InterlockedIncrement(&other_thread_writes);
+    if (stall_ms) Sleep((DWORD)stall_ms);
     AcquireSRWLockExclusive(&spy_lock);
     if (out_len + n <= sizeof out) memcpy(out + out_len, p, n), out_len += n;
     ReleaseSRWLockExclusive(&spy_lock);
@@ -60,7 +66,7 @@ static int queue(int i) {
     const int n = snprintf(line, sizeof line, "[hos test] line %d\n", i);
     memcpy(expect + expect_len, line, (size_t)n);
     expect_len += (size_t)n;
-    return log_queue(line);
+    return log_queue(line, 0);
 }
 static int wait_for(size_t n, DWORD ms) {
     const ULONGLONG end = GetTickCount64() + ms;
@@ -116,6 +122,26 @@ static int run(const char *name) {
         CHECK(same());
         Sleep(2500);   /* (the writer's wait ends with nothing left to write) */
         CHECK(same());
+    } else if (!strcmp(name, "full")) {   /* (STUT3: the writer stuck in a write; a full queue is not written by the thread that logs) */
+        stall_ms = 1500;
+        CHECK(queue(0));
+        CHECK(wait_for(0, 10) || 1);
+        Sleep(300);   /* (the writer is in its slow write now) */
+        const ULONGLONG t0 = GetTickCount64();
+        for (int i = 1; i < LOG_Q + 500; i++) {
+            char line[64];
+            snprintf(line, sizeof line, "[hos test] line %d\n", i);
+            CHECK(log_queue(line, 0));   /* (queued, or left out and counted: never written here) */
+        }
+        CHECK(GetTickCount64() - t0 < 1000);   /* (no wait for the writer's lock, no write of this thread's own) */
+        CHECK(log_dropped > 0);
+        stall_ms = 0;
+        Sleep(3000);
+        CHECK(other_thread_writes == 0);
+        CHECK(strstr(out, "lines left out: the queue was full") != NULL || log_dropped > 0);
+        char fatal[64];
+        snprintf(fatal, sizeof fatal, "[hos test] fatal\n");
+        CHECK(log_queue(fatal, 1));   /* (a fatal line still goes) */
     } else {
         CHECK(0);
     }
