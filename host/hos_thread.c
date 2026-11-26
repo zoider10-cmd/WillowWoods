@@ -2008,12 +2008,18 @@ static void vc_acquire(HosThread *t) {
                 HosThread *h = vc_owner[k];
                 if ((m >> k & 1) && vc_askable(h, now) && (!worst || h->priority > worst->priority)) worst = h;
             }
-        if (worst && !worst->vc_kick) {
-            worst->vc_kick = worst->priority > t->priority ? 1 : 2;
-            worst->vc_kick_at = hos_now_ns();
+        if (worst) {
+            if (!worst->vc_kick) {
+                worst->vc_kick = worst->priority > t->priority ? 1 : 2;
+                worst->vc_kick_at = hos_now_ns();
+                vc_st.kicks++;
+            }
+            /* ((Triforce v0.8.x) the interrupt published at every look, also for a request already pending: it repairs one
+               whose interrupt went to a context the holder no longer runs (it switched to or from a fiber between the read
+               of run_ctx and the store, so its loops never saw it and only its next nn::os call or SVC, or the waiter's
+               escape, ended the wait). A holder that sees it twice finds no request the second time: vc_yield) */
             Ctx *rc = worst->run_ctx;   /* (a fiber's context while it runs one) */
             __atomic_store_n(rc ? &rc->poll : &worst->ctx.poll, 1, __ATOMIC_RELAXED);
-            vc_st.kicks++;
         }
         SleepConditionVariableSRW(&t->vc_cv, &vc_lock, 1, 0);
         if (t->vc_held) {   /* granted by a release */
