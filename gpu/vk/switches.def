@@ -188,6 +188,7 @@ SW(HOS_SPIN_ALWAYS, kill, bool, "adaptive: an object whose spins keep missing is
 SW(HOS_SPIN_OTHER_US, hw, int, "5 us with more logical processors than the short-sleep limit, else HOS_SPIN_US's", "Sets the spin before a wait sleeps on threads other than the frame's serial ones, in us (never above HOS_SPIN_US).")
 SW(HOS_SPIN_US, tune, int, "20 us", "Sets the spin before a wait sleeps on the frame's serial threads, in us (0: no spin).")
 SW(HOS_STATS_AFTER, diag, int, "unset: the host call statistics come at exit only", "With HOS_HOSTCALL_STATS=1, prints the host call counts and last calls after that many seconds.")
+SW(HOS_STICK_FULL_PUSH, kill, bool, "on: a stick pushed past 92% of its travel reads as a full push", "=0 leaves a stick's reading near its edge as the pad gives it.")
 SW(HOS_SYNC_TABLE_LOCK, kill, bool, "off: lock-free table reads", "Sync object lookups take the table's shared lock, as before.")
 SW(HOS_SYNC_TRACE, diag, bool, "off", "Logs nvdrv fences and sync point waits.")
 SW(HOS_TEST_ALLOC_REFUSE, diag, string, "off", "Refuses every allocation whose label contains the text (or one huge C++ allocation at the 600th present).")

@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>   /* (sqrt: stick_full_push) */
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include "hos_sdl.h"
@@ -88,6 +89,29 @@ static int motion_head, motion_count, motion_live;
 static volatile LONG gyro_status;   /* 0 no controller, 1 controllers but none with a gyro, 2 one with a gyro */
 
 void hos_filter_stick(int16_t x, int16_t y, int zone, int32_t out[2]);   /* nn_hid.c */
+/* (Triforce v0.8.4, from a player's input recording there: "clicking the left stick stops rolling when moving forward")
+   A stick pushed past 92% of its travel is a full push, in its direction. SDL's Switch driver widens an axis's range to
+   the furthest it has read: after a hard click at full tilt the same full push forward read 31083, then about 30600
+   (93 to 95%), and the game rolls only from a full one. Under 92%, and a push that is full already, are left as they
+   are. HOS_STICK_FULL_PUSH=0: as before */
+#define STICK_FULL 32767.0
+#define STICK_FULL_FROM 30146.0   /* (92% of 32767) */
+static void stick_full_push(int32_t v[2]) {
+    const double m = sqrt((double)v[0] * v[0] + (double)v[1] * v[1]);
+    if (m < STICK_FULL_FROM || m >= STICK_FULL) return;
+    for (int a = 0; a < 2; a++) {
+        const double x = v[a] * STICK_FULL / m;
+        v[a] = x >= STICK_FULL ? 32767 : x <= -STICK_FULL ? -32767 : (int32_t)(x < 0 ? x - 0.5 : x + 0.5);
+    }
+}
+static int stick_full_push_on(void) {
+    static int on = -1;
+    if (on < 0) {
+        const char *e = getenv("HOS_STICK_FULL_PUSH");
+        on = !(e && e[0] == '0');
+    }
+    return on;
+}
 
 /* SDL's controller support started; 0 when it could not be */
 static int pads_start(void) {
@@ -521,6 +545,7 @@ static void pads_poll(void) {
                the dead zone. Values are already clamped and the circle keeps them, so this changes nothing otherwise. */
             hos_filter_stick((int16_t)v[0], (int16_t)v[1], z, v);
             hos_filter_stick((int16_t)v[2], (int16_t)v[3], z, v + 2);
+            if (stick_full_push_on()) stick_full_push(v), stick_full_push(v + 2);   /* (past 92%: a full push) */
             /* Camera inversion changes output, not whether the physical stick crossed its rest position. Otherwise
                toggling the setting admits a held phantom axis, which stays admitted after the setting is restored (#2273). */
             if (inv_x) v[2] = -v[2];
