@@ -549,7 +549,7 @@ def main():
           seed.either([seed.CHILD, seed.CHILD]) == seed.CHILD and seed.collect([(E([{seed.BB}, {seed.HAM}]), seed.BOW), (seed.NONE, seed.HAM)])[-1] == [seed.BOW],
           "a rule with ways is not got by any one of them, or not as a plain rule otherwise")
     check("if placement >= 5:   # (Zora's Domain by the river or by the lake, zora_ways)" in script and
-          "needs = {h: n if h in story else forest(n, spots[h][0]) for h, n in needs.items()}" in script and "met(needs[h], have)" in script and
+          "needs = {h: n if h in story else forest(n, spots[h][0], h) for h, n in needs.items()}" in script and "met(needs[h], have)" in script and
           seed.forest_open(seed.CHILD, "DodongoCavern") == frozenset({seed.BB}) and seed.forest_open(seed.CHILD | {seed.BB}, "DodongoCavern") == frozenset({seed.BB}) and
           '",".join([code for item, code in CHECK_CODES.items() if item in way] + token_codes(way) + key_codes(way)) or "-"' in script and
           '"/".join(rule_text(way) for way in (need if isinstance(need, Either) else (need,)))' in script,

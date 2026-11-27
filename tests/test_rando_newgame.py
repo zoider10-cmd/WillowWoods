@@ -221,7 +221,7 @@ def sources():
     check(S.DOOR_NO_BOMBS <= S.DOOR_ADULT_AREAS and set(S.DOOR_SONGS) == set(S.DOOR_ADULT_AREAS) and
           all(v <= songs for v in S.DOOR_SONGS.values()) and (S._ZL, S._SARIA, S._TIME, S._STORMS) == (S.ZL, S.SARIA, S.TIME, S.STORMS) and
           "a.open_forest, spots[h][0],\n                         a.door_song, sword_asked=not no_sword(h))" in script and
-          "each(door_need, forest(need, area), grown(h, area), a.open_forest, area, a.door_song, sword_asked=not no_sword(h))" in script,
+          "each(door_need, forest(need, area, h), grown(h, area), a.open_forest, area, a.door_song, sword_asked=not no_sword(h))" in script,
           "the dungeons' own rules are not for the dungeons of an adult's alone, name songs that are not an adult's four, or are not asked")
     check(not S.DOOR_ADULT_AREAS & {"SpiritTemple", "DesertColossus", "KokiriForest", "InsideJabuJabuBelly", "DodongoCavern", "InsideTheDekuTree", "BottomOfTheWell"} and
           S.DOOR_ADULT_AREAS <= set(S.RULES),

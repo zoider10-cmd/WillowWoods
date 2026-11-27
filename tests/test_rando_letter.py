@@ -49,7 +49,7 @@ def main():
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
     check('a.letter = a.letter or ini["rando_letter"] == 1' in script and '(" letter 1" if a.letter else "")' in script and
           "PROGRESSION = PROGRESSION | {LETTER}" in script and "needs = {h: gate(n, spots[h][0]) for h, n in needs.items()}" in script and
-          "lambda need, h, area: gate(need, area))" in script and "lambda need, h, area: gate(forest(need, area), area))" in script,
+          "lambda need, h, area: gate(need, area))" in script and "lambda need, h, area: gate(forest(need, area, h), area))" in script,
           "the setting is not read, not on the stamp's first line, or the rules of the chests, Skulltulas and pieces are not stepped")
     header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
     launcher = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8")
