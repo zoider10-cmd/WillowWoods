@@ -213,6 +213,9 @@
       "Off", "On") \
     X(BOSS_SHUFFLE, "Boss shuffle", "rando_boss_shuffle", \
       "The bosses change rooms: walking into a boss's room sends you to another boss's room, where that boss's fight starts. Gohma and King Dodongo trade places (with the Door of Time open and Open forest exit); Phantom Ganon, Volvagia, Morpha and Bongo Bongo change among themselves. Everything after the fight is the boss's own: its Heart Container, its blue warp, its reward and where the warp takes you. The logic asks for the way to the room a boss is fought from, so the seed can still be finished. The spoiler says which room leads to which boss. Barinade, Twinrova and Ganondorf stay. Not tried in play yet.", \
+      "Off", "On") \
+    X(NO_LOGIC, "No logic", "rando_no_logic", \
+      "Off: the logic places the items so that the seed can always be finished, as before. On: no logic. Every item goes anywhere it can physically be, with no thought for what you need to reach it, and Dungeon entrances and Boss shuffle drop their own safety rules too (any dungeon behind any door of the chosen groups, any boss in any room of its group). A seed made this way may be impossible to finish. The Tracker still shows its usual rules, but they no longer promise anything. Not tried in play yet.", \
       "Off", "On")
 
 enum {

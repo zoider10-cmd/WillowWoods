@@ -2082,7 +2082,7 @@ static class RandoLayout {
     // (how far each is tested: Tested unless named here)
     static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_water_gate", "rando_magic", "rando_ageless_items", "rando_ageless_tunics",
         "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_fairy_prices", "rando_archery_wins", "rando_fast_push", "rando_maps", "rando_boss_keys", "rando_fast_crawl", "rando_pots" };
-    public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards", "rando_keyrings", "rando_entrances", "rando_entrances_mix", "rando_boss_shuffle" };
+    public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards", "rando_keyrings", "rando_entrances", "rando_entrances_mix", "rando_boss_shuffle", "rando_no_logic" };
     public static Color Status(string key) {
         if (Array.IndexOf(NotYetKeys, key) >= 0) return Experimental;
         return Array.IndexOf(ShouldWorkKeys, key) >= 0 ? ShouldWork : Tested;
@@ -2119,7 +2119,7 @@ static class RandoLayout {
     public static readonly RandoSection[] Sections = {
         new RandoSection { Title = "WHAT'S SHUFFLED", Sub = "where items can be", Accent = SectionColor,
             Rows = new[] { "rando_on", "rando_chests", "+skulltulas", "+quests", "+songs", "+shops", "rando_fairy_prices", "rando_heart_pieces", "rando_scrubs",
-                           "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_keyrings", "rando_boss_keys", "rando_maps", "rando_pots", "rando_dungeon_rewards", "rando_entrances", "rando_entrances_mix", "rando_boss_shuffle" } },
+                           "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_keyrings", "rando_boss_keys", "rando_maps", "rando_pots", "rando_dungeon_rewards", "rando_entrances", "rando_entrances_mix", "rando_boss_shuffle", "rando_no_logic" } },
         new RandoSection { Title = "OPEN WORLD", Sub = "what's open from a new game's start", Accent = SectionColor,
             Rows = new[] { "+forest", "rando_open_door", "rando_letter", "+bridge", "rando_water_gate" } },
         new RandoSection { Title = "ITEMS", Sub = "how items work", Accent = SectionColor,
@@ -2968,7 +2968,9 @@ class LauncherForm : Form {
         new object[] { "rando_entrances_mix", "Mix child and adult dungeons", new[] { "Off", "On" }, new[] { 0, 1 },
             "With Dungeon entrances on Both and Either age's items on: a child's dungeon can be behind an adult's door and an adult's behind a child's, each only where it can be finished. The Deku Tree and the Bottom of the Well stay behind a door young Link gets through (their own two or Dodongo's Cavern's): only he fits their crawlspaces. An adult's dungeon behind the Deku Tree's or the well's door is young Link's to do with the adult's items: the Fire and Water Temples go there only with Either age's tunics, the Gerudo Training Ground never (the Silver Gauntlets are an adult's). Dodongo's Cavern and its door take either age. Young Link in an adult's temple is little tried: his model may look wrong in its scenes, and a room may ask for an adult's reach. Without Either age's items this does nothing. Don't change Either age's items or tunics during such a seed. Not tried in play yet." },
         new object[] { "rando_boss_shuffle", "Boss shuffle", new[] { "Off", "On" }, new[] { 0, 1 },
-            "The bosses change rooms: walking into a boss's room sends you to another boss's room, where that boss's fight starts. Gohma and King Dodongo trade places (with the Door of Time open and Open forest exit); Phantom Ganon, Volvagia, Morpha and Bongo Bongo change among themselves. Everything after the fight is the boss's own: its Heart Container, its blue warp, its reward and where the warp takes you. The logic asks for the way to the room a boss is fought from, so the seed can still be finished. The spoiler says which room leads to which boss. Barinade, Twinrova and Ganondorf stay. Not tried in play yet." }
+            "The bosses change rooms: walking into a boss's room sends you to another boss's room, where that boss's fight starts. Gohma and King Dodongo trade places (with the Door of Time open and Open forest exit); Phantom Ganon, Volvagia, Morpha and Bongo Bongo change among themselves. Everything after the fight is the boss's own: its Heart Container, its blue warp, its reward and where the warp takes you. The logic asks for the way to the room a boss is fought from, so the seed can still be finished. The spoiler says which room leads to which boss. Barinade, Twinrova and Ganondorf stay. Not tried in play yet." },
+        new object[] { "rando_no_logic", "No logic", new[] { "Off", "On" }, new[] { 0, 1 },
+            "Off: the logic places the items so that the seed can always be finished, as before. On: no logic. Every item goes anywhere it can physically be, with no thought for what you need to reach it, and Dungeon entrances and Boss shuffle drop their own safety rules too (any dungeon behind any door of the chosen groups, any boss in any room of its group). A seed made this way may be impossible to finish. The Tracker still shows its usual rules, but they no longer promise anything. Not tried in play yet." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and

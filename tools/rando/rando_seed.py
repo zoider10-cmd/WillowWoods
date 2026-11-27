@@ -5950,15 +5950,15 @@ def entrance_fits(door, dungeon, ageless_tunics=False):
     return True
 
 
-def entrance_mixed(seed, doors, ageless_tunics=False, nocturne_item=True):
+def entrance_mixed(seed, doors, ageless_tunics=False, nocturne_item=True, free=False):
     """{a door's own dungeon: the dungeon behind it} for doors, the groups mixed: by the seed alone, every pair fitting
-    (entrance_fits), and the Shadow Temple's door as entrance_shuffle has it"""
+    (entrance_fits), and the Shadow Temple's door as entrance_shuffle has it. free: No logic, any dungeon behind any door"""
     rng = random.Random("entrances-mixed:%d" % seed)
     for _ in range(1000000):
         order = list(doors)
         rng.shuffle(order)
         behind = dict(zip(doors, order))
-        if all(entrance_fits(a, b, ageless_tunics) for a, b in behind.items()) and (nocturne_item or behind.get("ShadowTemple") not in ENTRANCE_NOCTURNE_WAITS):
+        if free or (all(entrance_fits(a, b, ageless_tunics) for a, b in behind.items()) and (nocturne_item or behind.get("ShadowTemple") not in ENTRANCE_NOCTURNE_WAITS)):
             return behind
     raise ValueError("no change of the doors fits")
 
@@ -7187,7 +7187,7 @@ def start_lines(codes):
 
 def settings(game):
     """the randomizer's lines of the options file (0 where it does not say)"""
-    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_keyrings": 0, "rando_entrances": 0, "rando_entrances_mix": 0, "rando_boss_shuffle": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
+    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_keyrings": 0, "rando_entrances": 0, "rando_entrances_mix": 0, "rando_boss_shuffle": 0, "rando_no_logic": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
            "rando_skip_intro": 0, "rando_skip_cutscenes": 0, "rando_skulltulas": 0, "rando_quests": 0, "rando_frogs": 0, "rando_light_arrows": 0,
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
@@ -9961,6 +9961,12 @@ def main():
     if a.ageless is None:
         a.ageless = ((1 if ini["rando_ageless"] in (1, 2) else 0) | (2 if ini["rando_ageless"] == 2 or ini["rando_ageless_items"] == 1 else 0) |
                      (4 if ini["rando_ageless_tunics"] == 1 else 0))
+    # (No logic, rando_no_logic, asked 2026-11-27: "No logic will completely randomize everything, a no logic run can be
+    #  unbeatable". The options' line is --no-logic: the items go anywhere they can be given from, by no rule (place without
+    #  needs), and Dungeon entrances and Boss shuffle drop what they keep for the rules' sake too: every child's dungeon in
+    #  its pool, any dungeon behind any door when mixed, any boss in any room of its group, the Shadow Temple's door as any.
+    #  The rules are still made and written for the Tracker, which then promises nothing. On the stamp: "logic 0")
+    a.no_logic = a.no_logic or ini["rando_no_logic"] == 1
     # (the songs gate the game: with them shuffled the logic places them, whatever Major items says)
     logic_now = (a.event_chests or bool(a.songs)) and not a.no_logic
     # (the options file's rando_open_deku and rando_open_forest too, so that the launcher's run at Play keeps them)
@@ -10045,7 +10051,7 @@ def main():
             a.dampe_hookshot = True
     except OSError:
         pass
-    rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, keys_mode, a.event_chests, logic_now,
+    rest = " seed %d chests %d keys %d major %d logic %d%s%s\n" % (seed, which, keys_mode, a.event_chests, logic_now, " none" if a.no_logic else "",
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
                                                                (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" bosses 1" if a.boss_shuffle else "") + (" entrances %d%s%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "", " mixed %d" % ((a.ageless or 0) & 6) if a.entrance_mix and (a.ageless or 0) & 2 else "") if a.entrances else "") + (" pots 1" if a.pots else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
@@ -10664,23 +10670,26 @@ def main():
         holds.update((h, junk) for h in JUNK_ONLY if h in spots)
     # (Dungeon entrances: a moved dungeon's checks ask for its new door's way in too, entrance_shuffle's note)
     behind = {}
-    mixed = a.entrance_mix and bool((a.ageless or 0) & 2)   # (the two groups mixed: with Either age's items only)
+    mixed = a.entrance_mix and (bool((a.ageless or 0) & 2) or a.no_logic)   # (the two groups mixed: with Either age's items only; or with No logic)
+    child_pool = lambda items: ENTRANCE_CHILD if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items)
+    nocturne_free = NOCTURNE in PROGRESSION or a.no_logic   # (No logic: the Shadow Temple's door and its boss's room as any)
     if a.entrance_mix and not mixed:
         print("Dungeon entrances: Mix child and adult dungeons does nothing without Either age's items: each group among its own doors")
     if mixed:
-        doors = ENTRANCE_ADULT + entrance_child_pool(bool(door_rules), bool(a.open_forest), True)
+        doors = ENTRANCE_ADULT + child_pool(True)
         try:
-            behind = entrance_mixed(seed, doors, bool(a.ageless & 4), NOCTURNE in PROGRESSION)
+            behind = entrance_mixed(seed, doors, bool((a.ageless or 0) & 4), nocturne_free, a.no_logic)
         except ValueError as e:
             sys.exit("Dungeon entrances: %s. Nothing written." % e)
-        print("Dungeon entrances: the two groups mixed (Either age's items%s): %d doors" % (" and tunics" if a.ageless & 4 else "", len(doors)))
+        print("Dungeon entrances: the two groups mixed (%s): %d doors" % ("No logic: any dungeon behind any door" if a.no_logic else
+              "Either age's items%s" % (" and tunics" if a.ageless & 4 else ""), len(doors)))
     for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):
         if group is ENTRANCE_CHILD:
-            group = entrance_child_pool(bool(door_rules), bool(a.open_forest), bool((a.ageless or 0) & 2))
+            group = child_pool(bool((a.ageless or 0) & 2))
             print("Dungeon entrances: the child's dungeons that change places with these settings: %s" % (", ".join(DUNGEON_SAY[d] for d in group) or
                   "none (the Door of Time open, and two of: Open forest exit for the Deku Tree, Either age's items for Dodongo's Cavern, the well)"))
         if group:
-            behind.update(entrance_shuffle(seed, group, NOCTURNE in PROGRESSION, "" if group is ENTRANCE_ADULT else "-child"))
+            behind.update(entrance_shuffle(seed, group, nocturne_free, "" if group is ENTRANCE_ADULT else "-child"))
     door_of = {dungeon: door for door, dungeon in behind.items() if door != dungeon}   # (a moved dungeon: the door it is behind)
     door_access = {}
     if door_of:
@@ -10707,7 +10716,7 @@ def main():
         print("Dungeon entrances: %s" % "; ".join("%s's door leads to %s" % (DUNGEON_SAY[door], DUNGEON_SAY[dungeon]) for door, dungeon in behind.items()))
     # (Boss shuffle: what stands for a boss beaten asks for the room it is fought from too, boss_shuffle's note)
     try:
-        fights = boss_shuffle(seed, bool(door_rules) and bool(a.open_forest), NOCTURNE in PROGRESSION, behind) if a.boss_shuffle else {}
+        fights = boss_shuffle(seed, (bool(door_rules) and bool(a.open_forest)) or a.no_logic, nocturne_free, behind) if a.boss_shuffle else {}
     except ValueError as e:
         sys.exit("Boss shuffle: %s. Nothing written." % e)
     boss_room = {boss: room for room, boss in fights.items() if room != boss}   # (a moved boss: the room it is fought from)

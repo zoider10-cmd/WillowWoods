@@ -231,7 +231,7 @@ check(any(S.boss_shuffle(s)[SHADOW] in waits for s in range(40)), "with the Noct
 main = src[src.index("\ndef main():"):]
 for line in ('a.boss_shuffle = ini["rando_boss_shuffle"] == 1',
              '(" bosses 1" if a.boss_shuffle else "")',
-             "fights = boss_shuffle(seed, bool(door_rules) and bool(a.open_forest), NOCTURNE in PROGRESSION, behind) if a.boss_shuffle else {}",
+             "fights = boss_shuffle(seed, (bool(door_rules) and bool(a.open_forest)) or a.no_logic, nocturne_free, behind) if a.boss_shuffle else {}",
              "boss_room = {boss: room for room, boss in fights.items() if room != boss}",
              "room_access = {room: heart_asks(heart_of[room]) for room in set(boss_room.values())}",
              "boss_rooms_of = lambda h: {boss_room[d] for d in (bosses.get(h), boss_gift.get(h)) + tuple(boss_waits.get(h, ())) if d in boss_room}",
@@ -253,10 +253,10 @@ check('"rando_boss_shuffle": 0' in src and "heart_before = heart_asks\n        h
 header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
 launcher = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8")
 check('X(BOSS_SHUFFLE, "Boss shuffle", "rando_boss_shuffle",' in header and header.index("X(BOSS_SHUFFLE,") > header.index("X(ENTRANCES_MIX,")
-      and header.rstrip().count("X(BOSS_SHUFFLE,") == 1 and '"Off", "On")\n\nenum {' in header[header.index("X(BOSS_SHUFFLE,"):], "the menu's table: not there, or not last")
+      and header.rstrip().count("X(BOSS_SHUFFLE,") == 1, "the menu's table: not there, or before the settings it came after")
 check('new object[] { "rando_boss_shuffle", "Boss shuffle", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher
       and launcher.index('new object[] { "rando_boss_shuffle"') > launcher.index('new object[] { "rando_entrances_mix"')
-      and '"rando_entrances_mix", "rando_boss_shuffle" } },' in launcher, "the launcher's table or section")
+      and '"rando_entrances_mix", "rando_boss_shuffle", "rando_no_logic" } },' in launcher, "the launcher's table or section")
 
 # ---- the Tracker says the boss rooms, each only once Link has been through it (the owner's ask, 2026-11-27) ----
 # Seen in the game without a window: a dungeon's page says "not found yet" and "not entered yet" before, and names the

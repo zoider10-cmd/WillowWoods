@@ -87,8 +87,9 @@ check('a.entrances = ini["rando_entrances"] if ini["rando_entrances"] in ENTRANC
 check('(" entrances %d%s%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "", " mixed %d" % ((a.ageless or 0) & 6) if a.entrance_mix and (a.ageless or 0) & 2 else "") if a.entrances else "")' in main,
       "the setting is not on the stamp, or Either age's items is not with the child's group")
 check("for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):" in main and
-      "group = entrance_child_pool(bool(door_rules), bool(a.open_forest), bool((a.ageless or 0) & 2))" in main and
-      'behind.update(entrance_shuffle(seed, group, NOCTURNE in PROGRESSION, "" if group is ENTRANCE_ADULT else "-child"))' in main, "the shuffle's calls")
+      "group = child_pool(bool((a.ageless or 0) & 2))" in main and
+      "child_pool = lambda items: ENTRANCE_CHILD if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items)" in main and
+      'behind.update(entrance_shuffle(seed, group, nocturne_free, "" if group is ENTRANCE_ADULT else "-child"))' in main, "the shuffle's calls")
 block = main[main.index("    for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):"):main.index("    # (the tokens are placed by the logic when a rule counts them")]
 for line in ("door_access = {door: entrance_access(needs, spots, door) for door in behind}",
              'door_access["ShadowTemple"] = and_rules(door_access["ShadowTemple"], *(door_access[door_of[t]] for t in ENTRANCE_NOCTURNE_WAITS if t in door_of))',
@@ -111,7 +112,7 @@ launcher = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8")
 check('X(ENTRANCES, "Dungeon entrances", "rando_entrances",' in header and '"Off", "Adult dungeons", "Child dungeons", "Both") \\\n    X(ENTRANCES_MIX,' in header
       and header.index("X(ENTRANCES,") > header.index("X(KEYRINGS,"), "the menu's table: not there, or not last")
 check('new object[] { "rando_entrances", "Dungeon entrances", new[] { "Off", "Adult dungeons", "Child dungeons", "Both" }, new[] { 0, 1, 2, 3 },' in launcher
-      and launcher.index('new object[] { "rando_entrances"') > launcher.index('new object[] { "rando_keyrings"') and '"rando_dungeon_rewards", "rando_entrances", "rando_entrances_mix", "rando_boss_shuffle" } },' in launcher,
+      and launcher.index('new object[] { "rando_entrances"') > launcher.index('new object[] { "rando_keyrings"') and '"rando_dungeon_rewards", "rando_entrances", "rando_entrances_mix", "rando_boss_shuffle", "rando_no_logic" } },' in launcher,
       "the launcher's table or section")
 
 # the child's dungeons (2026-11-27 later): the Deku Tree, Dodongo's Cavern and the well, each only where the rules stay true.
@@ -165,15 +166,15 @@ check(S.entrance_mixed(3, ALL) == S.entrance_mixed(3, ALL) and any(S.entrance_mi
 check(all(S.entrance_mixed(s, ALL, True, False)["ShadowTemple"] not in S.ENTRANCE_NOCTURNE_WAITS for s in range(120)), "mixed, without the Nocturne: a waited temple behind the Shadow Temple's door")
 check(set(S.entrance_mixed(5, A + (DC, WELL))) == set(A + (DC, WELL)), "a mixed pool without the Deku Tree")
 for line in ('a.entrance_mix = ini["rando_entrances_mix"] == 1 and ini["rando_entrances"] == 3',
-             "mixed = a.entrance_mix and bool((a.ageless or 0) & 2)",
-             "doors = ENTRANCE_ADULT + entrance_child_pool(bool(door_rules), bool(a.open_forest), True)",
-             "behind = entrance_mixed(seed, doors, bool(a.ageless & 4), NOCTURNE in PROGRESSION)"):
+             "mixed = a.entrance_mix and (bool((a.ageless or 0) & 2) or a.no_logic)",
+             "doors = ENTRANCE_ADULT + child_pool(True)",
+             "behind = entrance_mixed(seed, doors, bool((a.ageless or 0) & 4), nocturne_free, a.no_logic)"):
     check(line in main, "the main part lacks: %s" % line)
 check('"rando_entrances_mix": 0' in src, "the options' line is not known")
 check('X(ENTRANCES_MIX, "Mix child and adult dungeons", "rando_entrances_mix",' in header and header.index("X(ENTRANCES_MIX,") > header.index("X(ENTRANCES,")
       and 'new object[] { "rando_entrances_mix", "Mix child and adult dungeons", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher
       and launcher.index('new object[] { "rando_entrances_mix"') > launcher.index('new object[] { "rando_entrances",')
-      and '"rando_entrances", "rando_entrances_mix", "rando_boss_shuffle" } },' in launcher, "the mix setting in the tables")
+      and '"rando_entrances", "rando_entrances_mix", "rando_boss_shuffle", "rando_no_logic" } },' in launcher, "the mix setting in the tables")
 
 # the Tracker says the doors (gpu/vk/vk_menu.cpp, asked 2026-11-27), and each only once it is found (the owner, the same day:
 # "only show what dungeon it leads to after you've entered it once already in the seed"): the game's side notes the door
