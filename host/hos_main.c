@@ -3119,6 +3119,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
                 rx_option_set(OOT_LINK_X, (int)lrintf(oot_link_place[0] * 100));
                 rx_option_set(OOT_LINK_Z, (int)lrintf(oot_link_place[2] * 100));
                 rx_option_set(OOT_LINK_YAW, (int)lrintf(yaw * 1000));
+                if (fabsf(oot_link_place[1]) < 2e6f) rx_option_set(OOT_LINK_Y, (int)lrintf(oot_link_place[1] * 100));
             }
             static int log_place = -1;   /* (HOS_OOT_PLACE_LOG=1, test runs: where Link is, twice a second, for fitting the minimap) */
             static int64_t next_log;

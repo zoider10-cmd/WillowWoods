@@ -148,6 +148,7 @@
 #define OOT_LINK_X 4044
 #define OOT_LINK_Z 4045
 #define OOT_LINK_YAW 4046
+#define OOT_LINK_Y 4047 /* (asked 2026-11-26: his height, y * 100, for the maps' above and below marks) */
 #define OOT_HEALTH_AT 4048
 #define OOT_HEALTH_LIFE 4056
 #define OOT_HEALTH_KIND 4064

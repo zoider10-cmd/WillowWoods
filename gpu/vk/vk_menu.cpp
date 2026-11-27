@@ -666,8 +666,9 @@ constexpr const char* kWorldEdges[][2] = {
     {"Hyrule Field", "Lost Woods"}, {"Lost Woods", "Kokiri Forest"}, {"Lost Woods", "Sacred Forest Meadow"}, {"Hyrule Field", "Gerudo Valley"},
     {"Gerudo Valley", "Gerudo's Fortress"}, {"Gerudo's Fortress", "Haunted Wasteland"}, {"Haunted Wasteland", "Desert Colossus"},
 };
-/// Where Link is (OOT_LINK_X, _Z: hundredths; _YAW: thousandths of a radian), from the game side ten times a second
-std::atomic<int> link_place[3] = {INT_MIN, INT_MIN, 0};
+/// Where Link is (OOT_LINK_X, _Z: hundredths; _YAW: thousandths of a radian; OOT_LINK_Y, his height: hundredths), from the
+/// game side ten times a second
+std::atomic<int> link_place[4] = {INT_MIN, INT_MIN, 0, INT_MIN};
 /// An area's checks for the map: how many there are, left (not collected, not junk), and in logic among those left
 struct AreaCount { int all = 0, left = 0, in = 0; };
 AreaCount tracker_area_count(const char* area) {
@@ -756,33 +757,134 @@ float tracker_world_map(ui::Ctx& c, float x0, float x1, float y0, float y1) {
     }
     return y1;
 }
-/// An area's checks as dots where they are (an area's row), in a box from y0 to y1, the one the row is stepped to ringed
+/// (Willow Woods, asked 2026-11-26: the maps' small improvements, share/todo.md) What the maps go by, each a function of
+/// its own so tests/test_tracker_map_marks.py can run it.
+/// A check's mark, by its name: 1 a chest (a square), 2 a Gold Skulltula (a diamond), 3 a pot (a small circle: there
+/// are 530), 0 anything else (a gift, a lesson, a Piece of Heart, a shop's item: a circle)
+int tracker_kind_mark(const char* kind) {
+    if (!strncmp(kind, "Pot", 3)) return 3;
+    if (!strncmp(kind, "Gold Skulltula", 14)) return 2;
+    if (!strncmp(kind, "Chest", 5) || !strncmp(kind, "Big chest", 9)) return 1;
+    return 0;
+}
+/// Whether a check is one of Link's age (ages: "C", "A" or "CA"; age: 0 the child, 1 the adult, -1 not known: every one).
+/// The other age's checks are another map's: an adult's pot where a child's stands is a second dot on the same spot
+bool tracker_of_age(const char* ages, int age) {
+    return age == 0 ? strchr(ages, 'C') != nullptr : age == 1 ? strchr(ages, 'A') != nullptr : true;
+}
+/// How far up or down counts as another level: a check that much above or below Link gets an up or a down mark
+constexpr float kMapLevel = 3.0f;
+/// Where a check is from Link, in words: "42 m north-east, above" (dx metres east, dy up, dz south: north is -z, as the
+/// maps are drawn); within 2 m, "right here"
+std::string tracker_from_link(float dx, float dy, float dz) {
+    static const char* const dirs[8] = {"north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"};
+    const float flat = hypotf(dx, dz);
+    std::string out = "right here";
+    if (flat >= 2) out = std::to_string((int)lrintf(flat)) + " m " + dirs[(int)lrintf(atan2f(dx, -dz) / 0.78539816f) & 7];
+    return out + (dy > kMapLevel ? ", above" : dy < -kMapLevel ? ", below" : "");
+}
+/// The map's view around the check stepped to, as half its width in metres: out to that check's kMapZoomNear-th
+/// nearest neighbour and a quarter more (away: how far each other check shown is from it), so a crowd comes apart (the
+/// Market's guard house: 22 pots in 8 m of an area 192 m across), no less than kMapZoomMin. half_all, the whole
+/// area's: returned when the view would be most of it anyway (no zoom)
+constexpr int kMapZoomNear = 8;
+constexpr float kMapZoomMin = 8.0f;
+float tracker_zoom_half(std::vector<float> away, float half_all) {
+    if (away.empty()) return half_all;
+    const size_t nth = std::min(away.size(), (size_t)kMapZoomNear) - 1;
+    std::nth_element(away.begin(), away.begin() + nth, away.end());
+    const float half = std::max(away[nth] * 1.25f, kMapZoomMin);
+    return half >= half_all * 0.7f ? half_all : half;
+}
+/// A check's mark at a place: its kind's shape (tracker_kind_mark), filled when in logic (state 1), an outline not yet
+/// (0), a small dot collected (2), a cross junk (3); lift 1 an up mark over it, -1 a down mark under it, 0 none
+void tracker_mark(ImDrawList* d, ImVec2 at, int mark, int state, int lift, float s) {
+    constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(138, 156, 184), kGot = ui::rgba(92, 104, 126);
+    if (state == 2) { d->AddCircleFilled(at, 3 * s, kGot); return; }
+    if (state == 3) {
+        d->AddLine(ImVec2(at.x - 3 * s, at.y - 3 * s), ImVec2(at.x + 3 * s, at.y + 3 * s), kGot, 1.5f * s);
+        d->AddLine(ImVec2(at.x - 3 * s, at.y + 3 * s), ImVec2(at.x + 3 * s, at.y - 3 * s), kGot, 1.5f * s);
+        return;
+    }
+    const bool in = state == 1;
+    const ImU32 ink = in ? kIn : kOut;
+    const float line = 1.6f * s;
+    float r = 5 * s;
+    if (mark == 1) {   // (a chest: a square)
+        r = 4.5f * s;
+        if (in) d->AddRectFilled(ImVec2(at.x - r, at.y - r), ImVec2(at.x + r, at.y + r), ink);
+        else d->AddRect(ImVec2(at.x - r + line * 0.5f, at.y - r + line * 0.5f), ImVec2(at.x + r - line * 0.5f, at.y + r - line * 0.5f), ink, 0, 0, line);
+    } else if (mark == 2) {   // (a Gold Skulltula: a diamond)
+        r = 6 * s;
+        const ImVec2 q[4] = {ImVec2(at.x, at.y - r), ImVec2(at.x + r, at.y), ImVec2(at.x, at.y + r), ImVec2(at.x - r, at.y)};
+        if (in) d->AddQuadFilled(q[0], q[1], q[2], q[3], ink);
+        else d->AddQuad(q[0], q[1], q[2], q[3], ink, line);
+    } else {   // (a pot: a small circle; anything else: a circle)
+        r = (mark == 3 ? 3.5f : 5) * s;
+        if (in) d->AddCircleFilled(at, r, ink);
+        else d->AddCircle(at, r - line * 0.5f, ink, 0, line);
+    }
+    if (lift) {   // (above or below Link: a small arrowhead over or under the mark)
+        const float y = at.y - lift * (r + 2.5f * s), tip = y - lift * 3.5f * s;
+        d->AddLine(ImVec2(at.x - 3.5f * s, y), ImVec2(at.x, tip), ink, line);
+        d->AddLine(ImVec2(at.x + 3.5f * s, y), ImVec2(at.x, tip), ink, line);
+    }
+}
+extern std::atomic<int> link_age;   // (below, with the Debug tab's rows: 0 the child, 1 the adult, -1 not known)
+/// An area's checks as marks where they are (an area's row), in a box from y0 to y1, the one the row is stepped to ringed.
+/// The checks of Link's age (and the one stepped to, whatever its age); stepped to a check in a crowd, the view closes in
+/// on it (tracker_zoom_half) and a small picture of the whole area in the corner shows where the view is
 void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int row) {
     const float s = c.s;
-    constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(138, 156, 184), kGot = ui::rgba(92, 104, 126);
     ui::box(c, ImVec2(x0, y0), ImVec2(x1, y1));
-    ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y0 + 12 * s), ui::kDim, "Map: north is up");
+    const TrackerCheck* picked = tracker_pick[row] ? tracker_row_check(row, tracker_pick[row]) : nullptr;
+    const int age = link_age.load(std::memory_order_relaxed);
+    const auto shown = [&](const TrackerCheck& k) {
+        return !strcmp(k.area, tracker_name[row]) && (&k == picked || tracker_of_age(k.ages, age));
+    };
     const float mx0 = x0 + 30 * s, mx1 = x1 - 30 * s, my0 = y0 + 40 * s, my1 = y1 - 20 * s;
     float lo[2] = {FLT_MAX, FLT_MAX}, hi[2] = {-FLT_MAX, -FLT_MAX};
     int n = 0;
+    std::vector<float> away;   // (how far each other check shown is from the one stepped to)
     for (int i = 0; i < tracker_check_count; i++) {
-        if (strcmp(tracker_checks[i].area, tracker_name[row])) continue;
+        if (!shown(tracker_checks[i])) continue;
         const float p[2] = {tracker_checks[i].pos[0], tracker_checks[i].pos[2]};
         for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], p[k]), hi[k] = std::max(hi[k], p[k]);
+        if (picked && &tracker_checks[i] != picked) away.push_back(hypotf(p[0] - picked->pos[0], p[1] - picked->pos[2]));
         n++;
     }
     // (Link, when he is in this area: the map takes him in too, so he is on it wherever he stands)
     const char* here = tracker_here_area();
     const int lx = link_place[0].load(std::memory_order_relaxed), lz = link_place[1].load(std::memory_order_relaxed);
+    const int ly = link_place[3].load(std::memory_order_relaxed);
     const bool link = here && !strcmp(here, tracker_name[row]) && lx != INT_MIN && lz != INT_MIN;
     const float link_at[2] = {lx / 100.0f, lz / 100.0f};
     if (link && n)
         for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], link_at[k]), hi[k] = std::max(hi[k], link_at[k]);
+    {   // (the heading, and what the shapes are)
+        float hx = x0 + 24 * s;
+        const float hy = y0 + 12 * s, mid = hy + 8.5f * s;
+        hx += ui::text(c, c.f.body, 15 * s, ImVec2(hx, hy), ui::kDim, "Map: north is up") + 22 * s;
+        static const struct { int mark; const char* name; } legend[] = {{1, "chest"}, {2, "Skulltula"}, {3, "pot"}, {0, "other"}};
+        for (const auto& l : legend) {
+            if (hx + 90 * s > x1) break;   // (a narrow panel: the heading alone)
+            tracker_mark(c.d, ImVec2(hx + 6 * s, mid), l.mark, 0, 0, s);
+            hx += 16 * s;
+            hx += ui::text(c, c.f.body, 15 * s, ImVec2(hx, hy), ui::kDim, l.name) + 16 * s;
+        }
+    }
     if (!n || mx1 - mx0 < 20 * s || my1 - my0 < 20 * s) return;
     const float span = std::max({hi[0] - lo[0], hi[1] - lo[1], 1.0f});
-    const float scale = std::min((mx1 - mx0) / std::max(hi[0] - lo[0], span * 0.05f), (my1 - my0) / std::max(hi[1] - lo[1], span * 0.05f));
-    const float ox = (mx0 + mx1) * 0.5f - (lo[0] + hi[0]) * 0.5f * scale, oy = (my0 + my1) * 0.5f - (lo[1] + hi[1]) * 0.5f * scale;
-    const TrackerCheck* picked = tracker_pick[row] ? tracker_row_check(row, tracker_pick[row]) : nullptr;
+    // (the whole area, as it fits the box; then the view: the whole area, or around the check stepped to)
+    const float all_scale = std::min((mx1 - mx0) / std::max(hi[0] - lo[0], span * 0.05f), (my1 - my0) / std::max(hi[1] - lo[1], span * 0.05f));
+    const float all_mid[2] = {(lo[0] + hi[0]) * 0.5f, (lo[1] + hi[1]) * 0.5f};
+    const float half_all = std::min(mx1 - mx0, my1 - my0) * 0.5f / all_scale;
+    const float half = picked ? tracker_zoom_half(away, half_all) : half_all;
+    const bool zoomed = picked && half < half_all;
+    const float scale = zoomed ? std::min(mx1 - mx0, my1 - my0) * 0.5f / half : all_scale;
+    const float mid[2] = {zoomed ? picked->pos[0] : all_mid[0], zoomed ? picked->pos[2] : all_mid[1]};
+    const float ox = (mx0 + mx1) * 0.5f - mid[0] * scale, oy = (my0 + my1) * 0.5f - mid[1] * scale;
+    c.d->PushClipRect(ImVec2(x0 + 4 * s, y0 + 34 * s), ImVec2(x1 - 4 * s, y1 - 4 * s), true);
     // (Link: a gold arrow the way he faces, under the dots. Until bug 160 it was drawn over them: he stood at Hyrule
     //  Castle's Pot #3 and #4 and the arrow covered both, "no dot near". A check he stands on shows on him)
     if (link) {
@@ -798,18 +900,32 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
     for (int pass = 0; pass < 2; pass++)   // (the others, then the one stepped to over them)
         for (int i = 0; i < tracker_check_count; i++) {
             const TrackerCheck& k = tracker_checks[i];
-            if (strcmp(k.area, tracker_name[row]) || (pass == 1) != (&k == picked)) continue;
+            if (!shown(k) || (pass == 1) != (&k == picked)) continue;
             const ImVec2 at(ox + k.pos[0] * scale, oy + k.pos[2] * scale);
             const bool got = tracker_done[i].load(std::memory_order_relaxed) == 1, junk = !got && tracker_junk[i];
-            const int state = got || junk ? -1 : tracker_in_logic(k);
-            if (got) c.d->AddCircleFilled(at, 3 * s, kGot);
-            else if (junk) {
-                c.d->AddLine(ImVec2(at.x - 3 * s, at.y - 3 * s), ImVec2(at.x + 3 * s, at.y + 3 * s), kGot, 1.5f * s);
-                c.d->AddLine(ImVec2(at.x - 3 * s, at.y + 3 * s), ImVec2(at.x + 3 * s, at.y - 3 * s), kGot, 1.5f * s);
-            } else if (state > 0) c.d->AddCircleFilled(at, 5 * s, kIn);
-            else c.d->AddCircle(at, 4.5f * s, kOut, 0, 1.6f * s);
-            if (&k == picked) c.d->AddCircle(at, 10 * s, ui::kAccent, 0, 2.2f * s);
+            const int state = got ? 2 : junk ? 3 : tracker_in_logic(k) > 0 ? 1 : 0;
+            // (a check well above or below Link, when he is here and his height is known: an up or a down mark)
+            const float up = link && ly != INT_MIN ? k.pos[1] - ly / 100.0f : 0;
+            tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s);
+            if (&k == picked) c.d->AddCircle(at, 11 * s, ui::kAccent, 0, 2.2f * s);
         }
+    c.d->PopClipRect();
+    if (zoomed) {   // (the whole area small in the corner: its checks as points, Link's gold, and the view's square)
+        const float iw = std::min(110 * s, (mx1 - mx0) * 0.3f), ih = iw * 0.7f, ix1 = x1 - 12 * s, iy0 = y0 + 38 * s, ix0 = ix1 - iw, iy1 = iy0 + ih;
+        c.d->AddRectFilled(ImVec2(ix0, iy0), ImVec2(ix1, iy1), ui::rgba(14, 20, 34, 235), 4 * s);
+        c.d->AddRect(ImVec2(ix0, iy0), ImVec2(ix1, iy1), ui::rgba(70, 84, 110), 4 * s, 0, std::max(1.0f, s));
+        const float in = 6 * s, k2 = std::min((iw - 2 * in) / std::max(hi[0] - lo[0], span * 0.05f), (ih - 2 * in) / std::max(hi[1] - lo[1], span * 0.05f));
+        const float jx = (ix0 + ix1) * 0.5f - all_mid[0] * k2, jy = (iy0 + iy1) * 0.5f - all_mid[1] * k2;
+        c.d->PushClipRect(ImVec2(ix0, iy0), ImVec2(ix1, iy1), true);
+        for (int i = 0; i < tracker_check_count; i++)
+            if (shown(tracker_checks[i]))
+                c.d->AddCircleFilled(ImVec2(jx + tracker_checks[i].pos[0] * k2, jy + tracker_checks[i].pos[2] * k2), std::max(1.0f, 1.3f * s), ui::rgba(138, 156, 184));
+        if (link) c.d->AddCircleFilled(ImVec2(jx + link_at[0] * k2, jy + link_at[1] * k2), std::max(1.5f, 2.2f * s), ui::rgba(255, 205, 60));
+        const float vw = (mx1 - mx0) * 0.5f / scale * k2, vh = (my1 - my0) * 0.5f / scale * k2;
+        const ImVec2 v(jx + picked->pos[0] * k2, jy + picked->pos[2] * k2);
+        c.d->AddRect(ImVec2(v.x - vw, v.y - vh), ImVec2(v.x + vw, v.y + vh), ui::kAccent, 0, 0, std::max(1.0f, 1.4f * s));
+        c.d->PopClipRect();
+    }
 }
 /// The help's last line for a row stepped to a check: in logic, or what Link still needs for it
 std::string tracker_hint(int row) {
@@ -826,6 +942,11 @@ std::string tracker_hint(int row) {
                                : says + " And the game gives it only after " + after + ".";
     // (Ocarina Atlas's ways, tracker_ways, are read but no longer said: the owner, 2026-11-23, a long way made the panel's
     // list and its map small)
+    // (asked 2026-11-26: where it is from Link, when he is in its area: "From Link: 42 m north-east, above.")
+    const char* here = tracker_here_area();
+    const int lx = link_place[0].load(std::memory_order_relaxed), lz = link_place[1].load(std::memory_order_relaxed), ly = link_place[3].load(std::memory_order_relaxed);
+    if (k && here && !strcmp(here, k->area) && lx != INT_MIN && lz != INT_MIN)
+        says += (says.empty() ? "" : " ") + ("From Link: " + tracker_from_link(k->pos[0] - lx / 100.0f, ly != INT_MIN ? k->pos[1] - ly / 100.0f : 0, k->pos[2] - lz / 100.0f)) + ".";
     return says;
 }
 /// A row's hints from a table, the value lo first (nullptr: none for that value)
@@ -7055,7 +7176,7 @@ void menu_option_set(int id, int value) {
         health_seen[id - OOT_HEALTH_LIFE].store(prof_now(), std::memory_order_relaxed);
         return;
     }
-    if (id == OOT_LINK_X || id == OOT_LINK_Z || id == OOT_LINK_YAW) {   // (the Tracker's map: where Link is)
+    if (id == OOT_LINK_X || id == OOT_LINK_Z || id == OOT_LINK_YAW || id == OOT_LINK_Y) {   // (the Tracker's map: where Link is)
         link_place[id - OOT_LINK_X].store(value, std::memory_order_relaxed);
         return;
     }
@@ -8419,13 +8540,13 @@ void draw_minimap_checks(ui::Ctx& c) {
     }
     constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(230, 236, 248);
     const float r = std::max(2.5f, c.h / 1440.0f * 6);
-    const int age = link_age.load(std::memory_order_relaxed);
+    const int age = link_age.load(std::memory_order_relaxed), ly = link_place[3].load(std::memory_order_relaxed);
     for (int i = 0; i < tracker_check_count; i++) {
         const TrackerCheck& k = tracker_checks[i];
         if (strcmp(k.area, here) || tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]) continue;
         // (the other age's checks are another map's: an adult's pot where a child's stands kept its dot once the child's
         //  was collected, the owner's run 2026-11-25. Link's age: 0 the child, 1 the adult, -1 not known)
-        if (age == 0 ? !strchr(k.ages, 'C') : age == 1 ? !strchr(k.ages, 'A') : false) continue;
+        if (!tracker_of_age(k.ages, age)) continue;
         const ImVec2 at(c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h);
         if (at.x < c.w - 0.5f * c.h || at.y < 0.55f * c.h || at.y > c.h) continue;   // (off the minimap's corner: another picture's part)
         if (tracker_in_logic(k) > 0) {
@@ -8434,6 +8555,16 @@ void draw_minimap_checks(ui::Ctx& c) {
         } else {
             c.d->AddCircle(at, r, ui::rgba(10, 10, 10, 220), 0, 3.0f);
             c.d->AddCircle(at, r, kOut, 0, 1.6f);
+        }
+        // (asked 2026-11-26: a check well above or below Link: an arrowhead over or under its dot, dark behind it)
+        const float up = ly != INT_MIN ? k.pos[1] - ly / 100.0f : 0;
+        if (const int lift = up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0) {
+            const float y = at.y - lift * (r + 3.5f), tip = y - lift * r * 0.8f, w = r * 0.8f;
+            for (int pass = 0; pass < 2; pass++) {
+                const ImU32 ink = pass ? (tracker_in_logic(k) > 0 ? kIn : kOut) : ui::rgba(10, 10, 10, 220);
+                c.d->AddLine(ImVec2(at.x - w, y), ImVec2(at.x, tip), ink, pass ? 1.6f : 3.4f);
+                c.d->AddLine(ImVec2(at.x + w, y), ImVec2(at.x, tip), ink, pass ? 1.6f : 3.4f);
+            }
         }
     }
 }
