@@ -5890,17 +5890,42 @@ def shop_bottle_flow(raw):
 # done, so none of those three goes behind it and its access asks for their doors' too. The child's dungeons are
 # not in it yet: being an adult stands for the three stones in the rules (ADULT), and each stone's dungeon would have
 # to be told its door in every rule that names an adult. A blue warp is the boss's own, where the game sends it.
-ENTRANCE_POOLS = {1: ("ForestTemple", "FireTemple", "IceCavern", "WaterTemple", "ShadowTemple", "GerudoTrainingGround")}
+#
+# The child's dungeons (rando_entrances 2, and 3 with the adult's; 2026-11-27 later): the Deku Tree, Dodongo's Cavern and
+# the Bottom of the Well among their three doors, each only where the rules stay true (entrance_child_pool):
+#  - none without the Door of Time open (either way): shut, being an adult is the three stones in the rules (ADULT, four
+#    items), and a stone's dungeon behind a door that takes an adult's song would never be told;
+#  - the Deku Tree only with Open forest exit: shut, the way out of the forest is the Deku Tree done (CHILD), and behind
+#    a door outside the forest it could never be done;
+#  - Dodongo's Cavern only with Either age's items: some of its checks' ways are an adult's (the Bow, the Hammer, the
+#    Hookshot; one Gold Skulltula has no other), who walks in by its own door, and only a child is known to get through
+#    the Deku Tree's and the well's (their doors are in the adult's maps too, not seen open). With the setting a child
+#    uses those items. So that setting is part of such a seed.
+# Jabu-Jabu stays: the first way in is his swallow, a flow's step straight to his belly, and Barinade's warp needs Ruto
+# (the research's B5). The checks the story holds back until the Deku Tree is done (DEKU_STORY, whose rules keep CHILD)
+# ask for its door too. No dungeon of one group goes behind a door of the other yet.
+ENTRANCE_ADULT = ("ForestTemple", "FireTemple", "IceCavern", "WaterTemple", "ShadowTemple", "GerudoTrainingGround")
+ENTRANCE_CHILD = ("InsideTheDekuTree", "DodongoCavern", "BottomOfTheWell")
+ENTRANCE_POOLS = {1: (ENTRANCE_ADULT,), 2: (ENTRANCE_CHILD,), 3: (ENTRANCE_ADULT, ENTRANCE_CHILD)}   # (the setting: its groups)
+
+
+def entrance_child_pool(door_open, open_forest, ageless_items):
+    """the child's dungeons that may change places with these settings (see above): () when fewer than two may"""
+    if not door_open:
+        return ()
+    pool = tuple(d for d in ENTRANCE_CHILD if (d != "InsideTheDekuTree" or open_forest) and (d != "DodongoCavern" or ageless_items))
+    return pool if len(pool) >= 2 else ()
 ENTRANCE_NOCTURNE_WAITS = ("ForestTemple", "FireTemple", "WaterTemple")   # (the Nocturne's lesson: STORY_GIFTS)
 ENTRANCES_FILE = "entrances.txt"   # (<a door's own dungeon>|<the dungeon behind it>, every door of the pool)
 ENTRANCE_WAYS = 3   # (the ways through a door kept: the fewest-item ones; one left out only asks for more)
 
 
-def entrance_shuffle(seed, pool, nocturne_item=True):
+def entrance_shuffle(seed, pool, nocturne_item=True, stream=""):
     """{a door's own dungeon: the dungeon behind it} for the dungeons of pool, by the seed alone (the other settings do
     not move it). nocturne_item: the Nocturne is an item of the shuffle; else the Shadow Temple's door waits for three
-    temples done, and none of those is behind it"""
-    rng = random.Random("entrances:%d" % seed)
+    temples done, and none of those is behind it. stream: a group's own name, so that one group's change is the same
+    whether the other is shuffled or not (the adult's: "")"""
+    rng = random.Random("entrances%s:%d" % (stream, seed))
     while True:
         order = list(pool)
         rng.shuffle(order)
@@ -9770,7 +9795,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, keys_mode, a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" entrances %d" % a.entrances if a.entrances else "") + (" pots 1" if a.pots else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" entrances %d%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "") if a.entrances else "") + (" pots 1" if a.pots else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -10386,7 +10411,14 @@ def main():
         junk = frozenset(i for i in {s[1] for s in spots.values()} if junk_holds(i))
         holds.update((h, junk) for h in JUNK_ONLY if h in spots)
     # (Dungeon entrances: a moved dungeon's checks ask for its new door's way in too, entrance_shuffle's note)
-    behind = entrance_shuffle(seed, ENTRANCE_POOLS[a.entrances], NOCTURNE in PROGRESSION) if a.entrances else {}
+    behind = {}
+    for group in ENTRANCE_POOLS.get(a.entrances, ()):
+        if group is ENTRANCE_CHILD:
+            group = entrance_child_pool(bool(door_rules), bool(a.open_forest), bool((a.ageless or 0) & 2))
+            print("Dungeon entrances: the child's dungeons that change places with these settings: %s" % (", ".join(DUNGEON_SAY[d] for d in group) or
+                  "none (the Door of Time open, and two of: Open forest exit for the Deku Tree, Either age's items for Dodongo's Cavern, the well)"))
+        if group:
+            behind.update(entrance_shuffle(seed, group, NOCTURNE in PROGRESSION, "" if group is ENTRANCE_ADULT else "-child"))
     door_of = {dungeon: door for door, dungeon in behind.items() if door != dungeon}   # (a moved dungeon: the door it is behind)
     door_access = {}
     if door_of:
@@ -10397,6 +10429,9 @@ def main():
         if NOCTURNE not in PROGRESSION:   # (the Shadow Temple's door: after three temples, each behind its own door now)
             door_access["ShadowTemple"] = and_rules(door_access["ShadowTemple"], *(door_access[door_of[t]] for t in ENTRANCE_NOCTURNE_WAITS if t in door_of))
         waits = story_waits()
+        for h, g in gifts.items():   # (the checks the story holds back until the Deku Tree is done: DEKU_STORY)
+            if g.key in DEKU_STORY:
+                waits[h] = tuple(waits.get(h, ())) + ("InsideTheDekuTree",)
         ending_of_gift = {gift_hash(BOSS_HEARTS[d][0]): d for d in door_of if d in BOSS_HEARTS}
 
         def behind_door(h, area, rule):

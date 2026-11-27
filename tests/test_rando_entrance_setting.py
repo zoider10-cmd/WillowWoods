@@ -1,4 +1,4 @@
-"""Dungeon entrances: Adult dungeons (rando_entrances 1, asked 2026-11-27): the six dungeons only an adult enters change
+"""Dungeon entrances (rando_entrances, asked 2026-11-27: 1 the adult's dungeons, 2 the child's, 3 both): the six dungeons only an adult enters change
 places among their doors, and the rules ask for the door a dungeon is behind (tools/rando/rando_seed.py
 entrance_shuffle, entrance_access, and_rules). No game data.
 
@@ -41,7 +41,8 @@ def ways(rule):
     return {frozenset(w) for w in rule} if isinstance(rule, S.Either) else {frozenset(rule)}
 
 
-POOL = S.ENTRANCE_POOLS[1]
+POOL = S.ENTRANCE_ADULT
+check(S.ENTRANCE_POOLS == {1: (S.ENTRANCE_ADULT,), 2: (S.ENTRANCE_CHILD,), 3: (S.ENTRANCE_ADULT, S.ENTRANCE_CHILD)}, "the setting's groups")
 check(set(POOL) <= set(S.DUNGEON_DOORS) and set(POOL) == set(S.DOOR_ADULT_AREAS) and len(POOL) == 6, "the pool is not the adult's six dungeons with a door")
 check(not set(POOL) & {"InsideTheDekuTree", "DodongoCavern", "InsideJabuJabuBelly", "BottomOfTheWell", "SpiritTemple", "InsideGanonCastle"}, "the pool has a dungeon it should not")
 
@@ -83,9 +84,12 @@ except ValueError:
 src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
 main = src[src.index("\ndef main():"):]
 check('a.entrances = ini["rando_entrances"] if ini["rando_entrances"] in ENTRANCE_POOLS else 0' in main and '"rando_entrances": 0' in src, "the setting is not read")
-check('(" entrances %d" % a.entrances if a.entrances else "")' in main, "the setting is not on the stamp")
-check("behind = entrance_shuffle(seed, ENTRANCE_POOLS[a.entrances], NOCTURNE in PROGRESSION) if a.entrances else {}" in main, "the shuffle's call")
-block = main[main.index("    behind = entrance_shuffle("):main.index("    # (the tokens are placed by the logic when a rule counts them")]
+check('(" entrances %d%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "") if a.entrances else "")' in main,
+      "the setting is not on the stamp, or Either age's items is not with the child's group")
+check("for group in ENTRANCE_POOLS.get(a.entrances, ()):" in main and
+      "group = entrance_child_pool(bool(door_rules), bool(a.open_forest), bool((a.ageless or 0) & 2))" in main and
+      'behind.update(entrance_shuffle(seed, group, NOCTURNE in PROGRESSION, "" if group is ENTRANCE_ADULT else "-child"))' in main, "the shuffle's calls")
+block = main[main.index("    for group in ENTRANCE_POOLS.get(a.entrances, ()):"):main.index("    # (the tokens are placed by the logic when a rule counts them")]
 for line in ("door_access = {door: entrance_access(needs, spots, door) for door in behind}",
              'door_access["ShadowTemple"] = and_rules(door_access["ShadowTemple"], *(door_access[door_of[t]] for t in ENTRANCE_NOCTURNE_WAITS if t in door_of))',
              "doors = {door_of[d] for d in (area, ending_of_gift.get(h)) + tuple(waits.get(h, ())) if d in door_of}",
@@ -94,7 +98,7 @@ for line in ("door_access = {door: entrance_access(needs, spots, door) for door 
              "skull_asks = lambda h, at=None: behind_door(h, at or skulls[h][0], skull_fixed(h, at))",
              "heart_asks = lambda h: behind_door(h, lying[h][0], heart_fixed(h))"):
     check(line in block, "the rules' step lacks: %s" % line)
-check(main.index("    behind = entrance_shuffle(") < main.index("kept_tokens = [(skull_asks(h, every_skull[h][0]), TOKEN)") < main.index("gives, stays, spheres = place("),
+check(main.index("    for group in ENTRANCE_POOLS.get(a.entrances, ()):") < main.index("kept_tokens = [(skull_asks(h, every_skull[h][0]), TOKEN)") < main.index("gives, stays, spheres = place("),
       "the rules' step is not before the tokens kept and the placement")
 check("if cap is not None and d in door_of:" in main and "caps[t] = cap | min(through if isinstance(through, Either) else (through,)" in main, "a moved dungeon's Boss Key's cap")
 check('if os.environ.get("RANDO_TEST_ENTRANCES") or door_of:' in main and "entrance_files(behind," in main, "the files are not moved for the setting")
@@ -104,9 +108,30 @@ check('f.write("".join("%s|%s\\n" % kv for kv in behind.items()))' in main and "
 
 header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
 launcher = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8")
-check('X(ENTRANCES, "Dungeon entrances", "rando_entrances",' in header and '"Off", "Adult dungeons")\n\nenum {' in header
+check('X(ENTRANCES, "Dungeon entrances", "rando_entrances",' in header and '"Off", "Adult dungeons", "Child dungeons", "Both")\n\nenum {' in header
       and header.index("X(ENTRANCES,") > header.index("X(KEYRINGS,"), "the menu's table: not there, or not last")
-check('new object[] { "rando_entrances", "Dungeon entrances", new[] { "Off", "Adult dungeons" }, new[] { 0, 1 },' in launcher
+check('new object[] { "rando_entrances", "Dungeon entrances", new[] { "Off", "Adult dungeons", "Child dungeons", "Both" }, new[] { 0, 1, 2, 3 },' in launcher
       and launcher.index('new object[] { "rando_entrances"') > launcher.index('new object[] { "rando_keyrings"') and '"rando_dungeon_rewards", "rando_entrances" } },' in launcher,
       "the launcher's table or section")
-print("ok: Dungeon entrances: Adult dungeons")
+
+# the child's dungeons (2026-11-27 later): the Deku Tree, Dodongo's Cavern and the well, each only where the rules stay true.
+# Seen in the game without a window, the setting on: a child through the Deku Tree's door into the Bottom of the Well, its
+# first visit's scene played, and out again at the Deku Tree's clearing; through the well's door into the Deku Tree.
+CHILD = S.ENTRANCE_CHILD
+check(CHILD == ("InsideTheDekuTree", "DodongoCavern", "BottomOfTheWell") and not set(CHILD) & set(POOL) and set(CHILD) <= set(S.DUNGEON_DOORS), "the child's group")
+pool = S.entrance_child_pool
+check(pool(False, True, True) == () and pool(False, False, False) == (), "the child's dungeons move with the Door of Time shut (an adult is the three stones in the rules)")
+check(pool(True, True, True) == CHILD, "all three with every setting")
+check(pool(True, False, True) == ("DodongoCavern", "BottomOfTheWell"), "the Deku Tree moves with the forest shut (its way out is the Deku Tree done)")
+check(pool(True, True, False) == ("InsideTheDekuTree", "BottomOfTheWell"), "Dodongo's Cavern moves without Either age's items (an adult's ways behind a child's door)")
+check(pool(True, False, False) == (), "one dungeon alone is a pool")
+kids = [S.entrance_shuffle(s, CHILD, True, "-child") for s in range(200)]
+check(all(set(b) == set(b.values()) == set(CHILD) for b in kids) and len({(d, x) for b in kids for d, x in b.items()}) == 9, "the child's shuffle: not one-to-one, or a pair never comes")
+check(all(S.entrance_shuffle(s, POOL) == S.entrance_shuffle(s, POOL, True, "") for s in range(20))
+      and any(S.entrance_shuffle(s, POOL, True, "-child") != S.entrance_shuffle(s, POOL) for s in range(20)), "a group's stream does not keep the adult's change as it was")
+check(S.entrance_shuffle(303, POOL) == {"ForestTemple": "WaterTemple", "FireTemple": "ShadowTemple", "IceCavern": "IceCavern", "WaterTemple": "GerudoTrainingGround",
+                                         "ShadowTemple": "FireTemple", "GerudoTrainingGround": "ForestTemple"}, "the adult's change of seed 303 moved (seeds made before)")
+check("for h, g in gifts.items():   # (the checks the story holds back until the Deku Tree is done: DEKU_STORY)" in block
+      and 'waits[h] = tuple(waits.get(h, ())) + ("InsideTheDekuTree",)' in block, "the checks that wait for the Deku Tree are not told its door")
+check("InsideJabuJabuBelly" not in CHILD + POOL and "SpiritTemple" not in CHILD + POOL, "Jabu-Jabu or the Spirit Temple is in a pool")
+print("ok: Dungeon entrances: the adult's and the child's dungeons")

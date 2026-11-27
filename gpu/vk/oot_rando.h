@@ -206,8 +206,8 @@
       "With Dungeon keys on Anywhere: each dungeon's small keys are one item, a key ring, in place of a key each. Found anywhere, it gives every small key of its dungeon at once. The chests the other keys left hold blue rupees. Off: a key each, as before. Not tried in play yet.", \
       "Off", "On") \
     X(ENTRANCES, "Dungeon entrances", "rando_entrances", \
-      "Adult dungeons: the Forest, Fire, Water and Shadow Temples, the Ice Cavern and the Gerudo Training Ground change places: each one's door leads to another of the six, and leaving it brings you back out of the door you came in by. The logic asks for the way to the door a dungeon is behind, so the seed can still be finished. A boss's blue warp takes you where that boss always does. The spoiler says which door leads where. The child's dungeons, the Spirit Temple and Ganon's Castle stay where they are. Not tried in play yet.", \
-      "Off", "Adult dungeons")
+      "Adult dungeons: the Forest, Fire, Water and Shadow Temples, the Ice Cavern and the Gerudo Training Ground change places: each one's door leads to another of the six, and leaving it brings you back out of the door you came in by. Child dungeons: the Deku Tree, Dodongo's Cavern and the Bottom of the Well change places among their three doors. This one needs the Door of Time open (either way); the Deku Tree moves only with Open forest exit, and Dodongo's Cavern only with Either age's items, since parts of it take an adult's items and only young Link gets through the other two doors (so don't change that setting during such a seed). Both: each group among its own doors. The logic asks for the way to the door a dungeon is behind, so the seed can still be finished. A boss's blue warp takes you where that boss always does. The spoiler says which door leads where. Jabu-Jabu, the Spirit Temple and Ganon's Castle stay where they are. Not tried in play yet.", \
+      "Off", "Adult dungeons", "Child dungeons", "Both")
 
 enum {
 #define OOT_RANDO_ENUM(NAME, label, key, help, ...) OOT_RANDO_##NAME,
