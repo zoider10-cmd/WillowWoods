@@ -5920,6 +5920,49 @@ ENTRANCES_FILE = "entrances.txt"   # (<a door's own dungeon>|<the dungeon behind
 ENTRANCE_WAYS = 3   # (the ways through a door kept: the fewest-item ones; one left out only asks for more)
 
 
+# ---- The two groups mixed (rando_entrances_mix with rando_entrances 3 and Either age's items; 2026-11-27 later still) ----
+# A dungeon behind a door must be one that whoever gets through that door can finish (entrance_fits):
+#  - the Deku Tree's and the well's doors take a child alone (the owner, 2026-11-27: "adult link cant enter deku tree or
+#    the well"); an adult's door is counted for an adult alone (its way in is its own dungeon's chests' rules, an
+#    adult's); Dodongo's Cavern's door takes either (a child with bombs or the bracelet; open to an adult);
+#  - the Deku Tree and the well are a child's to do, whatever he carries (crawlspaces): never behind an adult's door;
+#  - an adult's dungeon behind a child's door is a child's to do with the adult's items, so only with Either age's items
+#    (the whole of this needs it): the Fire and Water Temples there only with Either age's tunics too (their rules ask
+#    for the tunics), the Gerudo Training Ground never (5 of its checks ask for the Silver Gauntlets on every way of
+#    the table, and those are no item of that setting; the other five dungeons ask for none);
+#  - Dodongo's Cavern behind an adult's door is an adult's to do, with the Slingshot and the Boomerang by the setting.
+# The rules are as for the groups apart: a check's own and its new door's. NOT SEEN: a child in the rooms of an adult's
+# temple (a block to push, a ledge to climb), and a child's blue warp out of one (the owner: by glitches people beat the
+# Spirit Temple as a child and the adult's scene plays, Link's model wrong).
+ENTRANCE_CHILD_DOORS = ("InsideTheDekuTree", "BottomOfTheWell")   # (the doors only a child gets through, and the dungeons only he can do)
+ENTRANCE_TUNICS = ("FireTemple", "WaterTemple")
+ENTRANCE_NO_CHILD = ("GerudoTrainingGround",)
+
+
+def entrance_fits(door, dungeon, ageless_tunics=False):
+    """whether `dungeon` may be behind the door of `door`, the groups mixed with Either age's items (see above)"""
+    if door == dungeon:
+        return True
+    if dungeon in ENTRANCE_CHILD_DOORS:      # (a child's to do: not behind a door counted for an adult alone)
+        return door not in ENTRANCE_ADULT
+    if dungeon in ENTRANCE_ADULT and door in ENTRANCE_CHILD_DOORS:   # (an adult's dungeon a child must do)
+        return dungeon not in ENTRANCE_NO_CHILD and (ageless_tunics or dungeon not in ENTRANCE_TUNICS)
+    return True
+
+
+def entrance_mixed(seed, doors, ageless_tunics=False, nocturne_item=True):
+    """{a door's own dungeon: the dungeon behind it} for doors, the groups mixed: by the seed alone, every pair fitting
+    (entrance_fits), and the Shadow Temple's door as entrance_shuffle has it"""
+    rng = random.Random("entrances-mixed:%d" % seed)
+    for _ in range(1000000):
+        order = list(doors)
+        rng.shuffle(order)
+        behind = dict(zip(doors, order))
+        if all(entrance_fits(a, b, ageless_tunics) for a, b in behind.items()) and (nocturne_item or behind.get("ShadowTemple") not in ENTRANCE_NOCTURNE_WAITS):
+            return behind
+    raise ValueError("no change of the doors fits")
+
+
 def entrance_shuffle(seed, pool, nocturne_item=True, stream=""):
     """{a door's own dungeon: the dungeon behind it} for the dungeons of pool, by the seed alone (the other settings do
     not move it). nocturne_item: the Nocturne is an item of the shuffle; else the Shadow Temple's door waits for three
@@ -6937,7 +6980,7 @@ def start_lines(codes):
 
 def settings(game):
     """the randomizer's lines of the options file (0 where it does not say)"""
-    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_keyrings": 0, "rando_entrances": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
+    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_keyrings": 0, "rando_entrances": 0, "rando_entrances_mix": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
            "rando_skip_intro": 0, "rando_skip_cutscenes": 0, "rando_skulltulas": 0, "rando_quests": 0, "rando_frogs": 0, "rando_light_arrows": 0,
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
@@ -9685,6 +9728,7 @@ def main():
     a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
     a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0   # (Maps and compasses: MAPS_START, MAPS_LOOSE)
     a.pots = ini["rando_pots"] == 1   # (Pots: the tables' pots take part, POT_OWN)
+    a.entrance_mix = ini["rando_entrances_mix"] == 1 and ini["rando_entrances"] == 3   # (the two groups mixed: entrance_mixed; with Either age's items)
     a.entrances = ini["rando_entrances"] if ini["rando_entrances"] in ENTRANCE_POOLS else 0   # (Dungeon entrances: entrance_shuffle)
     a.keyrings = ini["rando_keyrings"] == 1 and keys_mode == 2   # (Key rings: with Small keys: Anywhere only, keyrings)
     a.boss_keys = ini["rando_boss_keys"] == 1   # (Boss Keys: Anywhere, boss_key_tag; with Small keys: Anywhere too, below)
@@ -9795,7 +9839,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, keys_mode, a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" entrances %d%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "") if a.entrances else "") + (" pots 1" if a.pots else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" entrances %d%s%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "", " mixed %d" % ((a.ageless or 0) & 6) if a.entrance_mix and (a.ageless or 0) & 2 else "") if a.entrances else "") + (" pots 1" if a.pots else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -10412,7 +10456,17 @@ def main():
         holds.update((h, junk) for h in JUNK_ONLY if h in spots)
     # (Dungeon entrances: a moved dungeon's checks ask for its new door's way in too, entrance_shuffle's note)
     behind = {}
-    for group in ENTRANCE_POOLS.get(a.entrances, ()):
+    mixed = a.entrance_mix and bool((a.ageless or 0) & 2)   # (the two groups mixed: with Either age's items only)
+    if a.entrance_mix and not mixed:
+        print("Dungeon entrances: Mix child and adult dungeons does nothing without Either age's items: each group among its own doors")
+    if mixed:
+        doors = ENTRANCE_ADULT + entrance_child_pool(bool(door_rules), bool(a.open_forest), True)
+        try:
+            behind = entrance_mixed(seed, doors, bool(a.ageless & 4), NOCTURNE in PROGRESSION)
+        except ValueError as e:
+            sys.exit("Dungeon entrances: %s. Nothing written." % e)
+        print("Dungeon entrances: the two groups mixed (Either age's items%s): %d doors" % (" and tunics" if a.ageless & 4 else "", len(doors)))
+    for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):
         if group is ENTRANCE_CHILD:
             group = entrance_child_pool(bool(door_rules), bool(a.open_forest), bool((a.ageless or 0) & 2))
             print("Dungeon entrances: the child's dungeons that change places with these settings: %s" % (", ".join(DUNGEON_SAY[d] for d in group) or

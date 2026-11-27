@@ -84,12 +84,12 @@ except ValueError:
 src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
 main = src[src.index("\ndef main():"):]
 check('a.entrances = ini["rando_entrances"] if ini["rando_entrances"] in ENTRANCE_POOLS else 0' in main and '"rando_entrances": 0' in src, "the setting is not read")
-check('(" entrances %d%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "") if a.entrances else "")' in main,
+check('(" entrances %d%s%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "", " mixed %d" % ((a.ageless or 0) & 6) if a.entrance_mix and (a.ageless or 0) & 2 else "") if a.entrances else "")' in main,
       "the setting is not on the stamp, or Either age's items is not with the child's group")
-check("for group in ENTRANCE_POOLS.get(a.entrances, ()):" in main and
+check("for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):" in main and
       "group = entrance_child_pool(bool(door_rules), bool(a.open_forest), bool((a.ageless or 0) & 2))" in main and
       'behind.update(entrance_shuffle(seed, group, NOCTURNE in PROGRESSION, "" if group is ENTRANCE_ADULT else "-child"))' in main, "the shuffle's calls")
-block = main[main.index("    for group in ENTRANCE_POOLS.get(a.entrances, ()):"):main.index("    # (the tokens are placed by the logic when a rule counts them")]
+block = main[main.index("    for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):"):main.index("    # (the tokens are placed by the logic when a rule counts them")]
 for line in ("door_access = {door: entrance_access(needs, spots, door) for door in behind}",
              'door_access["ShadowTemple"] = and_rules(door_access["ShadowTemple"], *(door_access[door_of[t]] for t in ENTRANCE_NOCTURNE_WAITS if t in door_of))',
              "doors = {door_of[d] for d in (area, ending_of_gift.get(h)) + tuple(waits.get(h, ())) if d in door_of}",
@@ -98,7 +98,7 @@ for line in ("door_access = {door: entrance_access(needs, spots, door) for door 
              "skull_asks = lambda h, at=None: behind_door(h, at or skulls[h][0], skull_fixed(h, at))",
              "heart_asks = lambda h: behind_door(h, lying[h][0], heart_fixed(h))"):
     check(line in block, "the rules' step lacks: %s" % line)
-check(main.index("    for group in ENTRANCE_POOLS.get(a.entrances, ()):") < main.index("kept_tokens = [(skull_asks(h, every_skull[h][0]), TOKEN)") < main.index("gives, stays, spheres = place("),
+check(main.index("    for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):") < main.index("kept_tokens = [(skull_asks(h, every_skull[h][0]), TOKEN)") < main.index("gives, stays, spheres = place("),
       "the rules' step is not before the tokens kept and the placement")
 check("if cap is not None and d in door_of:" in main and "caps[t] = cap | min(through if isinstance(through, Either) else (through,)" in main, "a moved dungeon's Boss Key's cap")
 check('if os.environ.get("RANDO_TEST_ENTRANCES") or door_of:' in main and "entrance_files(behind," in main, "the files are not moved for the setting")
@@ -108,10 +108,10 @@ check('f.write("".join("%s|%s|%s|%s\\n" % (door, dungeon, AREA_NAMES.get(door, d
 
 header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
 launcher = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8")
-check('X(ENTRANCES, "Dungeon entrances", "rando_entrances",' in header and '"Off", "Adult dungeons", "Child dungeons", "Both")\n\nenum {' in header
+check('X(ENTRANCES, "Dungeon entrances", "rando_entrances",' in header and '"Off", "Adult dungeons", "Child dungeons", "Both") \\\n    X(ENTRANCES_MIX,' in header
       and header.index("X(ENTRANCES,") > header.index("X(KEYRINGS,"), "the menu's table: not there, or not last")
 check('new object[] { "rando_entrances", "Dungeon entrances", new[] { "Off", "Adult dungeons", "Child dungeons", "Both" }, new[] { 0, 1, 2, 3 },' in launcher
-      and launcher.index('new object[] { "rando_entrances"') > launcher.index('new object[] { "rando_keyrings"') and '"rando_dungeon_rewards", "rando_entrances" } },' in launcher,
+      and launcher.index('new object[] { "rando_entrances"') > launcher.index('new object[] { "rando_keyrings"') and '"rando_dungeon_rewards", "rando_entrances", "rando_entrances_mix" } },' in launcher,
       "the launcher's table or section")
 
 # the child's dungeons (2026-11-27 later): the Deku Tree, Dodongo's Cavern and the well, each only where the rules stay true.
@@ -134,6 +134,46 @@ check(S.entrance_shuffle(303, POOL) == {"ForestTemple": "WaterTemple", "FireTemp
 check("for h, g in gifts.items():   # (the checks the story holds back until the Deku Tree is done: DEKU_STORY)" in block
       and 'waits[h] = tuple(waits.get(h, ())) + ("InsideTheDekuTree",)' in block, "the checks that wait for the Deku Tree are not told its door")
 check("InsideJabuJabuBelly" not in CHILD + POOL and "SpiritTemple" not in CHILD + POOL, "Jabu-Jabu or the Spirit Temple is in a pool")
+
+# the two groups mixed (rando_entrances_mix, 2026-11-27 later still): a dungeon behind a door is one that whoever gets through
+# that door can finish. Seen in trial seeds (the Deku Tree's door to the Forest Temple, the Training Ground's to Dodongo's
+# Cavern, the well's to the Deku Tree).
+fits, A, C = S.entrance_fits, S.ENTRANCE_ADULT, S.ENTRANCE_CHILD
+DEKU, DC, WELL = C
+check(S.ENTRANCE_CHILD_DOORS == (DEKU, WELL) and S.ENTRANCE_TUNICS == ("FireTemple", "WaterTemple") and S.ENTRANCE_NO_CHILD == ("GerudoTrainingGround",), "the mixed groups' lists")
+for d in A + C:
+    check(fits(d, d) and fits(d, d, True), "%s may not stay behind its own door" % d)
+for kid in (DEKU, WELL):       # (a child's to do, crawlspaces: a child's door or Dodongo's Cavern's, never an adult's)
+    check(all(not fits(door, kid, True) for door in A) and fits(DC, kid) and fits(DEKU, kid) and fits(WELL, kid), "%s behind a door a child does not pass, or not behind one he does" % kid)
+for door in (DEKU, WELL):      # (only a child gets through: an adult's dungeon there is his to do)
+    check(not fits(door, "GerudoTrainingGround") and not fits(door, "GerudoTrainingGround", True), "the Training Ground behind %s (the Silver Gauntlets)" % door)
+    check(not fits(door, "FireTemple") and not fits(door, "WaterTemple") and fits(door, "FireTemple", True) and fits(door, "WaterTemple", True), "the Fire or Water Temple behind %s: the tunics" % door)
+    check(all(fits(door, x) for x in ("ForestTemple", "IceCavern", "ShadowTemple", DC)), "a dungeon a child can do is kept from %s" % door)
+check(all(fits(DC, x) and fits(x, DC) for x in A), "Dodongo's Cavern and its door take either age")
+check(all(fits(x, y) for x in A for y in A), "an adult's dungeon behind an adult's door")
+# (the table: only the Training Ground asks for the Silver Gauntlets on every way of a check)
+table = __import__("json").loads((ROOT / "tools" / "rando" / S.DUNGEON_RULES2_FILE).read_text(encoding="utf-8"))["by_actor"]
+needs_silver = {v["folder"] for v in table.values() if v["folder"] in A and v["ways"] and all(w.get("Progressive Strength Upgrade", 0) >= 2 for w in v["ways"])}
+check(needs_silver == set(S.ENTRANCE_NO_CHILD), "the adult's dungeons with a check that takes the Silver Gauntlets every way: %r" % needs_silver)
+ALL = A + C
+for tunics in (False, True):
+    many = [S.entrance_mixed(s, ALL, tunics) for s in range(250)]
+    check(all(set(b) == set(b.values()) == set(ALL) and all(fits(x, y, tunics) for x, y in b.items()) for b in many), "a mixed change that does not fit, or is not one-to-one")
+    seen = {(x, y) for b in many for x, y in b.items()}
+    check(seen == {(x, y) for x in ALL for y in ALL if fits(x, y, tunics)}, "over 250 seeds not every fitting pair came up (tunics %s): %d" % (tunics, len(seen)))
+check(S.entrance_mixed(3, ALL) == S.entrance_mixed(3, ALL) and any(S.entrance_mixed(s, ALL) != S.entrance_mixed(3, ALL) for s in range(4, 9)), "the mixed change is not by the seed alone")
+check(all(S.entrance_mixed(s, ALL, True, False)["ShadowTemple"] not in S.ENTRANCE_NOCTURNE_WAITS for s in range(120)), "mixed, without the Nocturne: a waited temple behind the Shadow Temple's door")
+check(set(S.entrance_mixed(5, A + (DC, WELL))) == set(A + (DC, WELL)), "a mixed pool without the Deku Tree")
+for line in ('a.entrance_mix = ini["rando_entrances_mix"] == 1 and ini["rando_entrances"] == 3',
+             "mixed = a.entrance_mix and bool((a.ageless or 0) & 2)",
+             "doors = ENTRANCE_ADULT + entrance_child_pool(bool(door_rules), bool(a.open_forest), True)",
+             "behind = entrance_mixed(seed, doors, bool(a.ageless & 4), NOCTURNE in PROGRESSION)"):
+    check(line in main, "the main part lacks: %s" % line)
+check('"rando_entrances_mix": 0' in src, "the options' line is not known")
+check('X(ENTRANCES_MIX, "Mix child and adult dungeons", "rando_entrances_mix",' in header and header.index("X(ENTRANCES_MIX,") > header.index("X(ENTRANCES,")
+      and 'new object[] { "rando_entrances_mix", "Mix child and adult dungeons", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher
+      and launcher.index('new object[] { "rando_entrances_mix"') > launcher.index('new object[] { "rando_entrances",')
+      and '"rando_entrances", "rando_entrances_mix" } },' in launcher, "the mix setting in the tables")
 
 # the Tracker says the doors (gpu/vk/vk_menu.cpp, asked 2026-11-27), and each only once it is found (the owner, the same day:
 # "only show what dungeon it leads to after you've entered it once already in the seed"): the game's side notes the door
