@@ -62,7 +62,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 39  # 39: the checks a child's map has where a child never comes are no checks (Zora's Fountain's hidden cave's pots, Gerudo Valley's far side's, the Haunted Wasteland's), and the cave's adult pots ask what its Gold Skulltula asks (AGE_NEVER_FROM); 38: an overworld pot the tables don't rule takes its area's easiest ruled check's rule for its age, an adult-only pot an adult-only check's, not the nearest actor's (POT_AREA_FROM, bugs 151 and 154); 37: with Small keys: Anywhere, a pot that borrows the rule of an actor of its own dungeon room reached with no small key asks for none either (POT_KEYLESS_FROM); 36: with Dungeon keys, Boss Keys or Maps and compasses: Anywhere, a Gold Skulltula and a pot may hold them too, a drop of the dungeon's own (DUNGEON_DROPS_FROM); 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 40  # 40: Dodongo's Cavern's way in is the Bomb Bag or the Goron's Bracelet, not both (FLOWER_ENTRY_FROM, bug 158). 39: the checks a child's map has where a child never comes are no checks (Zora's Fountain's hidden cave's pots, Gerudo Valley's far side's, the Haunted Wasteland's), and the cave's adult pots ask what its Gold Skulltula asks (AGE_NEVER_FROM); 38: an overworld pot the tables don't rule takes its area's easiest ruled check's rule for its age, an adult-only pot an adult-only check's, not the nearest actor's (POT_AREA_FROM, bugs 151 and 154); 37: with Small keys: Anywhere, a pot that borrows the rule of an actor of its own dungeon room reached with no small key asks for none either (POT_KEYLESS_FROM); 36: with Dungeon keys, Boss Keys or Maps and compasses: Anywhere, a Gold Skulltula and a pot may hold them too, a drop of the dungeon's own (DUNGEON_DROPS_FROM); 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -2774,13 +2774,40 @@ def gift_hash(key):
     return 0xF1F7000000000000 | zlib.crc32(key.encode())
 
 
+# ---- Dodongo's Cavern's way in: the Bomb Bag or the Goron's Bracelet (placement 40; bug 158, the owner's run 2026-11-26) ----
+# "Every check asks for the Bomb Bag; much of it can be done with the Goron's Bracelet." The checks' own ways already
+# said so (the dungeons' table: "Bomb Bag" or "Progressive Strength Upgrade", a bomb flower at hand). What asked for both
+# was the way in: DUNGEON_ENTRY's bombs (the wall at the door, from the original game's rules), then the bracelet named
+# on every way by quest_need, and bombs again by Open forest exit (FOREST_FLOOR). The remake's wall is a bomb flower's:
+# the bracelet lifts it, and Link's own bombs do as well since a bomb is lifted without the bracelet (bomb_lift). From
+# placement 40, with the bracelet a gating item (Quest rewards), the way in is either, and neither step names the other
+# on a way that has one. A check whose every way names bombs keeps them (the two chests behind walls no flower reaches,
+# King Dodongo: the table's word, not looked into here). Without Quest rewards the bracelet is where the game has it and
+# the rules are as they were. main sets the switch for the seed's placement, as dungeon_table_for the table.
+FLOWER_ENTRY_FROM = 40
+FLOWER_ENTRY_AREA = "DodongoCavern"
+_FLOWER_ENTRY = [False]
+
+
+def flower_entry_for(placement):
+    _FLOWER_ENTRY[0] = placement >= FLOWER_ENTRY_FROM
+    return _FLOWER_ENTRY[0]
+
+
+def undominated(ways):
+    """the ways none of the others asks less than (a way that holds another whole says nothing new)"""
+    ways = list(dict.fromkeys(frozenset(w) for w in ways))
+    return [w for w in ways if not any(o < w for o in ways)]
+
+
 def quest_need(need, area, tunics=False, deep=False):
     """what a chest or a Gold Skulltula asks for (by the rules made before Quest rewards) with the gifts' two gating
     items named: the bracelet in Dodongo's Cavern, whose way in is a bomb flower's, and where a rule asks for
     everything; the Silver Scale wherever an adult is. Bombs no longer ask for the bracelet: every seed lets Link
     lift a bomb without it (bomb_lift)."""
     need = set(need)
-    if area == "DodongoCavern" or need >= THIRTEEN:
+    flower = area == FLOWER_ENTRY_AREA and not (_FLOWER_ENTRY[0] and need & {BB, BR})   # (a way in of its own: FLOWER_ENTRY_FROM)
+    if flower or need >= THIRTEEN:
         need.add(BR)
     if need >= ADULT:
         need.add(SSC)
@@ -2905,7 +2932,10 @@ def forest_open(need, area=None):
     """a rule with Open forest exit (see above); area: the place's, for FOREST_FLOOR"""
     if not need >= CHILD or BM in need:
         return need
-    return frozenset((need - CHILD) | FOREST_FLOOR.get(area, NONE))
+    floor = FOREST_FLOOR.get(area, NONE)
+    if _FLOWER_ENTRY[0] and area == FLOWER_ENTRY_AREA and need & {BB, BR}:   # (its way in is named already: FLOWER_ENTRY_FROM)
+        floor = NONE
+    return frozenset((need - CHILD) | floor)
 
 
 def rule(area, event):
@@ -8539,6 +8569,9 @@ def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=T
         entries = [CHILD | (frozenset((STORMS, OCARINA)) & frozenset(progression))]
     if area == DUNGEON_REQUIEM and "Item_Melody_SpiritRequiem" in progression:
         entries.append(ADULT | {"Item_Melody_SpiritRequiem"})
+    flower = area == FLOWER_ENTRY_AREA and _FLOWER_ENTRY[0] and BR in progression   # (the wall at the door: a bomb flower's, FLOWER_ENTRY_FROM)
+    if flower:
+        entries.append((DUNGEON_ENTRY[area] - {BB}) | {BR})
     tagged = [(way, entries) for way in ways]
     if age_ways and area == DUNGEON_REQUIEM and ages:   # (each age's ways with its own way in: DUNGEON_AGE_ENTRY)
         by_age = dungeon_age_entry("Item_Melody_SpiritRequiem" in progression, open_door)
@@ -8548,6 +8581,8 @@ def dungeon_rule(h, area, progression, pool=frozenset(), open_door=False, ages=T
         mine = frozenset(DUNGEON_AP_ITEMS[(name, level)] for name, level in way.items()
                          if DUNGEON_AP_ITEMS.get((name, level)) in progression or DUNGEON_AP_ITEMS.get((name, level)) in DUNGEON_SHUFFLED_ONLY & pool)
         (other if mine & DUNGEON_SHUFFLED_ONLY - progression else plain).extend(base | mine for base in entries)
+    if flower:   # (twice the ways, most of them saying nothing new)
+        plain, other = undominated(plain), undominated(other)
     return either(plain or other)
 
 
@@ -9908,6 +9943,7 @@ def main():
     logic = logic_now   # (without the event chests or the songs no gating item moves: nothing to ask)
     rng = random.Random("stage2:%d:%d:%d%s%s%s" % (seed, which, min(keys_mode, 1), ":events" if a.event_chests else "", ":logic" if logic else "",
                                                    ":songs2" if a.songs == 2 else ":songs" if a.songs else ""))
+    flower_entry_for(placement)   # (placement 40: Dodongo's Cavern's way in, bombs or the bracelet)
     dungeon_table_for(placement, a.master_sword)   # (placement 25: the newer dungeons' rules, DUNGEON_RULES2_FILE; SWORD_FROM)
     dungeon_on = placement >= DUNGEON_RULES_FROM and bool(dungeon_table())   # (each dungeon check by its own rule)
     if placement >= DUNGEON_RULES_FROM and not dungeon_table():
