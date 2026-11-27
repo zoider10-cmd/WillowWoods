@@ -24,7 +24,7 @@ def main():
     main_src = src[src.index("\ndef main():"):]
     assert "tneeds = {h: tracked(h, tracked_soil(h, n), ending_of.get(h)) for h, n in needs.items()}" in main_src   # (and the soil Skulltulas' bottle, bug 140)
     assert "tracked(h, needs.get(h) or heart_asks(h), bosses.get(h))" in main_src and "tneeds.get(h) or fit_rule(tracked_soil(h, skull_need(h)))" in main_src
-    assert "check_ages(maps[h]), tneeds[h], named(\"Chest\"" in main_src, "the chests' lines do not take the Tracker's rules"
+    assert "check_ages(maps[h]), user_found.get(h)), tneeds[h], named(\"Chest\"" in main_src, "the chests' lines do not take the Tracker's rules"
     menu = open(os.path.join(ROOT, "gpu", "vk", "vk_menu.cpp"), encoding="utf-8").read()
     start = menu.index("constexpr const char* kKeyDungeons[] = {")
     names = menu[start:menu.index("};", start)]

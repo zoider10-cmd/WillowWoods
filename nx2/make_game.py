@@ -3269,7 +3269,8 @@ def main(a=None):
             # (Willow Woods, 2026-11-22: and the logic's tables, each check's own rule: rando_seed.py DUNGEON_RULES_FILE,
             # DUNGEON_RULES2_FILE, OVERWORLD_RULES_FILE. Left out before, a player's seed asked as before placement 21)
             # (2026-11-24: and dungeon_keyless.json, Small keys: Anywhere, rando_seed.py KEYLESS_FILE)
-            for data in ("atlas_ways.json", "ATLAS_NOTICE.txt", "dungeon_rules.json", "dungeon_rules_25.json", "overworld_rules.json", "dungeon_keyless.json"):
+            for data in ("atlas_ways.json", "ATLAS_NOTICE.txt", "dungeon_rules.json", "dungeon_rules_25.json", "overworld_rules.json", "dungeon_keyless.json",
+                         "check_rules.txt"):   # (2026-11-26: the check rules that come with the tools, rando_seed.py USER_RULES_FILES)
                 if os.path.isfile(os.path.join(ROOT, "tools", "rando", data)):
                     shutil.copy2(os.path.join(ROOT, "tools", "rando", data), os.path.join(out, "rando", data))
             # (Willow Woods, 2026-11-22: and the evfl library the seed tool edits flows with, its LICENSE with it (rando_seed.py

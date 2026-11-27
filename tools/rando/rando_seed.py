@@ -53,6 +53,7 @@ import json
 import math
 import os
 import random
+import re
 import struct
 import sys
 import zlib
@@ -730,6 +731,153 @@ def rules_fixed(sources, pots, placement):
     if placement >= AGE_NEVER_FROM:
         sources.update((h, s) for h, s in RULE_FIXED.items() if h in pots)
     return sources
+
+
+# ---- The check rules' file: what a check asks for, said in a line of words (asked 2026-11-26) ----
+# The rules come from the other randomizers' logic of the remake (the tables) and a table run of our own rules
+# (overworld_own.json, through overworld_logic.py: over ten minutes an area). Where the remake differs, a check asks for
+# too little or too much, and until now each such bug waited for me (155: Kakariko's Piece of Heart asked for nothing, and
+# takes an adult with the Hookshot; 157: two Goron City chests needed the Hookshot). So a file of lines anyone can write:
+#     <area> | <check, as the Tracker names it> | <add: or only:> <words>
+#   add:   the check asks for these too (each of its ways with them)
+#   only:  the check asks for these and nothing else
+#   words: items by the Tracker's names (USER_ITEMS), "," or "and" between those all needed, "or" between ways;
+#          "adult" (the way to an adult, and an adult's check on the Tracker when every way says so), "child" (a child's
+#          check on the Tracker), "nothing".
+# A check without a name of its own is told by its place, as the Tracker's row says it: "Gold Skulltula at -40 158 201".
+# Two files, each beside the script: USER_RULES_FILES[0] comes with the tools (what has been found right), [1] is the
+# player's own (in the game folder's rando, never written over by a build), its lines after the first's.
+# A line's items go the tables' way (overworld_rule: an item this seed does not shuffle asks for what getting it takes or
+# for nothing, as the tables' own), then with what the check asked before (add) or in its place (only).
+# The seed's own: a new seed takes the files as they are and keeps their lines beside its stamp (USER_RULES_USED); the
+# same seed written again takes those kept lines, so it comes out as it was whatever the files say since. A check is
+# found by the names of the list written last (checks.txt); when this writing's list names it otherwise (a first seed,
+# other settings), the seed is made once more with the names it has now (main's second go).
+USER_RULES_FILES = ("check_rules.txt", "my_check_rules.txt")
+USER_RULES_USED = "check_rules_used.txt"
+USER_RULES_MINE = """# Your own check rules: what a check asks for, where you found the randomizer's rule wrong.
+# They count for NEW seeds. How to write a line, and every word it takes: check_rules.txt, beside this file.
+#
+#     <area> | <check, as the Tracker names it> | add: <words>      the check asks for these too
+#     <area> | <check, as the Tracker names it> | only: <words>     the check asks for these and nothing else
+#
+# For example (take the "#" away to use one):
+# Kakariko Village | Piece of Heart | add: adult, Hookshot
+# Dodongo's Cavern | Chest (red rupee), room 5 | only: Bomb Bag or Goron's Bracelet
+"""
+USER_ITEMS = {   # (the Tracker's names, gpu/vk/vk_menu.cpp kLogicItems, and a few said otherwise: the tables' name and level)
+    "kokiri sword": ("Kokiri Sword", 1), "fairy slingshot": ("Slingshot", 1), "slingshot": ("Slingshot", 1), "bomb bag": ("Bomb Bag", 1),
+    "bombs": ("Bomb Bag", 1), "boomerang": ("Boomerang", 1), "lens of truth": ("Lens of Truth", 1), "fairy bow": ("Bow", 1), "bow": ("Bow", 1),
+    "megaton hammer": ("Megaton Hammer", 1), "hammer": ("Megaton Hammer", 1), "iron boots": ("Iron Boots", 1), "hover boots": ("Hover Boots", 1),
+    "hookshot": ("Progressive Hookshot", 1), "longshot": ("Progressive Hookshot", 2), "goron's bracelet": ("Progressive Strength Upgrade", 1),
+    "bracelet": ("Progressive Strength Upgrade", 1), "silver gauntlets": ("Progressive Strength Upgrade", 2),
+    "golden gauntlets": ("Progressive Strength Upgrade", 3), "mirror shield": ("Mirror Shield", 1), "silver scale": ("Progressive Scale", 1),
+    "golden scale": ("Progressive Scale", 2), "zelda's lullaby": ("Zeldas Lullaby", 1), "epona's song": ("Eponas Song", 1),
+    "saria's song": ("Sarias Song", 1), "song of time": ("Song of Time", 1), "song of storms": ("Song of Storms", 1), "sun's song": ("Suns Song", 1),
+    "requiem of spirit": ("Requiem of Spirit", 1), "nocturne of shadow": ("Nocturne of Shadow", 1), "bolero of fire": ("Bolero of Fire", 1),
+    "minuet of forest": ("Minuet of Forest", 1), "serenade of water": ("Serenade of Water", 1), "prelude of light": ("Prelude of Light", 1),
+    "goron tunic": ("Goron Tunic", 1), "zora tunic": ("Zora Tunic", 1), "bottle": ("Bottle", 1), "a bottle": ("Bottle", 1), "an ocarina": ("Ocarina", 1), "zelda's letter": ("Zeldas Letter", 1),
+    "ocarina": ("Ocarina", 1), "fairy ocarina": ("Ocarina", 1), "magic": ("Magic Meter", 1), "master sword": ("Master Sword", 1),
+    "din's fire": ("Dins Fire", 1), "fire arrows": ("Fire Arrows", 1)}
+UserRule = collections.namedtuple("UserRule", "area name only ways ages line")   # (ways: [({a table's item: its level}, an adult's way)])
+
+
+def user_rules_parse(text, source=""):
+    """([UserRule], [what is wrong with a line]) of a check rules' file's text"""
+    rules, wrong = [], []
+    for number, raw in enumerate(text.splitlines(), 1):
+        line = re.sub(r"(^|\s)#(?![0-9a-fA-F]{16}|\d).*$", "", raw).strip()   # (a comment: not "Pot #3", nor a hash "#845b...")
+        if not line:
+            continue
+        where = "%s line %d" % (source, number) if source else "line %d" % number
+        parts = [part.strip() for part in line.split("|")]
+        m = re.match(r"(?i)(add|only)\s*:\s*(.*)$", parts[2]) if len(parts) == 3 else None
+        if not m or not parts[0] or not parts[1]:
+            wrong.append("%s: not \"<area> | <check> | add: ...\" or \"... | only: ...\": %s" % (where, raw.strip()))
+            continue
+        ways, ages, bad = [], set(), []
+        for way in re.split(r"(?i)\s+or\s+", m.group(2).strip()):
+            items, adult, child = {}, False, False
+            for word in re.split(r"(?i)\s*,\s*|\s+and\s+", way.strip()):
+                key = word.strip().lower().replace("’", "'")
+                if key in ("", "nothing"):
+                    continue
+                if key in ("adult", "child"):
+                    adult, child = adult or key == "adult", child or key == "child"
+                elif key in USER_ITEMS:
+                    name, level = USER_ITEMS[key]
+                    items[name] = max(items.get(name, 0), level)
+                else:
+                    bad.append(word.strip())
+            ways.append((items, adult))
+            ages.add("A" if adult and not child else "C" if child and not adult else "CA")
+        if bad:
+            wrong.append("%s: no such item: %s (the Tracker's names: Hookshot, Bomb Bag, Zelda's Lullaby...)" % (where, ", ".join(bad)))
+            continue
+        said = any(key in m.group(2).lower() for key in ("adult", "child"))
+        rules.append(UserRule(parts[0], parts[1], m.group(1).lower() == "only", ways, (ages.pop() if len(ages) == 1 else "CA") if said else None, raw.strip()))
+    return rules, wrong
+
+
+def user_rule_key(area, name, place=None):
+    """how a check is looked up: its area and name without regard to capitals; one without a name of its own (the
+    Tracker's row says "Gold Skulltula at -40 158 201") with its place, to the metre"""
+    name = re.sub(r"\s+", " ", name.strip().lower())
+    if place is not None and name in ("chest", "gold skulltula"):
+        name += " at %.0f %.0f %.0f" % tuple(v + 0.0 for v in (round(place[0]), round(place[1]), round(place[2])))
+    return (re.sub(r"\s+", " ", area.strip().lower()), name.replace("-0 ", "0 ").replace(" -0", " 0") if " at " in name else name)
+
+
+def user_names(lines):
+    """{user_rule_key: a check's hash} of the checks list's lines (check_lines': the area, the name, the place, the hash)"""
+    out = {}
+    for line in lines:
+        f = line.split("|")
+        if line.startswith("#") or len(f) < 7 or f[6] in ("", "-"):
+            continue
+        try:
+            place = tuple(float(v) for v in f[4].split()[:3])
+            out[user_rule_key(f[0], f[1], place)] = int(f[6], 16)
+        except ValueError:
+            pass
+    return out
+
+
+def user_rules_found(rules, names):
+    """({a check's hash: [UserRule, ...] in the files' order}, [the lines whose check the names don't have]). A name
+    "#<16 hexadecimal digits>" is the hash itself"""
+    found, lost = collections.OrderedDict(), []
+    for r in rules:
+        m = re.match(r"#([0-9a-fA-F]{16})$", r.name)
+        h = int(m.group(1), 16) if m else names.get(user_rule_key(r.area, r.name))
+        if h is None:
+            lost.append(r.line)
+        else:
+            found.setdefault(h, []).append(r)
+    return found, lost
+
+
+def user_need(need, rules, made, adult_way):
+    """a check's rule with its lines of the check rules' file: need, what it asked (None: everything, which stays);
+    made: a function from table ways ([{item: level}]) to a rule; adult_way: the way to an adult, or None"""
+    for r in rules:
+        ways = []
+        for items, adult in r.ways:
+            way = made([items])
+            way = NONE if way is None else way
+            if adult and adult_way is not None:
+                way = with_way(way, adult_way)
+            ways += list(way) if isinstance(way, Either) else [way]
+        extra = either(ways) if ways else NONE
+        need = extra if r.only else with_way(need, extra)
+    return need
+
+
+def user_ages(ages, rules):
+    """a check's ages for the Tracker with its lines of the check rules' file (the last that says an age)"""
+    for r in rules or ():
+        ages = r.ages or ages
+    return ages
 
 
 POT_TABLES = ("overworld_rules.json", "dungeon_rules.json")
@@ -9320,10 +9468,42 @@ def main():
         was = open(stamp_path, encoding="utf-8").read()
         was_first = was.split("\n")[0]
         was = stamp_settings(was_first) + "\n"   # (the first line: the settings. The second, later: the fixes)
-        if was.startswith("placement ") and was.split(" ", 2)[2:] == [rest[1:]] and 1 <= int(was.split()[1]) < PLACEMENT:
+        same_seed = was.startswith("placement ") and was.split(" ", 2)[2:] == [rest[1:]]
+        if same_seed and 1 <= int(was.split()[1]) < PLACEMENT:
             placement = int(was.split()[1])
     except (OSError, ValueError):
+        same_seed = False
+    # (the check rules' files, USER_RULES_FILES: a new seed takes them as they are; the same seed written again the lines
+    #  kept beside its stamp, none where it kept none. Its checks by the names of the list written last)
+    user_text = ""
+    try:
+        if same_seed:
+            with open(os.path.join(mod, USER_RULES_USED), encoding="utf-8") as f:
+                user_text = f.read()
+        else:
+            seen_files = []
+            for folder in (os.path.dirname(os.path.abspath(__file__)), os.path.join(game, "rando")):
+                for name in USER_RULES_FILES:
+                    path = os.path.normcase(os.path.abspath(os.path.join(folder, name)))
+                    if path not in seen_files and os.path.isfile(path):
+                        seen_files.append(path)
+            for name in USER_RULES_FILES:   # (the tools' lines first, then the player's own)
+                for path in seen_files:
+                    if os.path.basename(path) == os.path.normcase(name):
+                        with open(path, encoding="utf-8") as f:
+                            user_text += "# %s\n%s\n" % (name, f.read().rstrip("\n"))
+    except OSError:
         pass
+    user_rules, user_wrong = user_rules_parse(user_text)
+    for word in user_wrong:
+        print("the check rules' file: %s (the line is left out)" % word)
+    try:
+        list_before = os.path.join(mod, CHECKS)   # (the list of the seed before: read here, written far below)
+        with open(list_before, encoding="utf-8") as f:
+            user_names_were = user_names(f.read().splitlines())
+    except OSError:
+        user_names_were = {}
+    user_found, _ = user_rules_found(user_rules, user_names_were)
     a.dampe_hookshot = a.dampe_hookshot or placement >= DAMPE_HOOK_FROM   # (Dampe's Hookshot shuffled: HOOK)
     HOOK_SHUFFLED = a.dampe_hookshot
     stamp = "placement %d%sfixes %d\n" % (placement, rest, FIXES_VERSION)   # (the fixes: the same items, written again)
@@ -9711,10 +9891,11 @@ def main():
             len(pots), sum(1 for h in pots if h in pot_table), len(RULE_AS), len(pots) - len(RULE_AS) - sum(1 for h in pots if h in pot_table)))
     song_lessons = {g.item: g.need for g in SONGS if g.item not in PROGRESSION}
 
-    def over_rule(h, area, child_skulltula=False, name=None):
-        """an overworld check's own rule (by its actor, or by name), its items' steps done; None where the table doesn't know it"""
+    def over_rule(h, area, child_skulltula=False, name=None, ways=None):
+        """an overworld check's own rule (by its actor, or by name), its items' steps done; None where the table doesn't know it.
+        ways: table ways given outright (the check rules' file's)"""
         h = RULE_AS.get(h, h)   # (a pot with no rule of its own: the nearest ruled actor's, POTS_ALL_FROM)
-        ways = over_named.get(name) if name else (over_own.get(h) if placement >= OWN_FROM and h in over_own else over.get(h)) if area not in DUNGEON_ENTRY else None
+        ways = ways if ways is not None else over_named.get(name) if name else (over_own.get(h) if placement >= OWN_FROM and h in over_own else over.get(h)) if area not in DUNGEON_ENTRY else None
         made = overworld_rule(ways, PROGRESSION, song_lessons, child_skulltula) if ways else None
         if made is None:
             return None
@@ -9748,6 +9929,13 @@ def main():
         if made is not None:
             needs[h] = made
             ruled.add(h)
+    # (the check rules' file: a check's lines on what it asked, user_need)
+    user_adult = [w for w in (over_rule(None, "KakarikoVillage", name=n) for n in ADULT_NAMED if n in over_named) if w is not None]
+    user_adult = min(user_adult, key=rule_weight) if user_adult else None
+    user_rule = lambda h, need: user_need(need, user_found[h], lambda ways: over_rule(None, "", ways=ways), user_adult) if h in user_found else need
+    for h in spots:
+        if h in user_found and h in needs:
+            needs[h] = user_rule(h, needs[h])
     door = (lambda need, h, area: gate(each(door_need, forest(need, area), grown(h, area), a.open_forest, area, a.door_song, sword_asked=not no_sword(h)), area)) if door_rules else (
         lambda need, h, area: gate(forest(need, area), area))   # (with Open forest exit's step: the Gold Skulltulas' and the Pieces of Heart's)
     # (what a Gold Skulltula asks for, by the same settings; from placement 8 without Open forest exit's step: in a
@@ -9809,6 +9997,10 @@ def main():
                 return fit_rule(with_way(heart_old(h), adult_way)) if made is None else over_done(with_way(made, adult_way))
             return heart_old(h) if made is None else over_done(made)
         skull_asks, heart_asks = skull_over, heart_over
+    if user_found:   # (the check rules' file: a Gold Skulltula's, a lying piece's, a pot's)
+        skull_before, heart_before = skull_asks, heart_asks   # (names of their own: a lambda looks its names up when called)
+        skull_asks = lambda h, at=None: user_rule(h, skull_before(h, at))
+        heart_asks = lambda h: user_rule(h, heart_before(h))
     if a.start:   # (Starting items held: start_need, on what every step above made)
         skull_held, heart_held = skull_asks, heart_asks
         skull_asks = lambda h, at=None: start_need(skull_held(h, at), start_held(a.start))
@@ -11502,15 +11694,15 @@ def main():
         skull_need = skull_asks
         gift_key = gift_keys([h for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES], list(spots))
         named = lambda kind, h, area, pos, item="": check_name(kind, item, about.get(h, {}), pos, exits[area], sub_areas[area])
-        f.write("\n".join(check_lines([(spots[h][0], spots[h][5], CHEST_AGES.get(h) or check_ages(maps[h]), tneeds[h], named("Chest", h, spots[h][0], spots[h][5], MAGIC_JUNK if h == magic_chest else spots[h][1]), h, gives[h],
+        f.write("\n".join(check_lines([(spots[h][0], spots[h][5], user_ages(CHEST_AGES.get(h) or check_ages(maps[h]), user_found.get(h)), tneeds[h], named("Chest", h, spots[h][0], spots[h][5], MAGIC_JUNK if h == magic_chest else spots[h][1]), h, gives[h],
                                         CHEST_GO.get(h) or (chest_front(spots[h][5], about[h]["turned"]) if len(spots[h][5]) == 3 and "turned" in about.get(h, {}) else None))
                                        for h in gives if h not in gifts and check_listed(h, placement)],
-                                      [(skulls[h][0], skulls[h][1], ages_fixed(h, check_ages(maps[h]), placement), tneeds.get(h) or fit_rule(tracked_soil(h, skull_need(h))), named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN,
+                                      [(skulls[h][0], skulls[h][1], user_ages(ages_fixed(h, check_ages(maps[h]), placement), user_found.get(h)), tneeds.get(h) or fit_rule(tracked_soil(h, skull_need(h))), named("Gold Skulltula", h, skulls[h][0], skulls[h][1]), h, skull_drops.get(h) or drops.get(h) or TOKEN,
                                         SKULL_GO.get(h))
                                        for h in took] +
-                                      [(pots[h][0], pots[h][1], check_ages(maps[h]), tneeds.get(h) or heart_asks(h), "Pot", h, pot_drops.get(h, POT_OWN))
+                                      [(pots[h][0], pots[h][1], user_ages(check_ages(maps[h]), user_found.get(h)), tneeds.get(h) or heart_asks(h), "Pot", h, pot_drops.get(h, POT_OWN))
                                        for h in pots] +
-                                      [(pieces[h][0], pieces[h][1], check_ages(maps[h]), tracked(h, needs.get(h) or heart_asks(h), bosses.get(h)),
+                                      [(pieces[h][0], pieces[h][1], user_ages(check_ages(maps[h]), user_found.get(h)), tracked(h, needs.get(h) or heart_asks(h), bosses.get(h)),
                                         "Heart Container, " + BOSS_HEARTS[bosses[h]][1] if h in bosses else SUN_NAME if h in suns else named("Piece of Heart", h, pieces[h][0], pieces[h][1]), h,
                                         heart_drops.get(h, piece_own(h))) for h in pieces],
                                       [(g.area, gift_place(g.key)[1], gift_place(g.key)[0], tneeds[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
@@ -11536,11 +11728,36 @@ def main():
         os.remove(os.path.join(mod, NEW_GAME_FLAG))
     with open(os.path.join(mod, "rando_manifest.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(sorted(written)) + "\n")
+    # (the check rules' file: its lines kept with the seed, and the checks they name by this writing's list. Found
+    #  otherwise than at the start (a first seed, other settings): the seed is made once more, main's second go)
+    global USER_AGAIN
+    with open(os.path.join(mod, USER_RULES_USED), "w", encoding="utf-8", newline="\n") as f:
+        f.write(user_text)
+    try:   # (the player's own file, made the first time with how to write a line: never written over)
+        mine = os.path.join(game, "rando", USER_RULES_FILES[1])
+        if os.path.isdir(os.path.dirname(mine)) and not os.path.exists(mine):
+            with open(mine, "w", encoding="utf-8", newline="\n") as f:
+                f.write(USER_RULES_MINE)
+    except OSError:
+        pass
+    with open(os.path.join(mod, CHECKS), encoding="utf-8") as f:
+        user_now, user_lost = user_rules_found(user_rules, user_names(f.read().splitlines()))
+    USER_AGAIN = {h: [r.line for r in rs] for h, rs in user_now.items()} != {h: [r.line for r in rs] for h, rs in user_found.items()}
+    if user_rules:
+        print("The check rules' file: %d line(s), %d check(s) found%s" % (len(user_rules), len(user_now), "; made once more with them" if USER_AGAIN else ""))
+        for line in user_lost:
+            print("  no such check in this seed (its area and name as the Tracker shows them): %s" % line)
     with open(stamp_path, "w", encoding="utf-8") as f:   # (last: a run that stopped half way is made again)
         f.write(stamp)
     print("wrote %s: %d map files and the size table%s" % (mod, len(changed), " (%d files of the last seed replaced)" % removed if removed else ""))
     print("where everything went: %s" % os.path.join(mod, "spoiler.txt"))
 
 
+USER_AGAIN = False   # (the check rules' file named checks this writing's list names otherwise: main's second go)
+
+
 if __name__ == "__main__":
     main()
+    if USER_AGAIN:   # (once: the second writing finds them by the list the first wrote)
+        USER_AGAIN = False
+        main()

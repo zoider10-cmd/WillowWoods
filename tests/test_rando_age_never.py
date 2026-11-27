@@ -65,7 +65,7 @@ def main():
           "the cave's Skulltula is not an adult's on the Tracker")
     src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
     check("for h in gives if h not in gifts and check_listed(h, placement)]," in src and
-          "ages_fixed(h, check_ages(maps[h]), placement), tneeds.get(h) or fit_rule(tracked_soil(h, skull_need(h)))" in src,
+          "ages_fixed(h, check_ages(maps[h]), placement), user_found.get(h)), tneeds.get(h) or fit_rule(tracked_soil(h, skull_need(h)))" in src,
           "the Tracker's list is written without asking")
     check("rel.split(\"/\")[1] not in POTS_LEFT_OUT) and pot_takes_part(h, placement):" in src and
           "rules_fixed(RULE_AS, pots, placement)" in src, "the pots are not asked whether they take part, or the fixed rules are not put in")
