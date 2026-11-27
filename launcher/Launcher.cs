@@ -2082,7 +2082,7 @@ static class RandoLayout {
     // (how far each is tested: Tested unless named here)
     static readonly string[] ShouldWorkKeys = { "rando_ganon_bridge", "rando_bridge_medallions", "rando_hints", "rando_water_gate", "rando_magic", "rando_ageless_items", "rando_ageless_tunics",
         "rando_chest_size", "rando_master_sword", "rando_infinite_ammo", "rando_epona_song", "rando_ocarinas", "rando_any_fish", "rando_skull_kid_fast", "rando_skip_tower", "rando_fairy_prices", "rando_archery_wins", "rando_fast_push", "rando_maps", "rando_boss_keys", "rando_fast_crawl", "rando_pots" };
-    public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards", "rando_keyrings" };
+    public static readonly string[] NotYetKeys = { "rando_keys", "rando_dungeon_rewards", "rando_keyrings", "rando_entrances" };
     public static Color Status(string key) {
         if (Array.IndexOf(NotYetKeys, key) >= 0) return Experimental;
         return Array.IndexOf(ShouldWorkKeys, key) >= 0 ? ShouldWork : Tested;
@@ -2119,7 +2119,7 @@ static class RandoLayout {
     public static readonly RandoSection[] Sections = {
         new RandoSection { Title = "WHAT'S SHUFFLED", Sub = "where items can be", Accent = SectionColor,
             Rows = new[] { "rando_on", "rando_chests", "+skulltulas", "+quests", "+songs", "+shops", "rando_fairy_prices", "rando_heart_pieces", "rando_scrubs",
-                           "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_keyrings", "rando_boss_keys", "rando_maps", "rando_pots", "rando_dungeon_rewards" } },
+                           "rando_major", "rando_sword_shield", "rando_master_sword", "rando_magic", "rando_keys", "rando_keyrings", "rando_boss_keys", "rando_maps", "rando_pots", "rando_dungeon_rewards", "rando_entrances" } },
         new RandoSection { Title = "OPEN WORLD", Sub = "what's open from a new game's start", Accent = SectionColor,
             Rows = new[] { "+forest", "rando_open_door", "rando_letter", "+bridge", "rando_water_gate" } },
         new RandoSection { Title = "ITEMS", Sub = "how items work", Accent = SectionColor,
@@ -2962,7 +2962,9 @@ class LauncherForm : Form {
         new object[] { "rando_pots", "Pots", new[] { "Off", "On" }, new[] { 0, 1 },
             "The 67 pots the logic has rules for (in houses, grottos and dungeon rooms: the Market's guard house, Talon's house, Goron City, the Gerudo hideout and the like) take part as Gold Skulltulas do: each drops an item of the shuffle (what a Gold Skulltula may drop, its own a Deku Nut bundle) and is a check on the Tracker. A pot is back after about a day; its item is had once. Not tried in play yet." },
         new object[] { "rando_keyrings", "Key rings", new[] { "Off", "On" }, new[] { 0, 1 },
-            "With Dungeon keys on Anywhere: each dungeon's small keys are one item, a key ring, in place of a key each. Found anywhere, it gives every small key of its dungeon at once. The chests the other keys left hold blue rupees. Off: a key each, as before. Not tried in play yet." }
+            "With Dungeon keys on Anywhere: each dungeon's small keys are one item, a key ring, in place of a key each. Found anywhere, it gives every small key of its dungeon at once. The chests the other keys left hold blue rupees. Off: a key each, as before. Not tried in play yet." },
+        new object[] { "rando_entrances", "Dungeon entrances", new[] { "Off", "Adult dungeons" }, new[] { 0, 1 },
+            "Adult dungeons: the Forest, Fire, Water and Shadow Temples, the Ice Cavern and the Gerudo Training Ground change places: each one's door leads to another of the six, and leaving it brings you back out of the door you came in by. The logic asks for the way to the door a dungeon is behind, so the seed can still be finished. A boss's blue warp takes you where that boss always does. The spoiler says which door leads where. The child's dungeons, the Spirit Temple and Ganon's Castle stay where they are. Not tried in play yet." }
     };
     // (cosmetics: the colours of the tunics, the hearts and the magic meter, kept in hookshot_cosmetics.ini beside the options (the game's menu writes the options file
     // whole and would drop lines it does not know). tools/rando/rando_cosmetics.py reads them at Play: the same keys, and

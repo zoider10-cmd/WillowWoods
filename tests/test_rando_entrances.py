@@ -14,7 +14,7 @@ and to the Forest Temple, a child and an adult, in and back out to the Deku Tree
 - a three-way change, and a door that is in one age's map only;
 - refused: a change that is not one-to-one, a dungeon without a door in the table (Ganon's Castle), a door not found;
 - the table: eleven dungeons, each of DUNGEON_FOLDERS but Ganon's Castle;
-- the main part: only a test's switch for now (RANDO_TEST_ENTRANCES), its files in the size table.
+- the main part: a test's switch (RANDO_TEST_ENTRANCES) beside the setting (tests/test_rando_entrance_setting.py), its files in the size table.
 
     python -I -B tests/test_rando_entrances.py
 """
@@ -139,6 +139,7 @@ for bad in ({DEKU: FOREST}, {DEKU: FOREST, FOREST: FOREST}, {DEKU: "InsideGanonC
 check(set(S.DUNGEON_DOORS) == set(S.DUNGEON_FOLDERS) - {"InsideGanonCastle"} and len(S.DUNGEON_DOORS) == 11, "the doors' table")
 src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
 main = src[src.index("\ndef main():"):]
-check('if os.environ.get("RANDO_TEST_ENTRANCES"):' in main and "sizes[rel[:-3]] = len(data)" in main and "rando_entrances" not in src and S.DOOR_ACTOR == "Obj_TimeTemple_Door_A_01",
-      "the main part: not a test's switch alone, or its files are not in the size table")
-print("ok: dungeon entrances led elsewhere (the files; no setting yet)")
+check('if os.environ.get("RANDO_TEST_ENTRANCES") or door_of:' in main and "behind = dict(pair.split(\"=\") for pair in os.environ[\"RANDO_TEST_ENTRANCES\"].split(\",\"))" in main
+      and "sizes[rel[:-3]] = len(data)" in main and S.DOOR_ACTOR == "Obj_TimeTemple_Door_A_01",
+      "the main part: no test's switch, its files are not in the size table, or the Door of Time's actor's name is taken")
+print("ok: dungeon entrances led elsewhere (the files)")
