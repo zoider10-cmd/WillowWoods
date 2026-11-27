@@ -172,10 +172,17 @@ def main():
     check(ran.returncode == 0 and ran.stdout.strip() == "ok", "a Gold Skulltula's drop by the save's marks:\n" + ran.stdout + ran.stderr)
     # ---- the record uses them: a pick-up's add goes their way first, and the second's look settles a wait ----
     item = block(host, "static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int pickup) {")
-    check("if (pickup && !shop && oot_pot_chosen < 0 && oot_skull_item(c, name, family)) {" in item and
+    check("if (pickup && !shop && oot_pot_chosen < 0 && oot_piece_chosen < 0 && oot_skull_item(c, name, family)) {" in item and
           item.index("oot_skull_item(c, name, family)") < item.index("for (int pass = 0; pass < 1 + left && best < 0; pass++) {"),
           "a pick-up's add is not asked of the Skulltulas before the nearest check is looked for")
     check("oot_tracker_item(c, name, shop, price, c->x[30] != 0x828d50acULL);" in host, "the record is not told which adds are a pick-up's")
+    # (a lying Piece of Heart's item, a boss's Heart Container's, the lake's Fire Arrows': the check found at the piece's own
+    #  place is the one ticked, not the nearest check that gives its item)
+    gives = block(host, "static int oot_piece_gives(char *out, size_t size, int boss) {")
+    check("oot_piece_chosen = best;" in gives and "best = oot_piece_chosen;" in item and
+          item.index("best = oot_piece_chosen;") > item.index("for (int pass = 0; pass < 1 + left && best < 0; pass++) {") and
+          host.index("oot_piece_chosen = -1;", host.index("int hos_oot_pouch_add(Ctx *c) {")) < host.index("oot_piece_gives(gives, sizeof gives, 0)"),
+          "a lying piece's item is not ticked at the piece's own check, or an add before it leaves its check chosen")
     flags = block(host, "static int oot_shelf_flags(Ctx *c) {")
     check("marks += oot_skull_waited();" in flags and
           "if (now && flips < OOT_MARK_FLIPS) flip[flips] = i;" in flags and

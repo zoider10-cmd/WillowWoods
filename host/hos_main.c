@@ -2427,6 +2427,11 @@ static int oot_pot_progress(Ctx *c) {
      drop by itself, and it is to be looked at.
    Which of the three it was is logged ("rando: tracker: skulltula: ..."): when the game sets the mark was not known when
    this was written (no Skulltula could be killed in a run without a window). */
+/* SEEN 2026-11-26 without a window, on the owner's save at Kakariko's Skulltula house (three Skulltulas of the map giving
+   Deku Nuts, one in a tree 45 m off): the Skulltula killed, its nut bundle taken: at the add none was marked ("3
+   Skulltula(s) here give it, none marked by the save yet"), and the record's next look had the right one marked ("the
+   save marked it 0.0 s after the add"); the other two were left. So the game marks a Skulltula when its drop is added,
+   not at its death, and for a drop that is no token too: the wait is the way it goes. */
 #define OOT_SKULL_WAIT_NS 3000000000LL
 #define OOT_SKULL_CLAIM_NS 600000000000LL   /* (how long after its mark a Skulltula's drop may still be picked up as its own) */
 #define OOT_SKULL_WAITING 8
@@ -2654,6 +2659,9 @@ static int oot_tracker_shop_on = 1;
    Shop_SelectItemPrice at the sale (-1: not read), which tells the shelves of one item apart. */
 /* (the pot a pick-up came from, oot_pot_again, for the record that follows on the same thread; -1: none) */
 static _Thread_local int oot_pot_chosen = -1;
+/* (the lying Piece of Heart, boss's Heart Container or Fire Arrows whose item is being added, oot_piece_gives: the check
+   found at the piece's own place is the one the record ticks, not the nearest check that gives its item; -1: none) */
+static _Thread_local int oot_piece_chosen = -1;
 /* (the check the last item given was found to be, and when: a dungeon item from a Gold Skulltula or a pot is that check's
    dungeon's, oot_dungeon_owner. Written under oot_checks_lock) */
 static int oot_dungeon_check = -1;
@@ -2679,7 +2687,7 @@ static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int 
        next's: a check of the same family is the one) */
     const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
     /* (a pick-up's add that no pot gave: a Gold Skulltula's drop is its check's by the save's own marks, oot_skull_item) */
-    if (pickup && !shop && oot_pot_chosen < 0 && oot_skull_item(c, name, family)) {
+    if (pickup && !shop && oot_pot_chosen < 0 && oot_piece_chosen < 0 && oot_skull_item(c, name, family)) {
         ReleaseSRWLockExclusive(&oot_checks_lock);
         return;
     }
@@ -2715,6 +2723,11 @@ static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int 
         hos_log("rando: tracker: %s came from the pot just broken (check %d)", name, best);
     }
     oot_pot_chosen = -1;
+    if (oot_piece_chosen >= 0 && oot_piece_chosen < oot_check_count && oot_checks[oot_piece_chosen].done != 1 && !shop) {
+        best = oot_piece_chosen;   /* (the piece lying where Link took it: oot_piece_gives) */
+        hos_log("rando: tracker: %s came from the piece lying here (check %d)", name, best);
+    }
+    oot_piece_chosen = -1;
     if (best < 0) {
         /* (a shop's shelf gives its item by the name the pouch has it by, which is not always the seed's: seen without
            a window, the Lens of Truth bought was Armor_Child_GlassTruth and a purple rupee Obj_Rupee_Purple, and
@@ -2940,6 +2953,7 @@ static int oot_piece_gives(char *out, size_t size, int boss) {   /* (boss: a bos
     }
     const int other = best >= 0 && oot_checks[best].item[0] && strcmp(oot_checks[best].item, boss ? OOT_CONTAINER : OOT_PIECE);
     if (other) snprintf(out, size, "%s", oot_checks[best].item);
+    oot_piece_chosen = best;   /* (its own check, whatever it gives: the record's, oot_tracker_item) */
     ReleaseSRWLockShared(&oot_checks_lock);
     return other;
 }
@@ -5923,6 +5937,7 @@ int hos_oot_pouch_add(Ctx *c) {
     }
     name[length] = 0;
     oot_pickup_folder[0] = 0;
+    oot_piece_chosen = -1;
     if (oot_pot_fall(name)) {   /* (a pot's falling pick-up, POT_FALL_AS: the add is its item's) */
         if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder))
             hos_log("rando: pots: the pick-up is %s's own", oot_pickup_folder);
