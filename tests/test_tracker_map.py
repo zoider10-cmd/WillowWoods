@@ -47,6 +47,11 @@ def main():
     check("ox + k.pos[0] * scale, oy + k.pos[2] * scale" in body and "&k == picked" in body, "the dots are not x across and z down, or the stepped check not ringed")
     check("rx_option_set(OOT_LINK_X, (int)lrintf(oot_link_place[0] * 100));" in open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
           and "if (link) {" in body and "here && !strcmp(here, tracker_name[row])" in body, "Link is not on the map of the area he is in")
+    # (bug 160: Link stood at Hyrule Castle's Pot #3 and #4 and his arrow, drawn last, covered both dots: "no dot near".
+    #  The arrow is drawn first and the dots over it, so a check he stands on shows on him)
+    check("AddTriangleFilled(tip, l, rr," in body and "for (int pass = 0; pass < 2; pass++)" in body and
+          body.index("AddTriangleFilled(tip, l, rr,") < body.index("for (int pass = 0; pass < 2; pass++)"),
+          "Link's arrow is drawn over the checks' dots: a check he stands on is hidden under it")
     # (the Minimap checks row: the area's square of the world on the game's minimap, fitted to the owner's screenshots)
     check('{TAB_GAMEPLAY, "Minimap checks", &opts.minimap_checks, 0, 1, 1, tx_onoff,' in menu and "int minimap_checks = 0;" in
           open(os.path.join(ROOT, "gpu", "vk", "vk_menu.h"), encoding="utf-8").read(), "no Minimap checks row, off by default")
