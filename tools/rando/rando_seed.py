@@ -128,7 +128,7 @@ DAMPE_HOOK_FROM = 19   # (the owner, 2026-11-21: "it should be randomized the sa
 # The Stalfos room's shutter (opened by an eye switch, so by the Bow) no longer turns saving and the warp songs off
 # while it is shut: without the Bow the room is left by a warp song, as any other. Nothing new to learn for a player.
 FIXES = {0x74fb0489585fe0e2: {"IsDisableSaveAndWarp": False}}
-FIXES_VERSION = 105   # (104: before a Boss Key lying to be picked up was made half as large again, PICKUP_SCALES. 103: before a dungeon item found away from its dungeon said whose, DUNGEON_WORDS (bug 141). 102: before a new game of a seed was known by a flag of its own, true in a new game, NEW_GAME_FLAG. 101: before a pot's unique item fell to the ground, POT_FALL_AS. 100: before a pot's unique item was never swapped for a green rupee, IsReplace 0 but for junk. 99: before a pot holding Deku Nuts or Sticks dropped their bundle while Link had no such bag, POT_BAGGED. 98: IsReplace 0 tried, a junk pot dropped nothing with no bag; kept as the game's. 97: 96: before a pot's junk was the game's own pick-up, no "You got" scene, POT_WORLD. 95: before each pot taking part was an actor of its own dropping its item by its own table, lifted as the game's, read as the game's pot once collected, POT_ACTOR. 94: before the pots taking part had an actor of their own, coloured and not lifted, POT_LOOK. 93: before a boss's Heart Container that gives another item showed that item, CONTAINER_LOOK. 92: before a Piece of Heart lying in the world that gives another item showed that item, PIECE_LOOK. 91: before the Silver and Golden Gauntlets' shelves posed their pair as the get scene does, SHELF_OWN_POSE. 90: before the Silver and Golden Gauntlets' shelves showed their own pair a third its size, not the Bracelet. 89: before a Gold Skulltula's drop of a family was shown as the family's next, its tiers made pick-ups, SKULL_TIERS. 88: before the bean-soil Gold Skulltulas were there for a bottle got, no bugs, SOIL_FILES. 87: before Bombchu Bowling's first two wins gave its two checks, the bag's then the Piece of Heart's, BOWLING_FLOW. 86: before the climbing boxes over Lake Hylia's dead tree's vines, baked, were a Hookshot catch and its baked Wood was not, CLIMB_WALL_ENTRY (bug 119). 85: before Lake Hylia's dead tree was baked again, its climbing boxes as the game has them, and its baked Wood a Hookshot catch, BAKED_TREE_FILES (bug 119). 84: before Lake Hylia's dead tree was placed without Bakeable, a body of its own, TREE_NAME (bug 119). 83: before the climbing boxes over Lake Hylia's dead tree's vines were a Hookshot catch, TREE_CLIMB_SHAPE, and its mesh's Wood was left as it was (bug 119). 82: before Lake Hylia's dead tree's wood was a Hookshot catch (83 only). 81: before Lake Hylia's tree had its hookshot-stopping wall taken out again (its own HitOnlyHookshot: it stops the Hookshot; 79 had kept it). 80: before Darunia's gift was had after Dodongo's Cavern, DARUNIA_LATE (bug 128). 79: before Goron City's sign-order grotto gave its right chest after a wrong try, SIGN_GROTTO_LOGIC (bug 127). 78: before Lake Hylia's dead tree kept the Hookshot's catch along its vines, there always (TREE_WALL keep, bug 119; 73 had taken it out). 77: before a new game started with the mask salesman's trade done, MASK_TRADE (bug 133). 76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
+FIXES_VERSION = 106   # (105: before the Tracker's list said a grotto's check's way in, the hole in the field, GROTTO_WAYS. 104: before a Boss Key lying to be picked up was made half as large again, PICKUP_SCALES. 103: before a dungeon item found away from its dungeon said whose, DUNGEON_WORDS (bug 141). 102: before a new game of a seed was known by a flag of its own, true in a new game, NEW_GAME_FLAG. 101: before a pot's unique item fell to the ground, POT_FALL_AS. 100: before a pot's unique item was never swapped for a green rupee, IsReplace 0 but for junk. 99: before a pot holding Deku Nuts or Sticks dropped their bundle while Link had no such bag, POT_BAGGED. 98: IsReplace 0 tried, a junk pot dropped nothing with no bag; kept as the game's. 97: 96: before a pot's junk was the game's own pick-up, no "You got" scene, POT_WORLD. 95: before each pot taking part was an actor of its own dropping its item by its own table, lifted as the game's, read as the game's pot once collected, POT_ACTOR. 94: before the pots taking part had an actor of their own, coloured and not lifted, POT_LOOK. 93: before a boss's Heart Container that gives another item showed that item, CONTAINER_LOOK. 92: before a Piece of Heart lying in the world that gives another item showed that item, PIECE_LOOK. 91: before the Silver and Golden Gauntlets' shelves posed their pair as the get scene does, SHELF_OWN_POSE. 90: before the Silver and Golden Gauntlets' shelves showed their own pair a third its size, not the Bracelet. 89: before a Gold Skulltula's drop of a family was shown as the family's next, its tiers made pick-ups, SKULL_TIERS. 88: before the bean-soil Gold Skulltulas were there for a bottle got, no bugs, SOIL_FILES. 87: before Bombchu Bowling's first two wins gave its two checks, the bag's then the Piece of Heart's, BOWLING_FLOW. 86: before the climbing boxes over Lake Hylia's dead tree's vines, baked, were a Hookshot catch and its baked Wood was not, CLIMB_WALL_ENTRY (bug 119). 85: before Lake Hylia's dead tree was baked again, its climbing boxes as the game has them, and its baked Wood a Hookshot catch, BAKED_TREE_FILES (bug 119). 84: before Lake Hylia's dead tree was placed without Bakeable, a body of its own, TREE_NAME (bug 119). 83: before the climbing boxes over Lake Hylia's dead tree's vines were a Hookshot catch, TREE_CLIMB_SHAPE, and its mesh's Wood was left as it was (bug 119). 82: before Lake Hylia's dead tree's wood was a Hookshot catch (83 only). 81: before Lake Hylia's tree had its hookshot-stopping wall taken out again (its own HitOnlyHookshot: it stops the Hookshot; 79 had kept it). 80: before Darunia's gift was had after Dodongo's Cavern, DARUNIA_LATE (bug 128). 79: before Goron City's sign-order grotto gave its right chest after a wrong try, SIGN_GROTTO_LOGIC (bug 127). 78: before Lake Hylia's dead tree kept the Hookshot's catch along its vines, there always (TREE_WALL keep, bug 119; 73 had taken it out). 77: before a new game started with the mask salesman's trade done, MASK_TRADE (bug 133). 76: before the second magic's chest was named by the blue rupee it held, not "Doubled Magic". 75: before the Fire Temple's way out kept its Kakariko video (Link frozen after Volvagia), SCENE_VIDEOS_KEPT. 74: before the gauntlets' own spellings had "You got" words, COPY_WORDS. 73: before every mask was the Happy Mask Shop's from the start, MASK_EXPS (bug 120). 72: before Lake Hylia's dead tree took the Longshot before the Water Temple's room 7, TREE_WALL (bug 119). 71: before a hint named an item by its file name ("the Fairy Bless MPDouble"), HINT_WORDS (bug 116). 70: before a shelf's Empty Bottle was sold without an empty bottle, SHOP_BOTTLE (bug 113). 69: before the Forest Temple's Bow room opened its barred door once its Stalfos were dead, BOW_ROOM_LOGIC. 68: before the rolling Goron's and King Zora's gifts were kept when their quest was moved on first, QUEST_LATE. 67: before the Fire Temple's Boss Key chest (Room 17) was unlocked with its Goron gone, FIRE_CHESTS. 66: before a new game stopped starting with the Water Temple's gate flags, which the game's side sets by the Water Temple gate setting, WATER_GATE. 65: before a starting stick or nut bag's first pick-up came without a box, START_PICKUPS. 65: before Zelda's Letter had the amiibo slot of its own, LETTER_SLOT. 64: before the Fire Temple's jailed Gorons were gone with Skip cutscenes, FIRE_GORONS. 63: before the first rupee, heart, magic jar, arrows and seeds came without a box with Skip cutscenes, FIRST_PICKUPS. 62: before the lake's logic was the game's again (61 gave its switch's boots check another input, on a wrong reading: with the Iron Boots on it changed nothing). 60: before the Water Temple's gate was open from the start, WATER_GATE. 59: before Bombchu Bowling and the Bombchu Shop were open from the start, the shop day and night, and the Water Temple's gate switch was free of the Ice Cavern, ALWAYS_EXP, WATER_WALL. 58: before the two-handed swords were the child's, with the adult's 02 and 03 clips, AGELESS_BIGGORON. 57: before the Goron and Zora Tunics were the child's too, AGELESS_TUNICS. 56: before the boots were the child's again to try, AGELESS_BOOTS. 55: before the child's Bow shot arrows of its own, AGELESS_ARROWS, and the magic arrows were his again. 54: before the child's Biggoron's Sword, boots and magic arrows were taken out of either age's items, AGELESS_NOT_CHILD. 53: before either age's items lent each Link the other's shootable actors, AGELESS_SHOOTERS. 52: before a quieted scene's own music was passed over, SCENE_MUSIC (the owl's played on). 51: before either age's items lent each Link the other's holders, AGELESS_HOLDERS. 50: before every Great Fairy's fountain answered Zelda's Lullaby from the start, FOUNTAIN_FLOW. 49: before the first Deku Nut and Deku Stick bags had "You got" words, FIRST_BAG_WORDS, bug 48. 48: before a shield's pick-up (a Skulltula's drop) had a model file of its own, bug 78, and King Zora's move aside was kept with Skip cutscenes, bug 88. 47: before the Gold Skulltulas by day had their AI never told it is day, bug 82. 46: before a Heart Container on a shelf was made a piece's size, bug 72. 45: before the empty bottle stood up on its shelf, and Kakariko's Potion Shop had its own turns and sizes, SHELF_TURN_SHOP. 44: before the royal tomb's opening, the Sun's Song's lesson and its sunrise were skipped, SCENE_SILENT. 43: before the cucco lady's game wanted one cucco, CUCCO_LOGIC. 42: before Death Mountain Trail's and Goron City's intros were left to play (their arrivals take the Fire quest a step), and an adult's first visit to Goron City went on to the rolling Goron, goron_arrival_fix. 41: before an empty child's sword slot was given the Kokiri Sword on the way back, era_sword_fix. 40: before the areas' first-visit intros were marked played with Skip cutscenes, AREA_INTROS. 39: before a map with two shops' shelves of a family had one list of tiers, and the tiers' maps kept its other edits (the Market went black). 38: before a shelf of a family showed the item Link would get, SHELF_FAMILIES (Progressive items). 37: before Hyrule Field's Piece of Heart chest was a child's on the Tracker tab, CHEST_AGES. 36: before the Tracker tab had the directions to a check, CHECK_WAYS. 35: before an adult had the sword's prompt with Open Door of Time, SWORD_PROMPT_LOGIC. 34: before the Potion Shop keeper's calm schedule's mark was set with his errand skipped. 33: before the bug of the Potion Shop keeper's errand was taken away too. 32: before the Potion Shop keeper's errand of the bug was passed over. 31: before a shelf's shield had a model file of its own (SHELF_OWN_MODEL) and a song's harp faced out. 30: before a shelf item the game never sells kept its capitals in the keeper's line, SHOP_NAME_CAPS. 29: before the empty bottle stood clear of its shelf's price board. 28: before the Kokiri girl in front of the shop was quieted, SCENE_STOPS. 27: before a song's harp stood up on its shelf. 26: before a song looked like Sheik's harp, SONG_LOOK. 25: before Hyrule Castle's drawbridge had three red rupees, DRAWBRIDGE_RUPEES. 24: before the stump chest by the bridge was an adult's on the Tracker tab, CHEST_AGES. 23: before Go there to the stump chest by the bridge went to the bridge's forest end, CHEST_GO. 22: before the minimap was there from a new game's start, MINIMAP. 21: before the Bombchu Shop's keeper was there from the start, BOMBCHU_ACTORS. 20: before the Bombchu Shop's door opened at night from the start, BOMBCHU_DOOR_LOGIC. 19: before Link's door was open from the start with Skip opening, LINK_DOOR. 18: before a gift's scene without talk was quieted, SCENE_GIFTS. 17: before the story's flows a lesson calls were quieted. 16: before a fork kept only the branches left, and counted them. 15: before the song lessons went to their gift, SCENE_LESSON. 14: before Zelda's last line, EventTalkIgnoreSameTalkAS, was passed over. 13: before a question whose answers all come to the same step was passed over. 12: before the story's videos were left out, SCENE_VIDEOS. 11: before Zelda's questions of three and four answers were passed over. 10: before the d-pad's HUD was there from a new game's start, DPAD_HUD. 9: before the smallest arrows' bundle lay across its shelf and the bracelet stood over the price board. 8: before the bomb's file was changed in the bomb flowers' packs too. 7: before the bomb's file was changed in place: written anew, the game fell reading it. 6: before bombs were lifted without the Goron's Bracelet, bomb_lift. 1: the eye switch took the Hookshot. 2: before the Kokiri Sword's chest's own cutscene was left out. 4: before Hyrule Field's clock ran from a new game's start, FIELD_CLOCK)
 # The forest's two closed ways. Each is a flag of the game that starts set and is put out by the story: Mido stands in
 # the way to the Deku Tree until Link has a sword and a shield (KokiriForest_Npc_Kokiri_Mido_Child_Blocker), and a
 # Kokiri in the forest's way out until the Deku Tree is done (KokiriForest_Npc_Kokiri_007_Child_Blocker_00). An
@@ -7538,6 +7538,75 @@ def fit_rule(need):
 # not by its place, so it is still marked when opened. Kokiri Forest's Song of Storms grotto: the owner's screenshot,
 # Link at its soft soil, measured on the minimap (Kokiri Forest's fit).
 CHECK_PLACE = {0xcda7447b91ab4dba: (-49.5, 103.6, -59.5)}
+# ---- A grotto's checks' way in (bugs 149 and 153, the owner's run 2026-11-26: "a grotto's check has its dot where the
+# chest is, not at the grotto's hole") ----
+# A grotto lies under the ground of its area's own map, its checks some 15 m to the side of the hole Link drops into: on
+# the Tracker's maps and the game's minimap their marks stood away from the hole, on ground where nothing is. The game
+# names its grottos itself: each has DestinationAnchors called HidingHole_... (73 of each name in the maps): among them
+# HidingHole_HoleEntrance, where Link lands below, and HidingHole_FieldEntranceGo, the hole in the field, straight above
+# it (seen on every one: 0.0 m aside, 12 to 95 m up). So a check within HOLE_NEAR of a landing, and no more than
+# HOLE_BELOW under it or HOLE_ABOVE over it (a chest stands 3 to 5 m lower than the landing's anchor, a Skulltula on the
+# grotto's wall a metre higher; Mido's house's chests, 21 m from Kokiri Forest's grotto and 5 m over its landing, are in no
+# grotto), is that grotto's, and its line of the Tracker's list says the hole's place after where Link is put (way_in,
+# check_lines): the maps draw it there. The check's own place stays the line's place: the game's side finds a Gold
+# Skulltula's and a pot's check by it. Seen on the owner's seed: 51 checks in 24 grottos, each the grotto the other
+# randomizer's names say ("Kak Open Grotto Chest", "Graveyard Shield Grave Chest", "HC GS Storms Grotto"...). Not grottos
+# of this kind (no such anchors): the royal tomb, Dampe's race, Zora's Fountain's hidden cave.
+HOLE_ANCHOR = "DestinationAnchor"
+HOLE_LANDING, HOLE_FIELD = "HidingHole_HoleEntrance", "HidingHole_FieldEntranceGo"
+HOLE_NEAR, HOLE_BELOW, HOLE_ABOVE = 25.0, 6.0, 3.0
+HOLE_ASIDE = 3.0   # (how far to the side of its landing a hole in the field may be: every one is straight above)
+
+
+def hole_anchors(data):
+    """[(name, place)] of a map file's grotto anchors (HOLE_ANCHOR actors named HOLE_LANDING... or HOLE_FIELD...)"""
+    if data[:2] != b"YB":
+        raise ValueError("not a little-endian BYML")
+    key_at, str_at, root = struct.unpack_from("<III", data, 4)
+    keys, strings = table(data, key_at), table(data, str_at)
+    out = []
+    for name, kind, value, _ in entries(data, root, keys):
+        if name != "Actors" or kind != 0xC0:
+            continue
+        n = int.from_bytes(data[value + 1:value + 4], "little")
+        vals = value + 4 + (n + 3 & ~3)
+        for i in range(n):
+            if data[value + 4 + i] != 0xC1:
+                continue
+            gyaml, called, pos = "", "", ()
+            for k, kt, v, _ in entries(data, struct.unpack_from("<I", data, vals + 4 * i)[0], keys):
+                if k == "Gyaml" and kt == 0xA0:
+                    gyaml = strings[v] if v < len(strings) else ""
+                elif k == "Name" and kt == 0xA0:
+                    called = strings[v] if v < len(strings) else ""
+                elif k == "Translate" and kt == 0xC0 and int.from_bytes(data[v + 1:v + 4], "little") == 3:
+                    pos = tuple(round(x, 1) for x in struct.unpack_from("<3f", data, v + 8))
+            if gyaml == HOLE_ANCHOR and len(pos) == 3 and (called.startswith(HOLE_LANDING) or called.startswith(HOLE_FIELD)):
+                out.append((called, pos))
+    return out
+
+
+def grottos(anchors):
+    """[(where Link lands, the hole in the field)] of a folder's grotto anchors ([(name, place)]): each landing with the
+    hole above it (within HOLE_ASIDE to the side, the lowest such); a landing with none is left out. Each place once."""
+    fields = sorted({pos for name, pos in anchors if name.startswith(HOLE_FIELD)})
+    out = []
+    for landing in sorted({pos for name, pos in anchors if name.startswith(HOLE_LANDING)}):
+        over = [f for f in fields if f[1] > landing[1] and math.hypot(f[0] - landing[0], f[2] - landing[2]) <= HOLE_ASIDE]
+        if over:
+            out.append((landing, min(over, key=lambda f: f[1])))
+    return out
+
+
+def way_in(place, holes):
+    """the hole in the field of the grotto a check at place is in (holes: grottos() of its folder), or None: the nearest
+    landing within HOLE_NEAR flat, the check no more than HOLE_BELOW under or HOLE_ABOVE over it"""
+    best = None
+    for landing, field in holes or ():
+        flat = math.hypot(place[0] - landing[0], place[2] - landing[2])
+        if flat <= HOLE_NEAR and -HOLE_BELOW <= place[1] - landing[1] <= HOLE_ABOVE and (best is None or flat < best[0]):
+            best = (flat, field)
+    return best[1] if best else None
 # Where Go there puts Link for a Gold Skulltula whose own place is on a wall he can't be put in (bug 117, the owner's run
 # 2026-11-23: Link stuck behind a wall, or fallen out of the world). Each is a floor spot found without a window, Link put
 # at eight points 2.5 from the Skulltula and logged where he came to rest (2026-11-24): Dodongo's Cavern's room 2
@@ -7550,7 +7619,7 @@ SKULL_GO = {0x0d53e429a1ef383d: (56.5, 104.0, -18.2), 0x845ba51dc18c855e: (82.7,
             0xa6a4e87da18fa678: (-147.9, 124.0, 324.9)}
 
 
-def check_lines(chests, skulls, gifts=()):
+def check_lines(chests, skulls, gifts=(), holes=None):
     """The checks file's lines. chests, skulls and gifts: [(area (the Banc folder), position, ages, what its rule asks
     for, its name, its actor's hash)]; a chest or a Gold Skulltula without a name is "Chest" or "Gold Skulltula". The
     name is the line's kind; those of an area that are the same are numbered, by place. By the area's name, the
@@ -7558,7 +7627,8 @@ def check_lines(chests, skulls, gifts=()):
     rules ask for a line may have two more fields: its actor's hash, 16 hexadecimal digits ("-" without one), and
     the item it gives (a seventh of a tuple): the game's side marks a check collected when its item is given near it.
     A line with neither ends after what the rules ask for. An eighth of a tuple is where Link is put to go to the
-    check, when that is not the check's own place (a chest's front): a field more, "x y z"."""
+    check, when that is not the check's own place (a chest's front): a field more, "x y z". holes: {a folder:
+    grottos()}: a check in a grotto has one field more after that, the hole in the field (way_in), "x y z"."""
     rows = []
     for order, plain, those in ((0, "Chest", chests), (1, "Gold Skulltula", skulls), (2, "", gifts)):
         for area, pos, ages, need, *more in those:
@@ -7569,10 +7639,11 @@ def check_lines(chests, skulls, gifts=()):
                 more = list(more) + [None] * (4 - len(more))
                 more[3] = more[3] or tuple(pos)
                 pos = CHECK_PLACE[more[1]]
+            hole = way_in(pos, (holes or {}).get(area)) if not (len(more) > 1 and more[1] in CHECK_PLACE) else None
             rows.append([AREA_NAMES.get(area, area).replace("|", "/")[:47], (name[:1].upper() + name[1:]).replace("|", "/"), area, ages, pos,
                          "/".join(rule_text(way) for way in (need if isinstance(need, Either) else (need,))),
                          order, more[1] if len(more) > 1 else None,
-                         more[2] if len(more) > 2 else "", more[3] if len(more) > 3 else None])
+                         more[2] if len(more) > 2 else "", (more[3] if len(more) > 3 else None) or (tuple(pos) if hole else None), hole])
     too_long = [r for r in rows if len(r[5]) > CHECK_NEED]
     if too_long:   # (the menu's and the game's side read a rule of CHECK_NEED letters, commas and slashes at most)
         raise ValueError("a rule of %s is %d letters long, more than the %d the tracker reads" % (too_long[0][1], len(too_long[0][5]), CHECK_NEED))
@@ -7587,11 +7658,12 @@ def check_lines(chests, skulls, gifts=()):
             count[(r[0], r[1])] += 1
             r[1] = r[1][:CHECK_NAME - 4] + " #%d" % count[(r[0], r[1])]
         r[1] = r[1][:CHECK_NAME]
-    return ["# The checks of this seed, one by one, for the Tracker tab: <area>|<kind>|<folder>|<ages>|<x> <y> <z>|<the rules ask for>[|<the actor's hash>[|<the item it gives>[|<where Link is put>]]]"] + [
-        "%s|%s|%s|%s|%.1f %.1f %.1f|%s%s%s%s" % (name, kind, area, ages, pos[0], pos[1], pos[2], need,
+    return ["# The checks of this seed, one by one, for the Tracker tab: <area>|<kind>|<folder>|<ages>|<x> <y> <z>|<the rules ask for>[|<the actor's hash>[|<the item it gives>[|<where Link is put>[|<its grotto's hole>]]]]"] + [
+        "%s|%s|%s|%s|%.1f %.1f %.1f|%s%s%s%s%s" % (name, kind, area, ages, pos[0], pos[1], pos[2], need,
                                                  "" if key is None and not given and not stand else "|-" if key is None else "|%016x" % key,
-                                                 "|" + given if given else "|-" if stand else "", "|%.1f %.1f %.1f" % tuple(stand) if stand else "")
-        for name, kind, area, ages, pos, need, _, key, given, stand in rows[:CHECK_ROWS]]
+                                                 "|" + given if given else "|-" if stand else "", "|%.1f %.1f %.1f" % tuple(stand) if stand else "",
+                                                 "|%.1f %.1f %.1f" % tuple(hole) if hole else "")
+        for name, kind, area, ages, pos, need, _, key, given, stand, hole in rows[:CHECK_ROWS]]
 
 
 # ---- Hints from the Gossip Stones (rando_hints, asked for 2026-11-18) ----
@@ -9325,6 +9397,7 @@ def main():
     pot_table = pot_actors() if a.pots else {}
     placed = collections.defaultdict(list)   # (Pots: a map file -> its actors' (hash, place, dungeon room), for RULE_AS)
     every_skull = collections.OrderedDict()   # every Gold Skulltula, the setting's or not: hash -> [area, position]
+    hole_marks = collections.defaultdict(list)   # a folder -> its grottos' anchors (hole_anchors: GROTTO_WAYS)
     paths = []
     for top, dirs, names in os.walk(os.path.join(romfs, "Banc")):
         dirs.sort()
@@ -9339,6 +9412,7 @@ def main():
             continue
         try:   # (what the file has to name its checks by: check_name)
             folder = rel.split("/")[1] if rel.count("/") > 1 else "(Banc)"
+            hole_marks[folder] += hole_anchors(data)
             for h, gyaml, pos, scale, words in marks(data):
                 leads = words.get("Location")
                 if gyaml in MARKS:
@@ -11442,7 +11516,8 @@ def main():
                                       [(g.area, gift_place(g.key)[1], gift_place(g.key)[0], tneeds[h], g.name, gift_key[h], gives[h], GIFT_STAND.get(g.key))
                                        for h, g in gifts.items() if h in gives and g.key in GIFT_PLACES] +
                                       [(shop.areas[0], shop.place, shop.ages, needs[h], gifts[h].name, None, gives[h])
-                                       for h, (shop, _, _) in shelves.items() if h in gives])) + "\n")
+                                       for h, (shop, _, _) in shelves.items() if h in gives],
+                                      holes={folder: grottos(marks_) for folder, marks_ in hole_marks.items()})) + "\n")
     ways = check_ways(os.path.join(mod, CHECKS))   # (the Tracker tab's directions to a check: CHECK_WAYS)
     with open(os.path.join(mod, CHECK_WAYS), "w", encoding="utf-8", newline="\n") as f:
         f.write("".join("%s|%s\n" % w for w in ways))

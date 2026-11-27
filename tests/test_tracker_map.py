@@ -48,7 +48,7 @@ def main():
     check("top + std::max(room * 0.55f, room - 420 * s)" in menu, "the list can take the whole panel, leaving the map no room")
     body = menu[menu.index("void tracker_area_map(ui::Ctx& c,"):]
     body = body[:body.index("\n}\n")]
-    check("ox + k.pos[0] * scale, oy + k.pos[2] * scale" in body and "&k == picked" in body, "the dots are not x across and z down, or the stepped check not ringed")
+    check("ox + k.at[0] * scale, oy + k.at[2] * scale" in body and "&k == picked" in body, "the dots are not x across and z down, or the stepped check not ringed")
     check("rx_option_set(OOT_LINK_X, (int)lrintf(oot_link_place[0] * 100));" in open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
           and "if (link) {" in body and "here && !strcmp(here, tracker_name[row])" in body, "Link is not on the map of the area he is in")
     # (bug 160: Link stood at Hyrule Castle's Pot #3 and #4 and his arrow, drawn last, covered both dots: "no dot near".
@@ -77,7 +77,7 @@ def main():
     check("at.x > c.w ||" in menu, "a check off the screen's right edge is drawn on the minimap's corner")
     draw = menu[menu.index("void draw_minimap_checks(ui::Ctx& c) {"):]
     draw = draw[:draw.index("\n}\n")]
-    check("c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h" in draw and
+    check("c.w + (m->u + m->a * k.at[0]) * c.h, (m->v + m->a * k.at[2]) * c.h" in draw and
           "tracker_done[i].load(std::memory_order_relaxed) == 1 || tracker_junk[i]" in draw and "else if (in_ranch(lx, lz)) m = &kMiniRanch;" in draw,
           "the dots are not the checks left on the measured minimap, or the ranch's picture not within 100 of it")
     # (the owner's run 2026-11-25: a child's pots collected kept their dots, the adult's pots at the same places)

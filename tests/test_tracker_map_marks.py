@@ -138,7 +138,7 @@ def main():
           "a dungeon's map does not draw the other floors' checks faint")
     # ---- the help line, and the minimap ----
     hint = block(menu, "std::string tracker_hint(int row) {")
-    check('"From Link: " + tracker_from_link(k->pos[0] - lx / 100.0f, ly != INT_MIN ? k->pos[1] - ly / 100.0f : 0, k->pos[2] - lz / 100.0f)' in hint
+    check('"From Link: " + tracker_from_link(k->at[0] - lx / 100.0f, ly != INT_MIN ? k->at[1] - ly / 100.0f : 0, k->at[2] - lz / 100.0f)' in hint
           and "if (k && here && !strcmp(here, k->area) && lx != INT_MIN && lz != INT_MIN)" in hint,
           "the help line does not say where the check is from Link, when he is in its area")
     mini = block(menu, "void draw_minimap_checks(ui::Ctx& c) {")
