@@ -9042,6 +9042,48 @@ def records_moved(folder, was, now):
 DOOR_SONG = 2
 
 
+# A seed in a deep game folder (the idea: OOTRR 1507454, whose game "aborts on entering a map that needs one"; ours by
+# reading, share/port-survey/ootrr-2026-11-26b.md): on Windows the game's side lists a mod's files with names of at most
+# 259 characters (host/mods.c index_romfs: char host[MAX_PATH], FindFirstFileA), and leaves a longer one out without a
+# word: the game then reads its own file in that one's place, a seed applied in part. A folder is made only under 248.
+# So a seed with such a file is not written at all, and the seed before it stays whole. Counted the longer way of the two
+# the game's side may count (UTF-16 units, UTF-8 bytes). The game's own files are read past the limit (host/nn_fs.c).
+PATH_MOST = 259     # (a file: MAX_PATH less its end)
+FOLDER_MOST = 247   # (a folder: Windows makes none of 248 or more)
+
+
+def path_length(path):
+    return max(len(path.encode("utf-16-le")) // 2, len(path.encode("utf-8")))
+
+
+def too_long(mod, rels, windows=None):
+    """the seed's files (rels: below the mod's folder, with /) the game's side could not list from this folder, longest
+    first, each with how far it is past the limit; none where the limit is not Windows'"""
+    if windows is None:
+        windows = os.name == "nt"
+    if not windows:
+        return []
+    base = mod.rstrip("\\/")
+    out = []
+    for rel in rels:
+        full = base + "\\" + rel.replace("/", "\\")
+        over = max(path_length(full) - PATH_MOST, path_length(full.rsplit("\\", 1)[0]) - FOLDER_MOST)
+        if over > 0:
+            out.append((over, rel))
+    return sorted(out, reverse=True)
+
+
+def too_long_words(mod, long):
+    """what the owner reads when the seed is not written"""
+    over, rel = long[0]
+    game = os.path.dirname(os.path.dirname(mod.rstrip("\\/")))
+    return ("The game's folder is too deep for Windows: %d of the seed's files would have a path longer than Windows reads "
+            "(the longest is %s), and the game would use its own files in their place, without a word.\n"
+            "Move the game's folder somewhere shorter, for example C:\\Games\\OOT: its path, %s, is %d characters and "
+            "may be %d at most. Then make the seed again. Nothing written; the seed before this one is as it was."
+            % (len(long), rel, game, path_length(game), path_length(game) - over))
+
+
 def remove_old(mod):
     """the files a run before this one wrote (its list: rando_manifest.txt), and the folders they leave empty"""
     listing = os.path.join(mod, "rando_manifest.txt")
@@ -11715,6 +11757,10 @@ def main():
             files[rel] = flow_switch_yes(files[rel] if rel in files else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts), event)
         except (OSError, ValueError, struct.error) as e:
             sys.exit("Bombchu Bowling: %s: %s. Nothing written." % (rel, e))
+    long = too_long(os.path.abspath(mod), ["romfs/" + rel for d in (changed, new_tables, flag_files, pack_files, gift_files, shop_files, scene_files) for rel in d] +
+                    [SHELF_TIER_DIR + "/" + rel for rel in tier_files])
+    if long:   # (before the last seed's files are taken away)
+        sys.exit(too_long_words(os.path.abspath(mod), long))
     removed = remove_old(mod)
     for rel, data in (list(changed.items()) + list(new_tables.items()) + list(flag_files.items()) + list(pack_files.items()) + list(gift_files.items()) +
                       list(shop_files.items()) + list(scene_files.items())):
