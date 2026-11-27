@@ -193,6 +193,10 @@ constexpr const char* kDungeonTitles[OOT_DUNGEON_COUNT] = {"Deku Tree", "Dodongo
 constexpr int kDungeonKeys[OOT_DUNGEON_COUNT] = {0, 0, 0, 2, 5, 8, 0, 4, 5, 5, 9, 1};
 constexpr bool kDungeonMaps[OOT_DUNGEON_COUNT] = {true, true, true, true, true, true, true, true, true, true, false, false};   // (and a compass)
 constexpr bool kDungeonBossKey[OOT_DUNGEON_COUNT] = {false, false, false, false, true, true, false, true, true, true, false, true};
+// (bug 159) Whether dungeon d has item k at all (0 its map, 1 its compass, 2 its Boss Key). Only those are counted and
+// drawn: a flag of one it has not says nothing (Maps and compasses: From the start sets every dungeon's two, the Training
+// Ground's and Ganon's Castle's too, and the row said "27 of 26 items")
+constexpr bool dungeon_has(int d, int k) { return k < 2 ? kDungeonMaps[d] : kDungeonBossKey[d]; }
 const char kTrackerDungeonHelp[] =
     "Each dungeon's small keys and items. Keys: the ones Link has now (a key used on a door is gone), of how many the dungeon "
     "has in all. A tick: the map, compass or Boss Key is found; a circle: not yet; a dash: the dungeon has none. With Dungeon "
@@ -593,10 +597,9 @@ float dungeon_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max) {
             else snprintf(keys, sizeof keys, "? of %d", kDungeonKeys[d]);
             centred(col[0], my, state > 0 && (state & 255) ? ui::kInkBright : ui::kSoft, px, keys);
         } else mark(col[0], my, -1);
-        const bool has[3] = {kDungeonMaps[d], kDungeonMaps[d], kDungeonBossKey[d]};
         for (int k = 0; k < 3; k++) {
             const bool got = state >= 0 && (state & (256 << k));
-            mark(col[k + 1], my, has[k] || got ? (got ? 1 : 0) : -1);
+            mark(col[k + 1], my, dungeon_has(d, k) ? (got ? 1 : 0) : -1);
         }
     }
     c.d->PopClipRect();
@@ -611,7 +614,7 @@ std::string dungeon_says() {
         all += 2 * kDungeonMaps[d] + kDungeonBossKey[d];
         if (state < 0) continue;
         known = true, keys += state & 255;
-        for (int k = 0; k < 3; k++) found += (state & (256 << k)) != 0;
+        for (int k = 0; k < 3; k++) found += dungeon_has(d, k) && (state & (256 << k)) != 0;
     }
     if (!known) return "Load a save to see them";
     return std::to_string(keys) + (keys == 1 ? " key" : " keys") + " in hand, " + std::to_string(found) + " of " + std::to_string(all) + " items";
@@ -624,9 +627,8 @@ std::string dungeon_words() {
         out += std::string(kDungeonTitles[d]) + ": ";
         out += kDungeonKeys[d] ? (state >= 0 ? std::to_string(state & 255) : std::string("?")) + " of " + std::to_string(kDungeonKeys[d]) + " keys" : "no keys";
         const char* const names[3] = {"map", "compass", "Boss Key"};
-        const bool has[3] = {kDungeonMaps[d], kDungeonMaps[d], kDungeonBossKey[d]};
         for (int k = 0; k < 3; k++)
-            if (has[k]) out += std::string(", ") + names[k] + (state >= 0 && (state & (256 << k)) ? " found" : " not yet");
+            if (dungeon_has(d, k)) out += std::string(", ") + names[k] + (state >= 0 && (state & (256 << k)) ? " found" : " not yet");
         out += "\n";
     }
     return out + "\n" + kTrackerDungeonHelp;
