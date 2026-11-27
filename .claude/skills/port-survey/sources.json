@@ -7,8 +7,8 @@
    "kind": "fork",
    "license": "GPL-3.0-or-later",
    "base": "engine/ is Hookshot by subtree at a2e65052 (our tree has it): diff a2e65052 HEAD:engine",
-   "surveyed": "256de8e6",
-   "surveyed_on": "2026-11-26"
+   "surveyed": "aba453fc",
+   "surveyed_on": "2026-11-27"
   },
   {
    "name": "ProjectReLink",
@@ -86,8 +86,8 @@
    "kind": "randomizer",
    "license": "GPL-3.0-or-later after v0.4.0 (MIT up to it; OoTR logic MIT)",
    "base": "its own Rust project: read for randomizer mechanisms (flags, flows); compared in share/ootrr-azk-comparison.md (2026-11-26: REALAZK's main is stale; their work is on origin/nightly, survey that branch)",
-   "surveyed": "240af8b2",
-   "surveyed_on": "2026-11-26"
+   "surveyed": "ce63c08c",
+   "surveyed_on": "2026-11-27"
   }
  ]
 }
