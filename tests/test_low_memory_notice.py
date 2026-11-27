@@ -84,6 +84,13 @@ static void hos_log(const char *fmt, ...) {
     vsnprintf(last_log, sizeof last_log, fmt, a);
     va_end(a);
 }
+#ifdef _WIN32
+/* (Triforce v0.8.4: the last run's out-of-memory mark, looked for first; none here: tests/test_oom_next_start.py) */
+#define MAX_PATH 260
+#define HOS_OOM_MARK "hookshot_out_of_memory.txt"
+typedef unsigned long DWORD;
+static DWORD hos_game_path_a(char *buf, DWORD size) { (void)buf, (void)size; return 0; }
+#endif
 static int MessageBoxA(void *w, const char *text, const char *caption, unsigned type) {
     (void)w, (void)caption, (void)type;
     snprintf(box_text, sizeof box_text, "%s", text);

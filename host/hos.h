@@ -74,6 +74,7 @@ int hos_commit(uint64_t addr, uint64_t size);          /* (mkw_glue.c) guest pag
 void *hos_xmalloc(size_t size, const char *what);
 void *hos_xcalloc(size_t count, size_t size, const char *what);
 void *hos_xrealloc(void *old, size_t size, const char *what);
+#define HOS_OOM_MARK "hookshot_out_of_memory.txt"   /* (beside the game: the last run ran out of memory, mkw_glue.c oom_mark) */
 void hos_out_of_memory(int wait);
 /* (mkw_glue.c, issue 1280) the end of hos_alloc_failed's wait: the line, the notice and the stop (n 0: the size not known, as for
    the renderer's C++ allocations, MkwVkHost out_of_memory). Does not return */

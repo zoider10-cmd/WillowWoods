@@ -83,6 +83,8 @@ static void hos_fatal(void *c, const char *fmt, ...) {
     longjmp(fatal_jump, 1);
 }
 DWORD WINAPI hos_out_of_memory_box(LPVOID closing) { boxes++, box_closing = closing != NULL; return 0; }
+static int marks;   /* (Triforce v0.8.4: the mark for the next start, mkw_glue.c oom_mark; tests/test_oom_next_start.py reads it) */
+static void oom_mark(void) { marks++; }
 /* (Windows' malloc at the commit limit: NULL, for fails_left tries or all of them) */
 static int refuse_now(void) { return fail_all || (fails_left > 0 && fails_left--); }
 static void *fake_malloc(size_t n) { return refuse_now() ? NULL : malloc(n); }
@@ -131,6 +133,7 @@ int main(int argc, char **argv) {
         deferred_thread = 1;
         hos_out_of_memory(0);
         CHECK(threads == 1 && boxes == 0 && oom_state == 1);
+        CHECK(marks == 1);   /* (the mark for the next start, left once) */
         fail_all = 1, sleeps_to_close = 100 + 3;   /* (the 5 s, then 3 x 100 ms until the notice is closed) */
         CHECK(STOPS(hos_xmalloc(65536, "native NVN: recording buffer")));
         CHECK(slept_ms == 5000 + 300 && boxes == 0 && threads == 1 && oom_state == 2);

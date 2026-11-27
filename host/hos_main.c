@@ -6443,6 +6443,35 @@ static void memory_notice(void) {
 #else
     return;
 #endif
+#ifdef _WIN32
+    /* (Triforce v0.8.4) the last run ran out of memory (mkw_glue.c oom_mark): said now, once, before play, with this PC's RAM
+       and page file. The mark is removed when said (a run without a window leaves it for the player's next start) */
+    {
+        char mark[MAX_PATH];
+        const DWORD len = hos_game_path_a(mark, MAX_PATH);
+        char *slash = len ? strrchr(mark, '\\') : NULL;
+        if (slash) {
+            snprintf(slash + 1, (size_t)(mark + MAX_PATH - slash - 1), "%s", HOS_OOM_MARK);
+            FILE *f = fopen(mark, "r");
+            if (f) {
+                fclose(f);
+                hos_log("boot: the last run ran out of memory (%llu MB of memory, %llu MB of page file): said once now (%s)", ram, swap, mark);
+                if (!env_on("HOS_HEADLESS")) {
+                    char said[900];
+                    snprintf(said, sizeof said,
+                             "The last time the game ran, Windows ran out of memory for it: this PC's RAM (%.1f GB) and page file "
+                             "(%.1f GB) were full. That is what closed or froze the game.\n\nTo fix it, let Windows size the page "
+                             "file: search \"Adjust the appearance and performance of Windows\", Advanced tab, Virtual memory: "
+                             "Change, tick \"Automatically manage paging file size for all drives\", OK, then restart the PC. "
+                             "Closing other programs while playing helps too.",
+                             ram / 1024.0, swap / 1024.0);
+                    MessageBoxA(NULL, said, "Hookshot: out of memory last time", MB_OK | MB_ICONWARNING);
+                    remove(mark);
+                }
+            }
+        }
+    }
+#endif
     char text[512];
     if (!memory_notice_text(ram, swap, text, sizeof text)) {
         hos_log("boot: %llu MB of memory, %llu MB of swap", ram, swap);

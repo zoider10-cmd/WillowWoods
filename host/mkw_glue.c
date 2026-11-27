@@ -49,6 +49,22 @@ static int commit_wait(void *p, SIZE_T size) {
    than end the process before the player could read it */
 DWORD WINAPI hos_out_of_memory_box(LPVOID unused);
 static volatile LONG oom_state;
+/* (Triforce v0.8.4) A run that ran out of memory leaves HOS_OOM_MARK beside the game, once: the next start's notice
+   (hos_main.c memory_notice) says why before play. The notice at the moment is under a full-screen game and often not seen:
+   three of their reports in one day ended there, the players none the wiser. Windows only (the page file's advice is its) */
+static void oom_mark(void) {
+#ifdef _WIN32
+    char path[MAX_PATH];
+    const DWORD len = hos_game_path_a(path, MAX_PATH);
+    char *slash = len ? strrchr(path, '\\') : NULL;
+    if (!slash) return;
+    snprintf(slash + 1, (size_t)(path + MAX_PATH - slash - 1), "%s", HOS_OOM_MARK);
+    FILE *f = fopen(path, "w");
+    if (!f) return;
+    fputs("Windows ran out of memory (RAM and page file) in the last session: the next start says so\n", f);
+    fclose(f);
+#endif
+}
 static DWORD WINAPI oom_box(LPVOID unused) {
     hos_out_of_memory_box(unused);
     InterlockedExchange(&oom_state, 2);
@@ -61,6 +77,7 @@ void hos_out_of_memory(int wait) {
 #else
         hos_log("mem: out of memory (RAM and swap): close other programs, or add swap");
 #endif
+        oom_mark();   /* (the next start says so too) */
         /* (on a thread of its own either way: on the game's thread that ran out, sead::MainThread, MessageBoxA came back at
            once and showed nothing) */
         HANDLE t = NULL;
