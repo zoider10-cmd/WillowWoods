@@ -165,6 +165,62 @@ void tracker_door_words(const char* area, char* one, char* two, size_t size) {
             else if (strcmp(tracker_door_to[i], area)) snprintf(two, size, "Its own door leads to: %s", tracker_door_to[i]);
         }
 }
+// (Boss shuffle, asked 2026-11-27) The seed's boss rooms, mods\rando-seed\boss_doors.txt: "<a boss's room's dungeon>|<the
+// dungeon whose boss is fought from it>|<their names on the Tracker, two>", and the ones Link has been through,
+// rando\boss_rooms_seen.txt (host/hos_main.c oot_boss_doors_note), as the doors'. A dungeon's page says where its boss is
+// fought from and which boss its own boss's room leads to, each only once found (tracker_boss_words).
+char tracker_boss_key[kDoorRows][48], tracker_boss_from[kDoorRows][48], tracker_boss_to[kDoorRows][48];
+bool tracker_boss_seen[kDoorRows];
+int tracker_boss_count = 0;
+void tracker_boss_words(const char* area, char* one, char* two, size_t size) {
+    one[0] = two[0] = 0;
+    for (int i = 0; i < tracker_boss_count; i++)
+        if (!strcmp(tracker_boss_to[i], area)) {   // (the room this dungeon's boss is fought from)
+            if (!tracker_boss_seen[i]) snprintf(one, size, "Its boss: not found yet");
+            else if (!strcmp(tracker_boss_from[i], area)) snprintf(one, size, "Its boss: in its own room");
+            else snprintf(one, size, "Its boss: in the boss room of %s", tracker_boss_from[i]);
+        }
+    for (int i = 0; i < tracker_boss_count; i++)
+        if (!strcmp(tracker_boss_from[i], area)) {   // (this dungeon's own boss's room)
+            if (!tracker_boss_seen[i]) snprintf(two, size, "Its boss room: not entered yet");
+            else if (strcmp(tracker_boss_to[i], area)) snprintf(two, size, "Its boss room has the boss of: %s", tracker_boss_to[i]);
+        }
+}
+/// The rows of a file of the seed's ("<key>|<...>|<from's name>|<to's name>") and the keys found by a record of this seed
+int tracker_pairs_load(const std::string& file, bool on, const std::string& seen_path, const std::string& stamp,
+                       char key[][48], char from[][48], char to[][48], bool* seen) {
+    int n = 0;
+    if (FILE* f = on ? fopen(file.c_str(), "r") : nullptr) {
+        char line[256];
+        while (n < kDoorRows && fgets(line, sizeof line, f)) {
+            char a[48], b[48], name_a[48], name_b[48];
+            if (sscanf(line, "%47[^|\r\n]|%47[^|\r\n]|%47[^|\r\n]|%47[^|\r\n]", a, b, name_a, name_b) != 4) continue;
+            snprintf(key[n], 48, "%s", a);
+            snprintf(from[n], 48, "%s", name_a);
+            snprintf(to[n], 48, "%s", name_b);
+            seen[n] = false;
+            n++;
+        }
+        fclose(f);
+    }
+    if (FILE* f = n ? fopen(seen_path.c_str(), "r") : nullptr) {
+        char line[1100];
+        if (fgets(line, sizeof line, f)) {
+            line[strcspn(line, "\r\n")] = 0;
+            if (!strncmp(line, "seed ", 5) && !stamp.empty() && !strncmp(line + 5, stamp.c_str(), stamp.size()))
+                while (fgets(line, sizeof line, f)) {
+                    line[strcspn(line, "\r\n")] = 0;
+                    for (int i = 0; i < n; i++)
+                        if (!strcmp(line, key[i])) seen[i] = true;
+                }
+        }
+        fclose(f);
+    }
+    return n;
+}
+void tracker_bosses_load(const std::string& folder, bool on, const std::string& seen_path, const std::string& stamp) {
+    tracker_boss_count = tracker_pairs_load(folder + "boss_doors.txt", on, seen_path, stamp, tracker_boss_key, tracker_boss_from, tracker_boss_to, tracker_boss_seen);
+}
 void tracker_doors_load(const std::string& folder, bool on, const std::string& seen_path, const std::string& stamp) {
     int n = 0;
     if (FILE* f = on ? fopen((folder + "entrances.txt").c_str(), "r") : nullptr) {
@@ -565,9 +621,10 @@ float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int r
     const int n = (int)lines.size(), pick = tracker_pick[row];
     const float hh = hint ? ui::para(c, c.f.body, 16 * s, ImVec2(), 0, hint, w - 18 * s, false) : 0;
     // (Dungeon entrances: the door this dungeon is behind, and where its own door leads, a line each under the name)
-    char way_in[112], leads[112];
+    char way_in[112], leads[112], boss_from[112], boss_leads[112];
     tracker_door_words(tracker_name[row], way_in, leads, sizeof way_in);
-    const float doors = ((way_in[0] ? 1 : 0) + (leads[0] ? 1 : 0)) * 20 * s;
+    tracker_boss_words(tracker_name[row], boss_from, boss_leads, sizeof boss_from);   // (Boss shuffle: two lines more)
+    const float doors = ((way_in[0] ? 1 : 0) + (leads[0] ? 1 : 0) + (boss_from[0] ? 1 : 0) + (boss_leads[0] ? 1 : 0)) * 20 * s;
     const float fixed = 22 * s + 32 * s + doors + 12 * s + 24 * s + (hint ? 14 * s + hh : 0) + 20 * s;
     const int fit = std::max(1, std::min(n, (int)((y_max - y0 - fixed) / pitch)));
     const int first = n > fit ? std::clamp(pick - 1 - fit / 2, 0, n - fit) : 0;
@@ -582,7 +639,7 @@ float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int r
         ui::text_mid(c, c.f.body, 15 * s, x1 - 24 * s - ui::size_of(c.f.body, 15 * s, range).x, y + 12 * s, ui::kDim, range);
     }
     y += 32 * s;
-    for (const char* words : {way_in, leads})
+    for (const char* words : {way_in, leads, boss_from, boss_leads})
         if (words[0]) {
             ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y - 6 * s), ui::rgba(236, 196, 110), words);
             y += 20 * s;
@@ -3592,6 +3649,7 @@ void tracker_load() {
     tracker_stones_load(path.substr(0, path.find_last_of("\\/") + 1), on);
     tracker_stats_load(path.substr(0, path.find_last_of("\\/") + 1), on);
     tracker_doors_load(path.substr(0, path.find_last_of("\\/") + 1), on, game_folder_path() + "rando\\doors_seen.txt", tracker_seed_stamp());
+    tracker_bosses_load(path.substr(0, path.find_last_of("\\/") + 1), on, game_folder_path() + "rando\\boss_rooms_seen.txt", tracker_seed_stamp());
     int checks = 0;
     path = path.substr(0, path.find_last_of("\\/") + 1) + "checks.txt";
     if (FILE* f = on ? fopen(path.c_str(), "r") : nullptr) {

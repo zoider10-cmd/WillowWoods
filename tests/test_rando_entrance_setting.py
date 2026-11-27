@@ -190,7 +190,7 @@ parts = "\n".join(srccut.block(menu, start, "vk_menu.cpp") for start in (
 check('tracker_doors_load(path.substr(0, path.find_last_of("\\\\/") + 1), on, game_folder_path() + "rando\\\\doors_seen.txt", tracker_seed_stamp());' in menu,
       "the Tracker does not read the doors and the found ones with its lists")
 panel = srccut.block(menu, "float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {", "vk_menu.cpp")
-check("tracker_door_words(tracker_name[row], way_in, leads, sizeof way_in);" in panel and "for (const char* words : {way_in, leads})" in panel
+check("tracker_door_words(tracker_name[row], way_in, leads, sizeof way_in);" in panel and "for (const char* words : {way_in, leads, boss_from, boss_leads})" in panel
       and "const float fixed = 22 * s + 32 * s + doors + 12 * s" in panel, "an area's panel does not say its doors, or keeps no room for them")
 for a in S.ENTRANCE_ADULT + S.ENTRANCE_CHILD:
     check(a in S.AREA_NAMES and len(S.AREA_NAMES[a]) < 48, "%s has no name on the Tracker" % a)

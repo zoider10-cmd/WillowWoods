@@ -257,4 +257,125 @@ check('X(BOSS_SHUFFLE, "Boss shuffle", "rando_boss_shuffle",' in header and head
 check('new object[] { "rando_boss_shuffle", "Boss shuffle", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher
       and launcher.index('new object[] { "rando_boss_shuffle"') > launcher.index('new object[] { "rando_entrances_mix"')
       and '"rando_entrances_mix", "rando_boss_shuffle" } },' in launcher, "the launcher's table or section")
-print("ok: Boss shuffle: the files, the shuffle and the rules")
+
+# ---- the Tracker says the boss rooms, each only once Link has been through it (the owner's ask, 2026-11-27) ----
+# Seen in the game without a window: a dungeon's page says "not found yet" and "not entered yet" before, and names the
+# rooms after an adult went from the Forest Temple's boss's room to the Fire Temple's.
+import os
+import subprocess
+import tempfile
+sys.path.insert(0, str(ROOT / "tests"))
+import srccut  # noqa: E402
+menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
+menu_parts = "\n".join(srccut.block(menu, start, "vk_menu.cpp") for start in (
+    "void tracker_boss_words(const char* area, char* one, char* two, size_t size) {",
+    "int tracker_pairs_load(const std::string& file, bool on, const std::string& seen_path, const std::string& stamp,",
+    "void tracker_bosses_load(const std::string& folder, bool on, const std::string& seen_path, const std::string& stamp) {"))
+check('tracker_bosses_load(path.substr(0, path.find_last_of("\\\\/") + 1), on, game_folder_path() + "rando\\\\boss_rooms_seen.txt", tracker_seed_stamp());' in menu,
+      "the Tracker does not read the boss rooms with its lists")
+panel = srccut.block(menu, "float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {", "vk_menu.cpp")
+check("tracker_boss_words(tracker_name[row], boss_from, boss_leads, sizeof boss_from);" in panel and "for (const char* words : {way_in, leads, boss_from, boss_leads})" in panel
+      and "(boss_from[0] ? 1 : 0) + (boss_leads[0] ? 1 : 0)) * 20 * s;" in panel, "a dungeon's panel does not say its boss rooms, or keeps no room for the lines")
+menu_program = r"""
+#include <cstdio>
+#include <cstring>
+#include <string>
+constexpr int kDoorRows = 16;
+""" + srccut.between(menu, "char tracker_boss_key[kDoorRows][48]", "void tracker_boss_words(", "vk_menu.cpp") + menu_parts + r"""
+static bool says(const char* area, const char* one, const char* two) {
+    char a[112], b[112];
+    tracker_boss_words(area, a, b, sizeof a);
+    if (strcmp(a, one) || strcmp(b, two)) printf("%s: \"%s\" / \"%s\"\n", area, a, b);
+    return !strcmp(a, one) && !strcmp(b, two);
+}
+int main(int argc, char** argv) {
+    if (argc < 2) return 9;
+    const std::string folder = argv[1], seen = folder + "boss_rooms_seen.txt";
+    tracker_bosses_load(folder, true, folder + "none.txt", "the stamp");
+    if (tracker_boss_count != 3) return 1;
+    for (const char* area : {"Forest Temple", "Fire Temple", "Water Temple"})
+        if (!says(area, "Its boss: not found yet", "Its boss room: not entered yet")) return 2;
+    if (!says("Kokiri Forest", "", "") || !says("Ice Cavern", "", "")) return 3;
+    tracker_bosses_load(folder, true, seen, "the stamp");          // (the Forest Temple's room found, and the Water Temple's)
+    if (!says("Fire Temple", "Its boss: in the boss room of Forest Temple", "Its boss room: not entered yet")) return 4;
+    if (!says("Forest Temple", "Its boss: not found yet", "Its boss room has the boss of: Fire Temple")) return 5;
+    if (!says("Water Temple", "Its boss: in its own room", "")) return 6;
+    tracker_bosses_load(folder, true, seen, "another seed's stamp");
+    if (!says("Fire Temple", "Its boss: not found yet", "Its boss room: not entered yet")) return 7;
+    tracker_bosses_load(folder, false, seen, "the stamp");
+    return tracker_boss_count ? 8 : 0;
+}
+"""
+host_parts = "\n".join(srccut.block(host, start, "hos_main.c") for start in (
+    "static void oot_boss_doors_save(void) {", "static int oot_boss_doors_note(const char *map, const char *left, int64_t since, int (*near)(const char *folder)) {",
+    "static void oot_boss_doors_load(const char *stamp) {"))
+check("oot_boss_doors_load(stamp);" in srccut.block(host, "static void oot_tracker_load(const char *stamp) {", "hos_main.c"), "the boss rooms are not read with the seed's lists")
+check("oot_boss_doors_note(oot_link_map, oot_left_map, now - oot_left_at, oot_boss_room_near);" in host, "the boss room Link was sent from is not noted as his map is read")
+near = srccut.block(host, "static int oot_boss_room_near(const char *folder) {", "hos_main.c")
+check("oot_boss_rooms[i].place" in near and "< 30.0f * 30.0f" in near, "a boss's room is not told by the game's side's own places")
+host_program = r"""
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#define MAX_PATH 260
+#define OOT_DOORS_MAX 16
+static char root[400], oot_checks_seed[1024], in_room[24];
+static int oot_game_file(char *out, size_t size, const char *tail) { snprintf(out, size, "%s%s", root, strrchr(tail, '/') + 1); return 1; }
+static int oot_banc_in_folder(const char *banc, const char *folder) {
+    const size_t n = strlen(folder);
+    return !strncmp(banc, folder, n) && (!banc[n] || banc[n] == '_');
+}
+static void hos_log(const char *f, ...) { (void)f; }
+static int near(const char *folder) { return !strcmp(folder, in_room); }
+static struct { char room[24], boss[24]; int seen; } oot_boss_doors[OOT_DOORS_MAX];
+static int oot_boss_door_n;
+""" + host_parts + r"""
+#define S 1000000000LL
+int main(int argc, char **argv) {
+    if (argc < 2) return 9;
+    snprintf(root, sizeof root, "%s", argv[1]);
+    snprintf(oot_checks_seed, sizeof oot_checks_seed, "the stamp");
+    oot_boss_doors_load("the stamp");
+    if (oot_boss_door_n != 3) return 1;
+    /* (0: the Forest Temple's room -> the Fire Temple's boss; 1: the Fire Temple's -> the Forest Temple's; 2: the Water Temple's own) */
+    snprintf(in_room, sizeof in_room, "FireTemple");
+    if (oot_boss_doors_note("FireTemple", "DeathMountainCrater_Adult", 2 * S, near)) return 2;   /* (walked in by its own door: nothing) */
+    if (oot_boss_doors_note("FireTemple", "ForestTemple", 40 * S, near)) return 3;                /* (left the Forest Temple long ago) */
+    in_room[0] = 0;
+    if (oot_boss_doors_note("FireTemple", "ForestTemple", 2 * S, near)) return 4;                 /* (in the temple, not in the boss's room) */
+    snprintf(in_room, sizeof in_room, "FireTemple");
+    if (!oot_boss_doors_note("FireTemple", "ForestTemple", 2 * S, near) || !oot_boss_doors[0].seen || oot_boss_doors[1].seen) return 5;
+    if (oot_boss_doors_note("FireTemple", "ForestTemple", 3 * S, near)) return 6;                 /* (once) */
+    snprintf(in_room, sizeof in_room, "WaterTemple");
+    if (!oot_boss_doors_note("WaterTemple", "HyruleField_Adult", 500 * S, near) || !oot_boss_doors[2].seen) return 7;   /* (a room with its own boss: standing in it) */
+    oot_boss_door_n = 0;
+    oot_boss_doors_load("the stamp");
+    if (oot_boss_door_n != 3 || !oot_boss_doors[0].seen || oot_boss_doors[1].seen || !oot_boss_doors[2].seen) return 8;
+    oot_boss_doors_load("another seed's stamp");
+    return oot_boss_doors[0].seen || oot_boss_doors[2].seen ? 10 : 0;
+}
+"""
+cc, cxx = "clang", "clang++"
+for i, arg in enumerate(sys.argv):
+    if arg == "--cxx" and i + 1 < len(sys.argv):
+        cxx = sys.argv[i + 1]
+    if arg == "--cc" and i + 1 < len(sys.argv):
+        cc = sys.argv[i + 1]
+with tempfile.TemporaryDirectory() as tmp:
+    Path(tmp, "boss_doors.txt").write_text("ForestTemple|FireTemple|Forest Temple|Fire Temple\nFireTemple|ForestTemple|Fire Temple|Forest Temple\n"
+                                            "WaterTemple|WaterTemple|Water Temple|Water Temple\n", encoding="utf-8")
+    c_file, c_exe = os.path.join(tmp, "host.c"), os.path.join(tmp, "host.exe")
+    Path(c_file).write_text(host_program, encoding="utf-8")
+    built = subprocess.run([cc, "-O1", "-Wall", "-Werror", "-o", c_exe, c_file], capture_output=True, text=True)
+    check(built.returncode == 0, "the game's side's boss rooms do not compile:\n%s" % built.stderr)
+    ran = subprocess.run([c_exe, tmp + "/"], capture_output=True, text=True)
+    check(ran.returncode == 0, "the game's side's boss rooms: case %d" % ran.returncode)
+    record = Path(tmp, "boss_rooms_seen.txt").read_text(encoding="utf-8")
+    check(record == "seed the stamp\nForestTemple\nWaterTemple\n", "the record of the boss rooms found: %r" % record)
+    cpp, exe = os.path.join(tmp, "menu.cpp"), os.path.join(tmp, "menu.exe")
+    Path(cpp).write_text(menu_program, encoding="utf-8")
+    built = subprocess.run([cxx, "-std=c++17", "-O1", "-Wall", "-Werror", "-o", exe, cpp], capture_output=True, text=True)
+    check(built.returncode == 0, "the Tracker's boss rooms do not compile:\n%s" % built.stderr)
+    ran = subprocess.run([exe, tmp + os.sep], capture_output=True, text=True)
+    check(ran.returncode == 0, "the Tracker's boss rooms: case %d %s" % (ran.returncode, ran.stdout))
+print("ok: Boss shuffle: the files, the shuffle, the rules and the Tracker's boss rooms")

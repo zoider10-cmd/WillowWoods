@@ -1438,6 +1438,18 @@ static const OotBossRoom oot_boss_rooms[] = {
 };
 #define OOT_DESTINATIONS (sizeof oot_destinations / sizeof oot_destinations[0])
 #define OOT_BOSS_ROOMS (sizeof oot_boss_rooms / sizeof oot_boss_rooms[0])
+static float oot_link_place[3];   /* (where Link is: defined with the tracker's, below) */
+/* (Boss shuffle's record, oot_boss_doors_note) Link stands in the boss's room of the dungeon `folder`: within
+   OOT_BOSS_ROOM_NEAR of the room's start point (the rooms are 20 to 40 m across, and no other room of a dungeon is so near) */
+static int oot_boss_room_near(const char *folder) {
+    for (unsigned i = 0; i < OOT_BOSS_ROOMS; i++) {
+        if (strcmp(oot_boss_rooms[i].folder, folder)) continue;
+        const float dx = oot_link_place[0] - oot_boss_rooms[i].place[0], dy = oot_link_place[1] - oot_boss_rooms[i].place[1],
+                    dz = oot_link_place[2] - oot_boss_rooms[i].place[2];
+        return dx * dx + dy * dy + dz * dz < 30.0f * 30.0f;
+    }
+    return 0;
+}
 #define OOT_AGE_ACTION 999   /* (the Cheats page's Age row) */
 #define OOT_TELEPORT_ACTION 1000   /* (pouch edits use 200 to 348) */
 #define OOT_GAMEDATA_SLOT 0x84c9e180ULL   /* GameDataMgr, as ReserveBancChange's readers load it */
@@ -2215,6 +2227,64 @@ static void oot_doors_load(const char *stamp) {
     if (f) fclose(f);
     if (oot_door_n) hos_log("rando: dungeon entrances: %d doors of the seed, %d of them found by the record", oot_door_n, seen);
 }
+/* (Boss shuffle, the owner's ask 2026-11-27: the Tracker says which boss a room leads to, as a door's dungeon, only once
+   Link has been through it) The seed's boss rooms, mods/rando-seed/boss_doors.txt (<a boss's room's dungeon>|<the dungeon
+   whose boss is fought from it>|...). A room that leads to another boss is found when Link's map changes from its dungeon
+   straight to the boss's and he stands in that boss's room (the event of ours that sends him: nothing else changes map
+   between two dungeons); a room that keeps its boss, when he stands in it. The found ones are the seed's record,
+   rando/boss_rooms_seen.txt, as the doors' (gpu/vk/vk_menu.cpp reads it). */
+#define OOT_BOSS_ROOM_NEAR 30.0f
+static struct { char room[24], boss[24]; int seen; } oot_boss_doors[OOT_DOORS_MAX];
+static int oot_boss_door_n;
+static void oot_boss_doors_save(void) {
+    char path[MAX_PATH + 48];
+    FILE *f = oot_game_file(path, sizeof path, "rando/boss_rooms_seen.txt") ? fopen(path, "w") : NULL;
+    if (!f) return;
+    fprintf(f, "seed %s\n", oot_checks_seed);
+    for (int i = 0; i < oot_boss_door_n; i++)
+        if (oot_boss_doors[i].seen) fprintf(f, "%s\n", oot_boss_doors[i].room);
+    fclose(f);
+}
+/* (oot_checks_lock held) map: where Link is, left: the map he was in before it, since: how long ago he left it (ns),
+   place: where he stands; near(folder): he stands in that dungeon's boss's room. 1 when a room was found just now */
+static int oot_boss_doors_note(const char *map, const char *left, int64_t since, int (*near)(const char *folder)) {
+    int found = 0;
+    for (int i = 0; i < oot_boss_door_n; i++) {
+        if (oot_boss_doors[i].seen || !map[0] || !oot_banc_in_folder(map, oot_boss_doors[i].boss) || !near(oot_boss_doors[i].boss)) continue;
+        const int same = !strcmp(oot_boss_doors[i].room, oot_boss_doors[i].boss);
+        if (!same && !(left[0] && oot_banc_in_folder(left, oot_boss_doors[i].room) && since < 30000000000LL)) continue;
+        oot_boss_doors[i].seen = 1, found = 1;
+        hos_log("rando: boss shuffle: %s's boss's room found to lead to %s's boss", oot_boss_doors[i].room, oot_boss_doors[i].boss);
+    }
+    if (found) oot_boss_doors_save();
+    return found;
+}
+static void oot_boss_doors_load(const char *stamp) {
+    char path[MAX_PATH + 48], line[1100];
+    oot_boss_door_n = 0;
+    FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/boss_doors.txt") ? fopen(path, "r") : NULL;
+    while (f && oot_boss_door_n < OOT_DOORS_MAX && fgets(line, sizeof line, f)) {
+        char room[24], boss[24];
+        if (sscanf(line, "%23[A-Za-z]|%23[A-Za-z]", room, boss) != 2) continue;
+        snprintf(oot_boss_doors[oot_boss_door_n].room, sizeof oot_boss_doors[0].room, "%s", room);
+        snprintf(oot_boss_doors[oot_boss_door_n].boss, sizeof oot_boss_doors[0].boss, "%s", boss);
+        oot_boss_doors[oot_boss_door_n++].seen = 0;
+    }
+    if (f) fclose(f);
+    int seen = 0;
+    f = oot_boss_door_n && oot_game_file(path, sizeof path, "rando/boss_rooms_seen.txt") ? fopen(path, "r") : NULL;
+    if (f && fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\r\n")] = 0;
+        if (!strncmp(line, "seed ", 5) && !strcmp(line + 5, stamp))   /* (this seed's record) */
+            while (fgets(line, sizeof line, f)) {
+                line[strcspn(line, "\r\n")] = 0;
+                for (int i = 0; i < oot_boss_door_n; i++)
+                    if (!strcmp(line, oot_boss_doors[i].room) && !oot_boss_doors[i].seen) oot_boss_doors[i].seen = 1, seen++;
+            }
+    }
+    if (f) fclose(f);
+    if (oot_boss_door_n) hos_log("rando: boss shuffle: %d boss rooms of the seed, %d of them found by the record", oot_boss_door_n, seen);
+}
 static char oot_checks_seed[1024];   /* (the stamp the checks and the record are of: its whole first line. 200 cut a
    seed's 243-304 characters short, so a record written with the whole line was never this seed's, 2026-11-19) */
 static float oot_link_place[3];
@@ -2385,6 +2455,7 @@ static void oot_tracker_load(const char *stamp) {
     if (f) fclose(f);
     if (oot_keyring_n) hos_log("rando: key rings: %d dungeons' small keys are a ring each", oot_keyring_n);
     oot_doors_load(stamp);   /* (Dungeon entrances: the doors, and the ones found) */
+    oot_boss_doors_load(stamp);   /* (Boss shuffle: the boss rooms, and the ones found) */
     /* (the seed's "You found" words for each dungeon's items, rando_seed.py DUNGEON_WORDS_FILE: oot_dungeon_window) */
     f = oot_game_file(path, sizeof path, "mods/rando-seed/dungeon_words.txt") ? fopen(path, "r") : NULL;
     oot_dungeon_words = f != NULL;
@@ -3777,6 +3848,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
         if (oot_check_count < 0 || strcmp(stamp, oot_checks_seed)) oot_tracker_load(stamp);
     }
     oot_doors_note(oot_link_map);   /* (Dungeon entrances: the door of the dungeon Link is in is found) */
+    oot_boss_doors_note(oot_link_map, oot_left_map, now - oot_left_at, oot_boss_room_near);   /* (Boss shuffle: the room he was sent from) */
     for (int i = 0; i < oot_check_count; i++) rx_option_set(OOT_TRACKER_BASE + i, oot_checks[i].done == 1);
     {   /* (where Link is, for the Tracker tab's order: a check of the map he is in, the first of the file) */
         int here = -1;
