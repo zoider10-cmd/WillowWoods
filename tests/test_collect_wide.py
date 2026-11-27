@@ -141,8 +141,8 @@ def main():
             subprocess.run([str(exe), wide], check=True, env=env)
     # (HeyListen bbebb6ee: the lists are the host's checked allocation, which waits at the commit limit and then says the PC
     #  ran out of memory; a plain realloc's null was written through, 131072 entries in)
-    if ('uint32_t *out = hos_xmalloc(cap * sizeof *out, "the written pages' list");' not in src or
-            'out = hos_xrealloc(out, (cap *= 2) * sizeof *out, "the written pages' list");' not in src or
+    if ("uint32_t *out = hos_xmalloc(cap * sizeof *out, " not in src or
+            "out = hos_xrealloc(out, (cap *= 2) * sizeof *out, " not in src or
             " out = realloc(out," in src or "uint32_t *out = malloc(" in src):
         print("FAIL: the written pages' list is grown by an allocation whose failure is not checked")
         sys.exit(1)
