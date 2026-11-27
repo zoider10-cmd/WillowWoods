@@ -184,7 +184,9 @@ def sources(rows):
           "for (int i = LongSlots; i < XlSlots; i++) xl |= Choice(choices, i) != 0;" in launcher and
           "const int XxlBits = 150, XxlSlots = 53, XxlVersion = 4;" in launcher and
           "for (int i = XlSlots; i < XxlSlots; i++) xxl |= Choice(choices, i) != 0;" in launcher and
-          "if (n != Bits && n != LongBits && n != XlBits && n != XxlBits) return" in launcher and
+          "const int X3lBits = 175, X3lSlots = 66, X3lVersion = 5;" in launcher and
+          "for (int i = XxlSlots; i < X3lSlots; i++) x3l |= Choice(choices, i) != 0;" in launcher and
+          "if (n != Bits && n != LongBits && n != XlBits && n != XxlBits && n != X3lBits) return" in launcher and
           "bool longer = form == 1 || form == 3;" in launcher and "if (longer && Get(bits, ref n, 1) != 0) return" in launcher,
           "the launcher does not make, copy and paste a seed's ID as gpu/vk/oot_rando.h has it")
     # (a setting's place in the table is its place in a seed ID: v0.1.3's 38 keep theirs, later ones come after them. Two

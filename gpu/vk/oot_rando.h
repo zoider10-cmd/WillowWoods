@@ -201,6 +201,9 @@
       "Off", "On") \
     X(POTS, "Pots", "rando_pots", \
       "The 67 pots the logic has rules for (in houses, grottos and dungeon rooms: the Market's guard house, Talon's house, Goron City, the Gerudo hideout and the like) take part as Gold Skulltulas do: each drops an item of the shuffle (what a Gold Skulltula may drop, its own a Deku Nut bundle) and is a check on the Tracker. A pot is back after about a day; its item is had once. Not tried in play yet.", \
+      "Off", "On") \
+    X(KEYRINGS, "Key rings", "rando_keyrings", \
+      "With Dungeon keys on Anywhere: each dungeon's small keys are one item, a key ring, in place of a key each. Found anywhere, it gives every small key of its dungeon at once. The chests the other keys left hold blue rupees. Off: a key each, as before. Not tried in play yet.", \
       "Off", "On")
 
 enum {
@@ -223,10 +226,13 @@ enum {
     OOT_RANDO_ID_XXL_VERSION = 4,
     OOT_RANDO_ID_XXL_SLOTS = 53,    /* settings the 30 characters have room for (made 2026-11-22, the 25's being full) */
     OOT_RANDO_ID_XXL_BITS = 150,    /* 4 + 31 + 2 * 53 + 1 + 8 */
-    OOT_RANDO_ID_TEXT = 36,      /* 30 characters, 5 dashes and the end */
+    OOT_RANDO_ID_X3L_VERSION = 5,
+    OOT_RANDO_ID_X3L_SLOTS = 66,    /* settings the 35 characters have room for (made 2026-11-27, the 30's being full) */
+    OOT_RANDO_ID_X3L_BITS = 175,    /* 4 + 31 + 2 * 66 + 8 */
+    OOT_RANDO_ID_TEXT = 42,      /* 35 characters, 6 dashes and the end */
     OOT_RANDO_SEED_MAX = 0x7fffffff
 };
-typedef char oot_rando_fits_an_id[(int)OOT_RANDO_N <= (int)OOT_RANDO_ID_XXL_SLOTS ? 1 : -1];
+typedef char oot_rando_fits_an_id[(int)OOT_RANDO_N <= (int)OOT_RANDO_ID_X3L_SLOTS ? 1 : -1];
 
 typedef struct OotRandoSetting {
     const char *label, *key, *help;
@@ -273,15 +279,15 @@ static inline uint32_t oot_rando_choice(const OotRando *r, int i) {
     return i < OOT_RANDO_N && v > 0 && v < oot_rando_settings[i].count ? (uint32_t)v : 0;
 }
 
-/* An ID's form (0: the 15 characters, 1: the 20, 2: the 25, 3: the 30): its bits, the settings it holds, its version */
+/* An ID's form (0: the 15 characters, 1: the 20, 2: the 25, 3: the 30, 4: the 35): its bits, the settings it holds, its version */
 static inline int oot_rando_form_bits(int form) {
-    return form == 3 ? OOT_RANDO_ID_XXL_BITS : form == 2 ? OOT_RANDO_ID_XL_BITS : form ? OOT_RANDO_ID_LONG_BITS : OOT_RANDO_ID_BITS;
+    return form == 4 ? OOT_RANDO_ID_X3L_BITS : form == 3 ? OOT_RANDO_ID_XXL_BITS : form == 2 ? OOT_RANDO_ID_XL_BITS : form ? OOT_RANDO_ID_LONG_BITS : OOT_RANDO_ID_BITS;
 }
 static inline int oot_rando_form_slots(int form) {
-    return form == 3 ? OOT_RANDO_ID_XXL_SLOTS : form == 2 ? OOT_RANDO_ID_XL_SLOTS : form ? OOT_RANDO_ID_LONG_SLOTS : OOT_RANDO_ID_SLOTS;
+    return form == 4 ? OOT_RANDO_ID_X3L_SLOTS : form == 3 ? OOT_RANDO_ID_XXL_SLOTS : form == 2 ? OOT_RANDO_ID_XL_SLOTS : form ? OOT_RANDO_ID_LONG_SLOTS : OOT_RANDO_ID_SLOTS;
 }
 static inline int oot_rando_form_version(int form) {
-    return form == 3 ? OOT_RANDO_ID_XXL_VERSION : form == 2 ? OOT_RANDO_ID_XL_VERSION : form ? OOT_RANDO_ID_LONG_VERSION : OOT_RANDO_ID_VERSION;
+    return form == 4 ? OOT_RANDO_ID_X3L_VERSION : form == 3 ? OOT_RANDO_ID_XXL_VERSION : form == 2 ? OOT_RANDO_ID_XL_VERSION : form ? OOT_RANDO_ID_LONG_VERSION : OOT_RANDO_ID_VERSION;
 }
 
 /* The seed ID of a seed's random part and settings in one of its three forms, into out[OOT_RANDO_ID_TEXT]: the 15
@@ -289,7 +295,7 @@ static inline int oot_rando_form_version(int form) {
    those past the 41st) or the 30. */
 static inline void oot_rando_id_as(const OotRando *r, char *out, int form) {
     const int total = oot_rando_form_bits(form);
-    uint8_t bits[OOT_RANDO_ID_XXL_BITS];
+    uint8_t bits[OOT_RANDO_ID_X3L_BITS];
     int n = 0;
     memset(bits, 0, sizeof bits);
     oot_rando_put(bits, &n, (uint32_t)oot_rando_form_version(form), 4);
@@ -307,20 +313,22 @@ static inline void oot_rando_id_as(const OotRando *r, char *out, int form) {
 }
 
 /* The seed ID of a seed's random part and settings (on or not), into out[OOT_RANDO_ID_TEXT]: the 15 characters, the
-   20 when a setting past the sixteenth is set, the 25 when one past the 28th is, or the 30 when one past the 41st is.
+   20 when a setting past the sixteenth is set, the 25 when one past the 28th is, the 30 when one past the 41st is, or
+   the 35 when one past the 53rd is.
    A choice past its setting's last counts as the game's own, as oot_rando_read keeps them. */
 static inline void oot_rando_id(const OotRando *r, char *out) {
-    int longer = 0, xl = 0, xxl = 0;
+    int longer = 0, xl = 0, xxl = 0, x3l = 0;
     for (int i = OOT_RANDO_ID_SLOTS; i < OOT_RANDO_ID_LONG_SLOTS; i++) longer |= oot_rando_choice(r, i) != 0;
     for (int i = OOT_RANDO_ID_LONG_SLOTS; i < OOT_RANDO_ID_XL_SLOTS; i++) xl |= oot_rando_choice(r, i) != 0;
     for (int i = OOT_RANDO_ID_XL_SLOTS; i < OOT_RANDO_ID_XXL_SLOTS; i++) xxl |= oot_rando_choice(r, i) != 0;
-    oot_rando_id_as(r, out, xxl ? 3 : xl ? 2 : longer);
+    for (int i = OOT_RANDO_ID_XXL_SLOTS; i < OOT_RANDO_ID_X3L_SLOTS; i++) x3l |= oot_rando_choice(r, i) != 0;
+    oot_rando_id_as(r, out, x3l ? 4 : xxl ? 3 : xl ? 2 : longer);
 }
 
 /* A seed ID as typed or pasted (dashes, spaces and the line's end are skipped; small letters count) into r: its random
    part and settings, the randomizer on. Returns NULL, or what is wrong with the text, r untouched. */
 static inline const char *oot_rando_from_id(const char *text, OotRando *r) {
-    uint8_t bits[OOT_RANDO_ID_XXL_BITS];
+    uint8_t bits[OOT_RANDO_ID_X3L_BITS];
     int n = 0;
     for (const char *p = text; *p; p++) {
         char ch = *p;
@@ -330,13 +338,13 @@ static inline const char *oot_rando_from_id(const char *text, OotRando *r) {
         if (ch == 'I' || ch == 'L') ch = '1';
         const char *at = strchr(oot_rando_alphabet(), ch);
         if (!at) return "not a seed ID (a character no seed ID has)";
-        if (n == OOT_RANDO_ID_XXL_BITS) return "too long for a seed ID (15, 20, 25 or 30 characters)";
+        if (n == OOT_RANDO_ID_X3L_BITS) return "too long for a seed ID (15, 20, 25, 30 or 35 characters)";
         oot_rando_put(bits, &n, (uint32_t)(at - oot_rando_alphabet()), 5);
     }
-    if (n < OOT_RANDO_ID_BITS) return "too short for a seed ID (15, 20, 25 or 30 characters)";
-    if (n != OOT_RANDO_ID_BITS && n != OOT_RANDO_ID_LONG_BITS && n != OOT_RANDO_ID_XL_BITS && n != OOT_RANDO_ID_XXL_BITS)
-        return "not as long as a seed ID is (15, 20, 25 or 30 characters)";
-    const int total = n, form = n == OOT_RANDO_ID_XXL_BITS ? 3 : n == OOT_RANDO_ID_XL_BITS ? 2 : n == OOT_RANDO_ID_LONG_BITS,
+    if (n < OOT_RANDO_ID_BITS) return "too short for a seed ID (15, 20, 25, 30 or 35 characters)";
+    if (n != OOT_RANDO_ID_BITS && n != OOT_RANDO_ID_LONG_BITS && n != OOT_RANDO_ID_XL_BITS && n != OOT_RANDO_ID_XXL_BITS && n != OOT_RANDO_ID_X3L_BITS)
+        return "not as long as a seed ID is (15, 20, 25, 30 or 35 characters)";
+    const int total = n, form = n == OOT_RANDO_ID_X3L_BITS ? 4 : n == OOT_RANDO_ID_XXL_BITS ? 3 : n == OOT_RANDO_ID_XL_BITS ? 2 : n == OOT_RANDO_ID_LONG_BITS,
               longer = form == 1 || form == 3;   /* (a spare bit before the checksum, 0) */
     n = total - OOT_RANDO_ID_CHECK;
     if (oot_rando_get(bits, &n, OOT_RANDO_ID_CHECK) != oot_rando_check_of(bits, total)) return "a typo? (the seed ID's checksum does not match)";

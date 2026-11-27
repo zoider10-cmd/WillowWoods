@@ -2156,6 +2156,10 @@ static struct {
 } oot_checks[OOT_TRACKER_MAX];
 static int oot_check_count = -1;
 static int oot_dungeon_words;   /* (the seed has each dungeon's "You found" words: dungeon_words.txt, bug 141) */
+#define OOT_KEYRING_MAX 16
+static struct { char folder[24]; int keys; } oot_keyrings[OOT_KEYRING_MAX];   /* (Key rings: keyrings.txt, oot_keyring) */
+static int oot_keyring_n;
+static char oot_dungeon_own[24];   /* (oot_dungeon_owner: the dungeon whose item was got inside it, for its ring's other keys) */
 static char oot_checks_seed[1024];   /* (the stamp the checks and the record are of: its whole first line. 200 cut a
    seed's 243-304 characters short, so a record written with the whole line was never this seed's, 2026-11-19) */
 static float oot_link_place[3];
@@ -2313,6 +2317,18 @@ static void oot_tracker_load(const char *stamp) {
     }
     if (f) fclose(f);
     if (owned) hos_log("rando: tracker: %d checks hold a dungeon item that belongs to its own dungeon wherever it is", owned);
+    /* (Key rings, rando_seed.py KEYRINGS_FILE: <a dungeon's folder>|<the small keys its ring is>. None without it) */
+    oot_keyring_n = 0;
+    f = oot_game_file(path, sizeof path, "mods/rando-seed/keyrings.txt") ? fopen(path, "r") : NULL;
+    while (f && oot_keyring_n < OOT_KEYRING_MAX && fgets(line, sizeof line, f)) {
+        char owner[24];
+        int keys = 0;
+        if (sscanf(line, "%23[A-Za-z]|%d", owner, &keys) != 2 || keys < 1 || keys > 99) continue;
+        snprintf(oot_keyrings[oot_keyring_n].folder, sizeof oot_keyrings[0].folder, "%s", owner);
+        oot_keyrings[oot_keyring_n++].keys = keys;
+    }
+    if (f) fclose(f);
+    if (oot_keyring_n) hos_log("rando: key rings: %d dungeons' small keys are a ring each", oot_keyring_n);
     /* (the seed's "You found" words for each dungeon's items, rando_seed.py DUNGEON_WORDS_FILE: oot_dungeon_window) */
     f = oot_game_file(path, sizeof path, "mods/rando-seed/dungeon_words.txt") ? fopen(path, "r") : NULL;
     oot_dungeon_words = f != NULL;
@@ -4054,8 +4070,29 @@ static int oot_dungeon_owner(const char *name, char *owner, size_t size, float *
     if (nearest > 0) nearest = owner[0] ? best : OOT_DUNGEON_NEAR;
     ReleaseSRWLockShared(&oot_checks_lock);
     if (away_out) *away_out = nearest;
+    if (owner[0] && oot_banc_in_folder(oot_link_map, owner)) snprintf(oot_dungeon_own, sizeof oot_dungeon_own, "%s", owner);   /* (for a ring: oot_keyring_rest) */
     if (!owner[0] || oot_banc_in_folder(oot_link_map, owner)) return owner[0] = 0, 0;   /* (in its own dungeon: the game counts it there) */
     return 1;
+}
+/* (Key rings, rando_keyrings, asked 2026-11-27; tools/rando/rando_seed.py keyrings) With the setting a dungeon's small
+   keys of the shuffle are one item, its ring: the seed says how many keys that is (keyrings.txt, read with the
+   tracker's lists), and the dungeon's count is raised by that many where it was raised by one. Got in its own
+   dungeon the game counts one itself, and the rest is added here (oot_keyring_rest). A dungeon without a line: one. */
+static int oot_keyring(const char *folder) {
+    for (int i = 0; i < oot_keyring_n; i++)
+        if (!strcmp(oot_keyrings[i].folder, folder)) return oot_keyrings[i].keys;
+    return 1;
+}
+static void oot_keyring_rest(Ctx *c, const char *name, const char *folder) {
+    const int keys = oot_keyring(folder);
+    if (strcmp(name, "Item_Dungeon_SmallKey") || keys < 2) return;
+    char flag[80];
+    snprintf(flag, sizeof flag, "DungeonInfo.%s.SmallKeyNum", folder);
+    int32_t n = 0;
+    int ok = oot_gamedata_int(c, oot_flag_hash(flag), &n, 0);
+    n += keys - 1;
+    ok = ok && oot_gamedata_int(c, oot_flag_hash(flag), &n, 1);
+    hos_log("rando: key ring of %s got in its own dungeon: %d more keys beside the game's one: %s %s", folder, keys - 1, flag, ok ? "set" : "NOT FOUND");
 }
 static int oot_dungeon_item(Ctx *c, const char *name) {
     const char *field = !strcmp(name, "Item_Dungeon_Map") ? "IsGetMap" : !strcmp(name, "Item_Dungeon_Compass") ? "IsGetCompass" :
@@ -4065,7 +4102,7 @@ static int oot_dungeon_item(Ctx *c, const char *name) {
     float nearest;
     if (oot_pickup_folder[0]) {   /* (the pick-up of a dungeon's own, from a pot: its dungeon is in its name, oot_dungeon_pickup) */
         snprintf(owner, sizeof owner, "%s", oot_pickup_folder), oot_pickup_folder[0] = 0, nearest = 0;
-        if (oot_banc_in_folder(oot_link_map, owner)) return 0;   /* (in its own dungeon: the game counts it there) */
+        if (oot_banc_in_folder(oot_link_map, owner)) return oot_keyring_rest(c, name, owner), 0;   /* (in its own dungeon: the game counts it there) */
     } else {
     if (c->x[30] != 0x828d50acULL) {   /* (0x828d50ac: a chest's add, as a shop's. Another add, a pick-up's: a Gold Skulltula's
                                           or a pot's drop whose check the tracker has just found, with a dungeon told: test pins) */
@@ -4074,7 +4111,11 @@ static int oot_dungeon_item(Ctx *c, const char *name) {
         ReleaseSRWLockShared(&oot_checks_lock);
         if (!from_check) return 0;
     }
-    if (!oot_dungeon_owner(name, owner, sizeof owner, &nearest)) return 0;
+    oot_dungeon_own[0] = 0;
+    if (!oot_dungeon_owner(name, owner, sizeof owner, &nearest)) {
+        if (oot_dungeon_own[0]) oot_keyring_rest(c, name, oot_dungeon_own);   /* (its ring, in its own dungeon) */
+        return 0;
+    }
     }
     char flag[80];
     snprintf(flag, sizeof flag, "DungeonInfo.%s.%s", owner, field);
@@ -4082,7 +4123,7 @@ static int oot_dungeon_item(Ctx *c, const char *name) {
     if (!strcmp(field, "SmallKeyNum")) {
         int32_t n = 0;
         ok = oot_gamedata_int(c, oot_flag_hash(flag), &n, 0);
-        n++;
+        n += oot_keyring(owner);   /* (one, or its ring's keys) */
         ok = ok && oot_gamedata_int(c, oot_flag_hash(flag), &n, 1);
     } else ok = oot_gamedata_set_bool(c, oot_flag_hash(flag), 1);
     hos_log("rando: %s from a check %.1f m away (0: the one just collected) belongs to %s: %s %s", name, nearest, owner, flag, ok ? "set" : "NOT FOUND");

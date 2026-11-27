@@ -1207,6 +1207,31 @@ def pot_kinds(data, hashes):
 KEYLESS_FILE = "dungeon_keyless.json"
 
 
+# ---- Key rings (rando_keyrings, asked 2026-11-27; with Small keys: Anywhere) ----
+# "Instead of the keys each being their own item, a single new item that gives you every key for a specific dungeon."
+# A dungeon's first small key of the shuffle (key_tags' "#1") is its ring; the chests its other keys lay in hold
+# KEYRING_JUNK. The rules asked for all of a dungeon's keys wherever one is needed, so they ask for the ring. The
+# game's side is told how many keys each ring is (KEYRINGS_FILE: <dungeon>|<count>) and raises the dungeon's count by
+# that many when its small key of the shuffle is got (host/hos_main.c oot_keyring); the words say so (DUNGEON_WORDS'
+# ring). A key the shuffle leaves where the game has it is one key, as ever.
+KEYRINGS_FILE = "keyrings.txt"
+KEYRING_JUNK = "TBox_Rupee_Blue"
+KEYRING_WORDS = ("You found the key ring of {}!", "It holds all {} small keys of {},\nwherever you found it.")
+
+
+def keyrings(spots, tags):
+    """(tags with each dungeon's ring alone, {dungeon: the keys its ring is}); the other keys' chests are given
+    KEYRING_JUNK. tags: key_tags'; spots: hash -> [area, item, ...], changed in place"""
+    count = collections.Counter(t.split("@")[1].split("#")[0] for t in tags.values())
+    kept = {}
+    for h, t in sorted(tags.items(), key=lambda kv: (kv[1].split("#")[0], int(kv[1].split("#")[1]))):
+        if t.endswith("#1"):
+            kept[h] = t
+        else:
+            spots[h][1] = KEYRING_JUNK
+    return kept, dict(count)
+
+
 def key_tags(spots, which=3):
     """{a chest's hash: its small key's own name for the shuffle} of the chests in a dungeon (DUNGEON_FOLDERS) holding one
     that take part (no reason to stay, s[3]; dungeon chests with the Chests setting's, which), numbered in each dungeon by
@@ -6750,7 +6775,7 @@ def start_lines(codes):
 
 def settings(game):
     """the randomizer's lines of the options file (0 where it does not say)"""
-    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
+    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_keyrings": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
            "rando_skip_intro": 0, "rando_skip_cutscenes": 0, "rando_skulltulas": 0, "rando_quests": 0, "rando_frogs": 0, "rando_light_arrows": 0,
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
@@ -8872,7 +8897,7 @@ DUNGEON_WORDS = {   # the item: (its message, its caption: None the game's), {} 
 }
 
 
-def dungeon_words(data, english):
+def dungeon_words(data, english, rings=None):
     """the item text (SHOP_TEXT) with each dungeon's dungeon items' words (DUNGEON_WORDS), the lines it has already kept.
     (The new bytes, how many lines were added)."""
     added = 0
@@ -8889,6 +8914,9 @@ def dungeon_words(data, english):
                 words = bytes(data[a:b]).rstrip(b"\0")
                 if english and said:
                     words = said.format(DUNGEON_SAY[folder]).encode()
+                    if item == SMALL_KEY and rings and folder in rings:   # (Key rings: the ring's words, KEYRING_WORDS)
+                        ring = KEYRING_WORDS[suffix == "_GetCaption"]
+                        words = (ring.format(rings[folder], DUNGEON_SAY[folder]) if suffix == "_GetCaption" else ring.format(DUNGEON_SAY[folder])).encode()
                 data = msbt_add(data, label, words)
                 added += 1
     return data, added
@@ -9495,6 +9523,7 @@ def main():
     a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
     a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0   # (Maps and compasses: MAPS_START, MAPS_LOOSE)
     a.pots = ini["rando_pots"] == 1   # (Pots: the tables' pots take part, POT_OWN)
+    a.keyrings = ini["rando_keyrings"] == 1 and keys_mode == 2   # (Key rings: with Small keys: Anywhere only, keyrings)
     a.boss_keys = ini["rando_boss_keys"] == 1   # (Boss Keys: Anywhere, boss_key_tag; with Small keys: Anywhere too, below)
     if keys_mode == 2:   # (Small keys: Anywhere: the Boss Keys and the maps "With the keys" go with them, key_tags)
         a.boss_keys = True
@@ -9603,7 +9632,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, keys_mode, a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" pots 1" if a.pots else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" pots 1" if a.pots else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -10257,6 +10286,10 @@ def main():
                 s[1] = boss_tags[h] = boss_key_tag(s[0])
         loose = loose | frozenset(boss_tags.values())
     small_tags = key_tags(spots, which) if keys_mode == 2 else {}   # (Small keys: Anywhere)
+    ring_counts = {}
+    if a.keyrings and small_tags:   # (Key rings: a dungeon's keys one item, keyrings)
+        small_tags, ring_counts = keyrings(spots, small_tags)
+        print("Key rings: %d dungeons' small keys are a ring each (%s)" % (len(ring_counts), ", ".join("%s %d" % kv for kv in sorted(ring_counts.items()))))
     key_sets = {}
     if small_tags:
         for h, t in small_tags.items():
@@ -11054,7 +11087,7 @@ def main():
             if SHOP_TEXT not in parts:
                 continue
             text, added = first_bag_words(parts[SHOP_TEXT], n.startswith(FIRST_BAG_ENGLISH))
-            text, more = dungeon_words(text, n.startswith(FIRST_BAG_ENGLISH))   # (each dungeon's items' words, DUNGEON_WORDS)
+            text, more = dungeon_words(text, n.startswith(FIRST_BAG_ENGLISH), ring_counts)   # (each dungeon's items' words, DUNGEON_WORDS)
             added += more
             if added:
                 parts[SHOP_TEXT] = text
@@ -11863,6 +11896,13 @@ def main():
                                         collections.Counter(g.area for g in gifts.values()), collections.Counter(p[0] for p in list(pieces.values()) + list(pots.values())))) + "\n")
     with open(os.path.join(mod, DUNGEON_ITEMS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: oot_dungeon_item)
         f.write("".join("%016x|%s|%s\n" % (h, owners[h], gives.get(h) or skull_drops.get(h) or pot_drops.get(h)) for h in sorted(owners)))   # (a test pin's on a Skulltula or in a pot: its drop)
+    rings_file = os.path.join(mod, KEYRINGS_FILE)   # (Key rings: how many keys each dungeon's ring is, the game's side's oot_keyring)
+    if ring_counts:
+        with open(rings_file, "w", encoding="utf-8", newline="\n") as f:
+            f.write("".join("%s|%d\n" % kv for kv in sorted(ring_counts.items())))
+        written.append(KEYRINGS_FILE)
+    elif os.path.exists(rings_file):
+        os.remove(rings_file)
     with open(os.path.join(mod, DUNGEON_WORDS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: the words are there)
         f.write("# each dungeon's small key, boss key, map and compass have words of their own: <item>_<dungeon> (DUNGEON_WORDS)\n")
     written.append(DUNGEON_WORDS_FILE)

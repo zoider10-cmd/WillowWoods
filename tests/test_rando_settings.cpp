@@ -59,11 +59,14 @@ int main(int argc, char** argv) {
             a.v[i] = (int)((roll >> 16) % (uint32_t)oot_rando_settings[i].count);
         }
         oot_rando_id(&a, id);
-        bool past = false, past28 = false, past41 = false;   // (past the sixteenth: the 20 characters; the 28th: 25; the 41st: 30)
+        bool past = false, past28 = false, past41 = false, past53 = false;   // (past the sixteenth: the 20 characters; the 28th: 25; the 41st: 30; the 53rd: 35)
         for (int i = OOT_RANDO_ID_SLOTS; i < OOT_RANDO_N; i++) past = past || a.v[i] != 0;
         for (int i = OOT_RANDO_ID_LONG_SLOTS; i < OOT_RANDO_N; i++) past28 = past28 || a.v[i] != 0;
         for (int i = OOT_RANDO_ID_XL_SLOTS; i < OOT_RANDO_N; i++) past41 = past41 || a.v[i] != 0;
-        if (past41) CHECK("an ID with a setting past the 41st is 30 characters in six groups (2026-11-22)",
+        for (int i = OOT_RANDO_ID_XXL_SLOTS; i < OOT_RANDO_N; i++) past53 = past53 || a.v[i] != 0;
+        if (past53) CHECK("an ID with a setting past the 53rd is 35 characters in seven groups (2026-11-27)",
+                          std::strlen(id) == 41 && id[5] == '-' && id[11] == '-' && id[17] == '-' && id[23] == '-' && id[29] == '-' && id[35] == '-');
+        else if (past41) CHECK("an ID with a setting past the 41st is 30 characters in six groups (2026-11-22)",
                           std::strlen(id) == 35 && id[5] == '-' && id[11] == '-' && id[17] == '-' && id[23] == '-' && id[29] == '-');
         else if (past28) CHECK("an ID with a setting past the 28th is 25 characters in five groups",
                       std::strlen(id) == 29 && id[5] == '-' && id[11] == '-' && id[17] == '-' && id[23] == '-');
@@ -99,10 +102,18 @@ int main(int argc, char** argv) {
         char xxl[OOT_RANDO_ID_TEXT];
         OotRando e{};
         oot_rando_id_as(&a, xxl, 3);
-        CHECK("the longest ID is 30 characters in six groups",
+        CHECK("the 30 characters' ID is in six groups",
               std::strlen(xxl) == 35 && xxl[5] == '-' && xxl[11] == '-' && xxl[17] == '-' && xxl[23] == '-' && xxl[29] == '-');
-        CHECK("the longest ID loads and gives back its seed and settings", oot_rando_from_id(xxl, &e) == nullptr && same(a, e));
-        CHECK("an ID longer than 30 characters is refused", oot_rando_from_id((std::string(xxl) + "0").c_str(), &e) != nullptr);
+        if (!past53) CHECK("the 30 characters' ID loads and gives back its seed and settings", oot_rando_from_id(xxl, &e) == nullptr && same(a, e));
+        CHECK("an ID of 31 characters is refused", oot_rando_from_id((std::string(xxl) + "0").c_str(), &e) != nullptr);
+        // (the 35 characters, 2026-11-27: read as the same, whatever its settings)
+        char x3l[OOT_RANDO_ID_TEXT];
+        OotRando g{};
+        oot_rando_id_as(&a, x3l, 4);
+        CHECK("the longest ID is 35 characters in seven groups",
+              std::strlen(x3l) == 41 && x3l[5] == '-' && x3l[11] == '-' && x3l[17] == '-' && x3l[23] == '-' && x3l[29] == '-' && x3l[35] == '-');
+        CHECK("the longest ID loads and gives back its seed and settings", oot_rando_from_id(x3l, &g) == nullptr && same(a, g));
+        CHECK("an ID longer than 35 characters is refused", oot_rando_from_id((std::string(x3l) + "0").c_str(), &g) != nullptr);
         if ((int)OOT_RANDO_N <= (int)OOT_RANDO_ID_LONG_SLOTS)
             CHECK("no seed of this version needs the longest ID", std::strlen(id) <= 23);
     }

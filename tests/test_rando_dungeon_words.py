@@ -57,7 +57,7 @@ def main():
     check(set(S.DUNGEON_SAY) == set(S.DUNGEON_FOLDERS), "a dungeon has no words for its name")
     check(S.FIXES_VERSION >= 104, "fixes 104 is not the dungeon words'")
     script = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
-    check("text, more = dungeon_words(text, n.startswith(FIRST_BAG_ENGLISH))" in script and "written.append(DUNGEON_WORDS_FILE)" in script,
+    check("text, more = dungeon_words(text, n.startswith(FIRST_BAG_ENGLISH), ring_counts)" in script and "written.append(DUNGEON_WORDS_FILE)" in script,
           "a seed does not add the words or leave DUNGEON_WORDS_FILE")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     check('"mods/rando-seed/dungeon_words.txt"' in host and "oot_dungeon_words = f != NULL;" in host,
@@ -66,7 +66,7 @@ def main():
     check("if (oot_dungeon_words && (!strcmp(name, \"Item_Dungeon_SmallKey\")" in window and
           "oot_dungeon_owner(name, owner, sizeof owner, NULL)" in window and 'snprintf(word, sizeof word, "%s_%s", name, owner);' in window,
           "the get window is not pointed at the dungeon's words")
-    check("if (!oot_dungeon_owner(name, owner, sizeof owner, &nearest)) return 0;" in block(host, "static int oot_dungeon_item(Ctx *c, const char *name) {"),
+    check("if (!oot_dungeon_owner(name, owner, sizeof owner, &nearest)) {" in block(host, "static int oot_dungeon_item(Ctx *c, const char *name) {"),
           "the add and the window do not share the owner lookup")
     print("PASS: a dungeon item away from its dungeon says whose")
 
