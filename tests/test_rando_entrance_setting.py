@@ -135,7 +135,9 @@ check("for h, g in gifts.items():   # (the checks the story holds back until the
       and 'waits[h] = tuple(waits.get(h, ())) + ("InsideTheDekuTree",)' in block, "the checks that wait for the Deku Tree are not told its door")
 check("InsideJabuJabuBelly" not in CHILD + POOL and "SpiritTemple" not in CHILD + POOL, "Jabu-Jabu or the Spirit Temple is in a pool")
 
-# the Tracker says the doors (gpu/vk/vk_menu.cpp, asked 2026-11-27): the functions compiled and run on a file as the seed writes it
+# the Tracker says the doors (gpu/vk/vk_menu.cpp, asked 2026-11-27), and each only once it is found (the owner, the same day:
+# "only show what dungeon it leads to after you've entered it once already in the seed"): the game's side notes the door
+# of the dungeon Link is in (host/hos_main.c oot_doors_note) and keeps the found ones for the seed; both compiled and run
 import os
 import subprocess
 import tempfile
@@ -143,47 +145,115 @@ sys.path.insert(0, str(ROOT / "tests"))
 import srccut  # noqa: E402
 menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
 parts = "\n".join(srccut.block(menu, start, "vk_menu.cpp") for start in (
-    "const char* tracker_way_in(const char* area) {", "const char* tracker_door_leads(const char* area) {", "void tracker_doors_load(const std::string& folder, bool on) {"))
-check("tracker_doors_load(path.substr(0, path.find_last_of(\"\\\\/\") + 1), on);" in menu, "the Tracker does not read the doors with its lists")
+    "void tracker_door_words(const char* area, char* one, char* two, size_t size) {",
+    "void tracker_doors_load(const std::string& folder, bool on, const std::string& seen_path, const std::string& stamp) {"))
+check('tracker_doors_load(path.substr(0, path.find_last_of("\\\\/") + 1), on, game_folder_path() + "rando\\\\doors_seen.txt", tracker_seed_stamp());' in menu,
+      "the Tracker does not read the doors and the found ones with its lists")
 panel = srccut.block(menu, "float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {", "vk_menu.cpp")
-check('snprintf(words, sizeof words, "Way in: the door of %s", way_in);' in panel and 'snprintf(words, sizeof words, "Its own door leads to: %s", leads);' in panel
+check("tracker_door_words(tracker_name[row], way_in, leads, sizeof way_in);" in panel and "for (const char* words : {way_in, leads})" in panel
       and "const float fixed = 22 * s + 32 * s + doors + 12 * s" in panel, "an area's panel does not say its doors, or keeps no room for them")
 for a in S.ENTRANCE_ADULT + S.ENTRANCE_CHILD:
     check(a in S.AREA_NAMES and len(S.AREA_NAMES[a]) < 48, "%s has no name on the Tracker" % a)
-program = '''
+program = r"""
 #include <cstdio>
 #include <cstring>
 #include <string>
 constexpr int kDoorRows = 16;
-char tracker_door_from[kDoorRows][48], tracker_door_to[kDoorRows][48];
+char tracker_door_key[kDoorRows][48], tracker_door_from[kDoorRows][48], tracker_door_to[kDoorRows][48];
+bool tracker_door_seen[kDoorRows];
 int tracker_door_count = 0;
-''' + parts + '''
+""" + parts + r"""
+static bool says(const char* area, const char* one, const char* two) {
+    char a[112], b[112];
+    tracker_door_words(area, a, b, sizeof a);
+    if (strcmp(a, one) || strcmp(b, two)) printf("%s: \"%s\" / \"%s\"\n", area, a, b);
+    return !strcmp(a, one) && !strcmp(b, two);
+}
 int main(int argc, char** argv) {
     if (argc < 2) return 9;
-    tracker_doors_load(argv[1], true);
+    const std::string folder = argv[1], seen = folder + "doors_seen.txt";
+    tracker_doors_load(folder, true, folder + "none.txt", "the stamp");                      // (nothing found yet)
     if (tracker_door_count != 3) return 1;
-    if (!tracker_way_in("Ice Cavern") || strcmp(tracker_way_in("Ice Cavern"), "Shadow Temple")) return 2;
-    if (!tracker_door_leads("Shadow Temple") || strcmp(tracker_door_leads("Shadow Temple"), "Ice Cavern")) return 3;
-    if (tracker_way_in("Water Temple") || tracker_door_leads("Water Temple")) return 4;   // (behind its own door)
-    if (tracker_way_in("Kokiri Forest") || tracker_door_leads("Market")) return 5;        // (no dungeon of the file)
-    if (strcmp(tracker_way_in("Shadow Temple"), "Ice Cavern") || strcmp(tracker_door_leads("Ice Cavern"), "Shadow Temple")) return 6;
-    tracker_doors_load(argv[1], false);                                                    // (the randomizer off: none)
-    if (tracker_door_count || tracker_way_in("Ice Cavern")) return 7;
-    tracker_doors_load(std::string(argv[1]) + "nowhere/", true);                           // (no file: none)
-    return tracker_door_count ? 8 : 0;
+    for (const char* area : {"Shadow Temple", "Ice Cavern", "Water Temple"})                 // (one behind its own door as the others)
+        if (!says(area, "Way in: not found yet", "Its own door: not entered yet")) return 2;
+    if (!says("Kokiri Forest", "", "") || !says("Market", "", "")) return 3;                  // (no dungeon of the file)
+    tracker_doors_load(folder, true, seen, "the stamp");                                     // (the Shadow Temple's door found, and the Water Temple's)
+    if (!says("Ice Cavern", "Way in: the door of Shadow Temple", "Its own door: not entered yet")) return 4;
+    if (!says("Shadow Temple", "Way in: not found yet", "Its own door leads to: Ice Cavern")) return 5;
+    if (!says("Water Temple", "Way in: its own door", "")) return 6;
+    tracker_doors_load(folder, true, seen, "another seed's stamp");                          // (another seed's record: not taken)
+    if (!says("Ice Cavern", "Way in: not found yet", "Its own door: not entered yet")) return 7;
+    tracker_doors_load(folder, true, seen, "");                                              // (no stamp: not taken)
+    if (!says("Water Temple", "Way in: not found yet", "Its own door: not entered yet")) return 8;
+    tracker_doors_load(folder, true, seen, "the st");                                        // (this side's stamp cut short: the record's starts with it)
+    if (!says("Water Temple", "Way in: its own door", "")) return 10;
+    tracker_doors_load(folder, false, seen, "the stamp");                                    // (the randomizer off: none)
+    if (tracker_door_count || !says("Ice Cavern", "", "")) return 11;
+    tracker_doors_load(folder + "nowhere/", true, seen, "the stamp");                        // (no file: none)
+    return tracker_door_count ? 12 : 0;
 }
-'''
-cxx = "clang++"
+"""
+host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
+host_parts = "\n".join(srccut.block(host, start, "hos_main.c") for start in (
+    "static void oot_doors_save(void) {", "static int oot_doors_note(const char *map) {", "static void oot_doors_load(const char *stamp) {"))
+check("oot_doors_load(stamp);" in srccut.block(host, "static void oot_tracker_load(const char *stamp) {", "hos_main.c"), "the doors are not read with the seed's lists")
+check("oot_doors_note(oot_link_map);" in host and host.index("memcpy(oot_link_map, map, sizeof oot_link_map);") < host.index("oot_doors_note(oot_link_map);"),
+      "the door of the dungeon Link is in is not noted as his map is read")
+host_program = r"""
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#define MAX_PATH 260
+#define OOT_DOORS_MAX 16
+static char root[400], oot_checks_seed[1024];
+static struct { char door[24], dungeon[24]; int seen; } oot_doors[OOT_DOORS_MAX];
+static int oot_door_n;
+static int oot_game_file(char *out, size_t size, const char *tail) { snprintf(out, size, "%s%s", root, strrchr(tail, '/') + 1); return 1; }
+static int oot_banc_in_folder(const char *banc, const char *folder) {   /* (a map is its folder, or its folder and "_...") */
+    const size_t n = strlen(folder);
+    return !strncmp(banc, folder, n) && (!banc[n] || banc[n] == '_');
+}
+static void hos_log(const char *f, ...) { (void)f; }
+""" + host_parts + r"""
+int main(int argc, char **argv) {
+    if (argc < 2) return 9;
+    snprintf(root, sizeof root, "%s", argv[1]);
+    snprintf(oot_checks_seed, sizeof oot_checks_seed, "the stamp");
+    oot_doors_load("the stamp");
+    if (oot_door_n != 4 || oot_doors[0].seen || oot_doors[1].seen || oot_doors[2].seen) return 1;   /* (the file's lines, one of two fields too) */
+    if (oot_doors_note("") || oot_doors_note("HyruleField_Adult") || oot_doors_note("ShadowTempleX")) return 2;   /* (no dungeon of a door) */
+    if (!oot_doors_note("IceCavern") || !oot_doors[0].seen || oot_doors[1].seen) return 3;   /* (in the Ice Cavern: the Shadow Temple's door) */
+    if (oot_doors_note("IceCavern")) return 4;                                               /* (once) */
+    if (!oot_doors_note("WaterTemple") || !oot_doors[2].seen) return 5;                      /* (a door to its own dungeon is found as any) */
+    oot_door_n = 0;
+    oot_doors_load("the stamp");                                                              /* (the record kept) */
+    if (oot_door_n != 4 || !oot_doors[0].seen || oot_doors[1].seen || !oot_doors[2].seen) return 6;
+    oot_doors_load("another seed's stamp");                                                   /* (another seed's: not taken) */
+    if (oot_doors[0].seen || oot_doors[2].seen) return 7;
+    return 0;
+}
+"""
+cc, cxx = "clang", "clang++"
 for i, arg in enumerate(sys.argv):
     if arg == "--cxx" and i + 1 < len(sys.argv):
         cxx = sys.argv[i + 1]
+    if arg == "--cc" and i + 1 < len(sys.argv):
+        cc = sys.argv[i + 1]
+DOORS = "ShadowTemple|IceCavern|Shadow Temple|Ice Cavern\nIceCavern|ShadowTemple|Ice Cavern|Shadow Temple\nWaterTemple|WaterTemple|Water Temple|Water Temple\nOld|Line\n"
 with tempfile.TemporaryDirectory() as tmp:
+    Path(tmp, "entrances.txt").write_text(DOORS, encoding="utf-8")
+    c_file, c_exe = os.path.join(tmp, "host.c"), os.path.join(tmp, "host.exe")
+    Path(c_file).write_text(host_program, encoding="utf-8")
+    built = subprocess.run([cc, "-O1", "-Wall", "-Werror", "-o", c_exe, c_file], capture_output=True, text=True)
+    check(built.returncode == 0, "the game's side's doors do not compile:\n%s" % built.stderr)
+    ran = subprocess.run([c_exe, tmp + "/"], capture_output=True, text=True)
+    check(ran.returncode == 0, "the game's side's doors: case %d" % ran.returncode)
+    record = Path(tmp, "doors_seen.txt").read_text(encoding="utf-8")
+    check(record == "seed the stamp\nShadowTemple\nWaterTemple\n", "the record of the doors found: %r" % record)
     src_file, exe = os.path.join(tmp, "doors.cpp"), os.path.join(tmp, "doors.exe")
     Path(src_file).write_text(program, encoding="utf-8")
-    Path(tmp, "entrances.txt").write_text("ShadowTemple|IceCavern|Shadow Temple|Ice Cavern\nIceCavern|ShadowTemple|Ice Cavern|Shadow Temple\n"
-                                           "WaterTemple|WaterTemple|Water Temple|Water Temple\nOld|Line\n", encoding="utf-8")
     built = subprocess.run([cxx, "-std=c++17", "-O1", "-Wall", "-Werror", "-o", exe, src_file], capture_output=True, text=True)
     check(built.returncode == 0, "the Tracker's doors do not compile:\n%s" % built.stderr)
-    ran = subprocess.run([exe, tmp + os.sep], capture_output=True, text=True)
-    check(ran.returncode == 0, "the Tracker's doors: case %d" % ran.returncode)
-print("ok: Dungeon entrances: the adult's and the child's dungeons, and the Tracker's doors")
+    ran = subprocess.run([exe, tmp + os.sep], capture_output=True, text=True)   # (the record the game's side just wrote)
+    check(ran.returncode == 0, "the Tracker's doors: case %d %s" % (ran.returncode, ran.stdout))
+print("ok: Dungeon entrances: the adult's and the child's dungeons, and the Tracker's doors, each once found")

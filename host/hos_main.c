@@ -2160,6 +2160,61 @@ static int oot_dungeon_words;   /* (the seed has each dungeon's "You found" word
 static struct { char folder[24]; int keys; } oot_keyrings[OOT_KEYRING_MAX];   /* (Key rings: keyrings.txt, oot_keyring) */
 static int oot_keyring_n;
 static char oot_dungeon_own[24];   /* (oot_dungeon_owner: the dungeon whose item was got inside it, for its ring's other keys) */
+/* (Dungeon entrances, the owner's ask 2026-11-27: "the tracker to only show what dungeon it leads to after you've entered
+   it once already in the seed") The seed's doors, mods/rando-seed/entrances.txt (<a door's own dungeon>|<the dungeon behind
+   it>|...), each found once Link has stood in the dungeon behind it. The found ones are the seed's record,
+   rando/doors_seen.txt: "seed <the stamp>", then a door's own dungeon a line, which the Tracker reads (gpu/vk/vk_menu.cpp
+   tracker_doors_load). Another seed's record is not taken. A teleport into the dungeon finds its door too. */
+#define OOT_DOORS_MAX 16
+static char oot_checks_seed[1024];   /* (defined with the tracker's lists below: the seed's stamp) */
+static struct { char door[24], dungeon[24]; int seen; } oot_doors[OOT_DOORS_MAX];
+static int oot_door_n;
+static void oot_doors_save(void) {
+    char path[MAX_PATH + 48];
+    FILE *f = oot_game_file(path, sizeof path, "rando/doors_seen.txt") ? fopen(path, "w") : NULL;
+    if (!f) return;
+    fprintf(f, "seed %s\n", oot_checks_seed);
+    for (int i = 0; i < oot_door_n; i++)
+        if (oot_doors[i].seen) fprintf(f, "%s\n", oot_doors[i].door);
+    fclose(f);
+}
+/* (oot_checks_lock held) the door of the dungeon whose map Link is in is found: 1 when one was just now */
+static int oot_doors_note(const char *map) {
+    int found = 0;
+    for (int i = 0; i < oot_door_n; i++)
+        if (!oot_doors[i].seen && map[0] && oot_banc_in_folder(map, oot_doors[i].dungeon)) {
+            oot_doors[i].seen = 1, found = 1;
+            hos_log("rando: dungeon entrances: %s's door found to lead to %s", oot_doors[i].door, oot_doors[i].dungeon);
+        }
+    if (found) oot_doors_save();
+    return found;
+}
+static void oot_doors_load(const char *stamp) {
+    char path[MAX_PATH + 48], line[1100];
+    oot_door_n = 0;
+    FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/entrances.txt") ? fopen(path, "r") : NULL;
+    while (f && oot_door_n < OOT_DOORS_MAX && fgets(line, sizeof line, f)) {
+        char door[24], dungeon[24];
+        if (sscanf(line, "%23[A-Za-z]|%23[A-Za-z]", door, dungeon) != 2) continue;
+        snprintf(oot_doors[oot_door_n].door, sizeof oot_doors[0].door, "%s", door);
+        snprintf(oot_doors[oot_door_n].dungeon, sizeof oot_doors[0].dungeon, "%s", dungeon);
+        oot_doors[oot_door_n++].seen = 0;
+    }
+    if (f) fclose(f);
+    int seen = 0;
+    f = oot_door_n && oot_game_file(path, sizeof path, "rando/doors_seen.txt") ? fopen(path, "r") : NULL;
+    if (f && fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\r\n")] = 0;
+        if (!strncmp(line, "seed ", 5) && !strcmp(line + 5, stamp))   /* (this seed's record) */
+            while (fgets(line, sizeof line, f)) {
+                line[strcspn(line, "\r\n")] = 0;
+                for (int i = 0; i < oot_door_n; i++)
+                    if (!strcmp(line, oot_doors[i].door) && !oot_doors[i].seen) oot_doors[i].seen = 1, seen++;
+            }
+    }
+    if (f) fclose(f);
+    if (oot_door_n) hos_log("rando: dungeon entrances: %d doors of the seed, %d of them found by the record", oot_door_n, seen);
+}
 static char oot_checks_seed[1024];   /* (the stamp the checks and the record are of: its whole first line. 200 cut a
    seed's 243-304 characters short, so a record written with the whole line was never this seed's, 2026-11-19) */
 static float oot_link_place[3];
@@ -2329,6 +2384,7 @@ static void oot_tracker_load(const char *stamp) {
     }
     if (f) fclose(f);
     if (oot_keyring_n) hos_log("rando: key rings: %d dungeons' small keys are a ring each", oot_keyring_n);
+    oot_doors_load(stamp);   /* (Dungeon entrances: the doors, and the ones found) */
     /* (the seed's "You found" words for each dungeon's items, rando_seed.py DUNGEON_WORDS_FILE: oot_dungeon_window) */
     f = oot_game_file(path, sizeof path, "mods/rando-seed/dungeon_words.txt") ? fopen(path, "r") : NULL;
     oot_dungeon_words = f != NULL;
@@ -3720,6 +3776,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
         oot_tracker_stamp(stamp, sizeof stamp);
         if (oot_check_count < 0 || strcmp(stamp, oot_checks_seed)) oot_tracker_load(stamp);
     }
+    oot_doors_note(oot_link_map);   /* (Dungeon entrances: the door of the dungeon Link is in is found) */
     for (int i = 0; i < oot_check_count; i++) rx_option_set(OOT_TRACKER_BASE + i, oot_checks[i].done == 1);
     {   /* (where Link is, for the Tracker tab's order: a check of the map he is in, the first of the file) */
         int here = -1;

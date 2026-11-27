@@ -139,31 +139,58 @@ char tracker_name[kTrackerRows][48];
 char tracker_value[kTrackerRows][72];
 // (Dungeon entrances, asked 2026-11-27) The seed's doors, mods\rando-seed\entrances.txt: "<a door's own dungeon>|<the dungeon
 // behind it>|<the first's name on the Tracker>|<the second's>", a line for every door of the setting's pools, one that leads
-// to its own dungeon too. An area's panel says the door its dungeon is behind and where its own door leads, when either
-// is another's (tracker_way_in, tracker_door_leads). No file: no door leads elsewhere.
+// to its own dungeon too. An area's panel says the door its dungeon is behind and where its own door leads
+// (tracker_door_words). No file: no door is shuffled, and no area says anything.
+// (the owner, 2026-11-27: "only show what dungeon it leads to after you've entered it once already in the seed") A door
+// is found once Link has stood in the dungeon behind it: the game's side keeps the found ones, rando\doors_seen.txt, "seed
+// <the seed's stamp>" then a door's own dungeon (the file's first field) a line (host/hos_main.c oot_doors_note). Until
+// then a door's page says it is not entered yet and a dungeon's that its way in is not found, a door that leads to its
+// own dungeon as any other: which ones moved is not told either. Another seed's record is not taken.
 constexpr int kDoorRows = 16;
-char tracker_door_from[kDoorRows][48], tracker_door_to[kDoorRows][48];
+char tracker_door_key[kDoorRows][48], tracker_door_from[kDoorRows][48], tracker_door_to[kDoorRows][48];
+bool tracker_door_seen[kDoorRows];
 int tracker_door_count = 0;
-const char* tracker_way_in(const char* area) {
+/// The lines an area's panel has about the seed's doors, into one and two ("" none): its dungeon's way in, its own door
+void tracker_door_words(const char* area, char* one, char* two, size_t size) {
+    one[0] = two[0] = 0;
     for (int i = 0; i < tracker_door_count; i++)
-        if (!strcmp(tracker_door_to[i], area) && strcmp(tracker_door_from[i], area)) return tracker_door_from[i];
-    return nullptr;
-}
-const char* tracker_door_leads(const char* area) {
+        if (!strcmp(tracker_door_to[i], area)) {   // (the door this dungeon is behind)
+            if (!tracker_door_seen[i]) snprintf(one, size, "Way in: not found yet");
+            else if (!strcmp(tracker_door_from[i], area)) snprintf(one, size, "Way in: its own door");
+            else snprintf(one, size, "Way in: the door of %s", tracker_door_from[i]);
+        }
     for (int i = 0; i < tracker_door_count; i++)
-        if (!strcmp(tracker_door_from[i], area) && strcmp(tracker_door_to[i], area)) return tracker_door_to[i];
-    return nullptr;
+        if (!strcmp(tracker_door_from[i], area)) {   // (this dungeon's own door)
+            if (!tracker_door_seen[i]) snprintf(two, size, "Its own door: not entered yet");
+            else if (strcmp(tracker_door_to[i], area)) snprintf(two, size, "Its own door leads to: %s", tracker_door_to[i]);
+        }
 }
-void tracker_doors_load(const std::string& folder, bool on) {
+void tracker_doors_load(const std::string& folder, bool on, const std::string& seen_path, const std::string& stamp) {
     int n = 0;
     if (FILE* f = on ? fopen((folder + "entrances.txt").c_str(), "r") : nullptr) {
         char line[256];
         while (n < kDoorRows && fgets(line, sizeof line, f)) {
             char a[48], b[48], from[48], to[48];
             if (sscanf(line, "%47[^|\r\n]|%47[^|\r\n]|%47[^|\r\n]|%47[^|\r\n]", a, b, from, to) != 4) continue;   // (a file of two fields, before the names: none)
+            snprintf(tracker_door_key[n], sizeof tracker_door_key[n], "%s", a);
             snprintf(tracker_door_from[n], sizeof tracker_door_from[n], "%s", from);
             snprintf(tracker_door_to[n], sizeof tracker_door_to[n], "%s", to);
+            tracker_door_seen[n] = false;
             n++;
+        }
+        fclose(f);
+    }
+    if (FILE* f = n ? fopen(seen_path.c_str(), "r") : nullptr) {
+        char line[1100];
+        if (fgets(line, sizeof line, f)) {
+            line[strcspn(line, "\r\n")] = 0;
+            // (the game's side writes the whole stamp, this side reads its first 511 characters: tracker_seed_stamp)
+            if (!strncmp(line, "seed ", 5) && !stamp.empty() && !strncmp(line + 5, stamp.c_str(), stamp.size()))
+                while (fgets(line, sizeof line, f)) {
+                    line[strcspn(line, "\r\n")] = 0;
+                    for (int i = 0; i < n; i++)
+                        if (!strcmp(line, tracker_door_key[i])) tracker_door_seen[i] = true;
+                }
         }
         fclose(f);
     }
@@ -538,9 +565,9 @@ float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int r
     const int n = (int)lines.size(), pick = tracker_pick[row];
     const float hh = hint ? ui::para(c, c.f.body, 16 * s, ImVec2(), 0, hint, w - 18 * s, false) : 0;
     // (Dungeon entrances: the door this dungeon is behind, and where its own door leads, a line each under the name)
-    const char* way_in = tracker_way_in(tracker_name[row]);
-    const char* leads = tracker_door_leads(tracker_name[row]);
-    const float doors = ((way_in ? 1 : 0) + (leads ? 1 : 0)) * 20 * s;
+    char way_in[112], leads[112];
+    tracker_door_words(tracker_name[row], way_in, leads, sizeof way_in);
+    const float doors = ((way_in[0] ? 1 : 0) + (leads[0] ? 1 : 0)) * 20 * s;
     const float fixed = 22 * s + 32 * s + doors + 12 * s + 24 * s + (hint ? 14 * s + hh : 0) + 20 * s;
     const int fit = std::max(1, std::min(n, (int)((y_max - y0 - fixed) / pitch)));
     const int first = n > fit ? std::clamp(pick - 1 - fit / 2, 0, n - fit) : 0;
@@ -555,18 +582,11 @@ float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int r
         ui::text_mid(c, c.f.body, 15 * s, x1 - 24 * s - ui::size_of(c.f.body, 15 * s, range).x, y + 12 * s, ui::kDim, range);
     }
     y += 32 * s;
-    if (way_in) {
-        char words[112];
-        snprintf(words, sizeof words, "Way in: the door of %s", way_in);
-        ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y - 6 * s), ui::rgba(236, 196, 110), words);
-        y += 20 * s;
-    }
-    if (leads) {
-        char words[112];
-        snprintf(words, sizeof words, "Its own door leads to: %s", leads);
-        ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y - 6 * s), ui::rgba(236, 196, 110), words);
-        y += 20 * s;
-    }
+    for (const char* words : {way_in, leads})
+        if (words[0]) {
+            ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y - 6 * s), ui::rgba(236, 196, 110), words);
+            y += 20 * s;
+        }
     const auto mark = [&](float mx, float my, int state) {
         if (state == 2) {   // (collected: a tick)
             c.d->AddLine(ImVec2(mx - 5 * s, my), ImVec2(mx - 1.5f * s, my + 4 * s), kGot, 2 * s);
@@ -3571,7 +3591,7 @@ void tracker_load() {
     tracker_count = n;
     tracker_stones_load(path.substr(0, path.find_last_of("\\/") + 1), on);
     tracker_stats_load(path.substr(0, path.find_last_of("\\/") + 1), on);
-    tracker_doors_load(path.substr(0, path.find_last_of("\\/") + 1), on);
+    tracker_doors_load(path.substr(0, path.find_last_of("\\/") + 1), on, game_folder_path() + "rando\\doors_seen.txt", tracker_seed_stamp());
     int checks = 0;
     path = path.substr(0, path.find_last_of("\\/") + 1) + "checks.txt";
     if (FILE* f = on ? fopen(path.c_str(), "r") : nullptr) {
