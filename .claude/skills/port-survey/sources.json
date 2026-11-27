@@ -43,8 +43,8 @@
    "kind": "fork",
    "license": "GPL-3.0-or-later",
    "base": "one squashed commit per release: diff trees",
-   "surveyed": "ecb4d5cc",
-   "surveyed_on": "2026-11-26"
+   "surveyed": "2df08c75",
+   "surveyed_on": "2026-11-27"
   },
   {
    "name": "Rekarina",
