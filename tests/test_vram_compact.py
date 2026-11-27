@@ -44,6 +44,12 @@ def check_source():
     need("vk_texture.cpp: texture_frame()", frame,
          ["vram_compact::reclaimable(block_free, pool_free)", "vram_compact::pressed(used, allowed)",
           "vram_compact::held_budget(budget, total_bytes, used, reclaim, allowed, pct, active_floor)", 'getenv("RX_VK_COMPACT_PCT")',
+          # (HeyListen bcdac6b8, Longshot 8941d01b4: past the allowance the floors give way, on a separate card that is not AMD's
+          # unless the switch says otherwise; both floors, the dynamic one and the count line's)
+          "const uint64_t active_floor = known ? vram_compact::floor_within(dynamic_floor, used, allowed, floor_gives_way) : 0;",
+          "vram_compact::floor_within(vram_compact::texture_min_floor(allowed), used, allowed, floor_gives_way);",
+          'getenv("RX_VK_FLOOR_GIVES_WAY")',
+          "dev.props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && dev.props.vendorID != 0x1002;",
           # (the hold lets go of the excess alone, not of an eighth of the cache; the driver's limit still asks for 7/8)
           "if (held < budget) budget = evict_to = held;",
           # (the hold's pass: every dead render target, and live textures only for the excess left and only long unused ones;

@@ -131,6 +131,25 @@ int main() {
     // and the rules then see the count past it: no room in the blocks, the squeeze's line crossed
     CHECK(!room_in_blocks(5940 * MB, past_allowance(5940 * MB, 5940 * MB), 746 * MB, false));
     CHECK(room_in_blocks(5940 * MB, 5940 * MB, 746 * MB, false));               // (what the rule did with the driver's word)
+    {   // (HeyListen bcdac6b8, Longshot 8941d01b4, #2082) past the allowance no floor holds the textures (a GTX 1060 6 GB at 6128 MB
+        // of the 5231 it allowed, 1606 MB of textures: no rule could take one while the driver paged); within it, as before
+        const uint64_t a = 5231 * MB;
+        CHECK(floor_within(1800 * MB, 6128 * MB, a) == kNoFloor);           // (past it: none)
+        CHECK(floor_within(2600 * MB, 6128 * MB, a) == kNoFloor);           // (the dynamic floor gives way too)
+        CHECK(floor_within(1800 * MB, a + 1, a) == kNoFloor);               // (one byte past)
+        CHECK(floor_within(1800 * MB, a, a) == 1800 * MB);                  // (at it, not past)
+        CHECK(floor_within(1800 * MB, 5100 * MB, a) == 1800 * MB);          // (within it: as it was)
+        CHECK(floor_within(1800 * MB, 6128 * MB, 0) == 1800 * MB);          // (no allowance known: as it was)
+        CHECK(floor_within(1800 * MB, 6128 * MB, a, false) == 1800 * MB);   // (turned off, or a GPU it is not on for: as it was)
+        CHECK(floor_within(0, 6128 * MB, a) == 0);                          // (no floor stays no floor)
+        // the hold: with the floor, the 1606 MB of textures stay; given way, the excess over the line comes off them
+        const uint64_t line = a / 100 * 85;
+        CHECK(held_budget(6144 * MB, 1606 * MB, 6128 * MB, 0, a, 85, 1800 * MB) == 1800 * MB);
+        CHECK(held_budget(6144 * MB, 1606 * MB, 6128 * MB, 0, a, 85, floor_within(1800 * MB, 6128 * MB, a)) ==
+              1606 * MB - (6128 * MB - line) / 4);
+        // an allowance the driver gave as the count (past_allowance): past it, so the floor gives way
+        CHECK(floor_within(1800 * MB, 5940 * MB, past_allowance(5940 * MB, 5940 * MB)) == kNoFloor);
+    }
     std::printf("PASS: the compaction's rules\n");
     return 0;
 }

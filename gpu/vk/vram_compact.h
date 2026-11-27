@@ -113,6 +113,18 @@ inline uint64_t texture_min_floor(uint64_t allowed) {
     return std::max<uint64_t>(1800ull << 20, allowed / 4);
 }
 
+/// (HeyListen bcdac6b8, from Longshot 8941d01b4, #2082) A floor under the textures' budget as the rules may hold it: none once
+/// the driver's count is past its allowance. There the driver pages VRAM out to system memory and every frame reads some of it
+/// over PCIe, which costs more than textures made again: a GTX 1060 6 GB sat at 6128 MB of the 5231 it allowed with 1606 MB of
+/// textures, under the 1800 MB floor, so no rule could take one, and Hyrule Field went from 31 to 14 fps until a restart (an
+/// RTX 4060 8 GB: 10-20 fps). Past the allowance what stays is what the last presents drew from (texture_frame's `recent`, and
+/// the eviction's own 60 presents); within it the floor keeps the working set from a downward ratchet. kNoFloor and not 0,
+/// which held_budget reads as "the floor of this allowance". No allowance known, or `on` false: the floor as it is
+inline constexpr uint64_t kNoFloor = 1;
+inline uint64_t floor_within(uint64_t floor, uint64_t used, uint64_t allowed, bool on = true) {
+    return on && floor && allowed && used > allowed ? kNoFloor : floor;
+}
+
 /// Dynamic texture floor with hysteresis targeting the 86%-92% VRAM sweet spot on constrained GPUs.
 inline uint64_t update_dynamic_floor(uint64_t current_floor, uint64_t total_bytes, uint64_t used, uint64_t pressure, uint64_t allowed) {
     const uint64_t min_floor = texture_min_floor(allowed);

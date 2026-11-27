@@ -5219,7 +5219,20 @@ void texture_frame(uint64_t completed) {
             dynamic_floor = vram_compact::update_dynamic_floor(dynamic_floor, total_bytes, used, pressure, allowed);
         }
     }
-    const uint64_t active_floor = known ? dynamic_floor : 0;
+    // (HeyListen bcdac6b8, from Longshot 8941d01b4, #2082) past the allowance the floors give way: vram_compact::floor_within.
+    // On a separate graphics card that is not AMD's by default: the measured cases were NVIDIA's; AMD's driver gives its
+    // allowance as the count (past_allowance), so the count reads past it sooner there, and an integrated GPU's small heap is
+    // always past it. RX_VK_FLOOR_GIVES_WAY=1 / 0: on / off on any GPU
+    static const bool floor_gives_way = getenv("RX_VK_FLOOR_GIVES_WAY")
+        ? atoi(getenv("RX_VK_FLOOR_GIVES_WAY")) != 0
+        : dev.props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && dev.props.vendorID != 0x1002;
+    static bool gave_way_told = false;
+    if (floor_gives_way && known && used > allowed && !gave_way_told) {
+        gave_way_told = true;
+        logf("vk: %llu MB of VRAM used of %llu allowed: past the allowance the textures' floor gives way (RX_VK_FLOOR_GIVES_WAY=0: it holds)",
+             (unsigned long long)(used >> 20), (unsigned long long)(allowed >> 20));
+    }
+    const uint64_t active_floor = known ? vram_compact::floor_within(dynamic_floor, used, allowed, floor_gives_way) : 0;
     pool_pressure = !known ? 0 : (used > allowed / 100 * 97) ? 2 : (pressure > allowed / 10 * 9) ? 1 : 0;   // (target pool: halve at >90%, flush at >97%)
     compact.pressed = known && vram_compact::pressed(used, allowed);   // (hookshot, RX_VK_COMPACT: by the driver's own count)
     const uint64_t size_budget = budget;   // (the budget as a size, before the rules that take an excess off it: rule_target)
@@ -5272,7 +5285,7 @@ void texture_frame(uint64_t completed) {
     // RX_VK_SQUEEZE_ALWAYS=1 squeezes there too)
     if (known && !by_blocks && !(kept_only && !squeeze_always) && used > count_line && !room_in_blocks) {
         const uint64_t over = used - count_line;
-        const uint64_t floor = vram_compact::texture_min_floor(allowed);
+        const uint64_t floor = vram_compact::floor_within(vram_compact::texture_min_floor(allowed), used, allowed, floor_gives_way);
         uint64_t cut = total_bytes > over ? total_bytes - over : 0;
         if (floor && cut < floor) cut = floor;
         budget = std::min(budget, cut);
