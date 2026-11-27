@@ -53,7 +53,20 @@ def main():
             check("ZF GS Hidden Cave" in row.get("names", ()) and row.get("ways") and
                   all(way.get("Progressive Strength Upgrade", 0) >= 2 for way in row["ways"]), "the cave's Skulltula's rule: %s" % json.dumps(row)[:300])
     check(found, "the tables do not rule the cave's Gold Skulltula")
+    # (the owner, the same day: Gerudo Valley's far side and the Haunted Wasteland are no child's; the cave's Skulltula an adult's)
+    valley, valley_chest = (0x801e8f572111c0a2, 0xb6e63585e5882561, 0x0d243035ec83ec5e, 0xcf2e0e3d96f5fb1c), 0x561cbe4b374f3739
+    waste = (0x699e0e61241674cf, 0x3e1ef169d1d1c1ed, 0x266ec45f7f3b6e25, 0xd2ee747a35fff650)
+    for h in valley + waste:
+        check(not seed.pot_takes_part(h, first) and seed.pot_takes_part(h, first - 1), "a pot of Gerudo Valley's far side or the Wasteland's child's map is a check")
+    check(valley_chest in seed.JUNK_ONLY and not seed.check_listed(valley_chest, first) and seed.check_listed(valley_chest, first - 1),
+          "Gerudo Valley's child's chest of the far side is on the Tracker, or may hold more than junk")
+    check(seed.check_listed(0x1234, first), "another chest is not on the Tracker")
+    check(seed.ages_fixed(skull, "CA", first) == "A" and seed.ages_fixed(skull, "CA", first - 1) == "CA" and seed.ages_fixed(0x1234, "CA", first) == "CA",
+          "the cave's Skulltula is not an adult's on the Tracker")
     src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
+    check("for h in gives if h not in gifts and check_listed(h, placement)]," in src and
+          "ages_fixed(h, check_ages(maps[h]), placement), tneeds.get(h) or fit_rule(tracked_soil(h, skull_need(h)))" in src,
+          "the Tracker's list is written without asking")
     check("rel.split(\"/\")[1] not in POTS_LEFT_OUT) and pot_takes_part(h, placement):" in src and
           "rules_fixed(RULE_AS, pots, placement)" in src, "the pots are not asked whether they take part, or the fixed rules are not put in")
     print("PASS: checks an age can never get")
