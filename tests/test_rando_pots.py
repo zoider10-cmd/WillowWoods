@@ -33,7 +33,7 @@ def main():
     host = open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
     assert 'oot_checks[oot_check_count].pot = !strncmp(kind, "Pot", 3) && (!kind[3] || kind[3] == \' \');' in host
     again = host.index("if (c->x[30] != 0x828d50acULL && oot_pot_again(c, name)) return 1;")
-    assert again < host.index("oot_tracker_item(name, shop, price);"), "a pot back after a day is recorded before it is refused"
+    assert again < host.index("oot_tracker_item(c, name, shop, price, c->x[30] != 0x828d50acULL);"), "a pot back after a day is recorded before it is refused"
     # (2026-11-25, from play: the pot is known by the game's "broken" truth value by its hash, not by distance: the Market's
     #  guard house has 22 pots in 8 m, and a second token from the pot beside a collected one was refused)
     body = host[host.index("static int oot_pot_open(Ctx *c, const char *name, int *broken) {"):]
@@ -45,7 +45,7 @@ def main():
     assert "if (oot_checks[i].done != 1) {" in body and "open = i;" in body and "if (open < 0) open = alike;" in body and "return broken > 0;" in again, \
         "an item is refused while a broken pot giving it is not collected"
     assert "oot_checks[oot_check_count].broken = oot_checks[oot_check_count].pot ? oot_checks[oot_check_count].key : 0;" in host
-    track = host[host.index("static void oot_tracker_item(const char *name, int shop, int price) {"):]
+    track = host[host.index("static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int pickup) {"):]
     assert "best = oot_pot_chosen;" in track[:track.index("\n}\n")], "the record does not mark the pot just broken"
     # (FIXES 96, POT_ACTOR: a pot taking part is an actor of its own, coloured, its drop by its own table; its
     #  model and texture copies under names of the same length)

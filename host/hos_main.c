@@ -2150,6 +2150,9 @@ static struct {
     signed char pot_kept;   /* (a pot: in the record, collected in some game of the seed: oot_pot_progress) */
     int pot_at;             /* (a pot: the save's progress it was collected at, oot_pot_progress; -1 not known) */
     uint64_t broken;  /* (a pot's hash: the game's truth value by it is "broken", oot_pot_again) */
+    signed char skull;      /* (a Gold Skulltula: tools/rando/rando_seed.py names it "Gold Skulltula...": oot_skull_item) */
+    signed char claimed;    /* (a Gold Skulltula the save marked by itself: the drop it gave has been added since) */
+    int64_t marked_at;      /* (when the save's own mark was first seen on it, oot_shelf_flags; 0: not seen, or the record's) */
 } oot_checks[OOT_TRACKER_MAX];
 static int oot_check_count = -1;
 static int oot_dungeon_words;   /* (the seed has each dungeon's "You found" words: dungeon_words.txt, bug 141) */
@@ -2263,6 +2266,7 @@ static void oot_tracker_load(const char *stamp) {
         oot_checks[oot_check_count].sold = 0;
         oot_checks[oot_check_count].owner[0] = 0;
         oot_checks[oot_check_count].pot = !strncmp(kind, "Pot", 3) && (!kind[3] || kind[3] == ' ');
+        oot_checks[oot_check_count].skull = !strncmp(kind, "Gold Skulltula", 14), oot_checks[oot_check_count].claimed = 0, oot_checks[oot_check_count].marked_at = 0;
         /* (a pot's own truth value in the save is "broken", put back when it is back after a day: its check is the item
            picked up, the record's, not that value. Seen without a window 2026-11-24: breaking the pot marked it) */
         oot_checks[oot_check_count].broken = oot_checks[oot_check_count].pot ? oot_checks[oot_check_count].key : 0;
@@ -2409,13 +2413,125 @@ static int oot_pot_progress(Ctx *c) {
     }
     return changed;
 }
+/* (asked 2026-11-26: "every dropped item carries its own check") A Gold Skulltula's drop was matched to its check by a
+   guess: the nearest check not yet collected that gives the item, within OOT_CHECK_NEAR (60 m); and the check guessed
+   had its own mark written into the save (sold). Two Skulltulas near each other giving the same item: the wrong one could
+   be ticked, and a Skulltula never killed marked collected in the save.
+   The save keeps a truth value by each Skulltula's own hash (key), and the record follows it each second (oot_shelf_flags).
+   So a drop's check is the Skulltula the SAVE marks, and no mark is written on a guess:
+   - a Skulltula here that gives the item and whose mark is set already, not yet ticked: that one;
+   - else one the save marked a short while ago whose drop no add has claimed (marked at its death, the drop taken after);
+   - else the add waits (oot_skull_wait: the Skulltulas here that could be it): the first of them the save marks within
+     OOT_SKULL_WAIT_NS is the one (oot_skull_waited, each second). Only when the save marks none of them in that time is
+     the nearest taken and its mark written, as before, and the log says so: then the game does not mark that kind of
+     drop by itself, and it is to be looked at.
+   Which of the three it was is logged ("rando: tracker: skulltula: ..."): when the game sets the mark was not known when
+   this was written (no Skulltula could be killed in a run without a window). */
+#define OOT_SKULL_WAIT_NS 3000000000LL
+#define OOT_SKULL_CLAIM_NS 600000000000LL   /* (how long after its mark a Skulltula's drop may still be picked up as its own) */
+#define OOT_SKULL_WAITING 8
+#define OOT_MARK_FLIPS 2                 /* (the save's marks seen set in one second that count as "just now, in play") */
+#define OOT_MARK_STEADY_NS 5000000000LL  /* (and how long Link has been in his map by then) */
+static struct { char item[64]; int n, at[OOT_SKULL_WAITING]; int64_t since; } oot_skull_wait;
+static int oot_family_of(const char *name, int *spelling);   /* (below) */
+static int oot_dungeon_check;                                 /* (below: the check the last item given was found to be) */
+static int64_t oot_dungeon_check_at;
+/* the Skulltulas waited for: one the save has marked since the add is the drop's; none after the wait: the nearest, as
+   before. The lock held, each second. Returns how many marks changed */
+static int oot_skull_waited(void) {
+    if (!oot_skull_wait.n) return 0;
+    const int64_t now = hos_now_ns();
+    for (int k = 0; k < oot_skull_wait.n; k++) {
+        const int i = oot_skull_wait.at[k];
+        if (i < 0 || i >= oot_check_count || oot_checks[i].done != 1 || oot_checks[i].claimed) continue;
+        oot_checks[i].claimed = 1;
+        hos_log("rando: tracker: skulltula: %s was check %d's: the save marked it %.1f s after the add", oot_skull_wait.item, i,
+                (now - oot_skull_wait.since) / 1e9);
+        oot_skull_wait.n = 0;
+        return 0;   /* (its mark was counted when it was seen) */
+    }
+    if (now - oot_skull_wait.since < OOT_SKULL_WAIT_NS) return 0;
+    for (int k = 0; k < oot_skull_wait.n; k++) {
+        const int i = oot_skull_wait.at[k];
+        if (i < 0 || i >= oot_check_count || oot_checks[i].done == 1) continue;
+        oot_checks[i].done = 1, oot_checks[i].claimed = 1, oot_checks[i].sold = 1;
+        hos_log("rando: tracker: skulltula: %s: the save marked none of the %d Skulltulas here that give it in %.0f s: "
+                "check %d, the nearest, is taken as before (its mark written)", oot_skull_wait.item, oot_skull_wait.n, OOT_SKULL_WAIT_NS / 1e9, i);
+        oot_skull_wait.n = 0;
+        return 1;
+    }
+    oot_skull_wait.n = 0;
+    return 0;
+}
+/* A pick-up's add (not an event's): the Gold Skulltula it is the drop of, by the save's own marks. 1: it is seen to (ticked,
+   or waited for); 0: no Gold Skulltula here gives it. The lock held */
+static int oot_skull_item(Ctx *c, const char *name, int family) {
+    int flagged = -1, claimable = -1, n = 0, at[OOT_SKULL_WAITING];
+    float rank[OOT_SKULL_WAITING], flagged_away = 1e30f, claim_away = 1e30f;
+    const int64_t now = hos_now_ns();
+    for (int i = 0; i < oot_check_count; i++) {
+        if (!oot_checks[i].skull || !oot_checks[i].key || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
+        if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
+        const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
+                    dz = oot_checks[i].place[2] - oot_link_place[2];
+        const float away = sqrtf(dx * dx + dy * dy + dz * dz);
+        if (oot_checks[i].done == 1) {   /* (ticked: marked by the save a while ago, its drop not yet taken?) */
+            if (oot_checks[i].marked_at && !oot_checks[i].claimed && now - oot_checks[i].marked_at < OOT_SKULL_CLAIM_NS && away < claim_away)
+                claimable = i, claim_away = away;
+            continue;
+        }
+        int marked = 0;
+        if (oot_gamedata_keyed_bool(c, oot_checks[i].key, &marked) && marked) {
+            if (away < flagged_away) flagged = i, flagged_away = away;
+            continue;
+        }
+        const int other_age = oot_link_child >= 0 && oot_checks[i].ages[0] && !strchr(oot_checks[i].ages, oot_link_child ? 'C' : 'A');
+        const float r = away + (other_age ? OOT_CHECK_NEAR : 0.0f);   /* (bug 125: Link's age's first) */
+        /* (kept in order, the nearest first; of more than OOT_SKULL_WAITING the farthest are left out) */
+        if (n == OOT_SKULL_WAITING && r >= rank[n - 1]) continue;
+        int k = n < OOT_SKULL_WAITING ? n++ : n - 1;
+        for (; k > 0 && rank[k - 1] > r; k--) rank[k] = rank[k - 1], at[k] = at[k - 1];
+        rank[k] = r, at[k] = i;
+    }
+    if (flagged >= 0) {
+        oot_checks[flagged].done = 1, oot_checks[flagged].claimed = 1, oot_checks[flagged].marked_at = now;
+        oot_dungeon_check = flagged, oot_dungeon_check_at = now;
+        oot_tracker_save();
+        hos_log("rando: tracker: skulltula: %s got: check %d, marked by the save before the add (%.1f m from Link)", name, flagged, flagged_away);
+        return 1;
+    }
+    if (claimable >= 0) {
+        oot_checks[claimable].claimed = 1;
+        oot_dungeon_check = claimable, oot_dungeon_check_at = now;
+        hos_log("rando: tracker: skulltula: %s got: check %d, which the save marked %.1f s ago (%.1f m from Link)", name, claimable,
+                (now - oot_checks[claimable].marked_at) / 1e9, claim_away);
+        return 1;
+    }
+    if (!n) return 0;
+    if (oot_skull_wait.n) {   /* (another add still waited for: settled now, the old way, so each has its own) */
+        oot_skull_wait.since = now - OOT_SKULL_WAIT_NS;
+        if (oot_skull_waited()) oot_tracker_save();
+        int m = 0;
+        for (int k = 0; k < n; k++)
+            if (oot_checks[at[k]].done != 1) at[m++] = at[k];
+        n = m;
+        if (!n) return 1;
+    }
+    snprintf(oot_skull_wait.item, sizeof oot_skull_wait.item, "%s", name);
+    oot_skull_wait.n = n, oot_skull_wait.since = now;
+    memcpy(oot_skull_wait.at, at, sizeof at);
+    hos_log("rando: tracker: skulltula: %s: %d Skulltula(s) here give it, none marked by the save yet (the nearest, check %d, %.1f m): "
+            "waiting for the save's own mark", name, n, at[0], rank[0]);
+    return 1;
+}
 /* (Pots, asked 2026-11-25) A broken pot comes back when Link has left its area: its "broken" truth value is put back
    once he is in a map of another folder, so it is there the next time its area is entered, as in the original game. The
    game's own wait was about a day of play (bug 96), the Sun's Song not counting. The pots of the area he is in stay
    broken. The map last seen, to tell a move: */
 static char oot_pots_map[80];
 static int oot_shelf_flags(Ctx *c) {
-    int changed = 0, marks = 0, back = 0;
+    int changed = 0, marks = 0, back = 0, flips = 0, flip[OOT_MARK_FLIPS];
+    static int64_t map_since;
     const int moved = oot_link_map[0] && strcmp(oot_pots_map, oot_link_map);
     if (moved) snprintf(oot_pots_map, sizeof oot_pots_map, "%s", oot_link_map);
     AcquireSRWLockExclusive(&oot_checks_lock);
@@ -2462,9 +2578,19 @@ static int oot_shelf_flags(Ctx *c) {
             } else if ((oot_checks[i].done == 1) != now) {
                 oot_checks[i].done = now;
                 marks++;
+                /* (a Gold Skulltula the save marks by itself: its drop's add may come after, oot_skull_item. When, below) */
+                oot_checks[i].claimed = 0, oot_checks[i].marked_at = 0;
+                if (now && flips < OOT_MARK_FLIPS) flip[flips] = i;
+                flips += now;
             }
         }
     }
+    /* (marked just now, in play: one or two at a time, Link some seconds in his map. A save loaded, or another game's
+       record, marks many at once or as the map comes: those are no Skulltula just killed, and their drops are long taken) */
+    if (moved) map_since = hos_now_ns();
+    if (flips && flips <= OOT_MARK_FLIPS && oot_link_map[0] && hos_now_ns() - map_since > OOT_MARK_STEADY_NS)
+        for (int k = 0; k < flips; k++) oot_checks[flip[k]].marked_at = hos_now_ns();
+    marks += oot_skull_waited();
     marks += oot_pot_progress(c);
     if (marks) oot_tracker_save();
     ReleaseSRWLockExclusive(&oot_checks_lock);
@@ -2534,7 +2660,7 @@ static int oot_dungeon_check = -1;
 static int64_t oot_dungeon_check_at;
 #define OOT_DUNGEON_CHECK_NS 3000000000LL
 static _Thread_local char oot_pickup_folder[24];   /* (the dungeon of a pick-up of a dungeon's own being added: oot_dungeon_pickup) */
-static void oot_tracker_item(const char *name, int shop, int price) {
+static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int pickup) {
     static int read;
     if (!read) {
         const char *e = getenv("HOS_OOT_TRACK_SHOP");
@@ -2552,6 +2678,11 @@ static void oot_tracker_item(const char *name, int shop, int price) {
     /* (with Progressive items a check gives the family's next, by its own name or, since the chest says so, by that
        next's: a check of the same family is the one) */
     const int family = hos_rando_progressive() ? oot_family_of(name, NULL) : -1;
+    /* (a pick-up's add that no pot gave: a Gold Skulltula's drop is its check's by the save's own marks, oot_skull_item) */
+    if (pickup && !shop && oot_pot_chosen < 0 && oot_skull_item(c, name, family)) {
+        ReleaseSRWLockExclusive(&oot_checks_lock);
+        return;
+    }
     /* (pass 0: the map Link is in; pass 1, when nothing near was found there: the map he left within OOT_LEFT_MAP_NS) */
     const int left = oot_left_map[0] && hos_now_ns() - oot_left_at < OOT_LEFT_MAP_NS;
     for (int pass = 0; pass < 1 + left && best < 0; pass++) {
@@ -5863,7 +5994,7 @@ int hos_oot_pouch_add(Ctx *c) {
             int32_t price = -1;
             if (shop && !oot_gamedata_int(c, 0x07a1b798u, &price, 0)) price = -1;   /* Shop_SelectItemPrice */
             if (shop) hos_log("rando: tracker: %s bought in a shop (price %d)", name, (int)price);
-            oot_tracker_item(name, shop, price);
+            oot_tracker_item(c, name, shop, price, c->x[30] != 0x828d50acULL);
         }
     }
     if (oot_dungeon_item(c, name)) return 1;   /* (a dungeon's map or compass got in another place: its dungeon's flag) */

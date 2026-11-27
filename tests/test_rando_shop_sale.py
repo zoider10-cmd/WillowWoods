@@ -54,8 +54,8 @@ def main():
     check(murmur3(b"Shop_SelectItemPrice") == 0x07a1b798 and "0x07a1b798u, &price, 0)" in src,
           "the price is not read by Shop_SelectItemPrice's hash")
     check("const int shop = c->x[30] == 0x828d50acULL && (uint32_t)c->x[4] == 5;" in src and
-          "oot_tracker_item(name, shop, price);" in src, "a shop's sale is not told by the add's x4 5 from 0x828d50ac")
-    body = src[src.index("static void oot_tracker_item(const char *name, int shop, int price) {"):]
+          "oot_tracker_item(c, name, shop, price, c->x[30] != 0x828d50acULL);" in src, "a shop's sale is not told by the add's x4 5 from 0x828d50ac")
+    body = src[src.index("static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int pickup) {"):]
     body = body[:body.index("\n}\n")]
     loop = body[body.index("for (int i = 0; i < oot_check_count; i++) {"):body.index("if (best >= 0 && nearest > OOT_CHECK_NEAR)")]
     check("(!oot_checks[i].shelf) != !shop) continue;" in loop, "a sale may mark a check that is no shelf, or another add a shelf")
