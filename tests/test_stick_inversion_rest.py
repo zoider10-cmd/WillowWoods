@@ -40,6 +40,12 @@ static int options[20];
 static int rx_option(int id, int fallback) { (void)fallback; return options[id]; }
 static int16_t hos_sdl_pad_axis(void *gc, int axis) { return ((int16_t *)gc)[axis]; }
 ''' + function(hid, "void hos_filter_stick(int16_t x, int16_t y, int zone, int32_t out[2]) {") + r'''
+/* (the full push past 92% of the travel, which the same lines make: tests/test_stick_full_push.py has its own cases) */
+#include <math.h>
+#include <stdlib.h>
+#define STICK_FULL 32767.0
+#define STICK_FULL_FROM 30146.0
+''' + function(pad, "static void stick_full_push(int32_t v[2]) {") + function(pad, "static int stick_full_push_on(void) {") + r'''
 static void poll(int i, int16_t raw[4], int32_t output[4]) {
     void *gc = raw;
 ''' + pad[start:end] + r'''
@@ -95,7 +101,9 @@ int main(void) {
         memset(pads, 0, sizeof pads);
         int16_t raw[4] = {0}; int32_t output[4];
         poll(0, raw, output);
-        raw[0] = 22000; raw[1] = -24000; raw[2] = -28000; raw[3] = 30000;
+        /* (each stick under 92% of its travel: past that a push is made a full one, stick_full_push, and this is about the
+           mapping; the left was 22000, -24000: 99% of it) */
+        raw[0] = 15000; raw[1] = -17000; raw[2] = -18000; raw[3] = 20000;
         for (int setting = 0; setting < 4; setting++) {
             options[16] = setting & 1; options[17] = (setting >> 1) & 1;
             poll(0, raw, output);
