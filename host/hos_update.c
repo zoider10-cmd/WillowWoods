@@ -48,7 +48,7 @@ static int not_newer(const char *tag, const char *have) {
 #include "../gpu/vk/vk_api.h"   /* (MKWVK_API_VERSION) */
 
 #define HOOKSHOT_FORK_BASE "v0.1.2"       /* (the exe: which graphics patches fit it) */
-#define HOOKSHOT_FORK_VERSION "v0.1.8"      /* (the release this folder was built from) */
+#define HOOKSHOT_FORK_VERSION "v0.1.9"      /* (the release this folder was built from) */
 #define UPDATE_HOST L"api.github.com"
 /* (Willow Woods, 2026-11-24: every release is a pre-release, which releases/latest leaves out (404): the list's first, the newest) */
 #define UPDATE_PATH L"/repos/zoider10-cmd/WillowWoods/releases?per_page=1"
