@@ -34,6 +34,7 @@ import walk   # (hookshot) the kit's walk, with one shared entry per plain op's 
 import discover   # (hookshot) the discovery's walks in new processes where there is no fork
 import lift_fixes
 import suyu_rt_fixes
+import nativefp   # (the hot functions' float on the host's own instructions: Triforce v0.8.4's, ProjectReLink's)
 import chunks
 import standalone
 import adr_entries  # noqa: E402
@@ -51,6 +52,7 @@ dead_flags.install()
 walk.install()
 lift_fixes.install()
 suyu_rt_fixes.install()
+nativefp.install()   # (A64_NATIVE_FP / A64_FPX_EASY, each on unless =0: last, so the native names go on the hot text as it leaves every other pass)
 
 
 def module_of(img, pc):
@@ -228,6 +230,8 @@ def main():
         if L.stats["entry_gotos"]:   # (nx2/lift_fixes.py, 4)
             print("functions with code below their entry, started at it by a goto: %d" % L.stats["entry_gotos"])
         print("interrupt polls: %d loop headers in %d functions" % (poll.stats["polls"], poll.stats["functions"]))
+        if nativefp.report():
+            print(nativefp.report())
         print("wrote %d code files to %s (%.0fs)" % (len(files), gen, time.time() - t0))
     print("done (%.0fs)" % (time.time() - t0))
 

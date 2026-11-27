@@ -158,6 +158,11 @@ int hos_thread_serial(const HosThread *t);   /* one of the frame's serial thread
 int64_t hos_spin_ns(void);   /* the calling thread's spin before a wait sleeps, ns (HOS_SPIN_US, HOS_SPIN_OTHER_US) */
 void hos_thread_affinity(HosThread *t, int ideal, uint64_t mask);
 uint64_t hos_thread_mask(HosThread *t);
+/* (Triforce v0.8.4, ProjectReLink's) MXCSR's FTZ and DAZ follow the guest's FPCR.FZ once a lift with A64_NATIVE_FP asked
+   (hos_fpcr_follow, from its constructor): after its MSR FPCR (hos_fpcr_sync) and at a thread's and a fiber's start */
+void hos_fpcr_follow(void);
+void hos_fpcr_sync(Ctx *c);
+void hos_fpcr_start(const Ctx *c);
 int hos_thread_priority(HosThread *t, int set, int value);
 int hos_thread_core(HosThread *t);
 int hos_cores(void);

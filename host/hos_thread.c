@@ -563,13 +563,51 @@ Ctx *hos_boot_main_thread(uint64_t stack_size) {
     cur = t;
     track(t);
     hos_vcore_back();   /* (virtual cores: before any guest code) */
+    hos_fpcr_start(&t->ctx);
     return &t->ctx;
+}
+
+/* (Triforce v0.8.4; ProjectReLink's, pixl27) The host's MXCSR follows the guest's FPCR.FZ: results flushed to zero (FTZ) and
+   subnormal operands read as zeros (DAZ), which is what Arm's flush-to-zero mode does. With the lift option A64_NATIVE_FP
+   (nx2/nativefp.py) the hot functions' floating point runs on the host's own instructions, and those flush as the guest
+   expects only with both bits set; the exact helpers keep their values under them (with FZ they flush what they compute
+   themselves). Such a lift's constructor calls hos_fpcr_follow() before main, and its code calls hos_fpcr_sync() after every
+   MSR FPCR; the host syncs again at a thread's and a fiber's start (MXCSR is a thread's, and a fiber's with
+   FIBER_FLAG_FLOAT_SWITCH). A lift without the option never asks: MXCSR is left alone, as before. HOS_FPCR_SYNC=0: left
+   alone in any build (then a native lift's FZ is the host's default, no flush: a measurement switch only). */
+static volatile LONG fpcr_follow;
+static int fpcr_sync_on(void) {
+    static int on = -1;
+    if (on < 0) {
+        const char *e = getenv("HOS_FPCR_SYNC");
+        on = !(e && e[0] == '0');
+    }
+    return on;
+}
+static void fpcr_apply(const Ctx *c) {
+#if defined(__x86_64__) || defined(_M_X64)
+    const unsigned want = ((uint32_t)c->fpcr & (1u << 24)) ? 0x8040u : 0u;
+    const unsigned now = _mm_getcsr();
+    if ((now & 0x8040u) != want) _mm_setcsr((now & ~0x8040u) | want);
+#else
+    (void)c;
+#endif
+}
+void hos_fpcr_follow(void) {
+    if (fpcr_sync_on()) InterlockedExchange(&fpcr_follow, 1);
+}
+void hos_fpcr_sync(Ctx *c) {
+    if (fpcr_follow) fpcr_apply(c);
+}
+void hos_fpcr_start(const Ctx *c) {
+    if (fpcr_follow) fpcr_apply(c);
 }
 
 static DWORD WINAPI thread_main(void *p) {
     HosThread *t = (HosThread *)p;
     cur = t;
     Ctx *c = &t->ctx;
+    hos_fpcr_start(c);
     c->x[0] = t->arg;
     c->x[30] = 0;
     c->x[31] = (t->stack + t->stack_size) & ~15ULL;
@@ -1612,6 +1650,7 @@ static void WINAPI fiber_main(void *p) {
     c->x[0] = f->arg;
     c->x[30] = 0;
     c->x[31] = (f->stack + f->size) & ~15ULL;
+    hos_fpcr_start(c);   /* (a new fiber has the default MXCSR and the FPCR of whoever started it) */
     a64_icall(c, f->fn);   /* FiberType* (*)(void*) */
     const uint64_t next = c->x[0];
     f->done = 1;

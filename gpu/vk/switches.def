@@ -45,6 +45,7 @@ SW(HOS_DPI_UNAWARE, kill, bool, "the process and window thread are made per-moni
 SW(HOS_DYNRES, player, bool, "the menu's resolution row", "Overrides the menu's dynamic resolution row for a run (0 turns the game's dynamic resolution off).")
 SW(HOS_ENV_FILE, diag, string, "hookshot_env.txt in the game's folder", "Reads switches from the named file instead of hookshot_env.txt, for a scripted or A/B test run.")
 SW(HOS_FIXED_TIME, diag, int, "the PC's real clock", "The game's clock starts at the given POSIX seconds at boot, so runs can be compared.")
+SW(HOS_FPCR_SYNC, kill, bool, "on: with a build whose hot game code uses the processor's own float (A64_NATIVE_FP), its flush-to-zero mode follows the game's", "=0 leaves the processor's float mode alone (a measurement switch: tiny values are then not flushed as the game expects).")
 SW(HOS_FPS_CLOTH_60, attempt, bool, "off: above a 60 cap the cloth is solved every frame, each solve a 60th", "=1 solves the Havok cloth at most 60 times a second above a 60 cap (the game clock's whole 60ths), keeping its last pose between.")
 SW(HOS_FPS_LOG, diag, bool, "off", "Logs the game's frame limiter, VRR flags, nominal rate and game clock speed every 300 presents.")
 SW(HOS_FPS_MAX, player, int, "the Game frame rate cap row (frame_rate_cap in the options file)", "Sets the game's frame rate cap for a run (30 or 61-1000), over the menu's Game frame rate cap row.")
