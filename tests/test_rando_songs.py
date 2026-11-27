@@ -243,7 +243,7 @@ def main():
           "now = song_stone(open(os.path.join(romfs, *rel.split(\"/\")), \"rb\").read(), asked)" in script and "shop_parts | song_parts" in script,
           "the songs are not bound to the lessons with Song spots, their flows are not gone through, or the royal tomb's stones are left")
     check("only=lesson_only, apart=frozenset(lessons) if a.songs == 2 else (),\n                                      holds=holds or None," in script and script.count("keep=frozenset(lesson_only))") == 2 and
-          "now, found = gift_items(was, {own[flow]: now_gives[own[flow]]}, kinds=(4,))" in script and
+          "now, found = gift_items(was, {own[flow]: held_gift(flow, now_gives[own[flow]])}, kinds=(4,))" in script and   # (an ocarina: its held item, bug 162)
           "then, found = gift_items(now if now is not None else was, words, kinds=(0, 1))" in script and
           "asked = {old: new for old, new in now_gives.items() if new in SONG_ITEMS or new in lesson_safe}" in script,
           "Anywhere: the lessons asked about by name hold anything, lose their item to a Gold Skulltula or a Piece of Heart, or a lesson's gift "

@@ -5922,8 +5922,10 @@ static int oot_pot_open(Ctx *c, const char *name, int *broken);
    (1), so everything after goes by the seed's item as it did. 0: not such a name, left as it is. */
 #define OOT_POT_FALL "_Fall"
 /* (tools/rando/rando_seed.py POT_AS, asked 2026-11-25) A pick-up the seed made for an item that has no chest's item of its
-   own, and the item it stands for: the Master Sword's (MASTER_PICKUP, made from the Biggoron's item) */
-static const char *const oot_pot_as[][2] = {{"Item_Sword_Master", "Weapon_Sword_Master"}};
+   own, and the item it stands for: the Master Sword's (MASTER_PICKUP, made from the Biggoron's item), and an ocarina's
+   that a character hands over (OCARINA_HELD, bug 162: Link held up the ocarina he plays and the game fell; the add is
+   by the held item's name, seen without a window, and is made the ocarina's here) */
+static const char *const oot_pot_as[][2] = {{"Item_Sword_Master", "Weapon_Sword_Master"}, {"Item_HeldOcarina_Fairy", "Item_Ocarina_Fairy"}, {"Item_HeldOcarina_Time", "Item_Ocarina_Time"}};
 /* (tools/rando/rando_seed.py DUNGEON_PICKUP, asked 2026-11-26) A pot's dungeon item is a pick-up of its dungeon's own,
    "<the item>_<its dungeon>": the get scene's words are the seed's for that name, and the add here is made the item's again,
    its dungeon kept for oot_dungeon_item (oot_pickup_folder). Two pots broken by one swing, each with a small key of another
@@ -6019,7 +6021,7 @@ int hos_oot_pouch_add(Ctx *c) {
     if (oot_pot_fall(name)) {   /* (a pot's falling pick-up, POT_FALL_AS: the add is its item's) */
         if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder))
             hos_log("rando: pots: the pick-up is %s's own", oot_pickup_folder);
-        hos_log("rando: pots: a pot's pick-up is the seed's %s: that is added", name);
+        hos_log("rando: pots: a pot's pick-up (or an item of the seed's own) is the seed's %s: that is added", name);
         view = oot_pouch_name(c, view, name);
     } else if (oot_dungeon_pickup(name, oot_pickup_folder, sizeof oot_pickup_folder)) {   /* (a Gold Skulltula's drop of a dungeon's own) */
         hos_log("rando: a Gold Skulltula's drop is %s's own %s: that is added", oot_pickup_folder, name);
