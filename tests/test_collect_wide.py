@@ -10,6 +10,7 @@ python -I -B tests/test_collect_wide.py [--cc gcc]
 import argparse
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -26,6 +27,9 @@ FIXTURE = r"""
 static uint8_t a64_dirty[A64_DIRTY_PAGES];
 static uint64_t guest_size = A64_DIRTY_PAGES << 12;
 static uint64_t hos_guest_size(void) { return guest_size; }
+/* (the host's checked allocation, hos.h: the lists come from it since HeyListen bbebb6ee was taken) */
+static void *hos_xmalloc(size_t size, const char *what) { (void)what; return malloc(size); }
+static void *hos_xrealloc(void *old, size_t size, const char *what) { (void)what; return realloc(old, size); }
 static int clear_calls;
 #define memcpy(d, s, n) (clear_calls += (n) == 256, memcpy(d, s, n))
 
@@ -135,6 +139,13 @@ def main():
             if wide == "0":
                 env["HOS_COLLECT_WIDE"] = "0"
             subprocess.run([str(exe), wide], check=True, env=env)
+    # (HeyListen bbebb6ee: the lists are the host's checked allocation, which waits at the commit limit and then says the PC
+    #  ran out of memory; a plain realloc's null was written through, 131072 entries in)
+    if ('uint32_t *out = hos_xmalloc(cap * sizeof *out, "the written pages' list");' not in src or
+            'out = hos_xrealloc(out, (cap *= 2) * sizeof *out, "the written pages' list");' not in src or
+            " out = realloc(out," in src or "uint32_t *out = malloc(" in src):
+        print("FAIL: the written pages' list is grown by an allocation whose failure is not checked")
+        sys.exit(1)
     print("ok: the same pages 256 marks a step as 32")
 
 

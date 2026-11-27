@@ -105,7 +105,10 @@ static int64_t collect_in(const uint64_t (*ranges)[2], int nranges, uint32_t **p
         wide = !(e && e[0] == '0');
     }
     size_t n = 0, cap = 4096;
-    uint32_t *out = malloc(cap * sizeof *out);
+    /* (HeyListen bbebb6ee: the list grew with realloc and its result was used unchecked. One of their crash records, an AMD
+       integrated GPU at the title: the 131072nd page written at null + 0x80000 after the growth was refused at the commit
+       limit. hos_xmalloc and hos_xrealloc wait there and then say the PC ran out of memory, as the other host lists do) */
+    uint32_t *out = hos_xmalloc(cap * sizeof *out, "the written pages' list");
     for (int r = 0; r < nranges; r++) {
         const uint64_t lo = ranges[r][0], hi = ranges[r][1] < hos_guest_size() ? ranges[r][1] : hos_guest_size();
         uint64_t p1 = (hi + 4095) >> 12;
@@ -132,7 +135,7 @@ static int64_t collect_in(const uint64_t (*ranges)[2], int nranges, uint32_t **p
                 }
             }
             if (__atomic_load_n(&a64_dirty[p], __ATOMIC_RELAXED) && __atomic_exchange_n(&a64_dirty[p], 0, __ATOMIC_ACQUIRE)) {
-                if (n == cap) out = realloc(out, (cap *= 2) * sizeof *out);
+                if (n == cap) out = hos_xrealloc(out, (cap *= 2) * sizeof *out, "the written pages' list");
                 out[n++] = (uint32_t)p;
             }
             p++;
@@ -146,7 +149,7 @@ static int64_t host_collect(uint32_t **pages) {
        8,192-pool list left the newest pools out (the Ganondorf fight's lag, 7edeee8d) */
     static uint64_t (*ranges)[2];
     static int cap;
-    if (!ranges) cap = 4096, ranges = malloc(sizeof *ranges * (size_t)cap);
+    if (!ranges) cap = 4096, ranges = hos_xmalloc(sizeof *ranges * (size_t)cap, "the GPU ranges' list");
     int n;
     while ((n = hos_gpu_guest_ranges(ranges, cap)) == cap) {
         uint64_t (*more)[2] = realloc(ranges, sizeof *ranges * (size_t)cap * 2);
