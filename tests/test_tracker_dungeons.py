@@ -5,13 +5,21 @@ Each dungeon's small keys in hand of its total, and whether its map, compass and
   inventory's counts and sends them (OOT_DUNGEON_BASE + d: the keys | 256 map | 512 compass | 1024 Boss Key, -1 no save);
 - the ids are their own, after the Health bars' and before the Damage numbers';
 - the dungeons are in the same order on both sides, and the seed tool's (tools/rando/rando_seed.py DUNGEON_FOLDERS);
-- the menu keeps the values, has the row before the areas, and draws its panel (and words in a narrow window).
+- the menu keeps the values, has the row before the areas, and draws its panel (and words in a narrow window);
+- the row counts only what a dungeon has (bug 159: Maps and compasses: From the start sets the map's and the compass's
+  flag of the Training Ground and Ganon's Castle too, which have neither, and the row said "27 of 26 items"): the row's
+  words are compiled and run on the owner's save's flags, and the panel draws a dash for an item a dungeon has not.
 
-    python -I -B tests/test_tracker_dungeons.py
+    python -I -B tests/test_tracker_dungeons.py [--cxx g++]
 """
+import argparse
 import importlib.util
+import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +31,32 @@ seed = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(seed)
 
 
+RUN_ALL_ARGS = ["--cxx", "{cxx}"]
+FIXTURE = r"""
+#include <atomic>
+#include <cstdio>
+#include <string>
+#define OOT_DUNGEON_COUNT 12
+std::atomic<int> dungeon_state[OOT_DUNGEON_COUNT];
+// TABLES
+// SAYS
+int main() {
+    // (the owner's save of 2026-11-26, Maps and compasses: From the start: every dungeon's map and compass flag set, the
+    //  Forest, Water and Spirit Temples' Boss Keys, a key of the Fire and Water Temples and the Training Ground, two of the
+    //  Spirit Temple's)
+    const int keys[OOT_DUNGEON_COUNT] = {0, 0, 0, 0, 0, 1, 0, 1, 0, 2, 1, 0};
+    const bool boss[OOT_DUNGEON_COUNT] = {false, false, false, false, true, false, false, true, false, true, false, false};
+    for (int d = 0; d < OOT_DUNGEON_COUNT; d++) dungeon_state[d] = keys[d] | 256 | 512 | (boss[d] ? 1024 : 0);
+    puts(dungeon_says().c_str());
+    for (int d = 0; d < OOT_DUNGEON_COUNT; d++) dungeon_state[d] = 256 | 512 | 1024;   // (every flag there is)
+    puts(dungeon_says().c_str());
+    for (int d = 0; d < OOT_DUNGEON_COUNT; d++) dungeon_state[d] = -1;
+    puts(dungeon_says().c_str());
+    return 0;
+}
+"""
+
+
 def check(ok, why):
     if not ok:
         print("FAIL: %s" % why)
@@ -30,6 +64,9 @@ def check(ok, why):
 
 
 def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--cxx", default="g++")
+    a = p.parse_args()
     header = (ROOT / "gpu" / "vk" / "oot_cheat_items.h").read_text(encoding="utf-8")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
@@ -59,6 +96,23 @@ def main():
     for table in ("kDungeonKeys", "kDungeonMaps", "kDungeonBossKey", "kDungeonTitles"):
         row = re.search(table + r"\[OOT_DUNGEON_COUNT\] = \{([^}]*)\}", menu)
         check(row and len([v for v in row.group(1).split(",") if v.strip()]) == count, "%s is not one a dungeon" % table)
+    # ---- bug 159: only what a dungeon has is counted, and drawn ----
+    check(count == 12, "the fixture's save is of 12 dungeons")
+    tables = "\n".join(m.group(0) for m in re.finditer(
+        r"^constexpr (?:int|bool) (?:kDungeon\w+\[OOT_DUNGEON_COUNT\]|dungeon_has\()[^\n]*", menu, re.M))
+    fixture = FIXTURE.replace("// TABLES", tables).replace("// SAYS", block(menu, "std::string dungeon_says() {"))
+    with tempfile.TemporaryDirectory(prefix="tracker-dungeons-") as tmp:
+        cpp, exe = Path(tmp) / "fixture.cpp", Path(tmp) / "fixture.exe"
+        cpp.write_text(fixture, encoding="utf-8")
+        subprocess.run([a.cxx, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-Wno-unused-const-variable", str(cpp), "-o", str(exe)], check=True)
+        # (llvm-mingw's programs want its libc++.dll, which is beside the compiler and not on PATH)
+        beside = os.path.dirname(shutil.which(a.cxx) or "")
+        env = dict(os.environ, PATH=beside + os.pathsep + os.environ.get("PATH", ""))
+        said = subprocess.run([str(exe)], check=True, capture_output=True, text=True, env=env).stdout.splitlines()
+    check(said == ["5 keys in hand, 23 of 26 items", "0 keys in hand, 26 of 26 items", "Load a save to see them"],
+          "the row's words count an item a dungeon has not: %r" % said)
+    check("mark(col[k + 1], my, dungeon_has(d, k) ? (got ? 1 : 0) : -1);" in panel,
+          "the panel does not draw a dash for an item the dungeon has not, whatever its flag says")
     print("PASS: the Tracker's Dungeon items row")
 
 
