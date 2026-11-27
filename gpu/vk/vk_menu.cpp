@@ -783,6 +783,18 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
     const float scale = std::min((mx1 - mx0) / std::max(hi[0] - lo[0], span * 0.05f), (my1 - my0) / std::max(hi[1] - lo[1], span * 0.05f));
     const float ox = (mx0 + mx1) * 0.5f - (lo[0] + hi[0]) * 0.5f * scale, oy = (my0 + my1) * 0.5f - (lo[1] + hi[1]) * 0.5f * scale;
     const TrackerCheck* picked = tracker_pick[row] ? tracker_row_check(row, tracker_pick[row]) : nullptr;
+    // (Link: a gold arrow the way he faces, under the dots. Until bug 160 it was drawn over them: he stood at Hyrule
+    //  Castle's Pot #3 and #4 and the arrow covered both, "no dot near". A check he stands on shows on him)
+    if (link) {
+        const float yaw = link_place[2].load(std::memory_order_relaxed) / 1000.0f, fx = sinf(yaw), fz = cosf(yaw);
+        const ImVec2 at(ox + link_at[0] * scale, oy + link_at[1] * scale), f(fx, fz), side(-fz, fx);
+        const float r = 9 * s;
+        const ImVec2 tip(at.x + f.x * r, at.y + f.y * r), l(at.x - f.x * r * 0.7f + side.x * r * 0.7f, at.y - f.y * r * 0.7f + side.y * r * 0.7f),
+            rr(at.x - f.x * r * 0.7f - side.x * r * 0.7f, at.y - f.y * r * 0.7f - side.y * r * 0.7f);
+        c.d->AddTriangleFilled(tip, l, rr, ui::rgba(255, 205, 60));
+        c.d->AddTriangle(tip, l, rr, ui::rgba(20, 20, 20, 220), 1.5f * s);
+        ui::text_mid(c, c.f.body, 13 * s, at.x + r + 3 * s, at.y, ui::rgba(255, 205, 60), "Link");
+    }
     for (int pass = 0; pass < 2; pass++)   // (the others, then the one stepped to over them)
         for (int i = 0; i < tracker_check_count; i++) {
             const TrackerCheck& k = tracker_checks[i];
@@ -798,16 +810,6 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
             else c.d->AddCircle(at, 4.5f * s, kOut, 0, 1.6f * s);
             if (&k == picked) c.d->AddCircle(at, 10 * s, ui::kAccent, 0, 2.2f * s);
         }
-    if (link) {   // (Link: a gold arrow the way he faces, over the dots)
-        const float yaw = link_place[2].load(std::memory_order_relaxed) / 1000.0f, fx = sinf(yaw), fz = cosf(yaw);
-        const ImVec2 at(ox + link_at[0] * scale, oy + link_at[1] * scale), f(fx, fz), side(-fz, fx);
-        const float r = 9 * s;
-        const ImVec2 tip(at.x + f.x * r, at.y + f.y * r), l(at.x - f.x * r * 0.7f + side.x * r * 0.7f, at.y - f.y * r * 0.7f + side.y * r * 0.7f),
-            rr(at.x - f.x * r * 0.7f - side.x * r * 0.7f, at.y - f.y * r * 0.7f - side.y * r * 0.7f);
-        c.d->AddTriangleFilled(tip, l, rr, ui::rgba(255, 205, 60));
-        c.d->AddTriangle(tip, l, rr, ui::rgba(20, 20, 20, 220), 1.5f * s);
-        ui::text_mid(c, c.f.body, 13 * s, at.x + r + 3 * s, at.y, ui::rgba(255, 205, 60), "Link");
-    }
 }
 /// The help's last line for a row stepped to a check: in logic, or what Link still needs for it
 std::string tracker_hint(int row) {
