@@ -59,6 +59,7 @@ const char *hos_sdl_error(void) { return "no device"; }
    no_default */
 static int listed = 1, no_default, opens, opened, closed, mic_bytes, next_sample, last_format, last_rate, last_channels;
 static int expanded_list;
+static int no_mic_at_all;   /* (the system has none: the list is empty; else, with `listed` 0, another one is still there) */
 static uint32_t id_base = 7, last_id = 99;
 #define LONG_NAME "Microphone Array (Intel\xc2\xae Smart Sound Technology for Digital Microphones)"
 int hos_sdl_mic_list(uint32_t *ids, char (*names)[128], int max) {
@@ -71,6 +72,9 @@ int hos_sdl_mic_list(uint32_t *ids, char (*names)[128], int max) {
             else snprintf(names[n], 128, "Expanded microphone %d", n);
         } else strcpy(names[n], all[n]);
     }
+    /* (Triforce v0.8.4's any_mic: `listed` 0 is the wanted one pulled out, the PC's other microphone, the default, still
+       listed; a PC with none at all is no_mic_at_all) */
+    if (!n && !no_mic_at_all && max > 0) ids[0] = 900, strcpy(names[0], "Another microphone"), n = 1;
     return n;
 }
 void *hos_sdl_mic_open(uint32_t id, int freq, int channels, uint16_t format) {
@@ -234,6 +238,22 @@ int main(void) {
     listed = 0;
     for (int i = 0; i < 6; i++) mic_bytes = 9600, MS(1000), (void)FILLED(stream);
     if (last_id != 0) FAIL(42, "a pulled-out one sending zeros: the default stands in (%u)", last_id);
+    {   /* (Triforce v0.8.4) a PC with no microphone at all: the default is not opened, at the first try or at a retry (SDL's
+           open of it blocks for seconds there, on the game's thread: the Ocarina froze the game) */
+        const int was_mode_opens = opens;
+        no_mic_at_all = 1, listed = 0;
+        hos_mic_select(1, "", -1);
+        for (int i = 0; i < 12; i++) MS(1000), (void)FILLED(stream);
+        if (opens != was_mode_opens) FAIL(60, "no microphone at all: the default was opened %d time(s)", opens - was_mode_opens);
+        hos_mic_select(2, "Test microphone", -1);
+        for (int i = 0; i < 12; i++) MS(1000), (void)FILLED(stream);
+        if (opens != was_mode_opens) FAIL(61, "no microphone at all: a stand-in was opened %d time(s)", opens - was_mode_opens);
+        no_mic_at_all = 0;
+        hos_mic_select(2, "Test microphone", -1);
+        MS(6000), (void)FILLED(stream);
+        if (last_id != 0) FAIL(62, "a microphone there again: the default stands in (%u)", last_id);
+        cases++;
+    }
     listed = 1;
     MS(4000), (void)FILLED(stream);
     if (last_id != 20) FAIL(43, "and it is back on the next try (%u)", last_id);

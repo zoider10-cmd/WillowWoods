@@ -202,6 +202,14 @@ static int find_device(const Source *src, uint32_t *id) {
     const int n = hos_sdl_mic_list(ids, names, MAX_DEVICES);
     return pick(ids, names, n, src, id);
 }
+/* (Triforce v0.8.4) The system has a microphone at all. With none (Windows' Recording tab empty) SDL's open of the default
+   blocks for seconds before it fails (WASAPI: "can't find requested audio endpoint"), on the game's thread, at every
+   retry: a player's Ocarina froze the game 1 to 15 s at a time while it was out. The list is SDL's own, made at no cost */
+static int any_mic(void) {
+    uint32_t ids[MAX_DEVICES];
+    char names[MAX_DEVICES][128];
+    return hos_sdl_mic_list(ids, names, MAX_DEVICES) > 0;
+}
 static const char *wanted(const Source *src) { return src->mode == 2 ? src->want : "the default microphone"; }
 static void close_mic(Source *src, int64_t now) {
     if (src->mic) {
@@ -226,7 +234,7 @@ static void missed(Source *src, int64_t now, const char *why) {
 }
 static void stand_in(Source *src, int64_t now) {   /* (the default, while the wanted one cannot be had) */
     if (src->standin) return;
-    void *standin = hos_sdl_mic_open(0, src->rate, src->channels, sdl_format(src->format));
+    void *standin = any_mic() ? hos_sdl_mic_open(0, src->rate, src->channels, sdl_format(src->format)) : NULL;
     if (standin) use(src, standin, 1, now);
     else close_mic(src, now);
 }
@@ -245,7 +253,7 @@ static void connect(Source *src) {
     }
     uint32_t id = 0;   /* (the system's default) */
     void *mic = NULL;
-    const int found = src->mode == 1 || find_device(src, &id);
+    const int found = src->mode == 1 ? any_mic() : find_device(src, &id);
     if (found) mic = hos_sdl_mic_open(id, src->rate, src->channels, sdl_format(src->format));
     if (mic) {
         if (!src->failures) hos_log("audio in: %s open (%d Hz, %d channel%s)", wanted(src), src->rate, src->channels,
