@@ -6,6 +6,7 @@ together; the Haunted Wasteland's 8 pots in 9 x 2 m. So:
 - the area map shows the checks of Link's age, as the minimap does (tracker_of_age), and the one stepped to whatever its age;
 - stepped to a check in a crowd, the view closes in on it (tracker_zoom_half), the whole area small in the corner;
 - a mark's shape says what the check is (tracker_kind_mark: a chest, a Gold Skulltula, a pot, anything else), with a legend;
+- a dungeon's map draws the checks of other floors faint (tracker_same_floor: by height, of the check stepped to or Link);
 - the help line says where the check is from Link (tracker_from_link), and a check well above or below him has an up or a
   down mark on both maps (Link's height: OOT_LINK_Y from the game side).
 The four functions are compiled and run; the rest is read from the sources.
@@ -23,7 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
-from srccut import block   # noqa: E402
+from srccut import between, block   # noqa: E402
 
 RUN_ALL_ARGS = ["--cxx", "{cxx}"]
 FIXTURE = r"""
@@ -34,6 +35,7 @@ FIXTURE = r"""
 #include <string>
 #include <vector>
 // CONSTANTS
+// WORLD
 // FUNCTIONS
 int failed = 0;
 void check(bool ok, const char* what) { if (!ok) printf("FAIL: %s\n", what), failed = 1; }
@@ -74,6 +76,12 @@ int main() {
     check(tracker_zoom_half({}, 50) == 50, "an area of one check is not shown whole");
     check(tracker_zoom_half({0.5f, 0.7f}, 50) == 8, "the view is narrower than its least");
     check(tracker_zoom_half({20, 30}, 100) == 37.5f, "fewer neighbours than asked for: not out to the farthest");
+    // ---- a dungeon's floors, by height ----
+    check(tracker_is_dungeon("Shadow Temple") && tracker_is_dungeon("Inside the Deku Tree") && tracker_is_dungeon("Gerudo Training Ground"), "a dungeon");
+    check(!tracker_is_dungeon("Hyrule Field") && !tracker_is_dungeon("Market") && !tracker_is_dungeon("Kakariko Village"), "an area outdoors is no dungeon");
+    // (the Shadow Temple's checks' heights: 41..42, 46..48, 51..64, 87..90; Dodongo's Cavern's two floors: 92..104, 110..117)
+    check(tracker_same_floor(41, 42) && tracker_same_floor(46, 48) && !tracker_same_floor(42, 57) && !tracker_same_floor(57, 88), "the Shadow Temple's floors");
+    check(tracker_same_floor(96, 99) && !tracker_same_floor(96, 112), "Dodongo's Cavern's floors");
     if (!failed) puts("ok");
     return failed;
 }
@@ -93,11 +101,14 @@ def main():
     menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
     header = (ROOT / "gpu" / "vk" / "oot_cheat_items.h").read_text(encoding="utf-8")
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
-    constants = "\n".join(m.group(0) for m in re.finditer(r"^constexpr (?:int|float) kMap(?:Level|ZoomNear|ZoomMin) = [^\n]*", menu, re.M))
+    constants = "\n".join(m.group(0) for m in re.finditer(r"^constexpr (?:int|float) kMap(?:Level|ZoomNear|ZoomMin|Floor) = [^\n]*", menu, re.M))
     functions = "\n".join(block(menu, marker) for marker in (
         "int tracker_kind_mark(const char* kind) {", "bool tracker_of_age(const char* ages, int age) {",
         "std::string tracker_from_link(float dx, float dy, float dz) {", "float tracker_zoom_half(std::vector<float> away, float half_all) {"))
-    fixture = FIXTURE.replace("// CONSTANTS", constants).replace("// FUNCTIONS", functions)
+    world = (re.search(r"^struct WorldArea \{[^\n]*\};", menu, re.M).group(0) + "\n" +
+             between(menu, "constexpr WorldArea kWorldMap[] = {", "constexpr const char* kWorldEdges[][2] = {"))
+    functions += "\n" + "\n".join(block(menu, m) for m in ("bool tracker_same_floor(float y, float of) {", "bool tracker_is_dungeon(const char* area) {"))
+    fixture = FIXTURE.replace("// CONSTANTS", constants).replace("// WORLD", world).replace("// FUNCTIONS", functions)
     with tempfile.TemporaryDirectory(prefix="tracker-marks-") as tmp:
         cpp, exe = Path(tmp) / "fixture.cpp", Path(tmp) / "fixture.exe"
         cpp.write_text(fixture, encoding="utf-8")
@@ -114,9 +125,16 @@ def main():
           "the area map does not show the checks of Link's age, and the one stepped to")
     check("const float half = picked ? tracker_zoom_half(away, half_all) : half_all;" in area and "if (zoomed) {" in area,
           "the area map does not close in on the check stepped to, or has no picture of the whole area then")
-    check("tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s);" in area,
+    check("tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s, pass == 0);" in area,
           "a check's mark is not its kind's shape, or has no up or down mark")
     check('{{1, "chest"}, {2, "Skulltula"}, {3, "pot"}, {0, "other"}}' in area, "the area map does not say what the shapes are")
+    # (dungeons by floor: the floor of the check stepped to, else Link's; the other floors faint and under, and not counted for the zoom)
+    check("const bool floors = tracker_is_dungeon(tracker_name[row]) && (picked || (link && ly != INT_MIN));" in area and
+          "const float floor_at = picked ? picked->pos[1] : ly / 100.0f;" in area and
+          "return floors && &k != picked && !tracker_same_floor(k.pos[1], floor_at);" in area and
+          "if (!shown(k) || pass != (&k == picked ? 2 : faint(k) ? 0 : 1)) continue;" in area and
+          "&tracker_checks[i] != picked && !faint(tracker_checks[i])) away.push_back(" in area and 'ui::kDim, "another floor");' in area,
+          "a dungeon's map does not draw the other floors' checks faint")
     # ---- the help line, and the minimap ----
     hint = block(menu, "std::string tracker_hint(int row) {")
     check('"From Link: " + tracker_from_link(k->pos[0] - lx / 100.0f, ly != INT_MIN ? k->pos[1] - ly / 100.0f : 0, k->pos[2] - lz / 100.0f)' in hint

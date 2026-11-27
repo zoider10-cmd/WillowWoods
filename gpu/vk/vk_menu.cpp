@@ -796,10 +796,24 @@ float tracker_zoom_half(std::vector<float> away, float half_all) {
     const float half = std::max(away[nth] * 1.25f, kMapZoomMin);
     return half >= half_all * 0.7f ? half_all : half;
 }
+/// (asked 2026-11-26: dungeons by floor) A dungeon's checks are on many floors drawn on one sheet (the Shadow Temple: 84
+/// marks over 102 m of height). The game's files have no table of floors' heights (its map pictures are a floor each, but
+/// Game/MapCaptureInfo's slabs are rooms' and overlap), so a floor here is a height: a check within kMapFloor of the one
+/// stepped to (of Link, with none stepped to and him in the dungeon) is on its floor and drawn as ever, any other faint.
+/// Outdoors the ground rises and falls (Hyrule Field's checks: 98 to 167), so only the dungeons' maps do it
+constexpr float kMapFloor = 4.0f;
+bool tracker_same_floor(float y, float of) { return fabsf(y - of) <= kMapFloor; }
+bool tracker_is_dungeon(const char* area) {
+    for (const WorldArea& a : kWorldMap)
+        if (a.dungeon && !strcmp(a.area, area)) return true;
+    return false;
+}
 /// A check's mark at a place: its kind's shape (tracker_kind_mark), filled when in logic (state 1), an outline not yet
-/// (0), a small dot collected (2), a cross junk (3); lift 1 an up mark over it, -1 a down mark under it, 0 none
-void tracker_mark(ImDrawList* d, ImVec2 at, int mark, int state, int lift, float s) {
-    constexpr ImU32 kIn = ui::rgba(120, 224, 150), kOut = ui::rgba(138, 156, 184), kGot = ui::rgba(92, 104, 126);
+/// (0), a small dot collected (2), a cross junk (3); lift 1 an up mark over it, -1 a down mark under it, 0 none; faint:
+/// on another floor than the one looked at
+void tracker_mark(ImDrawList* d, ImVec2 at, int mark, int state, int lift, float s, bool faint = false) {
+    const int a = faint ? 70 : 255;
+    const ImU32 kIn = ui::rgba(120, 224, 150, a), kOut = ui::rgba(138, 156, 184, a), kGot = ui::rgba(92, 104, 126, a);
     if (state == 2) { d->AddCircleFilled(at, 3 * s, kGot); return; }
     if (state == 3) {
         d->AddLine(ImVec2(at.x - 3 * s, at.y - 3 * s), ImVec2(at.x + 3 * s, at.y + 3 * s), kGot, 1.5f * s);
@@ -845,19 +859,23 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
     const float mx0 = x0 + 30 * s, mx1 = x1 - 30 * s, my0 = y0 + 40 * s, my1 = y1 - 20 * s;
     float lo[2] = {FLT_MAX, FLT_MAX}, hi[2] = {-FLT_MAX, -FLT_MAX};
     int n = 0;
-    std::vector<float> away;   // (how far each other check shown is from the one stepped to)
-    for (int i = 0; i < tracker_check_count; i++) {
-        if (!shown(tracker_checks[i])) continue;
-        const float p[2] = {tracker_checks[i].pos[0], tracker_checks[i].pos[2]};
-        for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], p[k]), hi[k] = std::max(hi[k], p[k]);
-        if (picked && &tracker_checks[i] != picked) away.push_back(hypotf(p[0] - picked->pos[0], p[1] - picked->pos[2]));
-        n++;
-    }
     // (Link, when he is in this area: the map takes him in too, so he is on it wherever he stands)
     const char* here = tracker_here_area();
     const int lx = link_place[0].load(std::memory_order_relaxed), lz = link_place[1].load(std::memory_order_relaxed);
     const int ly = link_place[3].load(std::memory_order_relaxed);
     const bool link = here && !strcmp(here, tracker_name[row]) && lx != INT_MIN && lz != INT_MIN;
+    // (a dungeon: the floor looked at, by its height, tracker_same_floor: the check's stepped to, else Link's)
+    const bool floors = tracker_is_dungeon(tracker_name[row]) && (picked || (link && ly != INT_MIN));
+    const float floor_at = picked ? picked->pos[1] : ly / 100.0f;
+    const auto faint = [&](const TrackerCheck& k) { return floors && &k != picked && !tracker_same_floor(k.pos[1], floor_at); };
+    std::vector<float> away;   // (how far each other check shown on its floor is from the one stepped to)
+    for (int i = 0; i < tracker_check_count; i++) {
+        if (!shown(tracker_checks[i])) continue;
+        const float p[2] = {tracker_checks[i].pos[0], tracker_checks[i].pos[2]};
+        for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], p[k]), hi[k] = std::max(hi[k], p[k]);
+        if (picked && &tracker_checks[i] != picked && !faint(tracker_checks[i])) away.push_back(hypotf(p[0] - picked->pos[0], p[1] - picked->pos[2]));
+        n++;
+    }
     const float link_at[2] = {lx / 100.0f, lz / 100.0f};
     if (link && n)
         for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], link_at[k]), hi[k] = std::max(hi[k], link_at[k]);
@@ -870,7 +888,11 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
             if (hx + 90 * s > x1) break;   // (a narrow panel: the heading alone)
             tracker_mark(c.d, ImVec2(hx + 6 * s, mid), l.mark, 0, 0, s);
             hx += 16 * s;
-            hx += ui::text(c, c.f.body, 15 * s, ImVec2(hx, hy), ui::kDim, l.name) + 16 * s;
+            hx += ui::text(c, c.f.body, 15 * s, ImVec2(hx, hy), ui::kDim, l.name) + 12 * s;
+        }
+        if (floors && hx + 110 * s <= x1) {   // (a dungeon: what a faint mark is)
+            tracker_mark(c.d, ImVec2(hx + 6 * s, mid), 0, 0, 0, s, true);
+            ui::text(c, c.f.body, 15 * s, ImVec2(hx + 16 * s, hy), ui::kDim, "another floor");
         }
     }
     if (!n || mx1 - mx0 < 20 * s || my1 - my0 < 20 * s) return;
@@ -897,16 +919,16 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
         c.d->AddTriangle(tip, l, rr, ui::rgba(20, 20, 20, 220), 1.5f * s);
         ui::text_mid(c, c.f.body, 13 * s, at.x + r + 3 * s, at.y, ui::rgba(255, 205, 60), "Link");
     }
-    for (int pass = 0; pass < 2; pass++)   // (the others, then the one stepped to over them)
+    for (int pass = 0; pass < 3; pass++)   // (the other floors' faint ones, then this floor's over them, then the one stepped to)
         for (int i = 0; i < tracker_check_count; i++) {
             const TrackerCheck& k = tracker_checks[i];
-            if (!shown(k) || (pass == 1) != (&k == picked)) continue;
+            if (!shown(k) || pass != (&k == picked ? 2 : faint(k) ? 0 : 1)) continue;
             const ImVec2 at(ox + k.pos[0] * scale, oy + k.pos[2] * scale);
             const bool got = tracker_done[i].load(std::memory_order_relaxed) == 1, junk = !got && tracker_junk[i];
             const int state = got ? 2 : junk ? 3 : tracker_in_logic(k) > 0 ? 1 : 0;
             // (a check well above or below Link, when he is here and his height is known: an up or a down mark)
             const float up = link && ly != INT_MIN ? k.pos[1] - ly / 100.0f : 0;
-            tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s);
+            tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s, pass == 0);
             if (&k == picked) c.d->AddCircle(at, 11 * s, ui::kAccent, 0, 2.2f * s);
         }
     c.d->PopClipRect();
