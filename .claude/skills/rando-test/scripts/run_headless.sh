@@ -47,7 +47,9 @@ rm -f "$WORK"/shots/*.png "$WORK"/named/"${label}"_*.png; : > "$WORK/live.txt"; 
 #  the junk marks (rando/collected.txt, junk.txt: the game folder's, not the save's; 2026-11-19: test runs on a test seed
 #  left the owner's record another seed's), Go there's place, and the game's log files (2026-11-26: kept by hand before
 #  every run until then))
-kept="collected.txt junk.txt goto_check.txt"
+# (2026-11-27: and the run's stats, which a test run's seconds were added to, and the pop-out Tracker's file, which a test
+#  run's save would fill in)
+kept="collected.txt junk.txt goto_check.txt run_stats.txt tracker_live.txt"
 rm -rf "$WORK/keep"; mkdir -p "$WORK/keep/logs"
 for f in $kept; do [ -f "$GAME/rando/$f" ] && cp -p "$GAME/rando/$f" "$WORK/keep/$f"; done
 for f in "$GAME"/logs/hookshot_log*.txt "$GAME"/logs/hookshot_frames.csv; do [ -f "$f" ] && cp -p "$f" "$WORK/keep/logs/"; done
