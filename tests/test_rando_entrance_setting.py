@@ -88,7 +88,7 @@ check('(" entrances %d%s%s" % (a.entrances, " ageless" if a.entrances >= 2 and (
       "the setting is not on the stamp, or Either age's items is not with the child's group")
 check("for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):" in main and
       "group = child_pool(bool((a.ageless or 0) & 2))" in main and
-      "child_pool = lambda items: ENTRANCE_CHILD if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items)" in main and
+      "child_pool = lambda items: ENTRANCE_CHILD + ((JABU,) if with_jabu else ()) if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items, with_jabu)" in main and
       'behind.update(entrance_shuffle(seed, group, nocturne_free, "" if group is ENTRANCE_ADULT else "-child"))' in main, "the shuffle's calls")
 block = main[main.index("    for group in () if mixed else ENTRANCE_POOLS.get(a.entrances, ()):"):main.index("    # (the tokens are placed by the logic when a rule counts them")]
 for line in ("door_access = {door: entrance_access(needs, spots, door) for door in behind}",
@@ -134,14 +134,14 @@ check(S.entrance_shuffle(303, POOL) == {"ForestTemple": "WaterTemple", "FireTemp
                                          "ShadowTemple": "FireTemple", "GerudoTrainingGround": "ForestTemple"}, "the adult's change of seed 303 moved (seeds made before)")
 check("for h, g in gifts.items():   # (the checks the story holds back until the Deku Tree is done: DEKU_STORY)" in block
       and 'waits[h] = tuple(waits.get(h, ())) + ("InsideTheDekuTree",)' in block, "the checks that wait for the Deku Tree are not told its door")
-check("InsideJabuJabuBelly" not in CHILD + POOL and "SpiritTemple" not in CHILD + POOL, "Jabu-Jabu or the Spirit Temple is in a pool")
+check("InsideJabuJabuBelly" not in CHILD + POOL and "SpiritTemple" not in CHILD + POOL, "Jabu-Jabu (his own step: tests/test_rando_jabu_door.py) or the Spirit Temple is in the first pools")
 
 # the two groups mixed (rando_entrances_mix, 2026-11-27 later still): a dungeon behind a door is one that whoever gets through
 # that door can finish. Seen in trial seeds (the Deku Tree's door to the Forest Temple, the Training Ground's to Dodongo's
 # Cavern, the well's to the Deku Tree).
 fits, A, C = S.entrance_fits, S.ENTRANCE_ADULT, S.ENTRANCE_CHILD
 DEKU, DC, WELL = C
-check(S.ENTRANCE_CHILD_DOORS == (DEKU, WELL) and S.ENTRANCE_TUNICS == ("FireTemple", "WaterTemple") and S.ENTRANCE_NO_CHILD == ("GerudoTrainingGround",), "the mixed groups' lists")
+check(S.ENTRANCE_CHILD_DOORS == (DEKU, WELL, "InsideJabuJabuBelly") and S.ENTRANCE_TUNICS == ("FireTemple", "WaterTemple") and S.ENTRANCE_NO_CHILD == ("GerudoTrainingGround",), "the mixed groups' lists")
 for d in A + C:
     check(fits(d, d) and fits(d, d, True), "%s may not stay behind its own door" % d)
 for kid in (DEKU, WELL):       # (a child's to do, crawlspaces: a child's door or Dodongo's Cavern's, never an adult's)

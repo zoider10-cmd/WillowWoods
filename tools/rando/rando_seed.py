@@ -62,7 +62,7 @@ ZSTD = b"\x28\xb5\x2f\xfd"
 MOD = "rando-seed"
 # (raised whenever the same settings would place something else than before: the launcher's run at Play, --if-changed,
 # then makes the seed again. A seed being played changes under its save when that happens, so not lightly)
-PLACEMENT = 41  # 41: with Open forest exit a dungeon check keeps the Slingshot or the sword its own way asks for (OWN_KEPT_FROM, bug 163). 40: Dodongo's Cavern's way in is the Bomb Bag or the Goron's Bracelet, not both (FLOWER_ENTRY_FROM, bug 158). 39: the checks a child's map has where a child never comes are no checks (Zora's Fountain's hidden cave's pots, Gerudo Valley's far side's, the Haunted Wasteland's), and the cave's adult pots ask what its Gold Skulltula asks (AGE_NEVER_FROM); 38: an overworld pot the tables don't rule takes its area's easiest ruled check's rule for its age, an adult-only pot an adult-only check's, not the nearest actor's (POT_AREA_FROM, bugs 151 and 154); 37: with Small keys: Anywhere, a pot that borrows the rule of an actor of its own dungeon room reached with no small key asks for none either (POT_KEYLESS_FROM); 36: with Dungeon keys, Boss Keys or Maps and compasses: Anywhere, a Gold Skulltula and a pot may hold them too, a drop of the dungeon's own (DUNGEON_DROPS_FROM); 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
+PLACEMENT = 42  # 42: Jabu-Jabu's belly is one of the child's dungeons that change places (JABU_DOOR_FROM). 41: with Open forest exit a dungeon check keeps the Slingshot or the sword its own way asks for (OWN_KEPT_FROM, bug 163). 40: Dodongo's Cavern's way in is the Bomb Bag or the Goron's Bracelet, not both (FLOWER_ENTRY_FROM, bug 158). 39: the checks a child's map has where a child never comes are no checks (Zora's Fountain's hidden cave's pots, Gerudo Valley's far side's, the Haunted Wasteland's), and the cave's adult pots ask what its Gold Skulltula asks (AGE_NEVER_FROM); 38: an overworld pot the tables don't rule takes its area's easiest ruled check's rule for its age, an adult-only pot an adult-only check's, not the nearest actor's (POT_AREA_FROM, bugs 151 and 154); 37: with Small keys: Anywhere, a pot that borrows the rule of an actor of its own dungeon room reached with no small key asks for none either (POT_KEYLESS_FROM); 36: with Dungeon keys, Boss Keys or Maps and compasses: Anywhere, a Gold Skulltula and a pot may hold them too, a drop of the dungeon's own (DUNGEON_DROPS_FROM); 35: an overworld Gold Skulltula in bean soil asks for a bottle by its table's rule too (SOIL_OVER_FROM, bug 140); 34: a Gold Skulltula may drop the Master Sword, its own pick-up (MASTER_SKULLS_FROM); 33: the Master Sword in pots and lying pieces again, a pot's its own pick-up (MASTER_PICKUP, MASTER_POTS_FROM); 32: the Master Sword in no pot and no lying piece (its pack is no pick-up's); with Small keys: Anywhere, the checks held back until temples are done ask for their keys too, and the keys go anywhere the logic reaches (KEYS_ENDING_FROM); 31: a pot with no ruled actor in its own map file borrows the nearest one's in its folder's other files for its age, not its area's rule (POTS_FOLDER_FROM); 30: with Pots, every pot of the game's maps takes part, one the tables don't rule by the nearest ruled actor's rule, each holding junk of its own (POTS_ALL_FROM, RULE_AS); 29: Lake Hylia's chest there once the Water Temple is done asks for that temple's ending (AFTER_WATER_FROM); 28: Lake Hylia's Fire Arrows (the sun's shot) a check, their Fire Arrows in the pool (SUN_FROM); 27: the rainy Kakariko's own check (the windmill chest #1, there only from the Nocturne scene until the Shadow Temple is done) holds junk only (RAINY_FROM, bug 131), Lake Hylia's lab diving game is a gift of the shuffle (GIFTS_FROM, lab_dive), and the frogs' two prizes are two gifts (FROGS_SPLIT_FROM, bug 132); 26: the remake's own overworld checks by rules of their own (OWN_FROM, bug 118), adult checks ask for the Master Sword only where a fight needs it with the sword shuffled (SWORD_FROM), the Bottom of the Well a young Link's by the Song of Storms (WELL_FROM, bug 121), the Forest Stage by the Happy Mask Shop's masks (MASKS_FROM, bug 120), the two Business Scrubs' hearts where the game has them (SCRUB_SWAP_FROM, bug 126); 25: each dungeon check by the other randomizer's newer dungeons (ootrr a253c9a: the Spirit Temple and Gerudo Training Ground rewritten, Ganon's trials, three of Dodongo's Cavern's), DUNGEON_RULES2_FROM; 24: Kakariko's watchtower Gold Skulltula by the Boomerang too (OVERWORLD_MORE); 23: each overworld check asks for its own ways from a new game's start, from the same logic (OVERWORLD_FROM), Bombchu Bowling a child's alone (BOWLING_FREE), and Kakariko's gate Open is on the stamp; 22: the Spirit Temple's checks by age, each age's ways with its own way in (DUNGEON_AGES_FROM); 21: each dungeon check asks for its own ways, from the other randomizers' logic of the remake (DUNGEON_RULES_FROM); 20: with the Deku Tree and the forest's way out open, Deku Sticks from Goron City's pots do for the Kokiri Sword (STICKS_FROM); 19: with Open Door of Time, an adult's place asks for the Song of Time only where its area has Song of Time blocks (TIME_BLOCK_AREAS); 18: Malon's lesson asks for its own rule again with Songs: Anywhere, not for everything (MALON_FREE_FROM); 17: the tunics by the game's own hot rooms and deep water: the Zora Tunic wherever the Iron Boots sink Link, Zora's Fountain's checks above its water asking for neither (TUNIC_WATER_FROM); 16: the Great Fairies' offerings are rolled as the shops' prices are, and a fairy whose price needs a bigger wallet asks for it (FAIRY_PRICES); 15: the Deku Tree's third floor (room 3: a chest and a Gold Skulltula) asks for the Slingshot (DEKU_THIRD_FLOOR); 14: the Great Fairies of the three spells are gifts of the shuffle with Quest rewards, each holding what a lesson asked about by name may (FAIRY_GIFTS); 13: a bottle is a gating item where the bottles are shuffled (Quest rewards), and a Gold Skulltula in bean soil asks for one, its bugs (BOTTLE, soil_need: bug 84); 12: the Goron and Zora Tunics are gifts of the shuffle, and the rules ask for them (TUNICS); the chests with a substitute take part (SUBSTITUTE_CHESTS); the Gold Skulltulas and the Pieces of Heart lying in the world take part as chests do (SHUFFLED_FROM), and the Skulltula house's rewards, with the 40 tokens' one, ask for their tokens, counted (HOUSE_TOKENS); 2: the chests of LOCKED_ROOMS kept their items; 3: they take part again, their rooms opened by FIXES;
                 # 4: the Market's shops ask for nothing with Open forest exit, the Bombchu Shop not for Dodongo's Cavern (shop_need);
                 # 5: rules with alternatives (Either): Zora's Domain by the river or by the lake, and Open forest exit not
                 #    asking for the forest's way out (forest_open)
@@ -5909,11 +5909,13 @@ ENTRANCE_CHILD = ("InsideTheDekuTree", "DodongoCavern", "BottomOfTheWell")
 ENTRANCE_POOLS = {1: (ENTRANCE_ADULT,), 2: (ENTRANCE_CHILD,), 3: (ENTRANCE_ADULT, ENTRANCE_CHILD)}   # (the setting: its groups)
 
 
-def entrance_child_pool(door_open, open_forest, ageless_items):
-    """the child's dungeons that may change places with these settings (see above): () when fewer than two may"""
+def entrance_child_pool(door_open, open_forest, ageless_items, jabu=False):
+    """the child's dungeons that may change places with these settings (see above): () when fewer than two may. jabu:
+    Jabu-Jabu's belly with them (a seed from placement JABU_DOOR_FROM), whatever the other two settings"""
     if not door_open:
         return ()
     pool = tuple(d for d in ENTRANCE_CHILD if (d != "InsideTheDekuTree" or open_forest) and (d != "DodongoCavern" or ageless_items))
+    pool += ("InsideJabuJabuBelly",) if jabu else ()
     return pool if len(pool) >= 2 else ()
 ENTRANCE_NOCTURNE_WAITS = ("ForestTemple", "FireTemple", "WaterTemple")   # (the Nocturne's lesson: STORY_GIFTS)
 ENTRANCES_FILE = "entrances.txt"   # (<a door's own dungeon>|<the dungeon behind it>|<their names on the Tracker, two>, every door of the pools: the Tracker's, tracker_doors_load)
@@ -5934,7 +5936,7 @@ ENTRANCE_WAYS = 3   # (the ways through a door kept: the fewest-item ones; one l
 # The rules are as for the groups apart: a check's own and its new door's. NOT SEEN: a child in the rooms of an adult's
 # temple (a block to push, a ledge to climb), and a child's blue warp out of one (the owner: by glitches people beat the
 # Spirit Temple as a child and the adult's scene plays, Link's model wrong).
-ENTRANCE_CHILD_DOORS = ("InsideTheDekuTree", "BottomOfTheWell")   # (the doors only a child gets through, and the dungeons only he can do)
+ENTRANCE_CHILD_DOORS = ("InsideTheDekuTree", "BottomOfTheWell", "InsideJabuJabuBelly")   # (the doors only a child gets through, and the dungeons only he can do)
 ENTRANCE_TUNICS = ("FireTemple", "WaterTemple")
 ENTRANCE_NO_CHILD = ("GerudoTrainingGround",)
 
@@ -6017,6 +6019,65 @@ DUNGEON_DOORS = {
 }
 
 
+# ---- Jabu-Jabu among the doors (asked 2026-11-27; a test's switch first) ----
+# His door is the one of DUNGEON_DOORS that the game does not open by walking: the first time, a fish dropped before him
+# has him swallow Link, a step of the flow Get_StoneOfWater that changes map to his belly by itself and boots the belly's
+# first scene (Get_StoneOfWater_ArriveJabuJabuBelly: the fish, Dm_InsideJabu_Jabu_0000, the quest's next step); after it
+# his mouth stays open (the flag JabJabOpenedMouth takes the air wall out of it) and the door's actor is what leads in.
+# Seen without a window: with that flag set and no fish given, a child walks into his mouth and is in his belly.
+#  - Another dungeon behind his door: the swallow's map change is that dungeon's (jabu_swallow), and a new game starts
+#    with his mouth open (JABU_MOUTH), so the door does not hang on a fish whose prompt the quest takes away once it is
+#    past the step (the other randomizer's note, OOTRR 13ad839: the quest moved on inside the belly, entered elsewhere).
+#  - His belly behind another door: that door plays the belly's first scene the first time (ENTRANCE_FIRST), as the
+#    swallow did, by the door's own first-visit fields (as the Deku Tree's door has them).
+#  - The way to his door is past King Zora, who sits in it until Ruto's Letter is shown him, a talk of the quest's step
+#    that the belly, entered by another door, moves the quest past (its first scene sets Step09; his talks are the
+#    quest's Step01's and Step07's, so the letter may no longer be shown him then). Seen without a window, Link put on
+#    his seat: he sits there in a new game, with his scene's played flag (HavePlayedEvent.Dm_Zora_0010) set alone, and
+#    after the belly is entered by the Deku Tree's door with the flag put out; with the belly entered so AND the flag
+#    set, the seat is empty and the passage open. So a new game starts with that flag set (JABU_MOUTH): the belly
+#    entered early moves him by itself, and the fountain cannot be shut for good. Shown the letter in the game's own
+#    order he moves as ever (NOT SEEN with the flag set from the start). His map's actor put far under the map did
+#    nothing: he sat where he sits (tried and taken out).
+# From placement JABU_DOOR_FROM his dungeon is one of the child's pool (entrance_child_pool), a child's to do and his door a
+# child's alone (ENTRANCE_CHILD_DOORS).
+JABU = "InsideJabuJabuBelly"
+JABU_MOUTH = {"JabJabOpenedMouth": True, "HavePlayedEvent.Dm_Zora_0010": True}
+JABU_FLOW = "Event/EventFlow/Get_StoneOfWater.bfevfl.zs"
+JABU_DOOR_FROM = 42
+ENTRANCE_FIRST = {JABU: ("Get_StoneOfWater_ArriveJabuJabuBelly", "HavePlayedEvent.Dm_InsideJabu_Jabu_0000")}   # (a dungeon: its first scene, the scene's played flag)
+
+
+def entrance_way_in(dungeon, read):
+    """what a door that leads to `dungeon` says (entrance_dest of its own door, and its first scene where the game plays
+    that another way: ENTRANCE_FIRST)"""
+    dest = entrance_dest(read(entrance_file(DUNGEON_DOORS[dungeon][0][0])), DUNGEON_DOORS[dungeon][1])
+    if dungeon in ENTRANCE_FIRST and "InitEventName" not in dest:
+        dest["InitEventName"], dest["InitEventFlag"] = (("string", v) for v in ENTRANCE_FIRST[dungeon])
+    return dest
+
+
+def jabu_swallow(raw, dest):
+    """the flow Get_StoneOfWater with Jabu-Jabu's swallow leading where dest says (entrance_way_in's of the dungeon behind
+    his door): the map, the start point, and the event booted there, the dungeon's first scene where it has one. The new
+    bytes. ValueError: not one such map change"""
+    import io
+    evfl = evfl_module()
+    flow = evfl.EventFlow()
+    flow.read(raw)
+    found = [e for e in flow.flowchart.events if isinstance(e.data, evfl.ActionEvent) and e.data.actor_action.v is not None
+             and str(e.data.actor_action.v) == "EventReserveBancChange" and e.data.params is not None and e.data.params.data.get("NextBanc") == JABU]
+    if len(found) != 1:
+        raise ValueError("%d map changes to Jabu-Jabu's belly in the flow, not 1" % len(found))
+    boot = dest.get("InitEventName") or dest.get("NextEventName")
+    if boot is None or "NextBancParamNameChild" not in dest or "NextStartPosName" not in dest:
+        raise ValueError("the door's fields name no map, start point or event")
+    found[0].data.params.data.update(NextBanc=dest["NextBancParamNameChild"][1], NextStartPos=dest["NextStartPosName"][1], BootEventName=boot[1])
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
+
+
 def entrance_file(stem):
     return "Banc/%s_Static.bcett.byml.zs" % stem
 
@@ -6064,7 +6125,7 @@ def entrance_files(behind, read):
         raise ValueError("not a one-to-one change among the dungeons with a door: %r" % (behind,))
     files = {}
     get = lambda rel: files[rel] if rel in files else read(rel)
-    way_in = {d: entrance_dest(read(entrance_file(DUNGEON_DOORS[d][0][0])), DUNGEON_DOORS[d][1]) for d in behind}
+    way_in = {d: entrance_way_in(d, read) for d in behind}
     way_out = {d: entrance_dest(read(entrance_out_file(d)), DUNGEON_DOORS[d][2]) for d in behind}
     for door, dungeon in behind.items():
         if door == dungeon:
@@ -10671,7 +10732,8 @@ def main():
     # (Dungeon entrances: a moved dungeon's checks ask for its new door's way in too, entrance_shuffle's note)
     behind = {}
     mixed = a.entrance_mix and (bool((a.ageless or 0) & 2) or a.no_logic)   # (the two groups mixed: with Either age's items only; or with No logic)
-    child_pool = lambda items: ENTRANCE_CHILD if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items)
+    with_jabu = placement >= JABU_DOOR_FROM   # (Jabu-Jabu's belly among the child's: seeds made before keep their change)
+    child_pool = lambda items: ENTRANCE_CHILD + ((JABU,) if with_jabu else ()) if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items, with_jabu)
     nocturne_free = NOCTURNE in PROGRESSION or a.no_logic   # (No logic: the Shadow Temple's door and its boss's room as any)
     if a.entrance_mix and not mixed:
         print("Dungeon entrances: Mix child and adult dungeons does nothing without Either age's items: each group among its own doors")
@@ -10687,7 +10749,7 @@ def main():
         if group is ENTRANCE_CHILD:
             group = child_pool(bool((a.ageless or 0) & 2))
             print("Dungeon entrances: the child's dungeons that change places with these settings: %s" % (", ".join(DUNGEON_SAY[d] for d in group) or
-                  "none (the Door of Time open, and two of: Open forest exit for the Deku Tree, Either age's items for Dodongo's Cavern, the well)"))
+                  "none (the Door of Time open, and two of: Open forest exit for the Deku Tree, Either age's items for Dodongo's Cavern, the well, Jabu-Jabu)"))
         if group:
             behind.update(entrance_shuffle(seed, group, nocturne_free, "" if group is ENTRANCE_ADULT else "-child"))
     door_of = {dungeon: door for door, dungeon in behind.items() if door != dungeon}   # (a moved dungeon: the door it is behind)
@@ -11022,6 +11084,10 @@ def main():
                 new = flag_defaults(was, dict(flags, **FIELD_CLOCK, **DPAD_HUD, **MINIMAP, **SHUFFLED_FIRSTS, **(OPEN_DOOR if a.open_door else {}), **(LINK_DOOR if a.skip_intro else {}), **(AREA_INTROS if a.skip_cutscenes else {}), **(FIRST_PICKUPS if a.skip_cutscenes else {}),
                                                      **({START_PICKUPS[c]: True for c in a.start if c in START_PICKUPS} if a.skip_cutscenes else {}),
                                                      **(MAPS_START if a.maps == 2 else {})))
+                # (the same file: another dungeon behind Jabu-Jabu's door, or a test's: his mouth open and King Zora's scene's flag, JABU_MOUTH)
+                if JABU in door_of.values() or JABU + "=" in os.environ.get("RANDO_TEST_ENTRANCES", "").replace(JABU + "=" + JABU, ""):
+                    more = flag_defaults(new if new is not None else was, JABU_MOUTH)
+                    new = more if more is not None else new
                 if new_game_flag:   # (the same file: a new game's own flag, true in a new game: NEW_GAME_FLAG)
                     more = flag_defaults(new if new is not None else was, {new_game_flag: True})
                     new = more if more is not None else new
@@ -11791,11 +11857,19 @@ def main():
         try:
             if os.environ.get("RANDO_TEST_ENTRANCES"):   # (a test's: the rules know nothing of it)
                 behind = dict(pair.split("=") for pair in os.environ["RANDO_TEST_ENTRANCES"].split(","))
-            for rel, data in entrance_files(behind, lambda rel: changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)).items():
+            door_read = lambda rel: changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
+            for rel, data in entrance_files(behind, door_read).items():
                 changed[rel] = data
                 sizes[rel[:-3]] = len(data)
-        except (OSError, ValueError, struct.error, IndexError) as e:
-            sys.exit("RANDO_TEST_ENTRANCES: %s. Nothing written." % e)
+            if behind.get(JABU, JABU) != JABU:   # (another dungeon behind Jabu-Jabu's door: his swallow leads there too, jabu_swallow)
+                files = flag_files if JABU_FLOW in flag_files else gift_files   # (the scenes' step, later, takes it from either)
+                was = files[JABU_FLOW] if JABU_FLOW in files else unpack(open(os.path.join(romfs, *JABU_FLOW.split("/")), "rb").read(), zs, dicts)
+                files[JABU_FLOW] = jabu_swallow(was, entrance_way_in(behind[JABU], lambda rel: unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)))
+                if files is gift_files:
+                    gift_sizes[JABU_FLOW[:-3]] = len(files[JABU_FLOW])
+                print("Jabu-Jabu's swallow leads to %s; a new game starts with his mouth open, and King Zora makes way once his belly is entered" % DUNGEON_SAY[behind[JABU]])
+        except (OSError, ValueError, struct.error, IndexError, ImportError) as e:
+            sys.exit("Dungeon entrances: %s. Nothing written." % e)
         print("%sdungeon entrances led elsewhere: %s" % ("TEST: " if os.environ.get("RANDO_TEST_ENTRANCES") else "", ", ".join("%s's door -> %s" % kv for kv in sorted(behind.items()))))
     try:   # (every seed: the Water Temple's gate switch without the Ice Cavern, WATER_WALL)
         rel = WATER_WALL_FILE

@@ -49,7 +49,7 @@ check(any(f["ShadowTemple"] in S.ENTRANCE_NOCTURNE_WAITS for f in free), "No log
 kept = [S.entrance_mixed(s, ALL, True, False) for s in range(120)]
 check(not {(a, b) for f in kept for a, b in f.items()} & refused, "with the logic a pair the fits refuse comes up")
 for line in ("mixed = a.entrance_mix and (bool((a.ageless or 0) & 2) or a.no_logic)",
-             "child_pool = lambda items: ENTRANCE_CHILD if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items)",
+             "child_pool = lambda items: ENTRANCE_CHILD + ((JABU,) if with_jabu else ()) if a.no_logic else entrance_child_pool(bool(door_rules), bool(a.open_forest), items, with_jabu)",
              "nocturne_free = NOCTURNE in PROGRESSION or a.no_logic",
              "behind = entrance_mixed(seed, doors, bool((a.ageless or 0) & 4), nocturne_free, a.no_logic)",
              'behind.update(entrance_shuffle(seed, group, nocturne_free, "" if group is ENTRANCE_ADULT else "-child"))',
