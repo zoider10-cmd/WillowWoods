@@ -6074,6 +6074,180 @@ def entrance_files(behind, read):
     return files
 
 
+# ---- Boss Shuffle's first step: a boss's room led to another boss's fight (asked 2026-11-27) ----
+# share/design-entrance-boss-shuffle-research.md B: a boss's room is a room of its dungeon's map, and its fight is started
+# by one actor of the map's _Static file, an EventRequestActor whose RequestEventName is the fight's event (seven of the
+# eight; Jabu-Jabu's is his door's shutter). "Boss X behind boss Y's door": Y's request asks for an event of our own
+# (boss_door_event), whose flow changes map to X's dungeon at the start point in X's room and boots X's fight's event there:
+# what the Debug tab's boss teleport does from the game's side (host/hos_main.c oot_boss_rooms: the same places and events,
+# played by the owner). The flow is a copy of the game's boss rematches' (BOSS_DOOR_FROM, whose Rematch_ entries change map
+# with the same action), with an entry for each door; its events' rows in the two event tables are copies of a rematch's
+# (as EPONA_OWN's). The Fire and Water Temples' entry scenes, not played, walk Link back to the entrance from the boss's
+# room (the game's side's own finding): their played flag is set before the change. Everything after the fight is X's own:
+# its Heart Container, its blue warp, its ending and reward, and where the warp puts Link.
+# The room Link arrives in has a request of its own, which asks for our event of that room: seen without a window, the
+# first way, Gohma's room sent him to King Dodongo's, whose scene played, and that room's request sent him on to Gohma's.
+# So an event of ours asks a flag first (a flag the game has and a randomizer game has no use for, the next of the
+# shelves' pool: shelf_flags): put out, Link walked in, and the flag is set and the map changed; set, he was just sent
+# here, and the flag is put out and nothing more is done (the fight was booted by the change). The flag is true for the
+# length of a map change only.
+# Seen without a window (2026-11-27): a child put in Gohma's room is in Dodongo's Cavern's boss room, King Dodongo's scene
+# played and the fight on, and stays there.
+# Not here: Barinade (the shutter; his warp needs Ruto), Twinrova (no start point in her room), Ganondorf.
+# A TEST'S SWITCH for now: RANDO_TEST_BOSSES="<door's dungeon>=<boss's dungeon>,..." (the rules know nothing of it).
+BOSS_ROOMS = {   # a dungeon: (its boss's fight's event, the start point in the boss's room, its entry scene's played flag or None)
+    "InsideTheDekuTree": ("InsideTheDekuTree_BossArea_ShutIn", "StartPos_Get_StoneOfForest", None),
+    "DodongoCavern": ("Get_StoneOfFire_AppearBoss", "StartPos_Get_StoneOfFire", None),
+    "ForestTemple": ("ForestTemple_SageOfForest_PhantomGanonAppearance", "StartPos_SageOfForest", None),
+    "FireTemple": ("SageOfFire_BossAppear", "StartPos_SageOfFire", "HavePlayedEvent.Goto_FireTemple"),
+    "WaterTemple": ("Demo_SageOfWater_BossAppears", "StartPos_SageOfWater", "HavePlayedEvent.Goto_WaterTemple"),
+    "ShadowTemple": ("ShadowTemple_BossAppear", "StartPos_SageOfShadow", None),
+}
+BOSS_REQUEST = "EventRequestActor"
+BOSS_DOOR_NAME = "WillowBossDoor"
+BOSS_DOOR_FLOW = "Event/EventFlow/%s.bfevfl.zs" % BOSS_DOOR_NAME
+BOSS_DOOR_FROM = "Event/EventFlow/DreamBossStage.bfevfl.zs"
+BOSS_DOOR_TEMPLATE = "DreamBossStage_Rematch_Gohma"   # (the rows copied: a flowchart event that changes map)
+BOSS_FLAG_OUT, BOSS_FLAG_SET = 1, 0   # (EventQueryIsGameDataBool's case for a flag put out, and for one set: boss_door_flow)
+
+
+def boss_door_event(door):
+    """our event's name for the room of the dungeon `door`'s boss"""
+    return "%s_%s" % (BOSS_DOOR_NAME, door)
+
+
+def boss_door_flow(raw, fights, flag):
+    """the flow of our events, from the rematches' flow's bytes: an entry boss_door_event(door) for each door of fights
+    ({a door's dungeon: the dungeon whose boss is fought}). Each asks `flag` (a game's flag's name, see above): put out,
+    it is set, a dungeon's entry scene's flag too where the boss's has one, and the map changed to the boss's room,
+    booting the fight; set, it is put out and the event ends. ValueError: the flow has nothing to copy them from"""
+    import copy
+    import io
+    import evfl
+    flow = evfl.EventFlow()
+    flow.read(raw)
+    flow.name = BOSS_DOOR_NAME
+    f = flow.flowchart
+    f.name = BOSS_DOOR_NAME
+    like = [e for e in f.events if isinstance(e.data, evfl.ActionEvent) and e.data.actor_action.v is not None
+            and str(e.data.actor_action.v) == "EventReserveBancChange" and e.data.params is not None and "BootEventName" in e.data.params.data]
+    system = like[0].data.actor.v if like else None
+    data = next((a for a in f.actors if a.identifier.name == "GameDataActor" and not a.identifier.sub_name), None)
+    if system is None or data is None or system.identifier.name != "GameSystemActor" or not any(h.v == "EventQueryIsGameDataBool" for h in data.queries):
+        raise ValueError("the rematches' flow has no map change of the GameSystemActor, or no GameDataActor that asks a flag")
+
+    def holder(actor, name, kind="actions"):
+        got = [h for h in getattr(actor, kind) if h.v == name]
+        if got:
+            return got[0]
+        h = evfl.common.StringHolder(name)
+        getattr(actor, kind).append(h)
+        return h
+
+    def put(name, flag_name, value, nxt=None):
+        c = evfl.Container()
+        c.data.update(Value=value, Index=-1, GameDataName=flag_name)
+        return action(name, data, "EventTriggerSetGameDataBool", c, nxt)
+
+    def action(name, actor, act, params, nxt=None):
+        e = evfl.Event()
+        e.name = name
+        e.data = evfl.ActionEvent()
+        e.data.actor.v, e.data.actor_action.v, e.data.params = actor, holder(actor, act), params
+        e.data.nxt.v = nxt
+        return e
+    events, entries = [], []
+    for n, (door, boss) in enumerate(sorted(fights.items())):
+        fight, start, seen = BOSS_ROOMS[boss]
+        params = copy.deepcopy(like[0].data.params)
+        params.data.update(NextBanc=boss, NextStartPos=start, BootEventName=fight)
+        go = action("WillowBossDoor%dGo" % n, system, "EventReserveBancChange", params)
+        events.append(go)
+        if seen:
+            go = put("WillowBossDoor%dSeen" % n, seen, True, go)
+            events.append(go)
+        sent = put("WillowBossDoor%dSent" % n, flag, True, go)        # (walked in: off to the boss's room)
+        here = put("WillowBossDoor%dHere" % n, flag, False)           # (just sent here: the fight is this room's)
+        ask = evfl.Event()
+        ask.name = "WillowBossDoor%dAsk" % n
+        ask.data = evfl.SwitchEvent()
+        c = evfl.Container()
+        c.data.update(GameDataName=flag, Index=-1)
+        ask.data.actor.v, ask.data.actor_query.v, ask.data.params = data, holder(data, "EventQueryIsGameDataBool", "queries"), c
+        # (the query's cases, as seen without a window: a flag put out takes case 1, a flag set case 0. The other way
+        #  round the event ended at once in Gohma's room, with three different flags all put out in the save)
+        for value, to in ((BOSS_FLAG_OUT, sent), (BOSS_FLAG_SET, here)):
+            ask.data.cases[value] = evfl.util.RequiredIndex()
+            ask.data.cases[value].v = to
+        events += [sent, here, ask]
+        entry = evfl.EntryPoint(boss_door_event(door))
+        entry.main_event.v = ask
+        entries.append(entry)
+    f.actors = [system, data]
+    f.events = events
+    f.entry_points = entries
+    out = io.BytesIO()
+    flow.write(out)
+    return out.getvalue()
+
+
+def boss_event_rows(data, analyzed, doors):
+    """An event table (EVENT_TABLES: analyzed False the settings', True the analyzed one's) with a row for each door's event
+    (boss_door_event), copied from BOSS_DOOR_TEMPLATE's: the new bytes. ValueError: no such row, or one of ours there"""
+    tree, version = byml_parse(data)
+    if tree is None or tree[0] != "array":
+        raise ValueError("an event table that is not a list of rows")
+    by = {r[1]["__RowId"][1]: r for r in tree[1] if r[0] == "dict" and "__RowId" in r[1]}
+    names = [boss_door_event(d) for d in sorted(doors)]
+    if BOSS_DOOR_TEMPLATE not in by or any(n in by for n in names):
+        raise ValueError("the table has no row of %s, or one of ours already" % BOSS_DOOR_TEMPLATE)
+    rows = list(tree[1])
+    for name in names:
+        row = collections.OrderedDict(by[BOSS_DOOR_TEMPLATE][1])
+        row["__RowId"] = ("string", name)
+        if analyzed:
+            if "SubFlowList" in row:
+                row["SubFlowList"] = ("array", [])
+        else:
+            row["FlowchartFileName"] = ("string", "Work/Event/EventFlow/%s.evfc" % BOSS_DOOR_NAME)
+            row["EntryPointName"] = ("string", name)
+        rows.append(("dict", row))
+    rows.sort(key=lambda r: r[1]["__RowId"][1])
+    return byml_build(("array", rows), version)
+
+
+def boss_room_request(data, door):
+    """the dungeon `door`'s _Static map with its boss's fight's request asking for our event: the new bytes. ValueError: not
+    one such request"""
+    tree, version = byml_parse(data)
+    actors = tree[1].get("Actors") if tree and tree[0] == "dict" else None
+    if not actors or actors[0] != "array":
+        raise ValueError("the map file has no actors")
+    fight = BOSS_ROOMS[door][0]
+    found = [a[1]["Dynamic"][1] for a in actors[1] if a[1].get("Gyaml", ("", ""))[1] == BOSS_REQUEST and a[1].get("Dynamic", ("", None))[0] == "dict"
+             and a[1]["Dynamic"][1].get("RequestEventName", ("", ""))[1] == fight]
+    if len(found) != 1:
+        raise ValueError("%d requests of %s in %s's map, not 1" % (len(found), fight, door))
+    found[0]["RequestEventName"] = ("string", boss_door_event(door))
+    return byml_build(tree, version)
+
+
+def boss_files(fights, read, flag):
+    """({a map file: its new bytes}, the flow's bytes, {an event table: its new bytes}) for bosses fought behind other
+    bosses' doors. fights: {a door's dungeon: the dungeon whose boss is fought there}, a one-to-one change among BOSS_ROOMS,
+    a door that keeps its own boss left out of the files; read(rel): a file's bytes, unpacked. ValueError: not such a
+    change, or a file not as expected"""
+    if set(fights) != set(fights.values()) or not set(fights) <= set(BOSS_ROOMS):
+        raise ValueError("not a one-to-one change among the bosses with a room to lead to: %r" % (fights,))
+    moved = {door: boss for door, boss in fights.items() if door != boss}
+    if not moved:
+        return {}, None, {}
+    maps = {entrance_out_file(door): boss_room_request(read(entrance_out_file(door)), door) for door in moved}
+    flow = boss_door_flow(read(BOSS_DOOR_FROM), moved, flag)
+    tables = {rel: boss_event_rows(read(rel), analyzed, moved) for rel, analyzed in zip(EVENT_TABLES, (False, True))}
+    return maps, flow, tables
+
+
 def tower_anchor(data):
     """Ganon's tower's map with its preloading anchor (ChangeBancBeforehandAnchor, to CrumblingGanonCastle) preloading
     the field instead: the new bytes. ValueError: not one such anchor"""
@@ -10996,6 +11170,25 @@ def main():
         except (OSError, ValueError, struct.error, ImportError) as e:
             sys.exit("Epona by Epona's Song: %s. Nothing written." % e)
         print("Epona's Song: the first time an adult plays it where Link can ride, Epona is his")
+    if os.environ.get("RANDO_TEST_BOSSES"):   # (a test's: a boss's room led to another boss's fight, boss_files; the rules know nothing of it)
+        try:
+            fights = dict(pair.split("=") for pair in os.environ["RANDO_TEST_BOSSES"].split(","))
+            boss_read = lambda rel: (gift_files[rel] if rel in gift_files else changed[rel] if rel in changed else
+                                     unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts))
+            boss_flag = shelf_flags(len(shelves) + 2, a.shop_shelves, shield_shelf, placement)[-1]   # (after the shelves' and a new game's own)
+            boss_maps, boss_flow, boss_tables = boss_files(fights, boss_read, boss_flag)
+            for rel, data in boss_maps.items():
+                changed[rel] = data
+                sizes[rel[:-3]] = len(data)
+            if boss_flow is not None:
+                gift_files[BOSS_DOOR_FLOW] = boss_flow
+                gift_new.add(BOSS_DOOR_FLOW[:-3])
+                gift_files.update(boss_tables)
+                for rel in (BOSS_DOOR_FLOW,) + EVENT_TABLES:
+                    gift_sizes[rel[:-3]] = len(gift_files[rel])
+        except (OSError, ValueError, struct.error, ImportError, IndexError, KeyError) as e:
+            sys.exit("RANDO_TEST_BOSSES: %s. Nothing written." % e)
+        print("TEST: bosses' rooms led elsewhere (the flag %s): %s" % (boss_flag, ", ".join("%s's room -> %s's boss" % kv for kv in sorted(fights.items()))))
     if fairy_cost:   # (the offerings: FAIRY_PRICES)
         try:
             for flow, price in fairy_cost.items():
