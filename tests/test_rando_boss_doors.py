@@ -203,4 +203,58 @@ for dungeon, (fight, start, seen) in S.BOSS_ROOMS.items():
     check((int(rows[dungeon][1], 16) if rows[dungeon][1] else None) == (S.murmur3(seen.encode()) if seen else None), "%s's entry scene's flag is not the game's side's" % dungeon)
 src = (ROOT / "tools" / "rando" / "rando_seed.py").read_text(encoding="utf-8")
 check("RANDO_TEST_BOSS_MODE" not in src and "RANDO_TEST_BOSS_FLAG" not in src and "TRIAL" not in src[src.index("def boss_door_flow"):src.index("def boss_event_rows")], "a trial's code is left in")
-print("ok: a boss's room led to another boss's fight (the files)")
+
+# ---- the setting, rando_boss_shuffle (2026-11-27 later): the shuffle and the rules ----
+# Seen in trial seeds: 11 rules changed, the moved bosses' Heart Containers and the checks that wait for their temples or
+# the Deku Tree, none asking for less; each with the keys of the dungeon the boss is fought from.
+check(S.BOSS_CHILD == (DEKU, DC) and S.BOSS_ADULT == (FOREST, FIRE, WATER, SHADOW) and set(S.BOSS_CHILD + S.BOSS_ADULT) == set(S.BOSS_ROOMS), "the bosses' groups")
+many = [S.boss_shuffle(s) for s in range(300)]
+for f in many:
+    check(set(f) == set(f.values()) == set(S.BOSS_ROOMS), "not a one-to-one change: %r" % f)
+    check({f[d] for d in S.BOSS_CHILD} == set(S.BOSS_CHILD) and {f[d] for d in S.BOSS_ADULT} == set(S.BOSS_ADULT), "a boss fought from a room of the other group: %r" % f)
+check({(a, b) for f in many for a, b in f.items()} == {(a, b) for g in (S.BOSS_CHILD, S.BOSS_ADULT) for a in g for b in g}, "over 300 seeds not every pair of a group came up")
+check(S.boss_shuffle(7) == S.boss_shuffle(7) and any(S.boss_shuffle(s) != S.boss_shuffle(7) for s in range(8, 14)), "not by the seed alone")
+kept = [S.boss_shuffle(s, child=False) for s in range(60)]
+check(all(DEKU not in f and DC not in f and set(f) == set(S.BOSS_ADULT) for f in kept), "the child's two change rooms where they may not (the Door of Time shut, or the forest)")
+waits = S.ENTRANCE_NOCTURNE_WAITS
+quiet = [S.boss_shuffle(s, True, False) for s in range(300)]
+check(all(f[SHADOW] not in waits for f in quiet) and {f[SHADOW] for f in quiet} == {SHADOW}, "without the Nocturne a waited temple's boss is fought from the Shadow Temple's boss's room")
+moved = [S.boss_shuffle(s, True, False, {"ShadowTemple": "IceCavern", "IceCavern": SHADOW}) for s in range(100)]   # (the Ice Cavern behind the Shadow Temple's door: no boss)
+check(all(f[SHADOW] not in waits for f in moved), "without the Nocturne, the Ice Cavern behind the Shadow Temple's door: a waited boss fought from the Shadow Temple's")
+# (a temple behind the Shadow Temple's door without the Nocturne is a change the doors' shuffle never makes; asked for, no
+#  change of the bosses fits two such rooms, and the search says so and ends: it ran without end, found by this check)
+check(refused(S.boss_shuffle, 1, True, False, {"ShadowTemple": FIRE, FIRE: SHADOW}), "a search that cannot end is not refused")
+check('sys.exit("Boss shuffle: %s. Nothing written." % e)' in src and "while True:" not in src[src.index("def boss_shuffle("):src.index("def boss_door_event(")]
+      and "while True:" not in src[src.index("def entrance_shuffle("):src.index("def and_rules(")], "a shuffle's search without an end")
+check(any(S.boss_shuffle(s)[SHADOW] in waits for s in range(40)), "with the Nocturne an item no waited boss is ever fought from the Shadow Temple's")
+
+main = src[src.index("\ndef main():"):]
+for line in ('a.boss_shuffle = ini["rando_boss_shuffle"] == 1',
+             '(" bosses 1" if a.boss_shuffle else "")',
+             "fights = boss_shuffle(seed, bool(door_rules) and bool(a.open_forest), NOCTURNE in PROGRESSION, behind) if a.boss_shuffle else {}",
+             "boss_room = {boss: room for room, boss in fights.items() if room != boss}",
+             "room_access = {room: heart_asks(heart_of[room]) for room in set(boss_room.values())}",
+             "boss_rooms_of = lambda h: {boss_room[d] for d in (bosses.get(h), boss_gift.get(h)) + tuple(boss_waits.get(h, ())) if d in boss_room}",
+             "return fit_rule(and_rules(rule, *(room_access[r] for r in sorted(rooms)))) if rooms and rule is not None else rule",
+             "needs = {h: boss_moved(h, n) for h, n in needs.items()}",
+             "heart_asks = lambda h: boss_moved(h, heart_unmoved(h))",
+             "for room in sorted(boss_rooms_of(h)):",
+             "needs[h] = each(lambda way, keys=key_sets[room]: frozenset(way) | keys, needs[h])",
+             "tracked_own(h, n, d), frozenset(boss_key_tag(r) for r in boss_rooms_of(h) if r in moved_boss))",
+             'if os.environ.get("RANDO_TEST_BOSSES") or boss_room:',
+             "boss_flag = shelf_flags(len(shelves) + 2, a.shop_shelves, shield_shelf, placement)[-1]",
+             "written.append(BOSSES_FILE)",
+             'spoiler = ["Boss shuffle (a boss\'s room -> the boss fought from it)"]'):
+    check(line in main, "the main part lacks: %s" % line)
+check(main.index("    fights = boss_shuffle(") > main.index("        skull_asks = lambda h, at=None: behind_door(") and
+      main.index("    fights = boss_shuffle(") < main.index("kept_tokens = [(skull_asks(h, every_skull[h][0]), TOKEN)"),
+      "the bosses' rules are not after the doors' (a room's rule has its dungeon's door in) and before the placement")
+check('"rando_boss_shuffle": 0' in src and "heart_before = heart_asks\n        heart_asks = lambda h: boss_moved" not in src, "the options' line, or a name of the main part's taken again")
+header = (ROOT / "gpu" / "vk" / "oot_rando.h").read_text(encoding="utf-8")
+launcher = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8")
+check('X(BOSS_SHUFFLE, "Boss shuffle", "rando_boss_shuffle",' in header and header.index("X(BOSS_SHUFFLE,") > header.index("X(ENTRANCES_MIX,")
+      and header.rstrip().count("X(BOSS_SHUFFLE,") == 1 and '"Off", "On")\n\nenum {' in header[header.index("X(BOSS_SHUFFLE,"):], "the menu's table: not there, or not last")
+check('new object[] { "rando_boss_shuffle", "Boss shuffle", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher
+      and launcher.index('new object[] { "rando_boss_shuffle"') > launcher.index('new object[] { "rando_entrances_mix"')
+      and '"rando_entrances_mix", "rando_boss_shuffle" } },' in launcher, "the launcher's table or section")
+print("ok: Boss shuffle: the files, the shuffle and the rules")

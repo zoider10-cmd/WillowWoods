@@ -210,6 +210,9 @@
       "Off", "Adult dungeons", "Child dungeons", "Both") \
     X(ENTRANCES_MIX, "Mix child and adult dungeons", "rando_entrances_mix", \
       "With Dungeon entrances on Both and Either age's items on: a child's dungeon can be behind an adult's door and an adult's behind a child's, each only where it can be finished. The Deku Tree and the Bottom of the Well stay behind a door young Link gets through (their own two or Dodongo's Cavern's): only he fits their crawlspaces. An adult's dungeon behind the Deku Tree's or the well's door is young Link's to do with the adult's items: the Fire and Water Temples go there only with Either age's tunics, the Gerudo Training Ground never (the Silver Gauntlets are an adult's). Dodongo's Cavern and its door take either age. Young Link in an adult's temple is little tried: his model may look wrong in its scenes, and a room may ask for an adult's reach. Without Either age's items this does nothing. Don't change Either age's items or tunics during such a seed. Not tried in play yet.", \
+      "Off", "On") \
+    X(BOSS_SHUFFLE, "Boss shuffle", "rando_boss_shuffle", \
+      "The bosses change rooms: walking into a boss's room sends you to another boss's room, where that boss's fight starts. Gohma and King Dodongo trade places (with the Door of Time open and Open forest exit); Phantom Ganon, Volvagia, Morpha and Bongo Bongo change among themselves. Everything after the fight is the boss's own: its Heart Container, its blue warp, its reward and where the warp takes you. The logic asks for the way to the room a boss is fought from, so the seed can still be finished. The spoiler says which room leads to which boss. Barinade, Twinrova and Ganondorf stay. Not tried in play yet.", \
       "Off", "On")
 
 enum {

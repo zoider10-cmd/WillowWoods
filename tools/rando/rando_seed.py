@@ -5969,12 +5969,13 @@ def entrance_shuffle(seed, pool, nocturne_item=True, stream=""):
     temples done, and none of those is behind it. stream: a group's own name, so that one group's change is the same
     whether the other is shuffled or not (the adult's: "")"""
     rng = random.Random("entrances%s:%d" % (stream, seed))
-    while True:
+    for _ in range(20000):
         order = list(pool)
         rng.shuffle(order)
         behind = dict(zip(pool, order))
         if nocturne_item or behind.get("ShadowTemple") not in ENTRANCE_NOCTURNE_WAITS:
             return behind
+    raise ValueError("no change of the doors fits")
 
 
 def and_rules(*rules):
@@ -6094,7 +6095,39 @@ def entrance_files(behind, read):
 # Seen without a window (2026-11-27): a child put in Gohma's room is in Dodongo's Cavern's boss room, King Dodongo's scene
 # played and the fight on, and stays there.
 # Not here: Barinade (the shutter; his warp needs Ruto), Twinrova (no start point in her room), Ganondorf.
-# A TEST'S SWITCH for now: RANDO_TEST_BOSSES="<door's dungeon>=<boss's dungeon>,..." (the rules know nothing of it).
+# A test's switch, RANDO_TEST_BOSSES="<door's dungeon>=<boss's dungeon>,...", leads them as it says (the rules know nothing
+# of that one).
+#
+# The setting, rando_boss_shuffle (2026-11-27 later): the bosses change rooms within two groups, by the seed alone
+# (boss_shuffle). The child's two, Gohma and King Dodongo, only with the Door of Time open and Open forest exit, as the
+# child's dungeons move (entrance_child_pool's reasons: an adult is the three stones in the rules, and the forest's
+# way out the Deku Tree done); the adult's four among themselves. The rules: beating boss X now takes standing in
+# boss Y's room, so whatever stands for X beaten (its Heart Container, its ending's gift, the checks the story holds
+# back until X's temple is done or the Deku Tree is) asks for what Y's Heart Container asked where the game has it, as
+# well as its own: too much (X's own dungeon and Boss Key still), never too little. Without the Nocturne as an item
+# the Shadow Temple is entered after three temples done, so none of those three's bosses is fought from the Shadow
+# Temple's boss's room, nor from the room of a dungeon that is behind the Shadow Temple's door (Dungeon entrances).
+BOSS_CHILD = ("InsideTheDekuTree", "DodongoCavern")
+BOSS_ADULT = ("ForestTemple", "FireTemple", "WaterTemple", "ShadowTemple")
+BOSSES_FILE = "boss_doors.txt"   # (<a boss's room's dungeon>|<the dungeon whose boss is fought from it>|<their names>, every room of the pools)
+
+
+def boss_shuffle(seed, child=True, nocturne_item=True, behind=None):
+    """{a boss's room's dungeon: the dungeon whose boss is fought from it}, by the seed alone. child: the child's two change
+    places too. nocturne_item: the Nocturne is an item; else see above. behind: Dungeon entrances' {a door's dungeon: the
+    dungeon behind it}, for the Shadow Temple's door. ValueError: no change fits (two rooms reached by the Shadow Temple's
+    door, each to hold a boss that is not waited for)"""
+    rng = random.Random("bosses:%d" % seed)
+    shadow_side = {"ShadowTemple", (behind or {}).get("ShadowTemple", "ShadowTemple")}   # (the rooms reached by the Shadow Temple's door)
+    for _ in range(20000):
+        fights = {}
+        for group in ((BOSS_CHILD,) if child else ()) + (BOSS_ADULT,):
+            order = list(group)
+            rng.shuffle(order)
+            fights.update(zip(group, order))
+        if nocturne_item or not any(fights[room] in ENTRANCE_NOCTURNE_WAITS for room in shadow_side if room in fights):
+            return fights
+    raise ValueError("no change of the bosses' rooms fits")
 BOSS_ROOMS = {   # a dungeon: (its boss's fight's event, the start point in the boss's room, its entry scene's played flag or None)
     "InsideTheDekuTree": ("InsideTheDekuTree_BossArea_ShutIn", "StartPos_Get_StoneOfForest", None),
     "DodongoCavern": ("Get_StoneOfFire_AppearBoss", "StartPos_Get_StoneOfFire", None),
@@ -7154,7 +7187,7 @@ def start_lines(codes):
 
 def settings(game):
     """the randomizer's lines of the options file (0 where it does not say)"""
-    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_keyrings": 0, "rando_entrances": 0, "rando_entrances_mix": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
+    got = {"rando_on": 0, "rando_seed": 0, "rando_chests": 0, "rando_keys": 0, "rando_keyrings": 0, "rando_entrances": 0, "rando_entrances_mix": 0, "rando_boss_shuffle": 0, "rando_major": 0, "rando_open_deku": 0, "rando_open_forest": 0,
            "rando_skip_intro": 0, "rando_skip_cutscenes": 0, "rando_skulltulas": 0, "rando_quests": 0, "rando_frogs": 0, "rando_light_arrows": 0,
            "rando_start_rupees": 0, "rando_scrubs": 0, "rando_shops": 0, "rando_progressive": 0, "rando_songs": 0, "rando_heart_pieces": 0,
            "rando_shop_shelves": 0, "rando_sword_shield": 0, "rando_dungeon_rewards": 0, "rando_open_door": 0,
@@ -9902,6 +9935,7 @@ def main():
     a.house_hints = ini["rando_house_hints"] != 0       # (HOUSE_HINT_TEXT, 2026-11-24: a Quality of life setting; moves no item)
     a.maps = ini["rando_maps"] if ini["rando_maps"] in (0, 1, 2) else 0   # (Maps and compasses: MAPS_START, MAPS_LOOSE)
     a.pots = ini["rando_pots"] == 1   # (Pots: the tables' pots take part, POT_OWN)
+    a.boss_shuffle = ini["rando_boss_shuffle"] == 1   # (Boss shuffle: boss_shuffle)
     a.entrance_mix = ini["rando_entrances_mix"] == 1 and ini["rando_entrances"] == 3   # (the two groups mixed: entrance_mixed; with Either age's items)
     a.entrances = ini["rando_entrances"] if ini["rando_entrances"] in ENTRANCE_POOLS else 0   # (Dungeon entrances: entrance_shuffle)
     a.keyrings = ini["rando_keyrings"] == 1 and keys_mode == 2   # (Key rings: with Small keys: Anywhere only, keyrings)
@@ -10013,7 +10047,7 @@ def main():
         pass
     rest = " seed %d chests %d keys %d major %d logic %d%s\n" % (seed, which, keys_mode, a.event_chests, logic_now,
                                                                (" open %d%d flags" % (a.open_deku, a.open_forest) if flags else "") + (" door 7" if a.open_door else "") + (" door song 1" if a.door_song else "") + (" intro skipped" if a.skip_intro else "") + (" talks skipped" if a.skip_cutscenes else "") + (" rupees %d" % START_RUPEES if a.start_rupees else "") + ((" skulltulas %d" + " gated all" * logic_now) % a.skulltulas if a.skulltulas else "") +
-                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" entrances %d%s%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "", " mixed %d" % ((a.ageless or 0) & 6) if a.entrance_mix and (a.ageless or 0) & 2 else "") if a.entrances else "") + (" pots 1" if a.pots else "") + " checks 10" +
+                                                               (" quests 1%s%s" % (" frogs" * a.frogs, " light" * a.light_arrows) if a.quests else "") + (" scrubs 1 words 2" if a.scrubs else "") + (" scrubs cheap" if a.scrubs_cheap else "") + (" shops %d prices 5" % a.shops if a.shops else "") + (" shelves all" if a.shop_shelves else "") + (" fairies %d" % a.fairy_prices if a.fairy_prices else "") + (" sword and shield 1" if a.sword_shield else "") + (" progressive 1" if a.progressive else "") + (" songs 2%s%s" % (" anywhere 2" if a.songs == 2 else "", " ocarina 1" if a.ocarina else "") if a.songs else "") + (" rewards 1" if a.dungeon_rewards else "") + (" hearts 2" if a.heart_pieces else "") + (" skulltulas by day" if a.skulltulas_day else "") + (" letter 1" if a.letter else "") + (" gate open" if a.gate_open else "") + (" start " + ",".join(a.start) if a.start else "") + (" master sword 2" if a.master_sword else "") + (" dampe hookshot 1" if a.dampe_hookshot else "") + (" magic 1" if a.magic else "") + (" maps %d" % a.maps if a.maps else "") + (" boss keys 1" if a.boss_keys else "") + (" keyrings 1" if a.keyrings else "") + (" bosses 1" if a.boss_shuffle else "") + (" entrances %d%s%s" % (a.entrances, " ageless" if a.entrances >= 2 and (a.ageless or 0) & 2 else "", " mixed %d" % ((a.ageless or 0) & 6) if a.entrance_mix and (a.ageless or 0) & 2 else "") if a.entrances else "") + (" pots 1" if a.pots else "") + " checks 10" +
                                                                (" test drops %08x" % (zlib.crc32(repr(sorted(drops.items())).encode()) & 0xffffffff) if drops else "") +
                                                                (" test pickups " + ",".join(pickups) if pickups else "") +
                                                                (" test chests %08x" % (zlib.crc32(repr(sorted(test_chests.items())).encode()) & 0xffffffff) if test_chests else "") +
@@ -10671,6 +10705,35 @@ def main():
         skull_asks = lambda h, at=None: behind_door(h, at or skulls[h][0], skull_fixed(h, at))
         heart_asks = lambda h: behind_door(h, lying[h][0], heart_fixed(h))
         print("Dungeon entrances: %s" % "; ".join("%s's door leads to %s" % (DUNGEON_SAY[door], DUNGEON_SAY[dungeon]) for door, dungeon in behind.items()))
+    # (Boss shuffle: what stands for a boss beaten asks for the room it is fought from too, boss_shuffle's note)
+    try:
+        fights = boss_shuffle(seed, bool(door_rules) and bool(a.open_forest), NOCTURNE in PROGRESSION, behind) if a.boss_shuffle else {}
+    except ValueError as e:
+        sys.exit("Boss shuffle: %s. Nothing written." % e)
+    boss_room = {boss: room for room, boss in fights.items() if room != boss}   # (a moved boss: the room it is fought from)
+    boss_rooms_of = lambda h: ()   # (the rooms a check's bosses are fought from: their dungeons' small keys are asked for too, below)
+    if boss_room:
+        heart_of = {folder: h for h, folder in bosses.items()}
+        missing = [room for room in boss_room.values() if room not in heart_of]
+        if missing:
+            sys.exit("Boss shuffle: no Heart Container's rule for %s (Heart Containers and Pieces of Heart take part?). Nothing written." % ", ".join(missing))
+        room_access = {room: heart_asks(heart_of[room]) for room in set(boss_room.values())}   # (as the rules have it, the doors of Dungeon entrances in)
+        boss_waits = story_waits()
+        for h, g in gifts.items():
+            if g.key in DEKU_STORY:
+                boss_waits[h] = tuple(boss_waits.get(h, ())) + ("InsideTheDekuTree",)
+        boss_gift = {gift_hash(BOSS_HEARTS[d][0]): d for d in boss_room if d in BOSS_HEARTS}
+
+        boss_rooms_of = lambda h: {boss_room[d] for d in (bosses.get(h), boss_gift.get(h)) + tuple(boss_waits.get(h, ())) if d in boss_room}
+
+        def boss_moved(h, rule):
+            """a check's rule with the rooms the bosses it stands for are fought from: its own boss's, its ending's, the temples it waits for"""
+            rooms = boss_rooms_of(h)
+            return fit_rule(and_rules(rule, *(room_access[r] for r in sorted(rooms)))) if rooms and rule is not None else rule
+        needs = {h: boss_moved(h, n) for h, n in needs.items()}
+        heart_unmoved = heart_asks
+        heart_asks = lambda h: boss_moved(h, heart_unmoved(h))
+        print("Boss shuffle: %s" % "; ".join("%s's boss's room leads to %s's boss" % (DUNGEON_SAY[room], DUNGEON_SAY[boss]) for room, boss in fights.items()))
     # (the tokens are placed by the logic when a rule counts them: the Skulltula house's rewards. The Skulltulas that
     #  keep their token, of another setting or whose file cannot take a drop, are counted where they are)
     counted = placement >= HOUSE_FROM and logic and any(token_count(word) for n in needs.values() for way in (n if isinstance(n, Either) else (n,)) for word in way)
@@ -10734,6 +10797,10 @@ def main():
                 if area in key_sets and h not in free:
                     needs[h] = each(lambda way, keys=key_sets[area]: frozenset(way) | keys, needs[h])
                     asked += 1
+            for h in needs:   # (Boss shuffle: a boss fought from another dungeon's boss's room asks for that dungeon's keys too)
+                for room in sorted(boss_rooms_of(h)):
+                    if room in key_sets and needs[h] is not None:
+                        needs[h] = each(lambda way, keys=key_sets[room]: frozenset(way) | keys, needs[h])
             print("Small keys: Anywhere: %d keys of %d dungeons are items of the shuffle; %d checks ask for their dungeon's keys" % (
                 len(small_tags), len(key_sets), asked))
             if placement >= KEYS_ENDING_FROM:   # (a check the game holds back until temples are done asks for their keys: KEYS_ENDING_FROM)
@@ -11170,9 +11237,10 @@ def main():
         except (OSError, ValueError, struct.error, ImportError) as e:
             sys.exit("Epona by Epona's Song: %s. Nothing written." % e)
         print("Epona's Song: the first time an adult plays it where Link can ride, Epona is his")
-    if os.environ.get("RANDO_TEST_BOSSES"):   # (a test's: a boss's room led to another boss's fight, boss_files; the rules know nothing of it)
+    if os.environ.get("RANDO_TEST_BOSSES") or boss_room:   # (Boss shuffle, or a test's: a boss's room led to another boss's fight, boss_files)
         try:
-            fights = dict(pair.split("=") for pair in os.environ["RANDO_TEST_BOSSES"].split(","))
+            if os.environ.get("RANDO_TEST_BOSSES"):   # (a test's: the rules know nothing of it)
+                fights = dict(pair.split("=") for pair in os.environ["RANDO_TEST_BOSSES"].split(","))
             boss_read = lambda rel: (gift_files[rel] if rel in gift_files else changed[rel] if rel in changed else
                                      unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts))
             boss_flag = shelf_flags(len(shelves) + 2, a.shop_shelves, shield_shelf, placement)[-1]   # (after the shelves' and a new game's own)
@@ -11187,8 +11255,9 @@ def main():
                 for rel in (BOSS_DOOR_FLOW,) + EVENT_TABLES:
                     gift_sizes[rel[:-3]] = len(gift_files[rel])
         except (OSError, ValueError, struct.error, ImportError, IndexError, KeyError) as e:
-            sys.exit("RANDO_TEST_BOSSES: %s. Nothing written." % e)
-        print("TEST: bosses' rooms led elsewhere (the flag %s): %s" % (boss_flag, ", ".join("%s's room -> %s's boss" % kv for kv in sorted(fights.items()))))
+            sys.exit("Boss shuffle: %s. Nothing written." % e)
+        print("%sbosses' rooms led elsewhere (the flag %s): %s" % ("TEST: " if os.environ.get("RANDO_TEST_BOSSES") else "", boss_flag,
+                                                                ", ".join("%s's room -> %s's boss" % kv for kv in sorted(fights.items()))))
     if fairy_cost:   # (the offerings: FAIRY_PRICES)
         try:
             for flow, price in fairy_cost.items():
@@ -12354,6 +12423,14 @@ def main():
                                         collections.Counter(g.area for g in gifts.values()), collections.Counter(p[0] for p in list(pieces.values()) + list(pots.values())))) + "\n")
     with open(os.path.join(mod, DUNGEON_ITEMS_FILE), "w", encoding="utf-8", newline="\n") as f:   # (the game's side: oot_dungeon_item)
         f.write("".join("%016x|%s|%s\n" % (h, owners[h], gives.get(h) or skull_drops.get(h) or pot_drops.get(h)) for h in sorted(owners)))   # (a test pin's on a Skulltula or in a pot: its drop)
+    rooms_file = os.path.join(mod, BOSSES_FILE)   # (Boss shuffle: which room leads to which boss)
+    if boss_room:
+        with open(rooms_file, "w", encoding="utf-8", newline="\n") as f:
+            f.write("".join("%s|%s|%s|%s\n" % (room, boss, AREA_NAMES.get(room, room), AREA_NAMES.get(boss, boss)) for room, boss in fights.items()))
+        written.append(BOSSES_FILE)
+        spoiler = ["Boss shuffle (a boss's room -> the boss fought from it)"] + ["  %-28s -> %s's boss" % (DUNGEON_SAY[room], DUNGEON_SAY[boss]) for room, boss in fights.items()] + [""] + spoiler
+    elif os.path.exists(rooms_file):
+        os.remove(rooms_file)
     doors_file = os.path.join(mod, ENTRANCES_FILE)   # (Dungeon entrances: which door leads where, for the Tracker and whoever reads it)
     if door_of:
         with open(doors_file, "w", encoding="utf-8", newline="\n") as f:
@@ -12376,6 +12453,10 @@ def main():
     #  placement's rules never named it: boss_key_fits put it where the boss's rule reaches)
     moved_boss = {d for d in set(owners.values()) if any((gives.get(h) or skull_drops.get(h) or pot_drops.get(h)) == BOSS_KEY and owners.get(h) == d for h in owners)}
     tracked = lambda h, n, d: fit_rule(each(lambda way: frozenset(way) | {boss_key_tag(d)}, n) if d in moved_boss and n is not None else n)   # (fit again: the keys' letters)
+    if boss_room:   # (Boss shuffle, the Tracker's rules: the Boss Key of the room a boss is fought from, when it moved)
+        tracked_own = tracked
+        tracked = lambda h, n, d: (lambda made, keys: fit_rule(each(lambda way: frozenset(way) | keys, made)) if made is not None and keys else made)(
+            tracked_own(h, n, d), frozenset(boss_key_tag(r) for r in boss_rooms_of(h) if r in moved_boss))
     ending_of = {gift_hash(BOSS_HEARTS[d][0]): d for d in BOSS_HEARTS}
     # (and a Gold Skulltula in bean soil a bottle, for its bugs, at any placement: bug 140, SOIL_OVER_FROM)
     tracked_soil = lambda h, n: each(lambda way: frozenset(way) | {BOTTLE}, n) if n is not None and about.get(h, {}).get("soil") else n

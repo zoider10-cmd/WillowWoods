@@ -111,7 +111,7 @@ launcher = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8")
 check('X(ENTRANCES, "Dungeon entrances", "rando_entrances",' in header and '"Off", "Adult dungeons", "Child dungeons", "Both") \\\n    X(ENTRANCES_MIX,' in header
       and header.index("X(ENTRANCES,") > header.index("X(KEYRINGS,"), "the menu's table: not there, or not last")
 check('new object[] { "rando_entrances", "Dungeon entrances", new[] { "Off", "Adult dungeons", "Child dungeons", "Both" }, new[] { 0, 1, 2, 3 },' in launcher
-      and launcher.index('new object[] { "rando_entrances"') > launcher.index('new object[] { "rando_keyrings"') and '"rando_dungeon_rewards", "rando_entrances", "rando_entrances_mix" } },' in launcher,
+      and launcher.index('new object[] { "rando_entrances"') > launcher.index('new object[] { "rando_keyrings"') and '"rando_dungeon_rewards", "rando_entrances", "rando_entrances_mix", "rando_boss_shuffle" } },' in launcher,
       "the launcher's table or section")
 
 # the child's dungeons (2026-11-27 later): the Deku Tree, Dodongo's Cavern and the well, each only where the rules stay true.
@@ -173,7 +173,7 @@ check('"rando_entrances_mix": 0' in src, "the options' line is not known")
 check('X(ENTRANCES_MIX, "Mix child and adult dungeons", "rando_entrances_mix",' in header and header.index("X(ENTRANCES_MIX,") > header.index("X(ENTRANCES,")
       and 'new object[] { "rando_entrances_mix", "Mix child and adult dungeons", new[] { "Off", "On" }, new[] { 0, 1 },' in launcher
       and launcher.index('new object[] { "rando_entrances_mix"') > launcher.index('new object[] { "rando_entrances",')
-      and '"rando_entrances", "rando_entrances_mix" } },' in launcher, "the mix setting in the tables")
+      and '"rando_entrances", "rando_entrances_mix", "rando_boss_shuffle" } },' in launcher, "the mix setting in the tables")
 
 # the Tracker says the doors (gpu/vk/vk_menu.cpp, asked 2026-11-27), and each only once it is found (the owner, the same day:
 # "only show what dungeon it leads to after you've entered it once already in the seed"): the game's side notes the door
