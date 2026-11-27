@@ -86,7 +86,7 @@ def main():
           and "rx_option_set(OOT_DUNGEON_BASE + d, value);" in host, "the game side does not send each dungeon's keys and items")
     check("if (dungeon_state[id - OOT_DUNGEON_BASE].exchange(value, std::memory_order_relaxed) != value" in menu,
           "the menu does not keep the dungeons' values")
-    check("constexpr int kTrackerDungeonRow = 4;" in menu and '"Gossip Stones", "Dungeon items", "In logic now", "Doors and bosses"};' in menu
+    check("constexpr int kTrackerDungeonRow = 4;" in menu and '"Gossip Stones", "Dungeon items", "In logic now", "Doors and bosses",' in menu
           and "if (row == kTrackerDungeonRow && tracker_check_count) return dungeon_says();" in menu, "the Tracker has no Dungeon items row")
     check("const float top = hh + 18 * s, end = dungeon_panel(c, hx0, hx1, top, bar_top - 12 * s);" in menu and
           "dungeon_row ? (narrow ? dungeon_help.c_str() : kTrackerDungeonHelp) :" in menu, "the row's panel or its words are not drawn")

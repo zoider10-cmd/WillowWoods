@@ -2749,17 +2749,22 @@ class DarkMenu : ToolStripProfessionalRenderer {
 }
 
 // (Willow Woods, asked 2026-11-27: the Tracker "viewable while playing. Something like a pop out window") The Tracker in a
-// window of its own, opened from the Randomizer page and left open beside the game (it stays on top of a borderless
-// game; on a second screen it needs nothing). It works nothing out: it shows the seed's files (mods\rando-seed\checks.txt,
-// entrances.txt, boss_doors.txt, rando_hints.txt) and what the game writes while it runs: rando\tracker_live.txt (the
-// menu's own Tracker's word on every check, the checks in logic nearest first, the dungeons' keys and items:
+// window of its own, a program of its own (this exe with "--tracker <game folder>": it stays when the launcher closes as
+// the game starts, and the game's Tracker tab can start it too), left open beside the game or on a second screen. It
+// works nothing out: it shows the seed's files (mods\rando-seed\checks.txt, entrances.txt, boss_doors.txt,
+// rando_hints.txt) and what the game writes while it runs: rando\tracker_live.txt (the menu's own Tracker's word on every
+// check, the checks in logic nearest first, the dungeons' keys and items, what each check gave or still lacks:
 // gpu/vk/vk_menu.cpp tracker_live_write), rando\doors_seen.txt, boss_rooms_seen.txt and hints_heard.txt. Read again a
 // second after any of them changes. A live file of another seed is not taken: the window says to start the game.
+// Wide (the owner, 2026-11-27: "more detailed", on a second screen most of the time), it is three lists at once: the areas,
+// the checks of the one chosen (or all that is in logic now), and the dungeons' items, the doors and bosses and the hints.
+// Narrow, one list and a box that chooses which.
 class TrackerForm : Form {
-    class Check { public string Area, Kind, Ages, Gives; public char State = '?'; }
+    class Check { public string Area, Kind, Ages, Gives, Note = ""; public char State = '?'; }
     class Row {
-        public string Left = "", Right = ""; public Color Ink = Theme.Text, RightInk = Theme.Dim;
-        public bool Head, Wrap; public char Mark = ' '; public string Open;   // (Open: an area a click opens, "" back to the areas)
+        public string Left = "", Right = "", Below = ""; public Color Ink = Theme.Text, RightInk = Theme.Dim, BelowInk = Theme.Amber;
+        public bool Head, Wrap, Lit; public char Mark = ' '; public string Open;   // (Open: an area a click opens, "" back: the areas, or In logic now)
+        // (Below: a second line under the row, whole and wrapped: what a check lacks, a dungeon's items)
     }
     // (the dungeons among the areas, as the menu's map has them: gpu/vk/vk_menu.cpp kWorldMap; tests/test_tracker_window.py)
     public static readonly string[] Dungeons = {
@@ -2767,57 +2772,101 @@ class TrackerForm : Form {
         "Bottom of the Well", "Shadow Temple", "Spirit Temple", "Gerudo Training Ground", "Inside Ganon's Castle" };
     public static readonly string[] Views = { "In logic now", "Areas", "Doors and bosses", "Dungeon items", "Hints heard" };
     const int MostChecks = 1024;   // (the menu keeps as many: kTrackerChecks)
+    const int WideFrom = 860;      // (the window's width from which it is three lists)
+    public const string Title = "Willow Woods Tracker";
+    /// The other Tracker windows open (programs of this exe's name whose window has the Tracker's title): each one's window
+    public static void Others(Action<IntPtr> each) {
+        try {
+            int me = Process.GetCurrentProcess().Id;
+            foreach (var other in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
+                if (other.Id != me && other.MainWindowHandle != IntPtr.Zero && other.MainWindowTitle == Title) each(other.MainWindowHandle);
+        } catch { }
+    }
+    /// The Tracker's window shut, and waited for: before this exe is replaced (an update, the builder), which an open one keeps from being written
+    public static void CloseOthers() {
+        try {
+            int me = Process.GetCurrentProcess().Id;
+            foreach (var other in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
+                if (other.Id != me && other.MainWindowTitle == Title) { other.CloseMainWindow(); other.WaitForExit(3000); }
+        } catch { }
+    }
     readonly string dir;
     readonly Label top = new Label();
     readonly ComboBox view = new ComboBox();
     readonly CheckBox onTop = new CheckBox();
-    readonly ListBox list = new ListBox();
+    readonly ListBox list = new ListBox(), areas = new ListBox(), side = new ListBox();   // (the checks; wide: the areas left of them, the rest right)
     readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
     readonly List<Check> checks = new List<Check>();
     readonly List<int> near = new List<int>();
     readonly List<string[]> dungeons = new List<string[]>(), doors = new List<string[]>(), bosses = new List<string[]>();
     readonly List<string> hints = new List<string>();
+    readonly Dictionary<ListBox, string> shown = new Dictionary<ListBox, string>();   // (what each list last showed: another thing starts at its top)
     int hintsAll;
     string here = "", openArea, signature = "";
-    bool live, running;
+    bool live, running, narrowOnly, filling;
+
+    bool Wide { get { return !narrowOnly && ClientSize.Width >= WideFrom; } }
 
     public TrackerForm(string dir) {
         this.dir = dir;
-        Text = "Willow Woods Tracker";
-        FormBorderStyle = FormBorderStyle.SizableToolWindow; ShowInTaskbar = true; StartPosition = FormStartPosition.Manual;
+        Text = Title;
+        FormBorderStyle = FormBorderStyle.Sizable; ShowInTaskbar = true; StartPosition = FormStartPosition.Manual;
         BackColor = Theme.Bg1; ForeColor = Theme.Text; Font = new Font("Segoe UI", 10f);
-        MinimumSize = new Size(300, 260); Size = new Size(430, 640);
+        try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
+        MinimumSize = new Size(300, 260);
         var screen = Screen.PrimaryScreen.WorkingArea;
-        Location = new Point(screen.Right - Width - 24, screen.Top + 24);
-        top.SetBounds(10, 8, ClientSize.Width - 20, 40); top.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        Size = new Size(Math.Min(1180, screen.Width - 80), Math.Min(760, screen.Height - 80));
+        Location = new Point(screen.Left + 40, screen.Top + 40);
         top.ForeColor = Theme.Text; top.BackColor = Theme.Bg1;
-        view.SetBounds(10, 52, 200, 26); view.DropDownStyle = ComboBoxStyle.DropDownList; view.FlatStyle = FlatStyle.Flat;
-        view.BackColor = Theme.Card; view.ForeColor = Theme.Text;
+        view.DropDownStyle = ComboBoxStyle.DropDownList; view.FlatStyle = FlatStyle.Flat; view.BackColor = Theme.Card; view.ForeColor = Theme.Text;
         view.Items.AddRange(Views); view.SelectedIndex = 0;
-        onTop.SetBounds(222, 54, 120, 22); onTop.Text = "Stay on top"; onTop.Checked = true; onTop.ForeColor = Theme.Dim; onTop.BackColor = Theme.Bg1;
-        list.SetBounds(10, 86, ClientSize.Width - 20, ClientSize.Height - 96);
-        list.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-        list.DrawMode = DrawMode.OwnerDrawVariable; list.IntegralHeight = false; list.BorderStyle = BorderStyle.None;
-        list.BackColor = Theme.Card; list.ForeColor = Theme.Text; list.Font = Font;
-        Controls.Add(top); Controls.Add(view); Controls.Add(onTop); Controls.Add(list);
+        onTop.Text = "Stay on top"; onTop.Checked = true; onTop.ForeColor = Theme.Dim; onTop.BackColor = Theme.Bg1;
+        Controls.Add(top); Controls.Add(view); Controls.Add(onTop);
+        foreach (var l in new[] { list, areas, side }) {
+            l.DrawMode = DrawMode.OwnerDrawVariable; l.IntegralHeight = false; l.BorderStyle = BorderStyle.None;
+            l.BackColor = Theme.Card; l.ForeColor = Theme.Text; l.Font = Font;
+            l.MeasureItem += Measure;
+            l.DrawItem += Draw;
+            Controls.Add(l);
+        }
         Place(false);
         TopMost = onTop.Checked;
         onTop.CheckedChanged += (o, e) => { TopMost = onTop.Checked; };
-        view.SelectedIndexChanged += (o, e) => { openArea = null; Fill(); };
-        list.MeasureItem += Measure;
-        list.DrawItem += Draw;
-        list.Click += (o, e) => {
-            var row = list.SelectedItem as Row;
+        view.SelectedIndexChanged += (o, e) => { if (!filling) { openArea = null; Fill(); } };
+        EventHandler open = (o, e) => {
+            var row = ((ListBox)o).SelectedItem as Row;
             if (row == null || row.Open == null) return;
             openArea = row.Open.Length > 0 ? row.Open : null;
             Fill();
         };
-        list.Resize += (o, e) => Fill();   // (the wrapped lines measured again)
+        list.Click += open;
+        areas.Click += open;
+        Resize += (o, e) => { Arrange(); Fill(); };   // (the wrapped lines measured again)
         FormClosing += (o, e) => { if (Visible) Place(true); };   // (a window never shown, a test's: nothing kept)
         timer.Interval = 1000;
         timer.Tick += (o, e) => Look();
         timer.Start();
+        Arrange();
         Look();
+    }
+
+    // (where each thing is: wide, three lists side by side under the top's words; narrow, one under the box that chooses)
+    void Arrange() {
+        int w = ClientSize.Width, h = ClientSize.Height;
+        bool wide = Wide;
+        top.SetBounds(10, 8, Math.Max(100, w - (wide ? 150 : 20)), 40);
+        view.Visible = !wide; areas.Visible = wide; side.Visible = wide;
+        if (wide) {
+            onTop.SetBounds(w - 130, 14, 120, 22);
+            int y = 54, gap = 8, lw = (w - 20 - 2 * gap) * 28 / 100, rw = (w - 20 - 2 * gap) * 32 / 100, mw = w - 20 - 2 * gap - lw - rw;
+            areas.SetBounds(10, y, lw, h - y - 10);
+            list.SetBounds(10 + lw + gap, y, mw, h - y - 10);
+            side.SetBounds(10 + lw + gap + mw + gap, y, rw, h - y - 10);
+        } else {
+            view.SetBounds(10, 52, Math.Min(200, w - 140), 26);
+            onTop.SetBounds(view.Right + 12, 54, 120, 22);
+            list.SetBounds(10, 86, w - 20, h - 96);
+        }
     }
 
     // (where the window was and whether it stayed on top: rando\tracker_window.txt, "<x> <y> <w> <h> <1 on top>")
@@ -2892,7 +2941,8 @@ class TrackerForm : Form {
         for (int i = 1; i < lines.Length; i++) seen.Add(lines[i].Trim());
         return seen;
     }
-    /// What an item's name in the game's files reads as: without its first word, a space before each capital
+    /// What an item's name in the game's files reads as, where the game has not said its name (a live file before the
+    /// names were in it): without its first word, a space before each capital
     public static string ItemName(string actor) {
         int at = actor.IndexOf('_');
         string rest = at >= 0 ? actor.Substring(at + 1) : actor;
@@ -2911,10 +2961,11 @@ class TrackerForm : Form {
         here = ""; live = false; hintsAll = 0;
         string stamp = Stamp(ReadLines(Seed("rando_stamp.txt")));
         foreach (var f in CheckLines(ReadLines(Seed("checks.txt"))))
-            checks.Add(new Check { Area = f[0], Kind = f[1], Ages = f[3], Gives = f.Length > 7 && f[7] != "-" ? f[7].Trim() : "" });
+            checks.Add(new Check { Area = f[0], Kind = f[1], Ages = f[3], Gives = f.Length > 7 && f[7] != "-" ? ItemName(f[7].Trim()) : "" });
         var liveLines = ReadLines(Rando("tracker_live.txt"));
         string states = "";
         bool mine = false;
+        var detail = new List<string>();
         foreach (var line in liveLines) {
             if (line.StartsWith("seed ")) mine = stamp.Length > 0 && line.Substring(5) == stamp;
             else if (line.StartsWith("here ")) here = line.Substring(5);
@@ -2927,11 +2978,17 @@ class TrackerForm : Form {
             } else if (line.StartsWith("dungeon ")) {
                 var f = line.Substring(8).Split('|');
                 if (f.Length == 6) dungeons.Add(f);
-            }
+            } else if (line.StartsWith("gave ") || line.StartsWith("note ")) detail.Add(line);
         }
         live = mine && states.Length == checks.Count && checks.Count > 0;
-        if (live) for (int i = 0; i < checks.Count; i++) checks[i].State = states[i];
-        else { near.Clear(); dungeons.Clear(); here = ""; }
+        if (live) {
+            for (int i = 0; i < checks.Count; i++) checks[i].State = states[i];
+            foreach (var line in detail) {   // ("gave <i>|<the item's name>", "note <i>|<what the check lacks or waits for>")
+                int bar = line.IndexOf('|'), i;
+                if (bar < 6 || !int.TryParse(line.Substring(5, bar - 5), out i) || i < 0 || i >= checks.Count) continue;
+                if (line[0] == 'g') checks[i].Gives = line.Substring(bar + 1); else checks[i].Note = line.Substring(bar + 1);
+            }
+        } else { near.Clear(); dungeons.Clear(); here = ""; }
         // (the doors and boss rooms: "<key>|<...>|<from>|<to>", found when the game's record of this seed has the key)
         var doorsSeen = Record(ReadLines(Rando("doors_seen.txt")), stamp);
         foreach (var line in ReadLines(Seed("entrances.txt"))) {
@@ -2954,95 +3011,155 @@ class TrackerForm : Form {
         }
     }
 
-    /// A view chosen (an area's checks: area), and what it lists then: "<the top's words>", then a line a row, "<mark>|<left>|<right>"
+    /// A view chosen, narrow (an area's checks: area), and what it lists then: "<the top's words>", then a line a row,
+    /// "<mark>|<left>|<right>". which -1: the window wide, its three lists one after another, a line "--" between them
     public string Rows(int which, string area) {
-        view.SelectedIndex = which;
+        narrowOnly = which >= 0;
+        if (which >= 0) view.SelectedIndex = which;
+        else ClientSize = new Size(1100, 700);
         openArea = area;
+        Arrange();
         Fill();
         var s = new StringBuilder(top.Text.Replace("\n", " / ") + "\n");
-        foreach (Row r in list.Items) s.Append(r.Head ? '#' : r.Mark).Append('|').Append(r.Left).Append('|').Append(r.Right).Append("\n");
+        foreach (var l in which >= 0 ? new[] { list } : new[] { areas, list, side }) {
+            if (l != list && l != areas || (l == list && which < 0)) s.Append("--\n");
+            foreach (Row r in l.Items)
+                s.Append(r.Head ? '#' : r.Mark).Append('|').Append(r.Left).Append('|').Append(r.Right).Append(r.Below.Length > 0 ? "|" + r.Below : "").Append("\n");
+        }
         return s.ToString();
     }
     static string Count(int n, string one) { return n + " " + one + (n == 1 ? "" : "s"); }
     static Row Head(string text, string right = "") { return new Row { Left = text, Right = right, Head = true, Ink = Theme.Cyan }; }
+    static Row Say(string text) { return new Row { Left = text, Ink = Theme.Dim, Wrap = true }; }
 
     void Fill() {
         int done = 0, junk = 0, inLogic = 0;
         foreach (var k in checks) { if (k.State == 'c') done++; else if (k.State == 'j') junk++; else if (k.State == 'i') inLogic++; }
-        if (checks.Count == 0) top.Text = "No seed here yet: make one on the Randomizer page.";
+        if (checks.Count == 0) top.Text = "No seed here yet: make one on the launcher's Randomizer page.";
         else if (!live) top.Text = Count(checks.Count, "check") + " in this seed.\nStart the game: the tracker fills in while it runs.";
         else top.Text = done + " of " + checks.Count + " collected" + (junk > 0 ? ", " + junk + " junk" : "") + ", " + inLogic + " in logic now\n" +
                         (here.Length > 0 ? "Link is in: " + here : "") + (running ? "" : (here.Length > 0 ? "   " : "") + "(game closed: as it was last)");
-        var rows = new List<Row>();
-        int which = view.SelectedIndex;
-        if (which == 0) {   // (every check in logic, the nearest first)
-            if (!live) rows.Add(new Row { Left = "Nothing known until the game runs.", Ink = Theme.Dim });
-            else if (near.Count == 0) rows.Add(new Row { Left = "Nothing in logic right now.", Ink = Theme.Dim });
-            string area = null;
-            foreach (int i in near) {
-                if (checks[i].State != 'i') continue;
-                if (checks[i].Area != area) { area = checks[i].Area; rows.Add(Head(area, area == here ? "here" : "")); }
-                rows.Add(CheckRow(checks[i]));
-            }
-        } else if (which == 1 && openArea != null) {   // (an area's checks)
-            rows.Add(new Row { Left = "<  Back to the areas", Ink = Theme.Cyan, Open = "" });
-            rows.Add(Head(openArea));
-            foreach (var k in checks) if (k.Area == openArea) rows.Add(CheckRow(k));
-        } else if (which == 1) {   // (the areas in the menu's groups: the overworld, the dungeons, the finished ones)
-            var names = new List<string>();
-            foreach (var k in checks) if (!names.Contains(k.Area)) names.Add(k.Area);
-            names.Sort(StringComparer.OrdinalIgnoreCase);
-            var finished = new List<Row>();
-            for (int group = 0; group < 2; group++) {
-                bool any = false;
-                foreach (var name in names) {
-                    if ((Array.IndexOf(Dungeons, name) >= 0) != (group == 1)) continue;
-                    int all = 0, left = 0, can = 0;
-                    foreach (var k in checks) if (k.Area == name) { all++; if (k.State != 'c' && k.State != 'j') left++; if (k.State == 'i') can++; }
-                    var row = new Row { Left = name, Open = name };
-                    if (!live) row.Right = Count(all, "check");
-                    else if (left == 0) { row.Right = "all collected"; row.Ink = Theme.Faint; row.RightInk = Theme.Faint; }
-                    else { row.Right = left + " left" + (can > 0 ? ", " + can + " in logic" : ""); row.Mark = can > 0 ? 'i' : 'o'; }
-                    if (name == here) row.Left = name + "  (here)";
-                    if (live && left == 0) { finished.Add(row); continue; }
-                    if (!any) { rows.Add(Head(group == 1 ? "Dungeons" : "Overworld")); any = true; }
-                    rows.Add(row);
-                }
-            }
-            if (finished.Count > 0) { rows.Add(Head("Finished areas")); rows.AddRange(finished); }
-        } else if (which == 2) {   // (the doors and boss rooms the seed shuffles, each filled in once found)
-            if (doors.Count == 0 && bosses.Count == 0) rows.Add(new Row { Left = "No doors or boss rooms are shuffled in this seed.", Ink = Theme.Dim, Wrap = true });
-            if (doors.Count > 0) rows.Add(Head("Door of", "leads to"));
-            foreach (var d in doors) rows.Add(PairRow(d, "its own dungeon"));
-            if (bosses.Count > 0) rows.Add(Head("Boss room of", "has the boss of"));
-            foreach (var b in bosses) rows.Add(PairRow(b, "its own boss"));
-        } else if (which == 3) {   // (each dungeon's keys in hand and its map, compass and Boss Key)
-            if (dungeons.Count == 0) rows.Add(new Row { Left = "Nothing known until the game runs.", Ink = Theme.Dim });
-            else rows.Add(Head("Dungeon", "keys, map, compass, Boss Key"));
-            foreach (var d in dungeons) {
-                string keys = d[2] == "0" ? "no keys" : d[1] + " of " + d[2] + " keys";
-                string[] names = { "map", "compass", "Boss Key" };
-                var have = new StringBuilder(keys);
-                for (int k = 0; k < 3; k++) if (d[3 + k] != "-") have.Append(", ").Append(names[k]).Append(d[3 + k] == "1" ? " yes" : " no");
-                rows.Add(new Row { Left = d[0], Right = have.ToString(), RightInk = Theme.Text });
-            }
-        } else {   // (the Gossip Stones' hints heard)
-            rows.Add(Head(hints.Count + " of " + hintsAll + " hints heard"));
-            foreach (var h in hints) rows.Add(new Row { Left = h, Wrap = true });
+        filling = true;
+        if (Wide) {   // (the areas, the checks of the one chosen or all in logic now, and the rest)
+            Put(areas, "areas", AreaRows(true));
+            Put(list, openArea ?? "", openArea != null ? CheckRows(openArea, false) : NowRows());
+            var rest = DungeonRows();
+            rest.AddRange(DoorRows());
+            rest.AddRange(HintRows());
+            Put(side, "side", rest);
+        } else {
+            int which = view.SelectedIndex;
+            Put(list, which + "|" + openArea, which == 0 ? NowRows() : which == 1 && openArea != null ? CheckRows(openArea, true) : which == 1 ? AreaRows(false)
+                                              : which == 2 ? DoorRows() : which == 3 ? DungeonRows() : HintRows());
         }
-        int first = list.TopIndex;
-        list.BeginUpdate();
-        list.Items.Clear();
-        foreach (var r in rows) list.Items.Add(r);
-        if (first > 0 && first < list.Items.Count) list.TopIndex = first;
-        list.EndUpdate();
+        filling = false;
+    }
+    void Put(ListBox l, string what, List<Row> rows) {
+        string was;
+        int first = shown.TryGetValue(l, out was) && was == what ? l.TopIndex : 0;
+        shown[l] = what;
+        l.BeginUpdate();
+        l.Items.Clear();
+        foreach (var r in rows) l.Items.Add(r);
+        if (first > 0 && first < l.Items.Count) l.TopIndex = first;
+        l.EndUpdate();
+    }
+    // (every check in logic, the nearest first, under its area)
+    List<Row> NowRows() {
+        var rows = new List<Row>();
+        int n = 0;
+        foreach (int i in near) if (checks[i].State == 'i') n++;
+        rows.Add(Head("In logic now", live ? Count(n, "check") + ", nearest first" : ""));
+        if (!live) rows.Add(Say("Nothing known until the game runs."));
+        else if (n == 0) rows.Add(Say("Nothing in logic right now."));
+        string area = null;
+        foreach (int i in near) {
+            if (checks[i].State != 'i') continue;
+            if (checks[i].Area != area) { area = checks[i].Area; rows.Add(Head(area, area == here ? "here" : "")); }
+            rows.Add(CheckRow(checks[i]));
+        }
+        return rows;
+    }
+    // (an area's checks: the ones to get first, then the ones not in logic with what they lack, then the collected and what they gave)
+    List<Row> CheckRows(string area, bool back) {
+        var rows = new List<Row>();
+        if (back) rows.Add(new Row { Left = "<  Back to the areas", Ink = Theme.Cyan, Open = "" });
+        int all = 0, left = 0, can = 0;
+        foreach (var k in checks) if (k.Area == area) { all++; if (k.State != 'c' && k.State != 'j') left++; if (k.State == 'i') can++; }
+        rows.Add(Head(area, !live ? Count(all, "check") : left == 0 ? "all " + all + " collected" : left + " of " + all + " left, " + can + " in logic"));
+        foreach (string order in live ? new[] { "i", "o?", "cj" } : new[] { "?iocj" })
+            foreach (var k in checks) if (k.Area == area && order.IndexOf(k.State) >= 0) rows.Add(CheckRow(k));
+        return rows;
+    }
+    // (the areas in the menu's groups: the overworld, the dungeons, the finished ones; wide: In logic now first, and the one open lit)
+    List<Row> AreaRows(bool wide) {
+        var rows = new List<Row>();
+        if (wide) {
+            int n = 0;
+            foreach (var k in checks) if (k.State == 'i') n++;
+            rows.Add(new Row { Left = "In logic now", Right = live ? Count(n, "check") : "", Open = "", Lit = openArea == null, Mark = live && n > 0 ? 'i' : ' ' });
+        }
+        var names = new List<string>();
+        foreach (var k in checks) if (!names.Contains(k.Area)) names.Add(k.Area);
+        names.Sort(StringComparer.OrdinalIgnoreCase);
+        var finished = new List<Row>();
+        for (int group = 0; group < 2; group++) {
+            bool any = false;
+            foreach (var name in names) {
+                if ((Array.IndexOf(Dungeons, name) >= 0) != (group == 1)) continue;
+                int all = 0, left = 0, can = 0;
+                foreach (var k in checks) if (k.Area == name) { all++; if (k.State != 'c' && k.State != 'j') left++; if (k.State == 'i') can++; }
+                var row = new Row { Left = name, Open = name, Lit = wide && name == openArea };
+                if (!live) row.Right = Count(all, "check");
+                else if (left == 0) { row.Right = "all collected"; row.Ink = Theme.Faint; row.RightInk = Theme.Faint; }
+                else { row.Right = left + " left" + (can > 0 ? ", " + can + " in logic" : ""); row.Mark = can > 0 ? 'i' : 'o'; }
+                if (name == here && wide) row.Ink = Theme.Cyan;   // (a narrow column: no room for a word after the name; the top says where Link is)
+                else if (name == here) row.Left = name + "  (here)";
+                if (live && left == 0) { finished.Add(row); continue; }
+                if (!any) { rows.Add(Head(group == 1 ? "Dungeons" : "Overworld")); any = true; }
+                rows.Add(row);
+            }
+        }
+        if (finished.Count > 0) { rows.Add(Head("Finished areas")); rows.AddRange(finished); }
+        return rows;
+    }
+    // (the doors and boss rooms the seed shuffles, each filled in once found)
+    List<Row> DoorRows() {
+        var rows = new List<Row>();
+        if (doors.Count == 0 && bosses.Count == 0) { rows.Add(Head("Doors and bosses")); rows.Add(Say("No doors or boss rooms are shuffled in this seed.")); }
+        if (doors.Count > 0) rows.Add(Head("Door of", "leads to"));
+        foreach (var d in doors) rows.Add(PairRow(d, "its own dungeon"));
+        if (bosses.Count > 0) rows.Add(Head("Boss room of", "has the boss of"));
+        foreach (var b in bosses) rows.Add(PairRow(b, "its own boss"));
+        return rows;
+    }
+    // (each dungeon's keys in hand and its map, compass and Boss Key)
+    List<Row> DungeonRows() {
+        var rows = new List<Row>();
+        rows.Add(Head("Dungeon items", "keys in hand"));
+        if (dungeons.Count == 0) rows.Add(Say("Nothing known until the game runs."));
+        foreach (var d in dungeons) {
+            string keys = d[2] == "0" ? "no keys" : d[1] + " of " + d[2] + " keys";
+            string[] names = { "map", "compass", "Boss Key" };
+            var have = new StringBuilder();
+            for (int k = 0; k < 3; k++) if (d[3 + k] != "-") have.Append(have.Length > 0 ? ", " : "").Append(names[k]).Append(d[3 + k] == "1" ? " yes" : " no");
+            rows.Add(new Row { Left = d[0], Right = keys, RightInk = d[2] == "0" ? Theme.Faint : Theme.Text, Below = have.ToString(), BelowInk = Theme.Dim });
+        }
+        return rows;
+    }
+    // (the Gossip Stones' hints heard)
+    List<Row> HintRows() {
+        var rows = new List<Row>();
+        rows.Add(Head(hints.Count + " of " + hintsAll + " hints heard"));
+        foreach (var h in hints) rows.Add(new Row { Left = h, Wrap = true });
+        return rows;
     }
     Row CheckRow(Check k) {
         string what = k.Kind + (k.Ages == "C" ? " (child)" : k.Ages == "A" ? " (adult)" : "");
         var row = new Row { Left = what, Mark = k.State };
-        if (k.State == 'c') { row.Ink = Theme.Faint; row.Right = k.Gives.Length > 0 ? ItemName(k.Gives) : ""; }
+        if (k.State == 'c') { row.Ink = Theme.Faint; row.Right = k.Gives; }
         else if (k.State == 'j') { row.Ink = Theme.Faint; row.Right = "junk"; row.RightInk = Theme.Faint; }
-        else if (k.State == 'o') row.Ink = Theme.Dim;
+        else if (k.State == 'o') { row.Ink = Theme.Dim; row.Below = k.Note; }
         return row;
     }
     static Row PairRow(string[] pair, string own) {
@@ -3052,27 +3169,34 @@ class TrackerForm : Form {
     }
 
     void Measure(object sender, MeasureItemEventArgs e) {
-        var row = e.Index >= 0 && e.Index < list.Items.Count ? list.Items[e.Index] as Row : null;
+        var l = (ListBox)sender;
+        var row = e.Index >= 0 && e.Index < l.Items.Count ? l.Items[e.Index] as Row : null;
         e.ItemHeight = row != null && row.Head ? 28 : 22;
         if (row != null && row.Wrap) {
-            var size = TextRenderer.MeasureText(row.Left, list.Font, new Size(Math.Max(80, list.ClientSize.Width - 40), 0), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
+            var size = TextRenderer.MeasureText(row.Left, l.Font, new Size(Math.Max(80, l.ClientSize.Width - 40), 0), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
             e.ItemHeight = Math.Min(250, Math.Max(22, size.Height + 8));
+        }
+        if (row != null && row.Below.Length > 0) {
+            var size = TextRenderer.MeasureText(row.Below, l.Font, new Size(Math.Max(80, l.ClientSize.Width - 44), 0), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
+            e.ItemHeight = Math.Min(250, 22 + size.Height + 4);
         }
     }
     void Draw(object sender, DrawItemEventArgs e) {
-        if (e.Index < 0 || e.Index >= list.Items.Count) return;
-        var row = (Row)list.Items[e.Index];
+        var l = (ListBox)sender;
+        if (e.Index < 0 || e.Index >= l.Items.Count) return;
+        var row = (Row)l.Items[e.Index];
         var g = e.Graphics;
         var b = e.Bounds;
-        bool chosen = (e.State & DrawItemState.Selected) != 0 && row.Open != null;
+        bool chosen = row.Lit || ((e.State & DrawItemState.Selected) != 0 && row.Open != null);
         using (var back = new SolidBrush(chosen ? Theme.CardHi : Theme.Card)) g.FillRectangle(back, b);
+        if (row.Lit) using (var bar = new SolidBrush(Theme.Cyan)) g.FillRectangle(bar, b.X, b.Y + 2, 3, b.Height - 4);
         if (row.Head) {
             using (var pen = new Pen(Theme.Line)) g.DrawLine(pen, b.X + 6, b.Bottom - 3, b.Right - 6, b.Bottom - 3);
-            using (var bold = new Font(list.Font, FontStyle.Bold)) {
+            using (var bold = new Font(l.Font, FontStyle.Bold)) {
                 TextRenderer.DrawText(g, row.Left, bold, new Rectangle(b.X + 6, b.Y + 4, b.Width - 12, b.Height - 8), row.Ink,
                                       TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
                 if (row.Right.Length > 0)
-                    TextRenderer.DrawText(g, row.Right, list.Font, new Rectangle(b.X + 6, b.Y + 4, b.Width - 14, b.Height - 8), Theme.Dim,
+                    TextRenderer.DrawText(g, row.Right, l.Font, new Rectangle(b.X + 6, b.Y + 4, b.Width - 14, b.Height - 8), Theme.Dim,
                                           TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
             }
             return;
@@ -3088,14 +3212,18 @@ class TrackerForm : Form {
         else if (row.Mark == '?') using (var pen = new Pen(Theme.Faint, 1.6f)) g.DrawLine(pen, mx - 4, my, mx + 4, my);
         g.SmoothingMode = smooth;
         int left = b.X + 28, rightW = 0;
-        if (row.Right.Length > 0) {
-            rightW = Math.Min(b.Width / 2, TextRenderer.MeasureText(row.Right, list.Font, new Size(0, 0), TextFormatFlags.NoPrefix).Width + 6);
-            TextRenderer.DrawText(g, row.Right, list.Font, new Rectangle(b.Right - rightW - 8, b.Y, rightW, b.Height), row.RightInk,
+        int line = row.Below.Length > 0 ? 22 : b.Height;   // (the row's own line; what is below it under that)
+        if (row.Below.Length > 0)
+            TextRenderer.DrawText(g, row.Below, l.Font, new Rectangle(left, b.Y + 20, b.Width - 44, b.Height - 22), row.BelowInk,
+                                  TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
+        if (row.Right.Length > 0) {   // (the right's words: half the line at most)
+            rightW = Math.Min(b.Width / 2, TextRenderer.MeasureText(row.Right, l.Font, new Size(0, 0), TextFormatFlags.NoPrefix).Width + 6);
+            TextRenderer.DrawText(g, row.Right, l.Font, new Rectangle(b.Right - rightW - 8, b.Y, rightW, line), row.RightInk,
                                   TextFormatFlags.Right | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
         }
         var flags = row.Wrap ? TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix
                              : TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis;
-        TextRenderer.DrawText(g, row.Left, list.Font, new Rectangle(left, b.Y + (row.Wrap ? 4 : 0), b.Width - 36 - rightW - (rightW > 0 ? 8 : 0), b.Height - (row.Wrap ? 4 : 0)),
+        TextRenderer.DrawText(g, row.Left, l.Font, new Rectangle(left, b.Y + (row.Wrap ? 4 : 0), b.Width - 36 - rightW - (rightW > 0 ? 8 : 0), line - (row.Wrap ? 4 : 0)),
                               row.Ink, flags);
     }
 }
@@ -4558,11 +4686,12 @@ class LauncherForm : Form {
         return sb.ToString();
     }
 
-    TrackerForm tracker;   // (the Tracker's window, one at most: opened again, it comes to the front)
+    // (the Tracker's window: a program of its own, this exe started with "--tracker <game folder>", so it stays when this
+    //  launcher closes as the game starts (the owner, 2026-11-27). One at most: started again, the first comes to the front,
+    //  Main. The game's Tracker tab starts it the same way: gpu/vk/vk_menu.cpp tracker_window_open)
     void OnTracker() {
-        if (tracker == null || tracker.IsDisposed) { tracker = new TrackerForm(dir); tracker.Show(); return; }
-        if (tracker.WindowState == FormWindowState.Minimized) tracker.WindowState = FormWindowState.Normal;
-        tracker.Activate();
+        try { Process.Start(new ProcessStartInfo(Application.ExecutablePath, "--tracker \"" + dir + "\"") { UseShellExecute = false, WorkingDirectory = dir }); }
+        catch (Exception ex) { MessageBox.Show(this, "The Tracker's window could not be opened:\n" + ex.Message, Fork.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning); }
     }
 
     void OnCopySeedId() {
@@ -4900,6 +5029,7 @@ class LauncherForm : Form {
     void RunBuilder(string exe, string tag) {
         try {
             var psi = new ProcessStartInfo(exe, "--update \"" + dir + "\" --tag \"" + tag + "\"") { WorkingDirectory = Path.GetDirectoryName(exe), UseShellExecute = false };
+            TrackerForm.CloseOthers();   // (the Tracker's window is this exe too: open, it would keep the builder from replacing it)
             Process.Start(psi);
             Close();   // (the builder rebuilds this folder, this launcher with it)
         } catch (Exception ex) {
@@ -5746,8 +5876,15 @@ class LauncherForm : Form {
         // (the Tracker's window alone, for a shortcut of its own: "--tracker <game folder>". And for tests/test_tracker_window.py,
         //  "--tracker-rows <game folder> <view> [area]": the rows a view lists, a line each, "<mark>|<left>|<right>")
         if (args.Length == 2 && args[0] == "--tracker") {
+            bool alone;
+            var one = new Mutex(true, "WillowWoodsTracker", out alone);
+            if (!alone) {   // (one such window: the first to the front)
+                TrackerForm.Others(h => { ShowWindow(h, 9); SetForegroundWindow(h); });
+                return;
+            }
             Application.EnableVisualStyles();
             Application.Run(new TrackerForm(Path.GetFullPath(args[1])));
+            GC.KeepAlive(one);
             return;
         }
         if (args.Length >= 3 && args[0] == "--tracker-rows") {
@@ -5761,8 +5898,11 @@ class LauncherForm : Form {
         if (args.Length >= 4 && args[0] == "--tracker-shot") {   // (and the window as a picture: <game folder> <png> <view> [area])
             Application.EnableVisualStyles();
             using (var f = new TrackerForm(Path.GetFullPath(args[1]))) {
-                f.Rows(int.Parse(args[3]), args.Length > 4 ? args[4] : null);
+                int which = int.Parse(args[3]);
                 f.Show(); Application.DoEvents();
+                if (which >= 0) f.ClientSize = new Size(430, 640);   // (a view: the window narrow; -1: wide, its three lists)
+                f.Rows(which, args.Length > 4 ? args[4] : null);
+                Application.DoEvents();
                 using (var bmp = new Bitmap(f.Width, f.Height)) { f.DrawToBitmap(bmp, new Rectangle(0, 0, f.Width, f.Height)); bmp.Save(args[2]); }
             }
             return;

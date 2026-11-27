@@ -71,6 +71,10 @@ int tracker_area_hint(const char*) { return 0; }
 std::string tracker_after(const TrackerCheck&) { return std::string(); }
 std::string dungeon_says() { return std::string(); }   // (the Dungeon items row's words: not this check's)
 std::string doors_says() { return std::string(); }   // (nor the Doors and bosses row's)
+static int window_opens = 0;   // (the Tracker window row: how often the window was asked for)
+bool tracker_window_open() { return ++window_opens == 1; }
+ULONGLONG tracker_window_asked = 0;
+bool tracker_window_started = false;
 // (the groups of the areas' rows: tracker_load lays them out, this check by hand)
 char tracker_kind[kTrackerRows];
 bool tracker_folded[kTrackerRows];
@@ -107,10 +111,10 @@ int main(int argc, char** argv) {
     CHECK(argc == 2);
     folder = std::string(argv[1]) + "/";
     const char* names[] = {"The whole game", "Show", "Return home", "Gossip Stones", "Dungeon items", "In logic now", "Doors and bosses",
-                           "Market", "Kokiri Forest"};
-    static_assert(kTrackerStoneRow == 3 && kTrackerDungeonRow == 4 && kTrackerNowRow == 5 && kTrackerDoorRow == 6 && kTrackerFirstArea == 7,
+                           "Tracker window", "Market", "Kokiri Forest"};
+    static_assert(kTrackerStoneRow == 3 && kTrackerDungeonRow == 4 && kTrackerNowRow == 5 && kTrackerDoorRow == 6 && kTrackerWindowRow == 7 && kTrackerFirstArea == 8,
                   "the rows before the areas are not these");
-    for (int r = 0; r < 9; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
+    for (int r = 0; r < 10; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
     const int market = kTrackerFirstArea;
     put(0, "Market", "Chest A", 0, 1);
     put(1, "Market", "Chest B", 0, 1);
@@ -194,6 +198,14 @@ int main(int argc, char** argv) {
     tracker_pick[kTrackerNowRow] = 0;
     put(0, "Market", "Chest A", 0, 0), put(1, "Market", "Chest B", 0, 0);
     CHECK(tracker_says(kTrackerNowRow) == "Nothing in logic right now");
+
+    // (the Tracker window row: confirm asks for the window, and the row says for a moment how that went)
+    CHECK(tracker_says(kTrackerWindowRow) == "Open it beside the game");
+    CHECK(press_on(kTrackerWindowRow, 7) && window_opens == 1 && tracker_says(kTrackerWindowRow) == "Opened");
+    CHECK(!press_on(kTrackerWindowRow, 4) && window_opens == 1);   // (Right: nothing)
+    CHECK(press_on(kTrackerWindowRow, 7) && tracker_says(kTrackerWindowRow) == "The launcher could not be started");
+    now_ms += 60000;
+    CHECK(tracker_says(kTrackerWindowRow) == "Open it beside the game");
 
     // (asked 2026-11-27, the groups: a title is hidden with every row of its group; the areas with nothing left are folded
     //  under Finished areas, shut until confirmed, and that row is not there under a Left list)

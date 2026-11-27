@@ -53,7 +53,7 @@ def main():
     check(run.index(': > "$WORK/stdout.txt"') < run.index("exec timeout") < run.index('grep -q "rando: bottles: Link has" "$WORK/stdout.txt"'),
           "the steps can start on the last run's log")
     check('for f in "$GAME"/logs/hookshot_log*.txt "$GAME"/logs/hookshot_frames.csv; do [ -f "$f" ] && cp -p "$f" "$WORK/keep/logs/"; done' in run and
-          'kept="collected.txt junk.txt goto_check.txt"' in run and run.count("put_back") == 2 and run.index("wait $pid") < run.rindex("put_back"),
+          'kept="collected.txt junk.txt goto_check.txt run_stats.txt tracker_live.txt"' in run and run.count("put_back") == 2 and run.index("wait $pid") < run.rindex("put_back"),
           "the game folder's files are not kept before the run and put back after the game is gone")
     check("the game or the launcher is running: not started" in run, "the run starts under the player's own game")
     bash = shutil.which("bash")

@@ -286,7 +286,18 @@ constexpr int kTrackerDungeonRow = 4;   // (Willow Woods, asked 2026-11-26: each
 // bosses: one table of every dungeon door and boss room the seed shuffles, each filled in once found (doors_panel).
 constexpr int kTrackerNowRow = 5;
 constexpr int kTrackerDoorRow = 6;
-constexpr int kTrackerFirstArea = 7;  // (the first of the areas' rows, after the whole game's and those six)
+// (the owner, 2026-11-27: the launcher closes when the game starts, and its Tracker window with it: "i want it to be able
+// to start the pop-out while in-game too") Tracker window: confirm starts the launcher beside the game as the window alone,
+// a program of its own ("--tracker <game folder>", launcher/Launcher.cs: one such window at most, a second start brings the
+// first to the front), tracker_window_open.
+constexpr int kTrackerWindowRow = 7;
+constexpr int kTrackerFirstArea = 8;  // (the first of the areas' rows, after the whole game's and those seven)
+ULONGLONG tracker_window_asked = 0;   // (when the window was last asked for, and whether it started: the row says so for a moment)
+bool tracker_window_started = false;
+const char kTrackerWindowHelp[] =
+    "Opens the Tracker in a small window of its own that stays on top of the game: what is in logic now, the areas, the doors "
+    "and bosses, the dungeons' items and the hints heard, kept up to date while you play. Put it on a second screen or over a "
+    "corner of the game (not over true exclusive fullscreen). The launcher's Randomizer page has the same button.";
 // (asked 2026-11-27) The areas' rows are in groups: the overworld's under a title, the dungeons' under another, each by
 // name, and the areas with nothing left folded under a row of their own at the foot, Finished areas, that confirm opens
 // and shuts. A row's kind: 0 an area (or one of the tab's own), 'H' a group's title (drawn as a heading, stepped over),
@@ -606,6 +617,11 @@ std::string tracker_says(int row) {
         }
         if (row == kTrackerDungeonRow && tracker_check_count) return dungeon_says();
         if (row == kTrackerDoorRow && tracker_check_count) return doors_says();
+        if (row == kTrackerWindowRow && tracker_check_count) {
+            if (tracker_window_asked && GetTickCount64() - tracker_window_asked < kTrackerForgetMs)
+                return tracker_window_started ? "Opened" : "The launcher could not be started";
+            return "Open it beside the game";
+        }
         if (row == kTrackerNowRow && tracker_check_count) {
             const int n = tracker_row_checks(row);
             bool known = false;
@@ -929,19 +945,18 @@ constexpr const char* kWorldEdges[][2] = {
 /// Where Link is (OOT_LINK_X, _Z: hundredths; _YAW: thousandths of a radian; OOT_LINK_Y, his height: hundredths), from the
 /// game side ten times a second
 std::atomic<int> link_place[4] = {INT_MIN, INT_MIN, 0, INT_MIN};
-/// How many steps an area is from another over the map's ways (kWorldEdges; a dungeon is one from the area it lies in, as
-/// the game has it: a shuffled door is not told here), 99 when either is not on the map
-int tracker_area_steps(const char* from, const char* to) {
-    constexpr int kAreas = sizeof kWorldMap / sizeof kWorldMap[0];
-    int steps[kAreas];
-    for (int& n : steps) n = 99;
-    const auto at = [&](const char* area) {
-        for (int i = 0; i < kAreas; i++)
-            if (!strcmp(kWorldMap[i].area, area)) return i;
-        return -1;
-    };
-    const int a = at(from), b = at(to);
-    if (a < 0 || b < 0) return 99;
+/// How many steps every area of the map is from one (kWorldEdges; a dungeon is one from the area it lies in, as the game has
+/// it: a shuffled door is not told here), 99 one not reached; steps[i] for kWorldMap[i]. False: from is not on the map
+constexpr int kWorldAreas = sizeof kWorldMap / sizeof kWorldMap[0];
+int tracker_world_area(const char* area) {
+    for (int i = 0; i < kWorldAreas; i++)
+        if (!strcmp(kWorldMap[i].area, area)) return i;
+    return -1;
+}
+bool tracker_area_steps(const char* from, int steps[kWorldAreas]) {
+    for (int i = 0; i < kWorldAreas; i++) steps[i] = 99;
+    const int a = tracker_world_area(from);
+    if (a < 0) return false;
     steps[a] = 0;
     for (bool more = true; more;) {   // (a few areas: the ways gone over until nothing gets nearer)
         more = false;
@@ -950,24 +965,31 @@ int tracker_area_steps(const char* from, const char* to) {
             if (steps[p] + 1 < steps[q]) steps[q] = steps[p] + 1, more = true;
             if (steps[q] + 1 < steps[p]) steps[p] = steps[q] + 1, more = true;
         };
-        for (const auto& e : kWorldEdges) join(at(e[0]), at(e[1]));
-        for (int i = 0; i < kAreas; i++)
-            if (kWorldMap[i].parent) join(i, at(kWorldMap[i].parent));
+        for (const auto& e : kWorldEdges) join(tracker_world_area(e[0]), tracker_world_area(e[1]));
+        for (int i = 0; i < kWorldAreas; i++)
+            if (kWorldMap[i].parent) join(i, tracker_world_area(kWorldMap[i].parent));
     }
-    return steps[b];
+    return true;
 }
 /// tracker_near made anew: every check, those of the area Link is in first, the closest to him first, then the other
 /// areas' by how many steps away they are (as the file has them within an area). With Link nowhere known, as the file has them
 void tracker_near_sort() {
     struct Near { int steps; float away; int i; };   // (not near and far: windows.h has those names)
     std::vector<Near> all;
+    all.reserve(tracker_check_count > 0 ? tracker_check_count : 0);
     const char* here = tracker_here_area();
     const int lx = link_place[0].load(std::memory_order_relaxed), lz = link_place[1].load(std::memory_order_relaxed);
-    std::string last;
+    int from_here[kWorldAreas];
+    const bool on_map = here && tracker_area_steps(here, from_here);
+    const char* last = nullptr;
     int steps = 0;
     for (int i = 0; i < tracker_check_count; i++) {
         const TrackerCheck& k = tracker_checks[i];
-        if (last != k.area) last = k.area, steps = here ? tracker_area_steps(here, k.area) : 0;   // (the file's checks are area by area)
+        if (!last || strcmp(last, k.area)) {   // (the file's checks are area by area)
+            last = k.area;
+            const int area = on_map ? tracker_world_area(k.area) : -1;
+            steps = !here ? 0 : !strcmp(here, k.area) ? 0 : area >= 0 ? from_here[area] : 99;
+        }
         float away = 0;
         if (here && !steps && lx != INT_MIN && lz != INT_MIN) away = hypotf(k.at[0] - lx * 0.01f, k.at[2] - lz * 0.01f);
         all.push_back({steps, away, i});
@@ -3817,7 +3839,8 @@ void tracker_load(bool shown) {
     if (seed) {   // (the rows after the first are the tab's own: what it lists, the way home, the hints heard, the dungeons' items,
                   //  what is in logic now, the doors and bosses. The areas follow them)
         for (int i = 1; i < n; i++) areas.push_back({tracker_name[i], tracker_value[i]});
-        const char* const own[kTrackerFirstArea] = {nullptr, "Show", "Return home", "Gossip Stones", "Dungeon items", "In logic now", "Doors and bosses"};
+        const char* const own[kTrackerFirstArea] = {nullptr, "Show", "Return home", "Gossip Stones", "Dungeon items", "In logic now", "Doors and bosses",
+                                                    "Tracker window"};
         for (int i = 1; i < kTrackerFirstArea; i++) snprintf(tracker_name[i], sizeof tracker_name[0], "%s", own[i]), tracker_value[i][0] = 0;
     }
     tracker_stones_load(path.substr(0, path.find_last_of("\\/") + 1), on);
@@ -5789,6 +5812,7 @@ void draw_options(ui::Ctx& c) {
         if (selr.tracker == kTrackerShowRow && tracker_check_count) prompt_list[prompts_n++] = {ui::kLeftRight, "Change"};
         if (!selr.tracker && tracker_check_count) prompt_list[prompts_n++] = {ui::kConfirm, "Forget"};   // (the whole game's row: the record forgotten)
         if (selr.tracker == kTrackerHomeRow && tracker_check_count) prompt_list[prompts_n++] = {ui::kConfirm, "Go home"};
+        if (selr.tracker == kTrackerWindowRow && tracker_check_count) prompt_list[prompts_n++] = {ui::kConfirm, "Open"};
         if (selr.tracker == kTrackerStoneRow && tracker_stone_lines.size() > 1) prompt_list[prompts_n++] = {ui::kLeftRight, "Scroll"};
         if (const TrackerCheck* k = tracker_pick[selr.tracker] ? tracker_row_check(selr.tracker, tracker_pick[selr.tracker]) : nullptr)   // (Y or J: tracker_junk)
             prompt_list[prompts_n++] = {ui::kExtra, tracker_junk[k - tracker_checks] ? "Not junk" : "Junk", "J"};
@@ -5829,6 +5853,7 @@ void draw_options(ui::Ctx& c) {
                            dungeon_row ? (narrow ? dungeon_help.c_str() : kTrackerDungeonHelp) :
                            door_row ? (narrow ? door_help.c_str() : kTrackerDoorHelp) :
                            now_row && tracker_check_count ? kTrackerNowHelp :
+                           selr.tracker == kTrackerWindowRow && tracker_check_count ? kTrackerWindowHelp :
                            selr.tracker == 0 && tracker_check_count ? stats_help.c_str() : selr.help;
     if (narrow) {   // (help over the column's foot: normally half the room, up to 65% for the mic meter and its explanation)
         const float help_h = std::min(22 * s + 32 * s + help_tall + (after ? 30 * s : 0) + (pending_line.empty() ? 0 : 52 * s) + 22 * s,
@@ -7880,6 +7905,33 @@ void teleport_mouse(const MkwVkPointer& ptr, int mx, int my, bool* press, bool& 
     if (ptr.pressed & HOS_MOUSE_RIGHT) press[5] = true;
     if (ptr.wheel) teleport_wheel += ptr.wheel, teleport_follow = false, changed = true;
 }
+/// The Tracker's window started from the game (the Tracker window row): the launcher beside the game's exe, or a folder
+/// above it (an exe in a "bin" folder), with "--tracker <its folder>": whether it started. Wide paths: a folder of any name
+bool tracker_window_open() {
+#ifdef _WIN32
+    wchar_t folder[MAX_PATH];
+    DWORD n = GetModuleFileNameW(nullptr, folder, MAX_PATH);
+    while (n > 0 && folder[n - 1] != L'\\' && folder[n - 1] != L'/') n--;
+    if (n < 2 || n >= MAX_PATH) return false;
+    folder[n - 1] = 0;
+    for (int up = 0; up < 2; up++) {
+        const std::wstring exe = std::wstring(folder) + L"\\Willow Woods Launcher.exe";
+        if (GetFileAttributesW(exe.c_str()) != INVALID_FILE_ATTRIBUTES) {
+            std::wstring cmd = L"\"" + exe + L"\" --tracker \"" + folder + L"\"";
+            STARTUPINFOW si{};
+            si.cb = sizeof si;
+            PROCESS_INFORMATION pi{};
+            if (!CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, 0, nullptr, folder, &si, &pi)) return false;
+            CloseHandle(pi.hThread), CloseHandle(pi.hProcess);
+            return true;
+        }
+        wchar_t* above = wcsrchr(folder, L'\\');
+        if (!above) break;
+        *above = 0;
+    }
+#endif
+    return false;
+}
 /// A row of the Tracker tab: Left and Right step through its area's checks (past the last: its own words again), and
 /// confirm, with the debug tools on, has the game take Link to the check shown: its place, a metre above it, with its
 /// folder and ages, goes into <game folder>\rando\goto_check.txt and the action to the game, and the menu closes
@@ -7910,6 +7962,15 @@ void tracker_press(int row, const bool* press, bool& changed) {
                 logf("menu: tracker: return home");
                 open_now = false;   // (back to the game: a map change starts with an event)
             } else tracker_home_asked = now;
+            changed = true;
+        }
+        return;
+    }
+    if (row == kTrackerWindowRow && tracker_check_count) {   // (Tracker window: confirm starts it, a program of its own)
+        if (press[7]) {
+            tracker_window_started = tracker_window_open();
+            tracker_window_asked = GetTickCount64();
+            logf("menu: tracker: the window %s", tracker_window_started ? "started" : "could not be started");
             changed = true;
         }
         return;
@@ -8098,24 +8159,40 @@ void mic_test_tick(bool focused) {
 /// stamp>", "here <the area Link is in>", "states <a letter a check, in checks.txt's order: c collected, j junk, i in
 /// logic, o not, ? not known>", "near <the checks in logic, the nearest first: their places in checks.txt>", and a line
 /// "dungeon <title>|<keys in hand, ? not known>|<keys in all>|<map>|<compass>|<Boss Key>" each (1 found, 0 not, - none).
+/// Then the detail (the owner, 2026-11-27: "more detailed", the window being on a second screen most of the time): a line
+/// "gave <a check's place>|<the item's name>" for each check collected, and "note <place>|<words>" for each one not in
+/// logic: "needs <what Link has not, of the way with the fewest>" and "after <the temples its story waits for>".
 /// Looked at every two seconds while the randomizer's game runs, the menu open or shut, and written only when it says
 /// something else than the last time, to a file beside it that then takes its name (the window never reads half of one).
-/// The words alone, for tests/test_tracker_live.py
-std::string tracker_live_words() {
+/// Measured 2026-11-27: made in one go the words took 5 to 7 ms (926 checks, most not in logic: what each lacks, in words),
+/// most of a frame every two seconds. So they are made a few checks a frame (kLiveSlice: a few hundredths of a millisecond; 16 once took 0.6),
+/// the whole in about a second, and the file is written by a thread of its own.
+constexpr int kLiveSlice = 8;
+struct TrackerLive { std::string states, detail; std::vector<char> in; };
+/// One check's part: its letter, whether it is in logic, and its line of detail
+void tracker_live_check(int i, TrackerLive& live) {
+    const int done = tracker_done[i].load(std::memory_order_relaxed);
+    std::string missing;
+    const int state = done == 1 || tracker_junk[i] ? 0 : tracker_in_logic(tracker_checks[i], &missing);
+    live.states += done == 1 ? 'c' : tracker_junk[i] ? 'j' : done < 0 || state < 0 ? '?' : state > 0 ? 'i' : 'o';
+    live.in.push_back(done == 0 && !tracker_junk[i] && state > 0);
+    if (done == 1 && tracker_checks[i].gives[0]) live.detail += "gave " + std::to_string(i) + "|" + tracker_item_name(tracker_checks[i].gives) + "\n";
+    if (done == 0 && !tracker_junk[i] && state == 0) {
+        const std::string after = tracker_after(tracker_checks[i]);
+        std::string words = missing.empty() ? std::string() : "needs " + missing;
+        if (!after.empty()) words += (words.empty() ? "" : "; ") + ("after " + after);
+        if (!words.empty()) live.detail += "note " + std::to_string(i) + "|" + words + "\n";
+    }
+}
+/// The file's words, every check's part made
+std::string tracker_live_words(const TrackerLive& live) {
     std::string out = "seed " + tracker_junk_stamp + "\n";
     const char* here = tracker_here_area();
-    out += std::string("here ") + (here ? here : "") + "\nstates ";
+    out += std::string("here ") + (here ? here : "") + "\nstates " + live.states + "\n";
     std::string nearest = "near";
-    std::vector<char> in(tracker_check_count > 0 ? tracker_check_count : 0);
-    for (int i = 0; i < tracker_check_count; i++) {
-        const int done = tracker_done[i].load(std::memory_order_relaxed);
-        const int state = done == 1 || tracker_junk[i] ? 0 : tracker_in_logic(tracker_checks[i]);
-        out += done == 1 ? 'c' : tracker_junk[i] ? 'j' : done < 0 || state < 0 ? '?' : state > 0 ? 'i' : 'o';
-        in[i] = done == 0 && !tracker_junk[i] && state > 0;
-    }
     for (const int i : tracker_near)
-        if (i >= 0 && i < tracker_check_count && in[i]) nearest += " " + std::to_string(i);
-    out += "\n" + nearest + "\n";
+        if (i >= 0 && i < (int)live.in.size() && live.in[i]) nearest += " " + std::to_string(i);
+    out += nearest + "\n";
     for (int d = 0; d < OOT_DUNGEON_COUNT; d++) {
         const int state = dungeon_state[d].load(std::memory_order_relaxed);
         out += std::string("dungeon ") + kDungeonTitles[d] + "|" + (state >= 0 ? std::to_string(state & 255) : std::string("?")) + "|" +
@@ -8123,29 +8200,61 @@ std::string tracker_live_words() {
         for (int k = 0; k < 3; k++) out += !dungeon_has(d, k) ? "|-" : state >= 0 && (state & (256 << k)) ? "|1" : "|0";
         out += "\n";
     }
-    return out;
+    return out + live.detail;
 }
 void tracker_live_write() {
     static ULONGLONG next = 0;
     static std::string last;
-    const ULONGLONG now = GetTickCount64();
-    if (now < next) return;
-    next = now + 2000;
-    if (!tracker_on.load(std::memory_order_relaxed)) return;
-    if (!tracker_check_count) tracker_load(false);   // (the seed's checks, with the menu never opened)
-    if (!tracker_check_count) return;
-    tracker_near_sort();   // (Link has moved)
-    const std::string words = tracker_live_words();
-    if (words == last) return;
-    const std::string path = game_folder_path() + "rando\\tracker_live.txt", fresh = path + ".new";
-    std::error_code ec;
-    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
-    FILE* f = fopen(fresh.c_str(), "wb");
-    if (!f) return;
-    const bool ok = fwrite(words.data(), 1, words.size(), f) == words.size();
-    if (fclose(f) != 0 || !ok) return;
-    std::filesystem::rename(fresh, path, ec);
-    if (!ec) last = words;
+    static TrackerLive live;
+    static int at = -1, count = 0;   // (the check the making is at, -1 not being made; the checks it began with)
+    static int64_t slowest = 0;      // (the most a frame's share has cost: said when it grows)
+    if (at < 0) {
+        const ULONGLONG now = GetTickCount64();
+        if (now < next) return;
+        next = now + 2000;
+        if (!tracker_on.load(std::memory_order_relaxed)) return;
+        if (!tracker_check_count) tracker_load(false);   // (the seed's checks, with the menu never opened)
+        if (!tracker_check_count) return;
+        at = 0, count = tracker_check_count;
+        live.states.clear(), live.detail.clear(), live.in.clear();
+        return;
+    }
+    if (count != tracker_check_count) {   // (the seed's checks read anew meanwhile: begun again at the next look)
+        at = -1;
+        return;
+    }
+    // (a frame's share: some checks; then, a frame each, the checks put nearest first and the words put together)
+    const int64_t began = prof_now();
+    const char* share = "checks";
+    bool whole = false;
+    std::string words;
+    if (at < count) {
+        for (int n = 0; n < kLiveSlice && at < count; n++, at++) tracker_live_check(at, live);
+    } else if (at == count) {
+        share = "order";
+        tracker_near_sort();   // (Link has moved)
+        at++;
+    } else {
+        share = "words";
+        words = tracker_live_words(live);
+        whole = true, at = -1;
+    }
+    if (const int64_t took = prof_now() - began; took > slowest && took > 300000)
+        slowest = took, logf("menu: tracker: a frame's share of the window's file (%s) took %.2f ms", share, took / 1e6);
+    if (!whole || words == last) return;
+    last = words;
+    // (written by a thread of its own, the words its own copy: a disk's wait is not the frame's. To a file beside it that
+    //  then takes its name)
+    std::thread([words, path = game_folder_path() + "rando\\tracker_live.txt"] {
+        const std::string fresh = path + ".new";
+        std::error_code ec;
+        std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+        FILE* f = fopen(fresh.c_str(), "wb");
+        if (!f) return;
+        const bool ok = fwrite(words.data(), 1, words.size(), f) == words.size();
+        if (fclose(f) != 0 || !ok) return;
+        std::filesystem::rename(fresh, path, ec);
+    }).detach();
 }
 void menu_tick() {
     std::lock_guard lk(menu_mu);   // (the control bridge's settings: menu_setting_set)

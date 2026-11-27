@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""The Tracker in a window of the launcher's, beside the game (Willow Woods, asked 2026-11-27: "viewable while playing.
-Something like a pop out window").
+"""The Tracker in a window of its own, beside the game (Willow Woods, asked 2026-11-27: "viewable while playing.
+Something like a pop out window"; then "i want it to be able to start the pop-out while in-game too" and "more detailed").
 
 The window works nothing out. The menu writes what it knows to <game folder>\\rando\\tracker_live.txt while the randomizer's
-game runs (gpu/vk/vk_menu.cpp tracker_live_write, from menu_tick: the seed's stamp, the area Link is in, a letter a check,
-the checks in logic nearest first, a line a dungeon), and the launcher's TrackerForm shows it with the seed's own files and
-the game's records of the doors, boss rooms and stones found. This check reads both sides' source for the file's form, and
-where the .NET Framework's compiler is, builds the launcher and has the window list a made-up seed's rows.
+game runs (gpu/vk/vk_menu.cpp tracker_live_write, from menu_tick, a few checks a frame: the seed's stamp, the area Link is
+in, a letter a check, the checks in logic nearest first, a line a dungeon, then what each collected check gave and what
+each one not in logic lacks), and the launcher's TrackerForm shows it with the seed's own files and the game's records of
+the doors, boss rooms and stones found. The window is a program of its own (the launcher's exe with "--tracker <game
+folder>"), so it stays when the launcher closes as the game starts, and the Tracker tab's Tracker window row starts it
+from the game. This check reads both sides' source, and where the .NET Framework's compiler is, builds the launcher and
+has the window list a made-up seed's rows, narrow and wide.
 """
 import os
 import re
@@ -34,34 +37,57 @@ def rows(exe, game, view, area=None):
 def main():
     menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
     src = (ROOT / "launcher" / "Launcher.cs").read_text(encoding="utf-8-sig")
-    # ---- the menu's side: the file, written from menu_tick whether the menu is open or not, and only when it changed ----
-    words = block(menu, "std::string tracker_live_words() {")
-    check('std::string out = "seed " + tracker_junk_stamp + "\\n";' in words and 'out += std::string("here ") + (here ? here : "") + "\\nstates ";' in words
-          and "out += done == 1 ? 'c' : tracker_junk[i] ? 'j' : done < 0 || state < 0 ? '?' : state > 0 ? 'i' : 'o';" in words
+    # ---- the menu's side: the file's lines ----
+    one = block(menu, "void tracker_live_check(int i, TrackerLive& live) {")
+    check("live.states += done == 1 ? 'c' : tracker_junk[i] ? 'j' : done < 0 || state < 0 ? '?' : state > 0 ? 'i' : 'o';" in one
+          and 'live.detail += "gave " + std::to_string(i) + "|" + tracker_item_name(tracker_checks[i].gives) + "\\n";' in one
+          and 'std::string words = missing.empty() ? std::string() : "needs " + missing;' in one
+          and 'if (!after.empty()) words += (words.empty() ? "" : "; ") + ("after " + after);' in one
+          and 'live.detail += "note " + std::to_string(i) + "|" + words + "\\n";' in one,
+          "a check's letter, what it gave or what it lacks are not written as the window reads them")
+    words = block(menu, "std::string tracker_live_words(const TrackerLive& live) {")
+    check('std::string out = "seed " + tracker_junk_stamp + "\\n";' in words and '(here ? here : "") + "\\nstates " + live.states + "\\n";' in words
           and 'std::string nearest = "near";' in words and "for (const int i : tracker_near)" in words
-          and 'out += std::string("dungeon ") + kDungeonTitles[d] + "|"' in words, "the live file's lines are not the ones the window reads")
+          and 'out += std::string("dungeon ") + kDungeonTitles[d] + "|"' in words and "return out + live.detail;" in words,
+          "the live file's lines are not the ones the window reads")
+    # (written from menu_tick whether the menu is open or not: a look every two seconds, a few checks a frame (made in one go
+    #  the words took 5 to 7 ms, measured 2026-11-27), only when they changed, by a thread of its own, whole)
     write = block(menu, "void tracker_live_write() {")
     check("next = now + 2000;" in write and "if (!tracker_on.load(std::memory_order_relaxed)) return;" in write
-          and "if (words == last) return;" in write and 'game_folder_path() + "rando\\\\tracker_live.txt", fresh = path + ".new";' in write
+          and "for (int n = 0; n < kLiveSlice && at < count; n++, at++) tracker_live_check(at, live);" in write
+          and re.search(r"constexpr int kLiveSlice = (\d+);", menu) and int(re.search(r"constexpr int kLiveSlice = (\d+);", menu).group(1)) <= 16
+          and "if (count != tracker_check_count) {" in write and "if (!whole || words == last) return;" in write
+          and 'std::thread([words, path = game_folder_path() + "rando\\\\tracker_live.txt"] {' in write
           and "std::filesystem::rename(fresh, path, ec);" in write and "if (!tracker_check_count) tracker_load(false);" in write,
-          "the live file is not written every two seconds at most, only when it changed, whole (a file beside it renamed)")
+          "the live file is not made a few checks a frame, or not written only when it changed, whole, off the frame's thread")
     check("tracker_live_write();" in block(menu, "void menu_tick() {"), "the live file is not written from the menu's tick")
     # (a load for the file or the minimap is not the tab coming on screen: its rows are laid out when it does)
     load = block(menu, "void tracker_load(bool shown) {")
     check("if (shown) {" in load and "if (sort && shown) {" in load and "void tracker_load(bool shown = true);" in menu,
           "a load with the tab off screen lays its rows out, or counts as the tab shown")
+    # ---- the window started from the game: the Tracker window row ----
+    start = block(menu, "bool tracker_window_open() {")
+    check('L"\\\\Willow Woods Launcher.exe";' in start and 'std::wstring cmd = L"\\"" + exe + L"\\" --tracker \\"" + folder + L"\\"";' in start
+          and "CreateProcessW(nullptr, cmd.data()," in start and "GetModuleFileNameW(nullptr, folder, MAX_PATH);" in start,
+          "the game does not start the launcher as the Tracker's window, by wide paths")
+    check("constexpr int kTrackerWindowRow = 7;" in menu and "tracker_window_started = tracker_window_open();" in menu
+          and '"Tracker window"};' in menu, "the Tracker tab has no Tracker window row that starts it")
     # ---- the launcher's side ----
     check('Path.Combine(dir, "rando", name)' in src and 'Rando("tracker_live.txt")' in src and 'mine = stamp.Length > 0 && line.Substring(5) == stamp;' in src
           and "live = mine && states.Length == checks.Count && checks.Count > 0;" in src, "the window takes a live file of another seed, or of other checks")
     check('widgets.Add(new Btn { Text = "Tracker", R = new RectangleF(cx + 236, 542, 84, 36), Page = RandoPage, Click = OnTracker });' in src
-          and "if (tracker == null || tracker.IsDisposed) { tracker = new TrackerForm(dir); tracker.Show(); return; }" in src,
-          "the Randomizer page has no Tracker button, or it opens a second window")
-    check("const int MostChecks = 1024;" in src and "constexpr int kTrackerChecks = 1024;" in menu or
-          re.search(r"kTrackerChecks = OOT_TRACKER_MAX|#define OOT_TRACKER_MAX 1024", menu + (ROOT / "gpu/vk/oot_cheat_items.h").read_text(encoding="utf-8")),
-          "the window counts more checks than the menu keeps")
+          and 'Process.Start(new ProcessStartInfo(Application.ExecutablePath, "--tracker \\"" + dir + "\\"")' in src,
+          "the Randomizer page has no Tracker button, or the window is not a program of its own (it would close with the launcher)")
+    check('var one = new Mutex(true, "WillowWoodsTracker", out alone);' in src and "TrackerForm.Others(h => { ShowWindow(h, 9); SetForegroundWindow(h); });" in src,
+          "a second start opens a second window instead of bringing the first to the front")
+    check(src.index("TrackerForm.CloseOthers();") < src.index("Close();   // (the builder rebuilds this folder, this launcher with it)"),
+          "an open Tracker window is not shut before the builder replaces the launcher's exe")
+    items = (ROOT / "gpu" / "vk" / "oot_cheat_items.h").read_text(encoding="utf-8")
+    check("const int MostChecks = 1024;" in src and re.search(r"#define OOT_TRACKER_MAX 1024\b", items) and "constexpr int kTrackerChecks = OOT_TRACKER_MAX;" in menu
+          or "constexpr int kTrackerChecks = 1024;" in menu, "the window counts another number of checks than the menu keeps")
     # (the dungeons among the areas: the menu's map's)
     world = menu[menu.index("constexpr WorldArea kWorldMap[] = {"):menu.index("constexpr const char* kWorldEdges")]
-    dungeons = [m.group(1).replace("\\'", "'") for m in re.finditer(r'\{"([^"]+)", "[^"]+", [\d.]+f, [\d.]+f, 1, "', world)]
+    dungeons = [m.group(1) for m in re.finditer(r'\{"([^"]+)", "[^"]+", [\d.]+f, [\d.]+f, 1, "', world)]
     mine = re.search(r"public static readonly string\[\] Dungeons = \{(.*?)\};", src, re.S).group(1)
     check(sorted(re.findall(r'"([^"]+)"', mine)) == sorted(dungeons) and len(dungeons) == 12, "the window's dungeons are not the menu's map's")
 
@@ -89,38 +115,52 @@ def main():
         (seed / "entrances.txt").write_text("ForestTemple|FireTemple|Forest Temple|Fire Temple\nFireTemple|ForestTemple|Fire Temple|Forest Temple\n", encoding="utf-8")
         (seed / "boss_doors.txt").write_text("ForestTemple|ForestTemple|Forest Temple|Forest Temple\n", encoding="utf-8")
         (seed / "rando_hints.txt").write_text("Stone 1|Market|0 0 0|They say the Market hides a sword.\nStone 2|Market|0 0 0|They say nothing.\n", encoding="utf-8")
+        nothing = ["#|In logic now|", " |Nothing known until the game runs.|", ""]
         # (before the game has run: the seed's checks, nothing known of them)
         got = rows(exe, game, 1)
         check(got[0] == "4 checks in this seed. / Start the game: the tracker fills in while it runs.", "no live file: the window does not say to start the game: %r" % got[0])
         check(got[1:] == ["#|Overworld|", " |Kokiri Forest|2 checks", " |Market|1 check", "#|Dungeons|", " |Forest Temple|1 check", ""],
               "the areas are not listed in the menu's groups before the game has run: %r" % got[1:])
-        check(rows(exe, game, 0)[1:] == [" |Nothing known until the game runs.|", ""], "no live file: something is said to be in logic")
+        check(rows(exe, game, 0)[1:] == nothing, "no live file: something is said to be in logic")
         # (the game's word: A collected, B in logic, C not, the pot junk; Link in the forest; the pot is not near, being junk)
-        live = "seed placement 42 seed 7\nhere Kokiri Forest\nstates cioj\nnear 1\ndungeon Forest Temple|2|5|1|0|1\ndungeon Deku Tree|0|0|1|1|-\n"
+        live = ("seed placement 42 seed 7\nhere Kokiri Forest\nstates cioj\nnear 1\ndungeon Forest Temple|2|5|1|0|1\ndungeon Deku Tree|0|0|1|1|-\n"
+                "gave 0|Zelda's Lullaby\nnote 2|needs Hookshot; after the Forest Temple\nnote 9|out of range\n")
         (rando / "tracker_live.txt").write_text(live, encoding="utf-8")
         (rando / "doors_seen.txt").write_text("seed placement 42 seed 7\nForestTemple\n", encoding="utf-8")
         (rando / "boss_rooms_seen.txt").write_text("seed placement 42 seed 7\nForestTemple\n", encoding="utf-8")
         (rando / "hints_heard.txt").write_text("seed placement 42 seed 7\nStone 1\n", encoding="utf-8")
+        now = ["#|In logic now|1 check, nearest first", "#|Kokiri Forest|here", "i|Chest B (child)|"]
+        forest = ["#|Kokiri Forest|1 of 2 left, 1 in logic", "i|Chest B (child)|", "c|Chest A|Zelda's Lullaby"]
+        doors = ["#|Door of|leads to", " |Forest Temple|Fire Temple", " |Fire Temple|?", "#|Boss room of|has the boss of", " |Forest Temple|its own boss"]
+        items = ["#|Dungeon items|keys in hand", " |Forest Temple|2 of 5 keys|map yes, compass no, Boss Key yes", " |Deku Tree|no keys|map yes, compass yes"]
+        hints = ["#|1 of 2 hints heard|", " |They say the Market hides a sword.|"]
         got = rows(exe, game, 0)
         check(got[0].startswith("1 of 4 collected, 1 junk, 1 in logic now / Link is in: Kokiri Forest"), "the top line does not count the checks: %r" % got[0])
-        check(got[1:] == ["#|Kokiri Forest|here", "i|Chest B (child)|", ""], "In logic now does not list the checks in logic under their areas: %r" % got[1:])
+        check(got[1:] == now + [""], "In logic now does not list the checks in logic under their areas: %r" % got[1:])
         got = rows(exe, game, 1)
         check(got[1:] == ["#|Overworld|", "i|Kokiri Forest  (here)|1 left, 1 in logic", "#|Dungeons|", "o|Forest Temple|1 left",
                           "#|Finished areas|", " |Market|all collected", ""], "the areas' groups, counts and finished ones are not the menu's: %r" % got[1:])
         got = rows(exe, game, 1, "Kokiri Forest")
-        check(got[1:] == [" |<  Back to the areas|", "#|Kokiri Forest|", "c|Chest A|Melody Zelda Lullaby", "i|Chest B (child)|", ""],
-              "an area's checks are not listed with their marks and what a collected one gave: %r" % got[1:])
-        check(rows(exe, game, 2)[1:] == ["#|Door of|leads to", " |Forest Temple|Fire Temple", " |Fire Temple|?",
-                                         "#|Boss room of|has the boss of", " |Forest Temple|its own boss", ""],
-              "a door or a boss room is told before it is found, or not once it is")
-        check(rows(exe, game, 3)[1:] == ["#|Dungeon|keys, map, compass, Boss Key", " |Forest Temple|2 of 5 keys, map yes, compass no, Boss Key yes",
-                                         " |Deku Tree|no keys, map yes, compass yes", ""], "the dungeons' keys and items are not the live file's")
-        check(rows(exe, game, 4)[1:] == ["#|1 of 2 hints heard|", " |They say the Market hides a sword.|", ""], "the hints heard are not listed, or one not heard is")
+        check(got[1:] == [" |<  Back to the areas|"] + forest + [""],
+              "an area's checks are not listed the ones to get first, with what a collected one gave: %r" % got[1:])
+        got = rows(exe, game, 1, "Forest Temple")
+        check(got[2:] == ["#|Forest Temple|1 of 1 left, 0 in logic", "o|Chest C (adult)||needs Hookshot; after the Forest Temple", ""],
+              "a check not in logic does not say what it lacks: %r" % got[2:])
+        check(rows(exe, game, 2)[1:] == doors + [""], "a door or a boss room is told before it is found, or not once it is")
+        check(rows(exe, game, 3)[1:] == items + [""], "the dungeons' keys and items are not the live file's")
+        check(rows(exe, game, 4)[1:] == hints + [""], "the hints heard are not listed, or one not heard is")
+        # (wide, on a second screen: the areas, the checks of the one chosen or all in logic now, and the rest, at once)
+        got = rows(exe, game, -1)
+        check(got[1:] == ["i|In logic now|1 check", "#|Overworld|", "i|Kokiri Forest|1 left, 1 in logic", "#|Dungeons|", "o|Forest Temple|1 left",
+                          "#|Finished areas|", " |Market|all collected", "--"] + now + ["--"] + items + doors + hints + [""],
+              "wide, the window is not its three lists at once: %r" % got[1:])
+        got = rows(exe, game, -1, "Kokiri Forest")
+        check(got[got.index("--") + 1:got.index("--", got.index("--") + 1)] == forest, "wide, an area chosen does not show its checks in the middle: %r" % got)
         # (another seed's live file, and one of other checks: not taken)
         (rando / "tracker_live.txt").write_text(live.replace("seed 7", "seed 8"), encoding="utf-8")
-        check(rows(exe, game, 0)[1:] == [" |Nothing known until the game runs.|", ""], "another seed's live file is shown")
+        check(rows(exe, game, 0)[1:] == nothing, "another seed's live file is shown")
         (rando / "tracker_live.txt").write_text(live.replace("states cioj", "states cio"), encoding="utf-8")
-        check(rows(exe, game, 0)[1:] == [" |Nothing known until the game runs.|", ""], "a live file of fewer checks is shown")
+        check(rows(exe, game, 0)[1:] == nothing, "a live file of fewer checks is shown")
         check(not (rando / "tracker_window.txt").exists(), "a window never shown wrote its place")
     print("PASS: the Tracker's window, and the file the game writes for it")
 
