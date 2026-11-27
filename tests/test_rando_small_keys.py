@@ -35,7 +35,7 @@ def main():
     assert "if area in key_sets and h not in free:" in main_src, "a check behind a locked door does not ask for its dungeon's keys"
     assert "caps[t] = frozenset(boss_need(d)) | key_sets[d] if d in BOSS_HEARTS else None" in main_src
     assert "PROGRESSION = PROGRESSION | frozenset(small_tags.values())" in main_src
-    assert 'rest = " seed %d chests %d keys %d major %d logic %d%s\\n" % (seed, which, keys_mode,' in main_src, "Anywhere is not on the stamp"
+    assert 'rest = " seed %d chests %d keys %d major %d logic %d%s%s\\n" % (seed, which, keys_mode,' in main_src, "Anywhere is not on the stamp"
     keys_at = main_src.index("    if keys_mode == 2:   # (Small keys: Anywhere: the Boss Keys and the maps")
     assert main_src.index('a.boss_keys = ini["rando_boss_keys"] == 1') < keys_at, "the Boss Keys' own setting is read after"
     host = open(os.path.join(ROOT, "host", "hos_main.c"), encoding="utf-8").read()
