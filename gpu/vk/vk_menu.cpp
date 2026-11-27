@@ -43,6 +43,7 @@
 #include "oot_cheat_items.h"
 #include "vk_progress.h"   // (StartupView, version_text: the start-up screen)
 #include "vk_imgui.h"   // (the renderer's side of the overlay: begin, fonts, logo, record)
+#include "vk_map_pictures.h"   // (the Tracker's maps: the game's own map pictures behind the checks)
 #include "vk_ui.h"
 #include "vk_menu_keys.h"   // (which gamepad buttons confirm and go back: those A and B are bound to)         // (how it looks: Dear ImGui, vk_imgui.h)
 #include "vk_dlss.h"
@@ -808,46 +809,88 @@ bool tracker_is_dungeon(const char* area) {
         if (a.dungeon && !strcmp(a.area, area)) return true;
     return false;
 }
+/// (asked 2026-11-26: the game's map pictures behind the checks, vk_map_pictures.h) A dungeon's floors as the game draws
+/// them: a picture a floor. A check's floor is the one whose picture is drawn on where the check is (bits: bit f for floor
+/// f, map_floors_at); where rooms lie over each other (several bits) or the place is on no picture (none), the floor
+/// nearest in height, a floor's height being the middle one (the median) of the checks that are on its picture alone.
+/// out: each check's floor, -1 not known. n checks, their heights y; floors: how many the dungeon has
+void tracker_floors_assign(const unsigned* bits, const float* y, int n, int floors, int* out) {
+    float level[kMapFloors];
+    bool known[kMapFloors];
+    floors = std::min(floors, kMapFloors);
+    for (int f = 0; f < floors; f++) {
+        std::vector<float> own;
+        for (int i = 0; i < n; i++)
+            if (bits[i] == 1u << f) own.push_back(y[i]);
+        known[f] = !own.empty();
+        if (known[f]) std::nth_element(own.begin(), own.begin() + own.size() / 2, own.end()), level[f] = own[own.size() / 2];
+    }
+    for (int i = 0; i < n; i++) {
+        int best = -1, first = -1;
+        float away = FLT_MAX;
+        for (int f = 0; f < floors; f++) {
+            if (bits[i] && !(bits[i] >> f & 1)) continue;
+            if (bits[i] && first < 0) first = f;
+            if (known[f] && fabsf(y[i] - level[f]) < away) away = fabsf(y[i] - level[f]), best = f;
+        }
+        out[i] = best >= 0 ? best : first;
+    }
+}
 /// A check's mark at a place: its kind's shape (tracker_kind_mark), filled when in logic (state 1), an outline not yet
 /// (0), a small dot collected (2), a cross junk (3); lift 1 an up mark over it, -1 a down mark under it, 0 none; faint:
-/// on another floor than the one looked at
-void tracker_mark(ImDrawList* d, ImVec2 at, int mark, int state, int lift, float s, bool faint = false) {
-    const int a = faint ? 70 : 255;
-    const ImU32 kIn = ui::rgba(120, 224, 150, a), kOut = ui::rgba(138, 156, 184, a), kGot = ui::rgba(92, 104, 126, a);
-    if (state == 2) { d->AddCircleFilled(at, 3 * s, kGot); return; }
+/// on another floor than the one looked at; backed: over a map picture, so a dark shape goes under it and "not yet" is
+/// lighter (a grey ring on the game's yellow ground is hard to see)
+void tracker_mark(ImDrawList* d, ImVec2 at, int mark, int state, int lift, float s, bool faint = false, bool backed = false) {
+    const int a = faint ? (backed ? 110 : 70) : 255;
+    const ImU32 kIn = ui::rgba(120, 224, 150, a), kOut = backed ? ui::rgba(236, 240, 250, a) : ui::rgba(138, 156, 184, a);
+    const ImU32 kGot = backed ? ui::rgba(150, 160, 180, a) : ui::rgba(92, 104, 126, a), kDark = ui::rgba(12, 16, 26, faint ? 120 : 225);
+    if (state == 2) {
+        if (backed) d->AddCircleFilled(at, 4.6f * s, kDark);
+        d->AddCircleFilled(at, 3 * s, kGot);
+        return;
+    }
     if (state == 3) {
-        d->AddLine(ImVec2(at.x - 3 * s, at.y - 3 * s), ImVec2(at.x + 3 * s, at.y + 3 * s), kGot, 1.5f * s);
-        d->AddLine(ImVec2(at.x - 3 * s, at.y + 3 * s), ImVec2(at.x + 3 * s, at.y - 3 * s), kGot, 1.5f * s);
+        for (int pass = backed ? 0 : 1; pass < 2; pass++) {
+            const ImU32 ink = pass ? kGot : kDark;
+            const float w = pass ? 1.5f * s : 3.6f * s;
+            d->AddLine(ImVec2(at.x - 3 * s, at.y - 3 * s), ImVec2(at.x + 3 * s, at.y + 3 * s), ink, w);
+            d->AddLine(ImVec2(at.x - 3 * s, at.y + 3 * s), ImVec2(at.x + 3 * s, at.y - 3 * s), ink, w);
+        }
         return;
     }
     const bool in = state == 1;
     const ImU32 ink = in ? kIn : kOut;
     const float line = 1.6f * s;
-    float r = 5 * s;
-    if (mark == 1) {   // (a chest: a square)
-        r = 4.5f * s;
-        if (in) d->AddRectFilled(ImVec2(at.x - r, at.y - r), ImVec2(at.x + r, at.y + r), ink);
-        else d->AddRect(ImVec2(at.x - r + line * 0.5f, at.y - r + line * 0.5f), ImVec2(at.x + r - line * 0.5f, at.y + r - line * 0.5f), ink, 0, 0, line);
-    } else if (mark == 2) {   // (a Gold Skulltula: a diamond)
-        r = 6 * s;
-        const ImVec2 q[4] = {ImVec2(at.x, at.y - r), ImVec2(at.x + r, at.y), ImVec2(at.x, at.y + r), ImVec2(at.x - r, at.y)};
-        if (in) d->AddQuadFilled(q[0], q[1], q[2], q[3], ink);
-        else d->AddQuad(q[0], q[1], q[2], q[3], ink, line);
-    } else {   // (a pot: a small circle; anything else: a circle)
-        r = (mark == 3 ? 3.5f : 5) * s;
-        if (in) d->AddCircleFilled(at, r, ink);
-        else d->AddCircle(at, r - line * 0.5f, ink, 0, line);
-    }
+    const float r = (mark == 1 ? 4.5f : mark == 2 ? 6 : mark == 3 ? 3.5f : 5) * s;
+    const auto shape = [&](float size, ImU32 col, bool fill) {
+        if (mark == 1) {   // (a chest: a square)
+            if (fill) d->AddRectFilled(ImVec2(at.x - size, at.y - size), ImVec2(at.x + size, at.y + size), col);
+            else d->AddRect(ImVec2(at.x - size + line * 0.5f, at.y - size + line * 0.5f), ImVec2(at.x + size - line * 0.5f, at.y + size - line * 0.5f), col, 0, 0, line);
+        } else if (mark == 2) {   // (a Gold Skulltula: a diamond)
+            const ImVec2 q[4] = {ImVec2(at.x, at.y - size), ImVec2(at.x + size, at.y), ImVec2(at.x, at.y + size), ImVec2(at.x - size, at.y)};
+            if (fill) d->AddQuadFilled(q[0], q[1], q[2], q[3], col);
+            else d->AddQuad(q[0], q[1], q[2], q[3], col, line);
+        } else {   // (a pot: a small circle; anything else: a circle)
+            if (fill) d->AddCircleFilled(at, size, col);
+            else d->AddCircle(at, size - line * 0.5f, col, 0, line);
+        }
+    };
+    if (backed) shape(r + 1.8f * s, kDark, true);
+    shape(r, ink, in);
     if (lift) {   // (above or below Link: a small arrowhead over or under the mark)
         const float y = at.y - lift * (r + 2.5f * s), tip = y - lift * 3.5f * s;
-        d->AddLine(ImVec2(at.x - 3.5f * s, y), ImVec2(at.x, tip), ink, line);
-        d->AddLine(ImVec2(at.x + 3.5f * s, y), ImVec2(at.x, tip), ink, line);
+        for (int pass = backed ? 0 : 1; pass < 2; pass++) {
+            d->AddLine(ImVec2(at.x - 3.5f * s, y), ImVec2(at.x, tip), pass ? ink : kDark, pass ? line : line + 2 * s);
+            d->AddLine(ImVec2(at.x + 3.5f * s, y), ImVec2(at.x, tip), pass ? ink : kDark, pass ? line : line + 2 * s);
+        }
     }
 }
 extern std::atomic<int> link_age;   // (below, with the Debug tab's rows: 0 the child, 1 the adult, -1 not known)
 /// An area's checks as marks where they are (an area's row), in a box from y0 to y1, the one the row is stepped to ringed.
 /// The checks of Link's age (and the one stepped to, whatever its age); stepped to a check in a crowd, the view closes in
-/// on it (tracker_zoom_half) and a small picture of the whole area in the corner shows where the view is
+/// on it (tracker_zoom_half) and a small picture of the whole area in the corner shows where the view is. Behind the
+/// marks, the game's own map picture of the area when the build made them (vk_map_pictures.h: Link's age's; in a dungeon
+/// its shape and the picture of the floor looked at), where the game's own table says it lies
 void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int row) {
     const float s = c.s;
     ui::box(c, ImVec2(x0, y0), ImVec2(x1, y1));
@@ -864,10 +907,39 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
     const int lx = link_place[0].load(std::memory_order_relaxed), lz = link_place[1].load(std::memory_order_relaxed);
     const int ly = link_place[3].load(std::memory_order_relaxed);
     const bool link = here && !strcmp(here, tracker_name[row]) && lx != INT_MIN && lz != INT_MIN;
-    // (a dungeon: the floor looked at, by its height, tracker_same_floor: the check's stepped to, else Link's)
-    const bool floors = tracker_is_dungeon(tracker_name[row]) && (picked || (link && ly != INT_MIN));
+    const char* folder = nullptr;   // (the map's Banc folder, as its checks name it: the pictures are by it)
+    for (int i = 0; i < tracker_check_count && !folder; i++)
+        if (shown(tracker_checks[i])) folder = tracker_checks[i].folder;
+    // (a dungeon: the floor looked at, the check's stepped to, else Link's. By the game's floor pictures when the build
+    //  made them (tracker_floors_assign: floor_of each check, floor_now the one looked at), else by height, tracker_same_floor)
+    const bool dungeon = tracker_is_dungeon(tracker_name[row]);
+    const bool floors = dungeon && (picked || (link && ly != INT_MIN));
     const float floor_at = picked ? picked->pos[1] : ly / 100.0f;
-    const auto faint = [&](const TrackerCheck& k) { return floors && &k != picked && !tracker_same_floor(k.pos[1], floor_at); };
+    const char* floor_names[kMapFloors];
+    const int floor_n = dungeon && folder ? map_floors(folder, floor_names) : 0;
+    std::vector<int> floor_of((size_t)tracker_check_count, -1);
+    int floor_now = -1;
+    if (floor_n > 0) {
+        std::vector<unsigned> bits;
+        std::vector<float> ys;
+        std::vector<int> which;
+        for (int i = 0; i < tracker_check_count; i++)
+            if (shown(tracker_checks[i]))
+                which.push_back(i), bits.push_back(map_floors_at(folder, tracker_checks[i].pos[0], tracker_checks[i].pos[2])), ys.push_back(tracker_checks[i].pos[1]);
+        const int link_slot = link && ly != INT_MIN ? (int)bits.size() : -1;   // (Link as one more place)
+        if (link_slot >= 0) bits.push_back(map_floors_at(folder, lx / 100.0f, lz / 100.0f)), ys.push_back(ly / 100.0f);
+        std::vector<int> got(bits.size(), -1);
+        tracker_floors_assign(bits.data(), ys.data(), (int)bits.size(), floor_n, got.data());
+        for (size_t j = 0; j < which.size(); j++) floor_of[(size_t)which[j]] = got[j];
+        floor_now = picked ? floor_of[(size_t)(picked - tracker_checks)] : link_slot >= 0 ? got[(size_t)link_slot] : -1;
+    }
+    const auto faint = [&](const TrackerCheck& k) {
+        if (!floors || &k == picked) return false;
+        const int f = floor_of[(size_t)(&k - tracker_checks)];
+        return floor_now >= 0 && f >= 0 ? f != floor_now : !tracker_same_floor(k.pos[1], floor_at);
+    };
+    MapLayer layers[kMapLayers];
+    const int layer_n = folder ? map_layers(folder, age, floor_now >= 0 ? floor_names[floor_now] : "", layers) : 0;
     std::vector<float> away;   // (how far each other check shown on its floor is from the one stepped to)
     for (int i = 0; i < tracker_check_count; i++) {
         if (!shown(tracker_checks[i])) continue;
@@ -879,10 +951,14 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
     const float link_at[2] = {lx / 100.0f, lz / 100.0f};
     if (link && n)
         for (int k = 0; k < 2; k++) lo[k] = std::min(lo[k], link_at[k]), hi[k] = std::max(hi[k], link_at[k]);
+    for (int i = 0; i < layer_n && n; i++)   // (the pictures' drawn parts: the whole map shows, not only where checks are)
+        lo[0] = std::min(lo[0], layers[i].bx0), lo[1] = std::min(lo[1], layers[i].bz0), hi[0] = std::max(hi[0], layers[i].bx1), hi[1] = std::max(hi[1], layers[i].bz1);
     {   // (the heading, and what the shapes are)
         float hx = x0 + 24 * s;
         const float hy = y0 + 12 * s, mid = hy + 8.5f * s;
-        hx += ui::text(c, c.f.body, 15 * s, ImVec2(hx, hy), ui::kDim, "Map: north is up") + 22 * s;
+        char head[48] = "Map: north is up";
+        if (floor_now >= 0) snprintf(head, sizeof head, "Map, floor %s", floor_names[floor_now]);   // (short: the legend's "another floor" has to fit)
+        hx += ui::text(c, c.f.body, 15 * s, ImVec2(hx, hy), ui::kDim, head) + 22 * s;
         static const struct { int mark; const char* name; } legend[] = {{1, "chest"}, {2, "Skulltula"}, {3, "pot"}, {0, "other"}};
         for (const auto& l : legend) {
             if (hx + 90 * s > x1) break;   // (a narrow panel: the heading alone)
@@ -907,6 +983,9 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
     const float mid[2] = {zoomed ? picked->pos[0] : all_mid[0], zoomed ? picked->pos[2] : all_mid[1]};
     const float ox = (mx0 + mx1) * 0.5f - mid[0] * scale, oy = (my0 + my1) * 0.5f - mid[1] * scale;
     c.d->PushClipRect(ImVec2(x0 + 4 * s, y0 + 34 * s), ImVec2(x1 - 4 * s, y1 - 4 * s), true);
+    for (int i = 0; i < layer_n; i++)   // (the game's map pictures, where they lie: under everything)
+        c.d->AddImage(layers[i].tex->GetTexRef(), ImVec2(ox + layers[i].x0 * scale, oy + layers[i].z0 * scale),
+                      ImVec2(ox + layers[i].x1 * scale, oy + layers[i].z1 * scale), ImVec2(0, 0), ImVec2(1, 1), ui::rgba(255, 255, 255, 215));
     // (Link: a gold arrow the way he faces, under the dots. Until bug 160 it was drawn over them: he stood at Hyrule
     //  Castle's Pot #3 and #4 and the arrow covered both, "no dot near". A check he stands on shows on him)
     if (link) {
@@ -928,7 +1007,7 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
             const int state = got ? 2 : junk ? 3 : tracker_in_logic(k) > 0 ? 1 : 0;
             // (a check well above or below Link, when he is here and his height is known: an up or a down mark)
             const float up = link && ly != INT_MIN ? k.pos[1] - ly / 100.0f : 0;
-            tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s, pass == 0);
+            tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s, pass == 0, layer_n > 0);
             if (&k == picked) c.d->AddCircle(at, 11 * s, ui::kAccent, 0, 2.2f * s);
         }
     c.d->PopClipRect();
@@ -939,6 +1018,9 @@ void tracker_area_map(ui::Ctx& c, float x0, float x1, float y0, float y1, int ro
         const float in = 6 * s, k2 = std::min((iw - 2 * in) / std::max(hi[0] - lo[0], span * 0.05f), (ih - 2 * in) / std::max(hi[1] - lo[1], span * 0.05f));
         const float jx = (ix0 + ix1) * 0.5f - all_mid[0] * k2, jy = (iy0 + iy1) * 0.5f - all_mid[1] * k2;
         c.d->PushClipRect(ImVec2(ix0, iy0), ImVec2(ix1, iy1), true);
+        for (int i = 0; i < layer_n; i++)
+            c.d->AddImage(layers[i].tex->GetTexRef(), ImVec2(jx + layers[i].x0 * k2, jy + layers[i].z0 * k2), ImVec2(jx + layers[i].x1 * k2, jy + layers[i].z1 * k2),
+                          ImVec2(0, 0), ImVec2(1, 1), ui::rgba(255, 255, 255, 170));
         for (int i = 0; i < tracker_check_count; i++)
             if (shown(tracker_checks[i]))
                 c.d->AddCircleFilled(ImVec2(jx + tracker_checks[i].pos[0] * k2, jy + tracker_checks[i].pos[2] * k2), std::max(1.0f, 1.3f * s), ui::rgba(138, 156, 184));

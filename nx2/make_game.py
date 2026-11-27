@@ -3300,6 +3300,10 @@ def main(a=None):
                                        ("wheel_sounds.py", "--out", "sounds.bin", "it is silent")):
         if run(PY + [os.path.join(HERE, script), "--romfs", romfs, opt, os.path.join(wheel, name)], check=False, output=sys.stderr):
             print("the item wheel's %s was not made: %s" % (name, without), flush=True)
+    # (Willow Woods, asked 2026-11-26) the Tracker's map pictures (gpu/vk/vk_map_pictures.cpp): the game's own, from the RomFS
+    # (nx2/map_assets.py: made once, then left). Without them its maps show the checks alone. Made from the game: never sent
+    if run(PY + [os.path.join(HERE, "map_assets.py"), "--romfs", romfs, "--out", os.path.join(out, "maps")], check=False, output=sys.stderr):
+        print("the Tracker's map pictures were not made: its maps show the checks without a picture", flush=True)
     language = os.path.join(out, "language.txt")   # (the same text as host/nn_applet.c writes)
     with open(language, "w", encoding="utf-8", newline="\n") as f:
         f.write("# The game's language. Change the line below to one of the codes listed here, save, and start the game again.\n\n%s\n\n" % a.language)

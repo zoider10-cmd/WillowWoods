@@ -125,13 +125,14 @@ def main():
           "the area map does not show the checks of Link's age, and the one stepped to")
     check("const float half = picked ? tracker_zoom_half(away, half_all) : half_all;" in area and "if (zoomed) {" in area,
           "the area map does not close in on the check stepped to, or has no picture of the whole area then")
-    check("tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s, pass == 0);" in area,
+    check("tracker_mark(c.d, at, tracker_kind_mark(k.kind), state, up > kMapLevel ? 1 : up < -kMapLevel ? -1 : 0, s, pass == 0, layer_n > 0);" in area,
           "a check's mark is not its kind's shape, or has no up or down mark")
     check('{{1, "chest"}, {2, "Skulltula"}, {3, "pot"}, {0, "other"}}' in area, "the area map does not say what the shapes are")
     # (dungeons by floor: the floor of the check stepped to, else Link's; the other floors faint and under, and not counted for the zoom)
-    check("const bool floors = tracker_is_dungeon(tracker_name[row]) && (picked || (link && ly != INT_MIN));" in area and
+    # (2026-11-26: by the game's floor pictures where the build made them, tests/test_map_pictures.py; by height else)
+    check("const bool floors = dungeon && (picked || (link && ly != INT_MIN));" in area and
           "const float floor_at = picked ? picked->pos[1] : ly / 100.0f;" in area and
-          "return floors && &k != picked && !tracker_same_floor(k.pos[1], floor_at);" in area and
+          "if (!floors || &k == picked) return false;" in area and "!tracker_same_floor(k.pos[1], floor_at);" in area and
           "if (!shown(k) || pass != (&k == picked ? 2 : faint(k) ? 0 : 1)) continue;" in area and
           "&tracker_checks[i] != picked && !faint(tracker_checks[i])) away.push_back(" in area and 'ui::kDim, "another floor");' in area,
           "a dungeon's map does not draw the other floors' checks faint")
