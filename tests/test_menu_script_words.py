@@ -36,7 +36,7 @@ def main():
     check("if (same(rows[tab_row_to_global(cur_tab, k)].name, what.c_str())) tab_selected[cur_tab] = k, menu_refresh = true;" in tick,
           "ROW: does not choose the row of that name, or keeps scroll_rows from bringing it into view (scrolled_to)")
     check("if (pick >= 0 && pick <= checks) tracker_pick[row] = pick, menu_refresh = true;" in tick and
-          "c && same(c->kind, what.c_str())) pick = k;" in tick and "if (row < kTrackerFirstArea) return;" in tick, "CHECK: does not step the Tracker's row to that check")
+          "c && same(c->kind, what.c_str())) pick = k;" in tick and "if (row < kTrackerFirstArea && row != kTrackerNowRow) return;" in tick, "CHECK: does not step the Tracker's row to that check")
     check('static const char* live = getenv("RX_VK_MENU_LIVE");' in tick and r"fgets(line, sizeof line, f) && strchr(line, '\n')" in tick and
           "live_at = ftell(f);" in tick, "the live file is not read a whole line at a time, from where it was left")
     check("script_run(key, what);" in tick and "script_run(line, colon ? std::string(colon + 1) : std::string());" in tick,

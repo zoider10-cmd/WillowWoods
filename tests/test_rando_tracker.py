@@ -184,24 +184,24 @@ def main():
           "a check collected is shown when those are hidden, one out of logic when only the reachable are, or one is hidden when all are shown")
     check("if (!strcmp(tracker_checks[i].area, tracker_name[row]) && tracker_check_shown(i) && !--n) return &tracker_checks[i];" in menu and
           "!(rows[i].tracker > 0 && tracker_row_hidden(rows[i].tracker)) &&" in menu and
-          "return row >= kTrackerFirstArea && tracker_show != kTrackerShowAll && tracker_row_checks(row, true) > 0 && !tracker_row_checks(row);" in menu,
+          "if (row < kTrackerFirstArea) return false;" in menu and
+          "return tracker_show != kTrackerShowAll && tracker_row_checks(row, true) > 0 && !tracker_row_checks(row);" in menu,
           "a check not shown is stepped to, or an area with none to show keeps its row, or the whole game's row is hidden")
     # (what the tab lists is a row of its own, the second, since the tab was made easier to read: 2026-11-14)
     check("tracker_show = (tracker_show + kTrackerShows + (press[3] ? -1 : 1)) % kTrackerShows;" in menu and
           "for (int r = 1; r < kTrackerRows; r++) tracker_pick[r] = 0;" in menu and
           "if (row == kTrackerShowRow && tracker_check_count) return kTrackerShowWords[tracker_show];" in menu and
           "constexpr int kTrackerShowRow = 1;" in menu and "constexpr int kTrackerHomeRow = 2;" in menu and
-          "constexpr int kTrackerStoneRow = 3;" in menu and "constexpr int kTrackerDungeonRow = 4;" in menu and "constexpr int kTrackerFirstArea = 5;" in menu and   # (the Gossip Stones, the fourth row: 2026-11-21)
+          "constexpr int kTrackerStoneRow = 3;" in menu and "constexpr int kTrackerDungeonRow = 4;" in menu and "constexpr int kTrackerFirstArea = 7;" in menu and   # (the Gossip Stones, the fourth row: 2026-11-21; In logic now and Doors and bosses: 2026-11-27)
           # (Return home, the tab's third row: the randomizer's own way out, confirmed twice, with the debug tools off too)
-          'snprintf(tracker_name[kTrackerHomeRow], sizeof tracker_name[0], "Return home");' in menu and
+          'own[kTrackerFirstArea] = {nullptr, "Show", "Return home", "Gossip Stones",' in menu and
           "cheat_action.store(kTrackerHomeAction);" in menu and "constexpr int kTrackerHomeAction = 7;" in menu and
-          'snprintf(tracker_name[kTrackerShowRow], sizeof tracker_name[0], "Show");' in menu and
           '{"All checks", "Left to collect", "Left and in logic"}' in menu,
           "the first row's Left and Right do not choose what the tab shows, a row stays stepped to a check that is another now, or the row does not say what is shown")
     made = [name("Chest", item, {}, ()) for item in seed.ITEM_WORDS]
     check(all(len(n) <= seed.CHECK_NAME - 40 for n in made) and set(seed.PROGRESSION) <= set(seed.ITEM_WORDS) and set(seed.DUNGEON_ITEMS) <= set(seed.ITEM_WORDS),
           "a gating item or a dungeon's item has no words for a chest's name")
-    block = menu[menu.index("void tracker_load() {"):menu.index("tracker_check_count = checks;")]
+    block = menu[menu.index("void tracker_load(bool shown) {"):menu.index("tracker_check_count = checks;")]
     check("named = lambda kind, h, area, pos, item=\"\": check_name(kind, item, about.get(h, {}), pos, exits[area], sub_areas[area])" in script and
           "for h, gyaml, pos, scale, words in marks(data):" in script and "%79[^|]" in block,
           "the checks are not written with their names, or the menu does not read a name whole")
@@ -265,14 +265,17 @@ def main():
     items = (ROOT / "gpu" / "vk" / "oot_cheat_items.h").read_text(encoding="utf-8")
     check("float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {" in menu and
           "if (area_panel) tracker_panel(c, hx0, hx1, bottom + 8 * s, bar_top - 10 * s, selr.tracker, hint);" in menu and
-          "tracker_panel(c, hx0, hx1, top, top + std::max(room * 0.55f, room - 420 * s), selr.tracker, hint);" in menu and
+          "tracker_panel(c, hx0, hx1, top, top + (now_row ? room : std::max(room * 0.55f, room - 420 * s)), selr.tracker, hint);" in menu and
           "const int first = n > fit ? std::clamp(pick - 1 - fit / 2, 0, n - fit) : 0;" in menu and
-          "if (strcmp(tracker_checks[i].area, tracker_name[row]) || !tracker_check_shown(i)) continue;" in menu,
+          "if (now ? !tracker_check_now(i) : strcmp(tracker_checks[i].area, tracker_name[row]) || !tracker_check_shown(i)) continue;" in menu,
           "an area's row does not show its checks in the help's place, or not the ones the tab lists, or not the one stepped to")
     check("#define OOT_TRACKER_HERE 8190" in items and "rx_option_set(OOT_TRACKER_HERE, here);" in host and
           "if (oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) here = i;" in host and
           "if (id == OOT_TRACKER_HERE) {" in menu and
-          "std::stable_sort(rows_now.begin(), rows_now.end(), [&](int a, int b) { return _stricmp(tracker_name[a], tracker_name[b]) < 0; });" in menu and
+          # (2026-11-27: by name within two groups, the overworld and the dungeons, the finished areas folded at the foot)
+          "std::stable_sort(names.begin(), names.end(), [](const std::string& a, const std::string& b) { return _stricmp(a.c_str(), b.c_str()) < 0; });" in menu and
+          "if (tracker_is_dungeon(name.c_str()) != (group == 1)) continue;" in menu and "if (count.all && !count.left) finished.push_back(name);" in menu and
+          "if (sort && shown) {" in menu and
           "if (!called || now - called > 1500) sort = true;" in menu and
           'if (here && !strcmp(here, tracker_name[row])) words = "Here: " + words;' in menu,
           "the areas are not in alphabetical order (2026-11-18), the area Link is in is not marked Here, or the rows move while "

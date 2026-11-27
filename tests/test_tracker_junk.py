@@ -70,8 +70,15 @@ void tracker_stones_load(const std::string&, bool) {}
 int tracker_area_hint(const char*) { return 0; }
 std::string tracker_after(const TrackerCheck&) { return std::string(); }
 std::string dungeon_says() { return std::string(); }   // (the Dungeon items row's words: not this check's)
+std::string doors_says() { return std::string(); }   // (nor the Doors and bosses row's)
+// (the groups of the areas' rows: tracker_load lays them out, this check by hand)
+char tracker_kind[kTrackerRows];
+bool tracker_folded[kTrackerRows];
+bool tracker_done_open = false;
+int tracker_count = 0;
 // JUNK
 // SHOW
+std::vector<int> tracker_near;
 // FUNCTIONS
 static std::string file_text(const std::string& path) {
     std::string text;
@@ -99,9 +106,11 @@ static bool press_on(int row, int which) {
 int main(int argc, char** argv) {
     CHECK(argc == 2);
     folder = std::string(argv[1]) + "/";
-    const char* names[] = {"The whole game", "Show", "Return home", "Gossip Stones", "Dungeon items", "Market", "Kokiri Forest"};
-    static_assert(kTrackerStoneRow == 3 && kTrackerDungeonRow == 4 && kTrackerFirstArea == 5, "the rows before the areas are not these");
-    for (int r = 0; r < 7; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
+    const char* names[] = {"The whole game", "Show", "Return home", "Gossip Stones", "Dungeon items", "In logic now", "Doors and bosses",
+                           "Market", "Kokiri Forest"};
+    static_assert(kTrackerStoneRow == 3 && kTrackerDungeonRow == 4 && kTrackerNowRow == 5 && kTrackerDoorRow == 6 && kTrackerFirstArea == 7,
+                  "the rows before the areas are not these");
+    for (int r = 0; r < 9; r++) std::snprintf(tracker_name[r], sizeof tracker_name[r], "%s", names[r]);
     const int market = kTrackerFirstArea;
     put(0, "Market", "Chest A", 0, 1);
     put(1, "Market", "Chest B", 0, 1);
@@ -170,6 +179,38 @@ int main(int argc, char** argv) {
     CHECK(extra(kWest, kEast, kSouth) == kWest && extra(kNorth, kSouth, kEast) == kNorth);
     CHECK(extra(-1, kEast, kSouth) == paste(kEast, kSouth) && extra(kEast, kEast, kSouth) == paste(kEast, kSouth));
     CHECK(extra(9, kSouth, kEast) == paste(kSouth, kEast));
+
+    // (asked 2026-11-27, the In logic now row: the whole game's checks left and in logic, in tracker_near's order, each
+    //  said with its area; a junk one is not among them)
+    put(3, "Kokiri Forest", "Chest D", 0, 1);
+    tracker_near = {3, 2, 1, 0};
+    CHECK(tracker_row_checks(kTrackerNowRow) == 3 && tracker_row_check(kTrackerNowRow, 1) == &tracker_checks[3]);
+    CHECK(tracker_row_check(kTrackerNowRow, 2) == &tracker_checks[1] && !tracker_row_check(kTrackerNowRow, 4));
+    CHECK(tracker_says(kTrackerNowRow) == "3 checks, nearest first");
+    tracker_pick[kTrackerNowRow] = 1;
+    CHECK(tracker_says(kTrackerNowRow) == "1 of 3: Kokiri Forest: Chest D: in logic");
+    CHECK(press_on(kTrackerNowRow, kTrackerJunkPress) && tracker_junk[3] && tracker_row_checks(kTrackerNowRow) == 2);
+    CHECK(press_on(kTrackerNowRow, 4) && tracker_pick[kTrackerNowRow] == 2);   // (Right: the next)
+    tracker_pick[kTrackerNowRow] = 0;
+    put(0, "Market", "Chest A", 0, 0), put(1, "Market", "Chest B", 0, 0);
+    CHECK(tracker_says(kTrackerNowRow) == "Nothing in logic right now");
+
+    // (asked 2026-11-27, the groups: a title is hidden with every row of its group; the areas with nothing left are folded
+    //  under Finished areas, shut until confirmed, and that row is not there under a Left list)
+    const int first = kTrackerFirstArea;
+    const char* grouped[] = {"Overworld", "Market", "Finished areas", "Kokiri Forest"};
+    for (int r = 0; r < 4; r++) std::snprintf(tracker_name[first + r], sizeof tracker_name[0], "%s", grouped[r]);
+    tracker_kind[first] = 'H', tracker_kind[first + 2] = 'D', tracker_folded[first + 3] = true, tracker_count = first + 4;
+    CHECK(!tracker_row_hidden(first) && !tracker_row_hidden(first + 1) && !tracker_row_hidden(first + 2) && tracker_row_hidden(first + 3));
+    CHECK(tracker_says(first + 2) == "1 area, hidden");
+    CHECK(press_on(first + 2, 7) && tracker_done_open && !tracker_row_hidden(first + 3));
+    CHECK(tracker_says(first + 2) == "1 area, shown below");
+    CHECK(press_on(first + 2, 3) && !tracker_done_open && tracker_row_hidden(first + 3));   // (Left shuts it)
+    tracker_show = kTrackerShowLeft;
+    put(0, "Market", "Chest A", 1, 0), put(1, "Market", "Chest B", 1, 0);   // (the Market's all collected: nothing to list)
+    CHECK(tracker_row_hidden(first + 1) && tracker_row_hidden(first) && tracker_row_hidden(first + 2));
+    tracker_show = kTrackerShowAll;
+    CHECK(!tracker_row_hidden(first + 1) && !tracker_row_hidden(first));
     std::printf("PASS: a junk check leaves the counts and the Left lists, and rando/junk.txt round-trips\n");
     return 0;
 }
@@ -191,8 +232,8 @@ def main():
     junk = between(menu, "bool tracker_junk[kTrackerChecks];", "// What the tab shows (the first row's Left and Right)")
     show = between(menu, "enum { kTrackerShowAll", "std::atomic<int> tracker_here{-1};")
     functions = "\n".join(block(menu, marker) for marker in (
-        "bool tracker_check_shown(int i) {", "int tracker_row_checks(int row, bool any = false) {",
-        "const TrackerCheck* tracker_row_check(int row, int n) {", "bool tracker_junk_flip(int row) {",
+        "bool tracker_check_shown(int i) {", "bool tracker_check_now(int i) {", "int tracker_row_checks(int row, bool any = false) {",
+        "const TrackerCheck* tracker_row_check(int row, int n) {", "bool tracker_row_hidden(int row) {", "bool tracker_junk_flip(int row) {",
         "std::string tracker_says(int row) {", "void tracker_press(int row, const bool* press, bool& changed) {"))
     fixture = (FIXTURE.replace("// CONSTANTS", constants).replace("// TRACKER_CHECK", block(menu, "struct TrackerCheck {"))
                .replace("// JUNK", junk).replace("// SHOW", show).replace("// FUNCTIONS", functions))
@@ -222,7 +263,7 @@ def main():
           "c.extra_dot = menu_keys::dot(pad_junk);" in menu,
           "the Tracker's prompts do not show the junk button")
     # ---- the record is read with the seed's checks, and the panel draws a junk check its own way ----
-    load = block(menu, "void tracker_load() {")
+    load = block(menu, "void tracker_load(bool shown) {")
     check("if (checks) tracker_junk_read(tracker_junk_path(), stamp, checks);" in load and
           "const std::string stamp = on && checks ? tracker_seed_stamp() : std::string();" in load,
           "the junk record is not read with the seed's checks")

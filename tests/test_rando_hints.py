@@ -103,8 +103,8 @@ def main():
           "the hints file does not name each stone and its place")
     check("#define OOT_STONE_FLAG 0x05ab3f3du" in host and S.murmur3(b"GossipStone_NaviTalk_Temporary") == 0x05ab3f3d
           and "oot_stone_heard(c);" in host and '"rando/hints_heard.txt"' in host, "the game's side does not keep the stones heard")
-    check("constexpr int kTrackerStoneRow = 3;" in menu and "constexpr int kTrackerDungeonRow = 4;" in menu and "constexpr int kTrackerFirstArea = 5;" in menu and
-          'snprintf(tracker_name[kTrackerStoneRow], sizeof tracker_name[0], "Gossip Stones");' in menu and
+    check("constexpr int kTrackerStoneRow = 3;" in menu and "constexpr int kTrackerDungeonRow = 4;" in menu and "constexpr int kTrackerFirstArea = 7;" in menu and
+          '{nullptr, "Show", "Return home", "Gossip Stones", "Dungeon items", "In logic now", "Doors and bosses"};' in menu and
           'hints_heard.txt' in menu and "tracker_hints_help" not in menu, "the Tracker has no Gossip Stones row of the hints heard")
     check("gift_files[HINT_FLOW] = stone_heard_flow(stone_talk_open(was))" in script and 'HINT_TALK, HINT_RUMOR = "Talk", "InitTalk_GossipStone"' in script and
           "struct.pack_into(\"<H\", out, cases + 8 * c + 4, rumor[0])" in script,

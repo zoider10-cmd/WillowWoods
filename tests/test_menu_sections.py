@@ -97,7 +97,7 @@ def main():
 
     # the heading rows are drawn as titles and stepped over by the keys (no code of their own per tab)
     draw = function(menu, "void draw_options(ui::Ctx& c) {")
-    if "if (r.heading) {" not in draw:
+    if "if (row_heading(r)) {" not in draw:   # (a section's title, or a group's on the Tracker)
         raise SystemExit("FAIL: draw_options no longer draws heading rows as titles")
     tick = function(menu, "void menu_tick() {")
     if "while (heading_at(selected));" not in tick:

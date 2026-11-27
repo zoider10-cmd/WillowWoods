@@ -39,13 +39,13 @@ def main():
         check(want in names and want in seed, "the map has no box for %s, or the seed tool names it otherwise" % want)
     check("tracker_world_map(c, hx0, hx1, top, top + map_h);" in menu and "selr.tracker == 0 && tracker_check_count && cur_tab == TAB_TRACKER" in menu,
           "the whole game's row does not show the map")
-    check("if (bar_top - 12 * s - end >= 150 * s) tracker_area_map(c, hx0, hx1, end + 10 * s, bar_top - 12 * s, selr.tracker);" in menu,
+    check("if (!now_row && bar_top - 12 * s - end >= 150 * s) tracker_area_map(c, hx0, hx1, end + 10 * s, bar_top - 12 * s, selr.tracker);" in menu,
           "an area's row does not show its checks' map under its list")
     # (2026-11-26: a box of the overview says one number, the checks to get now, else those left: not both)
     world = menu[menu.index("float tracker_world_map(ui::Ctx& c,"):menu.index("/// An area's checks as marks where they are")]
     check('snprintf(line, sizeof line, n.in ? "%d now" : "%d left", n.in ? n.in : n.left);' in world and '", %d left"' not in world,
           "an area's box of the overview says two counts")
-    check("top + std::max(room * 0.55f, room - 420 * s)" in menu, "the list can take the whole panel, leaving the map no room")
+    check("top + (now_row ? room : std::max(room * 0.55f, room - 420 * s))" in menu, "the list can take the whole panel, leaving the map no room")
     body = menu[menu.index("void tracker_area_map(ui::Ctx& c,"):]
     body = body[:body.index("\n}\n")]
     check("ox + k.at[0] * scale, oy + k.at[2] * scale" in body and "&k == picked" in body, "the dots are not x across and z down, or the stepped check not ringed")
@@ -84,7 +84,7 @@ def main():
     # (the test of a check's age is a function since 2026-11-26, the area map's too: tests/test_tracker_map_marks.py runs it)
     check("const int age = link_age.load(std::memory_order_relaxed)" in draw and "if (!tracker_of_age(k.ages, age)) continue;" in draw,
           "the minimap shows the other age's checks")
-    check(menu.count("if (minimap) draw_minimap_checks(c);") == 2 and "next = now + 5000, tracker_load();" in menu,
+    check(menu.count("if (minimap) draw_minimap_checks(c);") == 2 and "next = now + 5000, tracker_load(false);" in menu,
           "the minimap's dots are not drawn on screen and on test pictures, or the seed's checks are never read with the menu shut")
     print("FAIL" if failed else "PASS: the Tracker's map")
     return 1 if failed else 0
