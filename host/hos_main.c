@@ -2437,37 +2437,38 @@ static int oot_pot_progress(Ctx *c) {
 #define OOT_SKULL_WAITING 8
 #define OOT_MARK_FLIPS 2                 /* (the save's marks seen set in one second that count as "just now, in play") */
 #define OOT_MARK_STEADY_NS 5000000000LL  /* (and how long Link has been in his map by then) */
-static struct { char item[64]; int n, at[OOT_SKULL_WAITING]; int64_t since; } oot_skull_wait;
+struct oot_wait { char item[64]; int n, at[OOT_SKULL_WAITING]; int64_t since; };
+static struct oot_wait oot_skull_wait, oot_chest_wait;   /* (a Gold Skulltula's drop; a chest's item, oot_chest_item) */
 static int oot_family_of(const char *name, int *spelling);   /* (below) */
 static int oot_dungeon_check;                                 /* (below: the check the last item given was found to be) */
 static int64_t oot_dungeon_check_at;
-/* the Skulltulas waited for: one the save has marked since the add is the drop's; none after the wait: the nearest, as
-   before. The lock held, each second. Returns how many marks changed */
-static int oot_skull_waited(void) {
-    if (!oot_skull_wait.n) return 0;
+/* the checks waited for (w): one the save has marked since the add is the item's; none after the wait: the nearest, as
+   before. what: "skulltula" or "chest", for the log. The lock held, each second. Returns how many marks changed */
+static int oot_wait_settle(struct oot_wait *w, const char *what) {
+    if (!w->n) return 0;
     const int64_t now = hos_now_ns();
-    for (int k = 0; k < oot_skull_wait.n; k++) {
-        const int i = oot_skull_wait.at[k];
+    for (int k = 0; k < w->n; k++) {
+        const int i = w->at[k];
         if (i < 0 || i >= oot_check_count || oot_checks[i].done != 1 || oot_checks[i].claimed) continue;
         oot_checks[i].claimed = 1;
-        hos_log("rando: tracker: skulltula: %s was check %d's: the save marked it %.1f s after the add", oot_skull_wait.item, i,
-                (now - oot_skull_wait.since) / 1e9);
-        oot_skull_wait.n = 0;
+        hos_log("rando: tracker: %s: %s was check %d's: the save marked it %.1f s after the add", what, w->item, i, (now - w->since) / 1e9);
+        w->n = 0;
         return 0;   /* (its mark was counted when it was seen) */
     }
-    if (now - oot_skull_wait.since < OOT_SKULL_WAIT_NS) return 0;
-    for (int k = 0; k < oot_skull_wait.n; k++) {
-        const int i = oot_skull_wait.at[k];
+    if (now - w->since < OOT_SKULL_WAIT_NS) return 0;
+    for (int k = 0; k < w->n; k++) {
+        const int i = w->at[k];
         if (i < 0 || i >= oot_check_count || oot_checks[i].done == 1) continue;
         oot_checks[i].done = 1, oot_checks[i].claimed = 1, oot_checks[i].sold = 1;
-        hos_log("rando: tracker: skulltula: %s: the save marked none of the %d Skulltulas here that give it in %.0f s: "
-                "check %d, the nearest, is taken as before (its mark written)", oot_skull_wait.item, oot_skull_wait.n, OOT_SKULL_WAIT_NS / 1e9, i);
-        oot_skull_wait.n = 0;
+        hos_log("rando: tracker: %s: %s: the save marked none of the %d here that give it in %.0f s: "
+                "check %d, the nearest, is taken as before (its mark written)", what, w->item, w->n, OOT_SKULL_WAIT_NS / 1e9, i);
+        w->n = 0;
         return 1;
     }
-    oot_skull_wait.n = 0;
+    w->n = 0;
     return 0;
 }
+static int oot_skull_waited(void) { return oot_wait_settle(&oot_skull_wait, "skulltula"); }
 /* A pick-up's add (not an event's): the Gold Skulltula it is the drop of, by the save's own marks. 1: it is seen to (ticked,
    or waited for); 0: no Gold Skulltula here gives it. The lock held */
 static int oot_skull_item(Ctx *c, const char *name, int family) {
@@ -2528,6 +2529,64 @@ static int oot_skull_item(Ctx *c, const char *name, int family) {
     hos_log("rando: tracker: skulltula: %s: %d Skulltula(s) here give it, none marked by the save yet (the nearest, check %d, %.1f m): "
             "waiting for the save's own mark", name, n, at[0], rank[0]);
     return 1;
+}
+/* (the same day: chests the same way) A chest that gives an item was ticked by the same guess at the item's add, the nearest
+   chest not yet collected that gives it, and that chest's own mark written. (A chest of rupees gives no add at all: it was
+   ticked by the game's own flag already, IsTreasureBoxOpen.<its hash>, .opened: seen without a window on the owner's save
+   in Mido's house.) By that flag for every chest now:
+   - a chest here that gives the item and whose opened flag is set, not yet ticked: that one;
+   - else one the record ticked by its opened flag a short while ago whose item no add has claimed (the flag set as the lid
+     goes up, the item added after the scene): that one, and nothing more;
+   - else, when the nearest check that gives the item is a chest, the add waits for the first of the chests here to have its
+     flag set (oot_chest_wait), and only after the wait is the nearest taken as before. An add whose nearest check is no
+     chest (a character's gift) goes as it did.
+   SEEN 2026-11-26 without a window on the owner's save "Chest Check Test Save" (Mido's house: four chests, two of red
+   rupees, one of Deku Nuts): the nut chest opened: "1 chest(s) here give it, none open by the game's flag yet", then "was
+   check 575's: the save marked it 0.2 s after the add": the flag is set just after the add, so the wait is the way it goes.
+   Returns 1: seen to (ticked or claimed); 0: not a chest's by its flag, with the chests here that could be it in wait
+   (not yet waited for: oot_tracker_item arms it when the nearest check is one of them). The lock held */
+static int oot_chest_item(Ctx *c, const char *name, int family, struct oot_wait *wait) {
+    int open = -1, claimable = -1, n = 0;
+    float rank[OOT_SKULL_WAITING], open_away = 1e30f, claim_away = 1e30f;
+    const int64_t now = hos_now_ns();
+    for (int i = 0; i < oot_check_count; i++) {
+        if (!oot_checks[i].opened || !oot_banc_in_folder(oot_link_map, oot_checks[i].folder)) continue;
+        if (strcmp(oot_checks[i].item, name) && (family < 0 || oot_family_of(oot_checks[i].item, NULL) != family)) continue;
+        const float dx = oot_checks[i].place[0] - oot_link_place[0], dy = oot_checks[i].place[1] - oot_link_place[1],
+                    dz = oot_checks[i].place[2] - oot_link_place[2];
+        const float away = sqrtf(dx * dx + dy * dy + dz * dz);
+        if (oot_checks[i].done == 1) {
+            if (oot_checks[i].marked_at && !oot_checks[i].claimed && now - oot_checks[i].marked_at < OOT_SKULL_CLAIM_NS && away < claim_away)
+                claimable = i, claim_away = away;
+            continue;
+        }
+        int is_open = 0;
+        if (oot_gamedata_bool(c, oot_checks[i].opened, &is_open) && is_open) {
+            if (away < open_away) open = i, open_away = away;
+            continue;
+        }
+        if (n == OOT_SKULL_WAITING && away >= rank[n - 1]) continue;
+        int k = n < OOT_SKULL_WAITING ? n++ : n - 1;
+        for (; k > 0 && rank[k - 1] > away; k--) rank[k] = rank[k - 1], wait->at[k] = wait->at[k - 1];
+        rank[k] = away, wait->at[k] = i;
+    }
+    wait->n = n, wait->since = now;
+    snprintf(wait->item, sizeof wait->item, "%s", name);
+    if (open >= 0) {
+        oot_checks[open].done = 1, oot_checks[open].claimed = 1, oot_checks[open].marked_at = now, oot_checks[open].sold = 1;
+        oot_dungeon_check = open, oot_dungeon_check_at = now;
+        oot_tracker_save();
+        hos_log("rando: tracker: chest: %s got: check %d, its chest open by the game's flag at the add (%.1f m from Link)", name, open, open_away);
+        return 1;
+    }
+    if (claimable >= 0) {
+        oot_checks[claimable].claimed = 1;
+        oot_dungeon_check = claimable, oot_dungeon_check_at = now;
+        hos_log("rando: tracker: chest: %s got: check %d, ticked by its chest's flag %.1f s ago (%.1f m from Link)", name, claimable,
+                (now - oot_checks[claimable].marked_at) / 1e9, claim_away);
+        return 1;
+    }
+    return 0;
 }
 /* (Pots, asked 2026-11-25) A broken pot comes back when Link has left its area: its "broken" truth value is put back
    once he is in a map of another folder, so it is there the next time its area is entered, as in the original game. The
@@ -2596,6 +2655,7 @@ static int oot_shelf_flags(Ctx *c) {
     if (flips && flips <= OOT_MARK_FLIPS && oot_link_map[0] && hos_now_ns() - map_since > OOT_MARK_STEADY_NS)
         for (int k = 0; k < flips; k++) oot_checks[flip[k]].marked_at = hos_now_ns();
     marks += oot_skull_waited();
+    marks += oot_wait_settle(&oot_chest_wait, "chest");
     marks += oot_pot_progress(c);
     if (marks) oot_tracker_save();
     ReleaseSRWLockExclusive(&oot_checks_lock);
@@ -2691,6 +2751,12 @@ static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int 
         ReleaseSRWLockExclusive(&oot_checks_lock);
         return;
     }
+    /* (an event's add: a chest's item is its chest's by the game's own opened flag, oot_chest_item) */
+    struct oot_wait chests = {.n = 0};
+    if (!pickup && !shop && oot_chest_item(c, name, family, &chests)) {
+        ReleaseSRWLockExclusive(&oot_checks_lock);
+        return;
+    }
     /* (pass 0: the map Link is in; pass 1, when nothing near was found there: the map he left within OOT_LEFT_MAP_NS) */
     const int left = oot_left_map[0] && hos_now_ns() - oot_left_at < OOT_LEFT_MAP_NS;
     for (int pass = 0; pass < 1 + left && best < 0; pass++) {
@@ -2744,6 +2810,18 @@ static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int 
             const float away = sqrtf(dx * dx + dy * dy + dz * dz);
             if (away <= OOT_CHECK_NEAR) best = i, nearest = away;
         }
+    }
+    if (best >= 0 && chests.n && oot_checks[best].opened) {
+        /* (the nearest check that gives it is a chest whose flag does not say open: not ticked on that guess. The chests
+           here that give it are waited for, oot_wait_settle; one waited for already is settled first, each its own) */
+        if (oot_chest_wait.n) {
+            oot_chest_wait.since = hos_now_ns() - OOT_SKULL_WAIT_NS;
+            if (oot_wait_settle(&oot_chest_wait, "chest")) oot_tracker_save();
+        }
+        oot_chest_wait = chests;
+        hos_log("rando: tracker: chest: %s: %d chest(s) here give it, none open by the game's flag yet (the nearest, check %d): "
+                "waiting for the flag", name, chests.n, chests.at[0]);
+        best = -1;
     }
     if (best >= 0) {
         oot_checks[best].done = 1;

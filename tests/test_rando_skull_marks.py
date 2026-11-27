@@ -10,6 +10,9 @@ not known when this was written, so the two functions are compiled and run throu
 - the mark comes after the add: the add waits, and the one the save marks is the drop's, the nearest left alone;
 - the save marks none in the wait: only then the nearest is taken and its mark written, as before;
 - a second add while one is waited for settles the first, each its own; an item no Skulltula here gives is not theirs.
+A chest that gives an item the same way, by the game's own opened flag (oot_chest_item; a chest of rupees gives no add and
+was ticked by that flag already): open at the add, it is ticked; ticked by its flag a while ago, the add claims it; else the
+chests here that give the item are handed back to be waited for, and the wait settles as a Skulltula's.
 
     python -I -B tests/test_rando_skull_marks.py [--cc gcc]
 """
@@ -41,6 +44,7 @@ static struct {
     signed char done, sold, skull, claimed;
     char ages[4];
     uint64_t key;
+    uint32_t opened;
     int64_t marked_at;
 } oot_checks[OOT_TRACKER_MAX];
 static int oot_check_count;
@@ -58,11 +62,14 @@ static int family_of(const char *name) { return !strncmp(name, "Bag", 3) ? 1 : -
 static int oot_family_of(const char *name, int *spelling) { (void)spelling; return family_of(name); }
 static int marks[OOT_TRACKER_MAX];   /* (the save's truth value by each check's key: its index + 1) */
 static int oot_gamedata_keyed_bool(Ctx *c, uint64_t key, int *out) { (void)c; if (!key || key > OOT_TRACKER_MAX) return 0; *out = marks[key - 1]; return 1; }
+static int opens[OOT_TRACKER_MAX];   /* (the game's opened flag of each chest: its index + 1) */
+static int oot_gamedata_bool(Ctx *c, uint32_t hash, int *value) { (void)c; if (!hash || hash > OOT_TRACKER_MAX) return 0; *value = opens[hash - 1]; return 1; }
 static int oot_dungeon_check = -1;
 static int64_t oot_dungeon_check_at;
 // DEFINES
 // WAITED
 // ITEM
+// CHEST
 static int failed;
 static void check(int ok, const char *what) { if (!ok) printf("FAIL: %s (the log: %s)\n", what, said), failed = 1; }
 static int add(const char *item, float x, float z, const char *folder, const char *ages, int skull) {
@@ -75,8 +82,8 @@ static int add(const char *item, float x, float z, const char *folder, const cha
     return i;
 }
 static void fresh(void) {
-    oot_check_count = 0, saves = 0, oot_skull_wait.n = 0, oot_dungeon_check = -1, said[0] = 0, clock_ns += 100000000000000LL;
-    memset(marks, 0, sizeof marks);
+    oot_check_count = 0, saves = 0, oot_skull_wait.n = 0, oot_chest_wait.n = 0, oot_dungeon_check = -1, said[0] = 0, clock_ns += 100000000000000LL;
+    memset(marks, 0, sizeof marks), memset(opens, 0, sizeof opens);
 }
 /* the record's second: a mark the save has is ticked, as oot_shelf_flags does, then the wait is looked at */
 static int second(void) {
@@ -142,6 +149,36 @@ int main(void) {
     check(oot_skull_item(&c, "Nuts", -1) == 0 && oot_skull_item(&c, "Arrows", -1) == 0 && !oot_skull_wait.n, "an item no Skulltula of this map gives is taken for one's");
     check(oot_skull_item(&c, "Bag_Small", family_of("Bag_Small")) == 1 && oot_skull_wait.n == 1 && oot_skull_wait.at[0] == other, "a family's next is not its Skulltula's");
     (void)chest, (void)far, (void)near;
+    /* ---- chests, by the game's opened flag ---- */
+    struct oot_wait w;
+    fresh();
+    near = add("Nuts", 2, 0, "KokiriForest", "CA", 0), far = add("Nuts", 4, 0, "KokiriForest", "CA", 0), other = add("Nuts", 3, 0, "KokiriForest", "CA", 1);
+    oot_checks[near].opened = near + 1, oot_checks[far].opened = far + 1;
+    snprintf(oot_link_map, sizeof oot_link_map, "KokiriForest_Child");
+    opens[far] = 1;
+    check(oot_chest_item(&c, "Nuts", -1, &w) == 1 && oot_checks[far].done == 1 && oot_checks[far].sold && oot_checks[far].claimed && oot_checks[near].done != 1 &&
+          oot_checks[other].done != 1 && saves == 1, "the chest open by the game's flag at the add is not the item's");
+    /* (ticked by its flag a while ago, the item added after the scene) */
+    fresh();
+    near = add("Nuts", 2, 0, "KokiriForest", "CA", 0), far = add("Nuts", 4, 0, "KokiriForest", "CA", 0);
+    oot_checks[near].opened = near + 1, oot_checks[far].opened = far + 1;
+    oot_checks[far].done = 1, oot_checks[far].marked_at = hos_now_ns() - 4000000000LL;
+    check(oot_chest_item(&c, "Nuts", -1, &w) == 1 && oot_checks[far].claimed && oot_checks[near].done != 1 && !oot_checks[near].sold, "the add did not claim the chest its flag ticked");
+    check(oot_chest_item(&c, "Nuts", -1, &w) == 0 && w.n == 1 && w.at[0] == near, "a second add claimed the same chest again");
+    /* (none open yet: the chests here that give it, the nearest first, for the record to wait for; then the wait) */
+    fresh();
+    far = add("Nuts", 4, 0, "KokiriForest", "CA", 0), near = add("Nuts", 2, 0, "KokiriForest", "CA", 0), other = add("Seeds", 1, 0, "KokiriForest", "CA", 0);
+    oot_checks[near].opened = near + 1, oot_checks[far].opened = far + 1, oot_checks[other].opened = other + 1;
+    check(oot_chest_item(&c, "Nuts", -1, &w) == 0 && w.n == 2 && w.at[0] == near && w.at[1] == far && !strcmp(w.item, "Nuts") && oot_checks[near].done != 1 && !saves,
+          "an add with no chest open by its flag ticked one, or did not hand back those that could be it");
+    oot_chest_wait = w;
+    oot_checks[far].done = 1, clock_ns += 200000000LL;   /* (the record's second ticked the one whose flag the game set) */
+    check(oot_wait_settle(&oot_chest_wait, "chest") == 0 && oot_checks[far].claimed && oot_checks[near].done != 1 && !oot_chest_wait.n && strstr(said, "chest"),
+          "the chest the save marked during the wait is not the item's");
+    oot_chest_wait = w, oot_chest_wait.since = hos_now_ns(), oot_checks[far].done = 0, oot_checks[far].claimed = 0;
+    clock_ns += 3100000000LL;
+    check(oot_wait_settle(&oot_chest_wait, "chest") == 1 && oot_checks[near].done == 1 && oot_checks[near].sold && oot_checks[far].done != 1, "no flag after the wait: the nearest chest is not taken as before");
+    snprintf(oot_link_map, sizeof oot_link_map, "KakarikoVillage_Child");
     if (!failed) puts("ok");
     return failed;
 }
@@ -160,16 +197,20 @@ def main():
     a = p.parse_args()
     host = (ROOT / "host" / "hos_main.c").read_text(encoding="utf-8")
     defines = "\n".join(line for line in host.splitlines() if line.startswith(("#define OOT_SKULL_WAIT_NS", "#define OOT_SKULL_CLAIM_NS", "#define OOT_SKULL_WAITING")))
-    wait = next(line for line in host.splitlines() if line.startswith("static struct { char item[64]; int n, at[OOT_SKULL_WAITING]; int64_t since; } oot_skull_wait;"))
-    fixture = (FIXTURE.replace("// DEFINES", defines + "\n" + wait).replace("// WAITED", block(host, "static int oot_skull_waited(void) {"))
-               .replace("// ITEM", block(host, "static int oot_skull_item(Ctx *c, const char *name, int family) {")))
+    wait = "\n".join(line for line in host.splitlines() if line.startswith(("struct oot_wait {", "static struct oot_wait oot_skull_wait, oot_chest_wait;")))
+    check(wait.count("\n") == 1, "the wait's record is not declared as the fixture takes it")
+    settle = block(host, "static int oot_wait_settle(struct oot_wait *w, const char *what) {")
+    one = next(line for line in host.splitlines() if line.startswith("static int oot_skull_waited(void) { return oot_wait_settle(&oot_skull_wait,"))
+    fixture = (FIXTURE.replace("// DEFINES", defines + "\n" + wait).replace("// WAITED", settle + "\n" + one)
+               .replace("// ITEM", block(host, "static int oot_skull_item(Ctx *c, const char *name, int family) {"))
+               .replace("// CHEST", block(host, "static int oot_chest_item(Ctx *c, const char *name, int family, struct oot_wait *wait) {")))
     with tempfile.TemporaryDirectory(prefix="skull-marks-") as tmp:
         src, exe = Path(tmp) / "fixture.c", Path(tmp) / "fixture.exe"
         src.write_text(fixture, encoding="utf-8")
         subprocess.run([a.cc, "-std=c11", "-Wall", "-Wextra", "-Werror", str(src), "-o", str(exe), "-lm"], check=True)
         beside = os.path.dirname(shutil.which(a.cc) or "")
         ran = subprocess.run([str(exe)], capture_output=True, text=True, env=dict(os.environ, PATH=beside + os.pathsep + os.environ.get("PATH", "")))
-    check(ran.returncode == 0 and ran.stdout.strip() == "ok", "a Gold Skulltula's drop by the save's marks:\n" + ran.stdout + ran.stderr)
+    check(ran.returncode == 0 and ran.stdout.strip() == "ok", "a drop's or a chest's check by the save's marks:\n" + ran.stdout + ran.stderr)
     # ---- the record uses them: a pick-up's add goes their way first, and the second's look settles a wait ----
     item = block(host, "static void oot_tracker_item(Ctx *c, const char *name, int shop, int price, int pickup) {")
     check("if (pickup && !shop && oot_pot_chosen < 0 && oot_piece_chosen < 0 && oot_skull_item(c, name, family)) {" in item and
@@ -183,13 +224,19 @@ def main():
           item.index("best = oot_piece_chosen;") > item.index("for (int pass = 0; pass < 1 + left && best < 0; pass++) {") and
           host.index("oot_piece_chosen = -1;", host.index("int hos_oot_pouch_add(Ctx *c) {")) < host.index("oot_piece_gives(gives, sizeof gives, 0)"),
           "a lying piece's item is not ticked at the piece's own check, or an add before it leaves its check chosen")
+    # (an event's add goes the chests' way first; the nearest check a chest not open by its flag: waited for, not ticked)
+    check("if (!pickup && !shop && oot_chest_item(c, name, family, &chests)) {" in item and
+          "if (best >= 0 && chests.n && oot_checks[best].opened) {" in item and "oot_chest_wait = chests;" in item and
+          item.index("if (best >= 0 && chests.n && oot_checks[best].opened) {") < item.index("oot_checks[best].done = 1;"),
+          "a chest's item is ticked on a guess before its chest's flag is waited for")
     flags = block(host, "static int oot_shelf_flags(Ctx *c) {")
+    check('marks += oot_wait_settle(&oot_chest_wait, "chest");' in flags, "the record's second does not settle a chest's wait")
     check("marks += oot_skull_waited();" in flags and
           "if (now && flips < OOT_MARK_FLIPS) flip[flips] = i;" in flags and
           "if (flips && flips <= OOT_MARK_FLIPS && oot_link_map[0] && hos_now_ns() - map_since > OOT_MARK_STEADY_NS)" in flags,
           "the record's second does not note when the save marked a check in play (not a load's many marks), or does not settle a wait")
     check('oot_checks[oot_check_count].skull = !strncmp(kind, "Gold Skulltula", 14)' in host, "a Gold Skulltula's check is not known by its name")
-    print("PASS: a Gold Skulltula's drop by the save's marks")
+    print("PASS: a Gold Skulltula's drop and a chest's item by the save's marks")
 
 
 if __name__ == "__main__":
