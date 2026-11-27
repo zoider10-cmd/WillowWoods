@@ -2108,7 +2108,14 @@ bool upload_inner(Texture& tex, const Ranges* dirty) {
                 const uint32_t px_h = std::min(g.h - y0 * (uint32_t)tex.block_h, th * (uint32_t)tex.block_h);
                 const uint64_t out_bytes = tex.astc ? (uint64_t)g.w * px_h * g.d * 4 : (uint64_t)g.tw * th * g.td * out_bpb;
                 const Staging st = staging((out_bytes + 15) & ~15ull, 16);
-                if (!st.buffer) return false;
+                if (!st.buffer) {
+                    // (HeyListen a3a7b102, Hookshot #3031: the sparse binds queued by the rows before are this image's: bound
+                    // now, not left in sparse_binds for the next flush, which binds the whole list into ANOTHER texture's
+                    // image: this one's tiles stay marked bound with no memory behind them, and that one gets memory it never
+                    // asked for. Staging runs out on a card short of memory)
+                    texture_resident_flush(&tex);
+                    return false;
+                }
                 if (buffer && st.buffer != buffer && !copies.empty()) {   // (a new arena: copy what the last one holds)
                     texture_resident_flush(&tex);
                     checkpoint_mark(upload_cmd(), tex.gpu, 'u');
