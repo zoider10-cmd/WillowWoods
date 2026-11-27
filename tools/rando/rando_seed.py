@@ -5869,6 +5869,94 @@ def shop_bottle_flow(raw):
     flow.write(out)
     return out.getvalue()
 
+# ---- Dungeon entrances led elsewhere (the Dungeon Entrance Randomizer's first step, asked 2026-11-27) ----
+# share/design-entrance-boss-shuffle-research.md: a door between the overworld and a dungeon is an actor of its map's
+# _Static file (ENTRANCE_ACTOR), told by its Name, whose Dynamic says where it leads: the map for each age, the start point
+# there, the event booted on arrival and a first visit's scene (ENTRANCE_DEST). Its FirstEventName, the leaving, stays the
+# door's. "Dungeon B behind door A": A's doors (one in each age's map that has it) are given what B's door says, and
+# B's way out what A's way out says, so leaving B puts Link at A's door. The arrival event goes with the dungeon (its
+# quest steps and first scene are the dungeon's). Ganon's Castle, the Spirit Temple's hands and the Ice Cavern's back
+# door are not here. NOT A SETTING YET: a test's switch, RANDO_TEST_ENTRANCES="<door's dungeon>=<dungeon>,..." (the
+# rules know nothing of it), to see in the game what a swap does.
+ENTRANCE_ACTOR = "FieldAndDungeonEntranceEventRequestActor"
+ENTRANCE_DEST = ("NextBancParamNameAdult", "NextBancParamNameChild", "NextStartPosName", "NextEventName", "InitEventName", "InitEventFlag",
+             "AddEventName", "AddEventFlag", "IsAlternativeGameDataBool", "IsChangableAirPos")
+# a dungeon's folder: (the overworld's map files with its door, the door's Name there, the dungeon's way out's Name)
+DUNGEON_DOORS = {
+    "InsideTheDekuTree": (("KokiriForest/KokiriForest_Child", "KokiriForest/KokiriForest_Adult"), "FrontDekuTree", "Entrance"),
+    "DodongoCavern": (("DeathMountainTrail/DeathMountainTrail_Child", "DeathMountainTrail/DeathMountainTrail_Adult"),
+                      "MountainTrail_DodongoCavernSide", "DodongoCavern_MountainTrailSide"),
+    "InsideJabuJabuBelly": (("ZoraFountain/ZoraFountain_Child",), "ZoraFountain_FromInsideJabuJabuBelly", "InsideJabuJabuBelly_FromZoraFountain"),
+    "BottomOfTheWell": (("KakarikoVillage/KakarikoVillage_Child", "KakarikoVillage/KakarikoVillage_Adult", "KakarikoVillage/KakarikoVillage_Adult_Alternative"),
+                        "Kakariko_WellSide", "Well_KakarikoSide"),
+    "ForestTemple": (("SacredForestMeadow/SacredForestMeadow_Child", "SacredForestMeadow/SacredForestMeadow_Adult"), "OutsideOfForestTemple", "ForestTemple"),
+    "FireTemple": (("DeathMountainCrater/DeathMountainCrater_Child", "DeathMountainCrater/DeathMountainCrater_Adult"), "OutsideOfFireTemple", "FireTemple"),
+    "IceCavern": (("ZoraFountain/ZoraFountain_Adult",), "ZoraFountain_FromIceCavern", "IceCavern_FromZoraFountain"),
+    "WaterTemple": (("HyruleField/HyruleField_Child", "HyruleField/HyruleField_Adult"), "OutsideOfWaterTemple", "WaterTemple_FromLakeHylia"),
+    "ShadowTemple": (("Graveyard/Graveyard_Child", "Graveyard/Graveyard_Adult"), "GraveYard_ShadowTempleSide", "Entrance"),
+    "SpiritTemple": (("DesertColossus/DesertColossus_Child", "DesertColossus/DesertColossus_Adult"), "DesertColossus_FromSpiritTempleEntrance", "SpiritTemple_Entrance"),
+    "GerudoTrainingGround": (("GerudoFortress/GerudoFortress_Adult",), "GerudoFortress_FromGerudoTrainingGround", "GerudoTrainingGround_FromGerudoFortress"),
+}
+
+
+def entrance_file(stem):
+    return "Banc/%s_Static.bcett.byml.zs" % stem
+
+
+def entrance_out_file(folder):
+    return entrance_file("%s/%s" % (folder, folder))
+
+
+def _entrance(tree, name):
+    actors = tree[1].get("Actors") if tree and tree[0] == "dict" else None
+    if not actors or actors[0] != "array":
+        raise ValueError("the map file has no actors")
+    found = [a for a in actors[1] if a[1].get("Gyaml", ("", ""))[1] == ENTRANCE_ACTOR and a[1].get("Name", ("", ""))[1] == name
+             and a[1].get("Dynamic", ("", None))[0] == "dict"]
+    if len(found) != 1:
+        raise ValueError("%d doors named %s, not 1" % (len(found), name))
+    return found[0][1]["Dynamic"][1]
+
+
+def entrance_dest(data, name):
+    """where the door `name` of a map file leads: {a ENTRANCE_DEST field: its node}, the ones it has"""
+    dyn = _entrance(byml_parse(data)[0], name)
+    return collections.OrderedDict((k, dyn[k]) for k in ENTRANCE_DEST if k in dyn)
+
+
+def entrance_point(data, name, dest):
+    """the map file with its door `name` leading where dest says (entrance_dest's): its ENTRANCE_DEST fields are dest's, the ones
+    dest has not taken away; its other fields (the leaving's event) are the door's. The new bytes"""
+    tree, version = byml_parse(data)
+    dyn = _entrance(tree, name)
+    for k in ENTRANCE_DEST:
+        dyn.pop(k, None)
+    for k, node in dest.items():
+        dyn[k] = node
+    for k in sorted(dyn):   # (a dict's keys are in order in the file)
+        dyn.move_to_end(k)
+    return byml_build(tree, version)
+
+
+def entrance_files(behind, read):
+    """{a map file: its new bytes} for dungeons led elsewhere. behind: {a door's own dungeon: the dungeon now behind it}, a
+    one-to-one change among DUNGEON_DOORS; read(rel): a map file's bytes, unpacked. ValueError: not such a change, or a
+    door not found"""
+    if set(behind) != set(behind.values()) or not set(behind) <= set(DUNGEON_DOORS):
+        raise ValueError("not a one-to-one change among the dungeons with a door: %r" % (behind,))
+    files = {}
+    get = lambda rel: files[rel] if rel in files else read(rel)
+    way_in = {d: entrance_dest(read(entrance_file(DUNGEON_DOORS[d][0][0])), DUNGEON_DOORS[d][1]) for d in behind}
+    way_out = {d: entrance_dest(read(entrance_out_file(d)), DUNGEON_DOORS[d][2]) for d in behind}
+    for door, dungeon in behind.items():
+        if door == dungeon:
+            continue
+        for stem in DUNGEON_DOORS[door][0]:
+            files[entrance_file(stem)] = entrance_point(get(entrance_file(stem)), DUNGEON_DOORS[door][1], way_in[dungeon])
+        files[entrance_out_file(dungeon)] = entrance_point(get(entrance_out_file(dungeon)), DUNGEON_DOORS[dungeon][2], way_out[door])
+    return files
+
+
 def tower_anchor(data):
     """Ganon's tower's map with its preloading anchor (ChangeBancBeforehandAnchor, to CrumblingGanonCastle) preloading
     the field instead: the new bytes. ValueError: not one such anchor"""
@@ -11261,6 +11349,15 @@ def main():
     except (OSError, ValueError, struct.error) as e:
         sys.exit("Bombchu Bowling and the Bombchu Shop: %s: %s. Nothing written." % (rel, e))
     print("Bombchu Bowling is open from the start, and the Bombchu Shop day and night")
+    if os.environ.get("RANDO_TEST_ENTRANCES"):   # (a test's: dungeons led elsewhere, entrance_files; the rules know nothing of it)
+        try:
+            behind = dict(pair.split("=") for pair in os.environ["RANDO_TEST_ENTRANCES"].split(","))
+            for rel, data in entrance_files(behind, lambda rel: changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)).items():
+                changed[rel] = data
+                sizes[rel[:-3]] = len(data)
+        except (OSError, ValueError, struct.error, IndexError) as e:
+            sys.exit("RANDO_TEST_ENTRANCES: %s. Nothing written." % e)
+        print("TEST: dungeon entrances led elsewhere: %s" % ", ".join("%s's door -> %s" % kv for kv in sorted(behind.items())))
     try:   # (every seed: the Water Temple's gate switch without the Ice Cavern, WATER_WALL)
         rel = WATER_WALL_FILE
         data = changed[rel] if rel in changed else unpack(open(os.path.join(romfs, *rel.split("/")), "rb").read(), zs, dicts)
