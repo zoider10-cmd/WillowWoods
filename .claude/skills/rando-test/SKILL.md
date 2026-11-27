@@ -52,7 +52,16 @@ SAVE="All Items unlocked" bash .claude/skills/rando-test/scripts/run_headless.sh
   "5:!cheat 999" "20:GO -42.0 97.9 22.0 KakarikoVillage A" "30:0:Y" "3:0:R/2000" "5:0:LUP/10"
 ```
 
-- Steps are `"<seconds>:<what>"`, run after ~100 s of loading. `GO x y z Folder ages` teleports (the map must be Link's
+- Steps are `"<seconds>:<what>"` (the seconds may be a fraction). They start once the save is loaded (about 60 s; the
+  script sees it in the log) and the game is stopped when they are done: a run is its steps' time plus about a minute.
+- **The menu, by name** (never count Down presses): `"0:MENU OPEN"`, `"1:MENU TAB:Tracker"`, `"1:MENU ROW:Shadow Temple"`,
+  `"1:MENU CHECK:Pot #3"` (or `CHECK:5`, `CHECK:0` the row's own words); plain keys too (`MENU RIGHT`, `MENU ENTER`).
+  Leave a second between them, two before a picture of a map (its picture is read on a thread of its own).
+- **A picture kept under a name**: `"2:SHOT castle map"` writes `$WORK/named/<label>_castle.png`; the part (`map`, `panel`,
+  `rows`, `minimap`, or `w:h:x:y`) is cut out and made three times the size. Read those, not `shots/` by number.
+- The script keeps the game's own log files, the Tracker's record and Go there's place before the run and puts them
+  back after: nothing to back up by hand.
+- `GO x y z Folder ages` teleports (the map must be Link's
   age: switch with `!cheat 999` first); `0:A`, `0:B`, `0:Y`, `0:R/2000`, `0:LUP/1500`... press or hold (`host/control.c`
   has the names); `!cheat 1003` is the Market's fountain. Leave ~25-40 s after a teleport for the area to load.
 - Checks' places: `$GAME/mods/rando-seed/checks.txt` (folder, ages, x y z per check).

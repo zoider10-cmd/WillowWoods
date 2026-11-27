@@ -551,6 +551,7 @@ SW(RX_VK_MALLOC_TRIM_MB, tune, int, "192 MB free in the heap (64 while Linux mem
 SW(RX_VK_MARKERS_V205, attempt, bool, "off: markers avoid the registers the current lowering reserves", "Lowering picks marker registers as v2.0.5 did, avoiding only the native high registers: an A/B for the AMD stripes report.")
 SW(RX_VK_MASK_BLEND, attempt, float, "0: off", "Blends a mask with its history at that weight (0-0.95) to stabilise streaks.")
 SW(RX_VK_MASK_RADIUS, tune, int, "0: unbounded history", "Bounds the mask history to a (2r+1)^2 neighbourhood, r from 0 to 4.")
+SW(RX_VK_MENU_LIVE, diag, string, "no file", "<file>: Insert menu keys and words (OPEN, TAB:<title>, ROW:<name>, CHECK:<name>) read a line at a time as the file grows, for a test's steps.")
 SW(RX_VK_MENU_SCRIPT, diag, string, "no script", "Plays timed Insert menu key presses (<seconds>:<key>,...) for automated runs.")
 SW(RX_VK_MESH_ARGS, attempt, bool, "off", "Rewrites indirect mesh draw arguments as {count,1,1,first} outside the pass, replacing the conversion.")
 SW(RX_VK_MESH_COUNT_WORD, tune, int, "0", "Picks which word of an indirect mesh record is copied as the count in the RX_VK_MESH_ARGS rewrite.")

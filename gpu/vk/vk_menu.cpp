@@ -7848,20 +7848,56 @@ void menu_tick() {
         // and the gamepad's face buttons by position, PADS PADE PADW PADN (bottom, right, left, top), as a controller's press.
         // (hookshot) TYPE:<text> types the text up to the next comma, as the keyboard would; while a text field has the
         // keyboard ENTER, ESC, LEFT, RIGHT, HOME, END, BACK (Backspace) and DEL are its keys, and the pad's confirm and back too
+        // (2026-11-26, for test runs: a run that had to count Down presses to reach a Tracker row landed on the wrong one
+        // three times in a day.) Words that go somewhere by name, each "<WORD>" or "<WORD>:<what>": OPEN and CLOSE (the menu,
+        // whichever it is now: INS only turns it over), TAB:<a tab's title> (Tracker), ROW:<a row's name in the tab shown>
+        // (Hyrule Castle), CHECK:<the check's name in the Tracker row chosen, or its number> (Pot #3; 0 the row's own
+        // words). Names without regard to capitals. And RX_VK_MENU_LIVE=<file>: a file read as it grows, a key or a word a
+        // line (a name may have commas there), one every tenth of a second: a test's steps send them when they come to
+        // them, so nothing is timed from the start (scripts/.. run_headless.sh's MENU step)
         static const char* next = getenv("RX_VK_MENU_SCRIPT");
         static const int64_t start = prof_now();
-        double at;
-        char key[8];
-        int n = 0;
-        if (next && sscanf(next, "%lf:%7[A-Z]%n", &at, key, &n) == 2 && (prof_now() - start) / 1e9 >= at) {
+        const auto script_run = [&](const char* key, const std::string& what) {
             static const char* names[] = {"INS", "UP", "DOWN", "LEFT", "RIGHT", "ESC", "", "ENTER", "", "", "TABL", "TABR"};
             static const struct { const char* name; int vk; } edit_keys[] = {
                 {"ENTER", VK_RETURN}, {"ESC", VK_ESCAPE}, {"LEFT", VK_LEFT}, {"RIGHT", VK_RIGHT}, {"HOME", VK_HOME},
                 {"END", VK_END}, {"BACK", VK_BACK}, {"DEL", VK_DELETE}};
-            if (!strcmp(key, "TYPE") && next[n] == ':') {
-                const size_t len = strcspn(next + n + 1, ",");
-                for (size_t i = 0; i < len; i++) scripted.push_back((unsigned char)next[n + 1 + i]);
-                n += (int)len + 1;
+            const auto same = [](const char* x, const char* y) {
+                for (; *x && *y; x++, y++)
+                    if (tolower((unsigned char)*x) != tolower((unsigned char)*y)) return false;
+                return !*x && !*y;
+            };
+            if (!strcmp(key, "OPEN") || !strcmp(key, "CLOSE")) {
+                if (open_now.load() != (key[0] == 'O')) press[0] = true;
+                return;
+            }
+            if (!strcmp(key, "TAB") && !what.empty()) {
+                for (int tab = 0; tab < TAB_COUNT; tab++)
+                    if (same(tab_titles[tab], what.c_str())) cur_tab = tab, menu_refresh = true;
+                return;
+            }
+            if (!strcmp(key, "ROW")) {
+                const int count = tab_row_count(cur_tab);
+                for (int k = 0; k < count; k++)
+                    if (same(rows[tab_row_to_global(cur_tab, k)].name, what.c_str())) tab_selected[cur_tab] = k, menu_refresh = true;   // (scroll_rows brings it into view)
+                return;
+            }
+            if (!strcmp(key, "CHECK")) {
+                const int count = tab_row_count(cur_tab), at = std::clamp(tab_selected[cur_tab], 0, std::max(count - 1, 0));
+                const int row = cur_tab == TAB_TRACKER && count ? rows[tab_row_to_global(cur_tab, at)].tracker : -1;
+                if (row < kTrackerFirstArea) return;
+                const int checks = tracker_row_checks(row);
+                int pick = -1;
+                if (!what.empty() && what.find_first_not_of("0123456789") == std::string::npos) pick = atoi(what.c_str());
+                else
+                    for (int k = 1; k <= checks && pick < 0; k++)
+                        if (const TrackerCheck* c = tracker_row_check(row, k); c && same(c->kind, what.c_str())) pick = k;
+                if (pick >= 0 && pick <= checks) tracker_pick[row] = pick, menu_refresh = true;
+                return;
+            }
+            if (!strcmp(key, "TYPE")) {
+                for (const char ch : what) scripted.push_back((unsigned char)ch);
+                return;
             }
             for (const auto& k : edit_keys)
                 if (editing && !strcmp(key, k.name)) scripted.push_back(HOS_TEXT_KEY | (uint32_t)k.vk);
@@ -7875,7 +7911,36 @@ void menu_tick() {
                         scripted.push_back(HOS_TEXT_KEY | (uint32_t)(p == pad_confirm ? VK_RETURN : VK_ESCAPE));
                     pad_last = true;
                 }
+        };
+        double at;
+        char key[8];
+        int n = 0;
+        if (next && sscanf(next, "%lf:%7[A-Z]%n", &at, key, &n) == 2 && (prof_now() - start) / 1e9 >= at) {
+            std::string what;
+            if (next[n] == ':') {   // (what a word is about: up to the next comma)
+                const size_t len = strcspn(next + n + 1, ",");
+                what.assign(next + n + 1, len);
+                n += (int)len + 1;
+            }
+            script_run(key, what);
             next = next[n] == ',' ? next + n + 1 : nullptr;
+        }
+        static const char* live = getenv("RX_VK_MENU_LIVE");
+        static long live_at = 0;
+        static int64_t live_next = 0;
+        if (live && prof_now() >= live_next) {
+            live_next = prof_now() + 100000000;
+            if (FILE* f = fopen(live, "rb")) {
+                char line[256];
+                if (!fseek(f, live_at, SEEK_SET) && fgets(line, sizeof line, f) && strchr(line, '\n')) {   // (a whole line only)
+                    live_at = ftell(f);
+                    line[strcspn(line, "\r\n")] = 0;
+                    char* colon = strchr(line, ':');
+                    if (colon) *colon = 0;
+                    if (line[0] && strlen(line) < sizeof key) script_run(line, colon ? std::string(colon + 1) : std::string());
+                }
+                fclose(f);
+            }
         }
     }
     // (hookshot) the text field that has the keyboard (editing): what was typed since the last frame, in order, and a paste asked
