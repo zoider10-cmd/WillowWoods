@@ -428,7 +428,7 @@ bool tracker_junk_flip(int row) {
     if (tracker_pick[row] > shown) tracker_pick[row] = shown;
     return true;
 }
-/// What a row says: its own words, or the check it is stepped to ("3 of 10: Chest, child's, at -27 68 65")
+/// What a row says: its own words, or the check it is stepped to ("3 of 10: Chest (child) at -27 68 65")
 std::string tracker_says(int row) {
     const TrackerCheck* k = tracker_pick[row] ? tracker_row_check(row, tracker_pick[row]) : nullptr;
     if (!k) {   // (its own words, how many of its checks are left and how many of those are in logic: the first row is the whole game's)
@@ -483,7 +483,7 @@ std::string tracker_says(int row) {
     char text[232], place[48] = "";   // (a check without a name of its own, from a file made before them: its place tells it from the next)
     if (!strcmp(k->kind, "Chest") || !strcmp(k->kind, "Gold Skulltula")) snprintf(place, sizeof place, " at %.0f %.0f %.0f", k->pos[0], k->pos[1], k->pos[2]);
     snprintf(text, sizeof text, "%d of %d: %s%s%s%s%s", tracker_pick[row], tracker_row_checks(row), k->kind,
-             !strcmp(k->ages, "C") ? ", child's," : !strcmp(k->ages, "A") ? ", adult's," : "", place,
+             !strcmp(k->ages, "C") ? " (child)" : !strcmp(k->ages, "A") ? " (adult)" : "", place,   // (as the panel's list names it; ", child's,: in logic" read badly)
              collected ? ": done" : state > 0 ? ": in logic" : logic.c_str(), junk ? ": junk" : "");
     return text;
 }
