@@ -102,7 +102,7 @@ check(main.index("    for group in ENTRANCE_POOLS.get(a.entrances, ()):") < main
       "the rules' step is not before the tokens kept and the placement")
 check("if cap is not None and d in door_of:" in main and "caps[t] = cap | min(through if isinstance(through, Either) else (through,)" in main, "a moved dungeon's Boss Key's cap")
 check('if os.environ.get("RANDO_TEST_ENTRANCES") or door_of:' in main and "entrance_files(behind," in main, "the files are not moved for the setting")
-check('f.write("".join("%s|%s\\n" % kv for kv in behind.items()))' in main and "written.append(ENTRANCES_FILE)" in main
+check('f.write("".join("%s|%s|%s|%s\\n" % (door, dungeon, AREA_NAMES.get(door, door), AREA_NAMES.get(dungeon, dungeon)) for door, dungeon in behind.items()))' in main and "written.append(ENTRANCES_FILE)" in main
       and "elif os.path.exists(doors_file):\n        os.remove(doors_file)" in main and 'spoiler = ["Dungeon entrances (a door -> the dungeon behind it)"]' in main,
       "ENTRANCES_FILE or the spoiler's lines")
 
@@ -134,4 +134,56 @@ check(S.entrance_shuffle(303, POOL) == {"ForestTemple": "WaterTemple", "FireTemp
 check("for h, g in gifts.items():   # (the checks the story holds back until the Deku Tree is done: DEKU_STORY)" in block
       and 'waits[h] = tuple(waits.get(h, ())) + ("InsideTheDekuTree",)' in block, "the checks that wait for the Deku Tree are not told its door")
 check("InsideJabuJabuBelly" not in CHILD + POOL and "SpiritTemple" not in CHILD + POOL, "Jabu-Jabu or the Spirit Temple is in a pool")
-print("ok: Dungeon entrances: the adult's and the child's dungeons")
+
+# the Tracker says the doors (gpu/vk/vk_menu.cpp, asked 2026-11-27): the functions compiled and run on a file as the seed writes it
+import os
+import subprocess
+import tempfile
+sys.path.insert(0, str(ROOT / "tests"))
+import srccut  # noqa: E402
+menu = (ROOT / "gpu" / "vk" / "vk_menu.cpp").read_text(encoding="utf-8")
+parts = "\n".join(srccut.block(menu, start, "vk_menu.cpp") for start in (
+    "const char* tracker_way_in(const char* area) {", "const char* tracker_door_leads(const char* area) {", "void tracker_doors_load(const std::string& folder, bool on) {"))
+check("tracker_doors_load(path.substr(0, path.find_last_of(\"\\\\/\") + 1), on);" in menu, "the Tracker does not read the doors with its lists")
+panel = srccut.block(menu, "float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int row, const char* hint) {", "vk_menu.cpp")
+check('snprintf(words, sizeof words, "Way in: the door of %s", way_in);' in panel and 'snprintf(words, sizeof words, "Its own door leads to: %s", leads);' in panel
+      and "const float fixed = 22 * s + 32 * s + doors + 12 * s" in panel, "an area's panel does not say its doors, or keeps no room for them")
+for a in S.ENTRANCE_ADULT + S.ENTRANCE_CHILD:
+    check(a in S.AREA_NAMES and len(S.AREA_NAMES[a]) < 48, "%s has no name on the Tracker" % a)
+program = '''
+#include <cstdio>
+#include <cstring>
+#include <string>
+constexpr int kDoorRows = 16;
+char tracker_door_from[kDoorRows][48], tracker_door_to[kDoorRows][48];
+int tracker_door_count = 0;
+''' + parts + '''
+int main(int argc, char** argv) {
+    if (argc < 2) return 9;
+    tracker_doors_load(argv[1], true);
+    if (tracker_door_count != 3) return 1;
+    if (!tracker_way_in("Ice Cavern") || strcmp(tracker_way_in("Ice Cavern"), "Shadow Temple")) return 2;
+    if (!tracker_door_leads("Shadow Temple") || strcmp(tracker_door_leads("Shadow Temple"), "Ice Cavern")) return 3;
+    if (tracker_way_in("Water Temple") || tracker_door_leads("Water Temple")) return 4;   // (behind its own door)
+    if (tracker_way_in("Kokiri Forest") || tracker_door_leads("Market")) return 5;        // (no dungeon of the file)
+    if (strcmp(tracker_way_in("Shadow Temple"), "Ice Cavern") || strcmp(tracker_door_leads("Ice Cavern"), "Shadow Temple")) return 6;
+    tracker_doors_load(argv[1], false);                                                    // (the randomizer off: none)
+    if (tracker_door_count || tracker_way_in("Ice Cavern")) return 7;
+    tracker_doors_load(std::string(argv[1]) + "nowhere/", true);                           // (no file: none)
+    return tracker_door_count ? 8 : 0;
+}
+'''
+cxx = "clang++"
+for i, arg in enumerate(sys.argv):
+    if arg == "--cxx" and i + 1 < len(sys.argv):
+        cxx = sys.argv[i + 1]
+with tempfile.TemporaryDirectory() as tmp:
+    src_file, exe = os.path.join(tmp, "doors.cpp"), os.path.join(tmp, "doors.exe")
+    Path(src_file).write_text(program, encoding="utf-8")
+    Path(tmp, "entrances.txt").write_text("ShadowTemple|IceCavern|Shadow Temple|Ice Cavern\nIceCavern|ShadowTemple|Ice Cavern|Shadow Temple\n"
+                                           "WaterTemple|WaterTemple|Water Temple|Water Temple\nOld|Line\n", encoding="utf-8")
+    built = subprocess.run([cxx, "-std=c++17", "-O1", "-Wall", "-Werror", "-o", exe, src_file], capture_output=True, text=True)
+    check(built.returncode == 0, "the Tracker's doors do not compile:\n%s" % built.stderr)
+    ran = subprocess.run([exe, tmp + os.sep], capture_output=True, text=True)
+    check(ran.returncode == 0, "the Tracker's doors: case %d" % ran.returncode)
+print("ok: Dungeon entrances: the adult's and the child's dungeons, and the Tracker's doors")

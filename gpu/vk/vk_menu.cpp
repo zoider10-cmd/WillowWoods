@@ -137,6 +137,38 @@ struct Row {
 constexpr int kTrackerRows = 48;
 char tracker_name[kTrackerRows][48];
 char tracker_value[kTrackerRows][72];
+// (Dungeon entrances, asked 2026-11-27) The seed's doors, mods\rando-seed\entrances.txt: "<a door's own dungeon>|<the dungeon
+// behind it>|<the first's name on the Tracker>|<the second's>", a line for every door of the setting's pools, one that leads
+// to its own dungeon too. An area's panel says the door its dungeon is behind and where its own door leads, when either
+// is another's (tracker_way_in, tracker_door_leads). No file: no door leads elsewhere.
+constexpr int kDoorRows = 16;
+char tracker_door_from[kDoorRows][48], tracker_door_to[kDoorRows][48];
+int tracker_door_count = 0;
+const char* tracker_way_in(const char* area) {
+    for (int i = 0; i < tracker_door_count; i++)
+        if (!strcmp(tracker_door_to[i], area) && strcmp(tracker_door_from[i], area)) return tracker_door_from[i];
+    return nullptr;
+}
+const char* tracker_door_leads(const char* area) {
+    for (int i = 0; i < tracker_door_count; i++)
+        if (!strcmp(tracker_door_from[i], area) && strcmp(tracker_door_to[i], area)) return tracker_door_to[i];
+    return nullptr;
+}
+void tracker_doors_load(const std::string& folder, bool on) {
+    int n = 0;
+    if (FILE* f = on ? fopen((folder + "entrances.txt").c_str(), "r") : nullptr) {
+        char line[256];
+        while (n < kDoorRows && fgets(line, sizeof line, f)) {
+            char a[48], b[48], from[48], to[48];
+            if (sscanf(line, "%47[^|\r\n]|%47[^|\r\n]|%47[^|\r\n]|%47[^|\r\n]", a, b, from, to) != 4) continue;   // (a file of two fields, before the names: none)
+            snprintf(tracker_door_from[n], sizeof tracker_door_from[n], "%s", from);
+            snprintf(tracker_door_to[n], sizeof tracker_door_to[n], "%s", to);
+            n++;
+        }
+        fclose(f);
+    }
+    tracker_door_count = n;
+}
 int tracker_count = 0;
 std::atomic<int> tracker_on{0};   // (the game side said the randomizer's game is the one played: OOT_TRACKER_ON)
 // (the strip's tabs: the Tracker, the last, is the randomizer's and is not there in the normal game or in Master Quest)
@@ -505,7 +537,11 @@ float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int r
     }
     const int n = (int)lines.size(), pick = tracker_pick[row];
     const float hh = hint ? ui::para(c, c.f.body, 16 * s, ImVec2(), 0, hint, w - 18 * s, false) : 0;
-    const float fixed = 22 * s + 32 * s + 12 * s + 24 * s + (hint ? 14 * s + hh : 0) + 20 * s;
+    // (Dungeon entrances: the door this dungeon is behind, and where its own door leads, a line each under the name)
+    const char* way_in = tracker_way_in(tracker_name[row]);
+    const char* leads = tracker_door_leads(tracker_name[row]);
+    const float doors = ((way_in ? 1 : 0) + (leads ? 1 : 0)) * 20 * s;
+    const float fixed = 22 * s + 32 * s + doors + 12 * s + 24 * s + (hint ? 14 * s + hh : 0) + 20 * s;
     const int fit = std::max(1, std::min(n, (int)((y_max - y0 - fixed) / pitch)));
     const int first = n > fit ? std::clamp(pick - 1 - fit / 2, 0, n - fit) : 0;
     const float y1 = std::min(y0 + fixed + fit * pitch, y_max);
@@ -519,6 +555,18 @@ float tracker_panel(ui::Ctx& c, float x0, float x1, float y0, float y_max, int r
         ui::text_mid(c, c.f.body, 15 * s, x1 - 24 * s - ui::size_of(c.f.body, 15 * s, range).x, y + 12 * s, ui::kDim, range);
     }
     y += 32 * s;
+    if (way_in) {
+        char words[112];
+        snprintf(words, sizeof words, "Way in: the door of %s", way_in);
+        ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y - 6 * s), ui::rgba(236, 196, 110), words);
+        y += 20 * s;
+    }
+    if (leads) {
+        char words[112];
+        snprintf(words, sizeof words, "Its own door leads to: %s", leads);
+        ui::text(c, c.f.body, 15 * s, ImVec2(x0 + 24 * s, y - 6 * s), ui::rgba(236, 196, 110), words);
+        y += 20 * s;
+    }
     const auto mark = [&](float mx, float my, int state) {
         if (state == 2) {   // (collected: a tick)
             c.d->AddLine(ImVec2(mx - 5 * s, my), ImVec2(mx - 1.5f * s, my + 4 * s), kGot, 2 * s);
@@ -3523,6 +3571,7 @@ void tracker_load() {
     tracker_count = n;
     tracker_stones_load(path.substr(0, path.find_last_of("\\/") + 1), on);
     tracker_stats_load(path.substr(0, path.find_last_of("\\/") + 1), on);
+    tracker_doors_load(path.substr(0, path.find_last_of("\\/") + 1), on);
     int checks = 0;
     path = path.substr(0, path.find_last_of("\\/") + 1) + "checks.txt";
     if (FILE* f = on ? fopen(path.c_str(), "r") : nullptr) {

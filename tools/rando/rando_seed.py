@@ -5916,7 +5916,7 @@ def entrance_child_pool(door_open, open_forest, ageless_items):
     pool = tuple(d for d in ENTRANCE_CHILD if (d != "InsideTheDekuTree" or open_forest) and (d != "DodongoCavern" or ageless_items))
     return pool if len(pool) >= 2 else ()
 ENTRANCE_NOCTURNE_WAITS = ("ForestTemple", "FireTemple", "WaterTemple")   # (the Nocturne's lesson: STORY_GIFTS)
-ENTRANCES_FILE = "entrances.txt"   # (<a door's own dungeon>|<the dungeon behind it>, every door of the pool)
+ENTRANCES_FILE = "entrances.txt"   # (<a door's own dungeon>|<the dungeon behind it>|<their names on the Tracker, two>, every door of the pools: the Tracker's, tracker_doors_load)
 ENTRANCE_WAYS = 3   # (the ways through a door kept: the fewest-item ones; one left out only asks for more)
 
 
@@ -12110,7 +12110,7 @@ def main():
     doors_file = os.path.join(mod, ENTRANCES_FILE)   # (Dungeon entrances: which door leads where, for the Tracker and whoever reads it)
     if door_of:
         with open(doors_file, "w", encoding="utf-8", newline="\n") as f:
-            f.write("".join("%s|%s\n" % kv for kv in behind.items()))
+            f.write("".join("%s|%s|%s|%s\n" % (door, dungeon, AREA_NAMES.get(door, door), AREA_NAMES.get(dungeon, dungeon)) for door, dungeon in behind.items()))
         written.append(ENTRANCES_FILE)
         spoiler = ["Dungeon entrances (a door -> the dungeon behind it)"] + ["  %-28s -> %s" % (DUNGEON_SAY[door], DUNGEON_SAY[dungeon]) for door, dungeon in behind.items()] + [""] + spoiler
     elif os.path.exists(doors_file):
