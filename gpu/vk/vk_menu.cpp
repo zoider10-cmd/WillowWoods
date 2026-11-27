@@ -693,8 +693,8 @@ float tracker_world_map(ui::Ctx& c, float x0, float x1, float y0, float y1) {
     {   // (the legend, beside the heading: what a box's colours and counts mean)
         const float ly = y0 + 18 * s + 4 * s, lh = 15 * s;
         float lx = x0 + 24 * s + ui::size_of(c.f.heading, 21 * s, "Map").x + 22 * s;
-        lx += ui::text(c, c.f.body, lh, ImVec2(lx, ly), kIn, "green: checks you can get now") + 18 * s;
-        lx += ui::text(c, c.f.body, lh, ImVec2(lx, ly), kOut, "grey: needs more items") + 18 * s;
+        lx += ui::text(c, c.f.body, lh, ImVec2(lx, ly), kIn, "green: you can get now") + 18 * s;   // (a box's one number: "5 now")
+        lx += ui::text(c, c.f.body, lh, ImVec2(lx, ly), kOut, "grey: left, not yet") + 18 * s;   // ("12 left")
         ui::text(c, c.f.body, lh, ImVec2(lx, ly), kGot, "dim: done");
     }
     const float mx0 = x0 + pad, mx1 = x1 - pad, my0 = y0 + 52 * s, my1 = y1 - pad;
@@ -745,16 +745,14 @@ float tracker_world_map(ui::Ctx& c, float x0, float x1, float y0, float y1) {
             continue;
         }
         ui::text_mid_centre(c, c.f.body, big, at[i].mid.x, at[i].mid.y - 7 * k, ink, a.label);
-        // (the checks to get now first, in green, then how many are left: "3 now · 12 left"; "12 left" with none to get now)
-        char in[24] = "", line[40];
-        if (n.left && n.in) snprintf(in, sizeof in, "%d now", n.in);
+        // (one number a box, as a dungeon's chip: the checks to get now, in green; with none, how many are left, in grey.
+        //  Until 2026-11-26 both, "3 now, 12 left": the owner found the map hard to read, 31 boxes of two counts each.
+        //  The row's own words still say both)
+        char line[40];
         if (!n.all) snprintf(line, sizeof line, "no checks");
         else if (!n.left) snprintf(line, sizeof line, "done");
-        else snprintf(line, sizeof line, in[0] ? ", %d left" : "%d left", n.left);
-        const float lw = ui::size_of(c.f.body, small, line).x;
-        const float iw = in[0] ? ui::size_of(c.f.body, small, in).x : 0, lx = at[i].mid.x - (lw + iw) * 0.5f;
-        if (in[0]) ui::text_mid(c, c.f.body, small, lx, at[i].mid.y + 8 * k, kIn, in);
-        ui::text_mid(c, c.f.body, small, lx + iw, at[i].mid.y + 8 * k, ui::kDim, line);
+        else snprintf(line, sizeof line, n.in ? "%d now" : "%d left", n.in ? n.in : n.left);
+        ui::text_mid_centre(c, c.f.body, small, at[i].mid.x, at[i].mid.y + 8 * k, n.left ? (n.in ? kIn : kOut) : ui::kDim, line);
     }
     return y1;
 }
@@ -8583,8 +8581,11 @@ void draw_health(ui::Ctx& c) {
 /// a copy of the owner's finished save: Link teleported to known spots in each area and walking, his red arrow found in each
 /// picture, a least squares fit per area): x across = the window's right edge + (u + a*x) of its height, y down = (v + a*z) of
 /// its height, kMiniMaps (a fitted area's a is 1 / (2.245 * the Height of its map picture's capture, romfs
-/// Game/MapCaptureInfo), the size the data foretold; its middle is not that capture's). Areas not measured (Hyrule Castle: too
-/// little ground walked; Gerudo's Fortress: fitted where Link walked (2026-11-24), but its archery range and a Skulltula fall off
+/// Game/MapCaptureInfo), the size the data foretold; its middle is not that capture's, nor is the picture's drawn box put at one
+/// place: looked for 2026-11-26, the fifteen fits' right edges 0.04 of the height apart and their feet 0.07, and the game's tables
+/// have no place for it, so each area is measured). Areas without dots (Ganon's Castle's grounds: the game shows no minimap
+/// there, MapMenuInfo's IsInvisibleMiniMap; Gerudo's Fortress and the Sacred Forest Meadow: their minimap pictures are 2000
+/// across, not 1067, and scroll with Link; Gerudo's Fortress: fitted where Link walked (2026-11-24), but its archery range and a Skulltula fall off
 /// that picture, so another picture may take over there; Sacred Forest Meadow, whose tall minimap scrolls with Link) have no dots, rather than wrong ones; Kakariko, Zora's
 /// Domain and Fountain and Gerudo Valley were measured once the game's side marked them visited (hos_main.c IsVisitLocation). The crater was measured 2026-11-24
 /// (five runs, 1433 points over 39 x 45 m, worst 0.3% of the height off; all nine of its checks on the picture). Hyrule
@@ -8608,6 +8609,9 @@ constexpr MiniMapArea kMiniMaps[] = {
     {"Zora's Domain", -0.3255f, 0.8568f, 0.002952f},
     {"Zora's Fountain", -0.2549f, 0.8420f, 0.002279f},
     {"Death Mountain Crater", -0.1546f, 0.7858f, 0.002361f},
+    // (2026-11-26: a is the data's, 1 / (2.245 * 242); u and v from Link's arrow at 23.7 -62.0, a run without a window
+    //  (-0.1624, 0.9698) and the owner's screenshot of bug 160 (-0.160, 0.971): the two within 3 pixels of 1440)
+    {"Hyrule Castle", -0.1620f, 0.9700f, 0.001841f},
 };
 constexpr MiniMapArea kMiniLake = {"Hyrule Field", 0.0119f, 0.3135f, 0.001062f}, kMiniRanch = {"Hyrule Field", -0.0625f, 0.4508f, 0.001602f};
 /// Lon Lon Ranch's outline, inside its walls (the owner's screenshots 2026-11-24, Link's place from his arrow on the measured
@@ -8652,7 +8656,7 @@ void draw_minimap_checks(ui::Ctx& c) {
         //  was collected, the owner's run 2026-11-25. Link's age: 0 the child, 1 the adult, -1 not known)
         if (!tracker_of_age(k.ages, age)) continue;
         const ImVec2 at(c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h);
-        if (at.x < c.w - 0.5f * c.h || at.y < 0.55f * c.h || at.y > c.h) continue;   // (off the minimap's corner: another picture's part)
+        if (at.x < c.w - 0.5f * c.h || at.x > c.w || at.y < 0.55f * c.h || at.y > c.h) continue;   // (off the minimap's corner: another picture's part; off the screen: Hyrule Castle's Great Fairy)
         if (tracker_in_logic(k) > 0) {
             c.d->AddCircleFilled(at, r + 1.5f, ui::rgba(10, 30, 16, 230));
             c.d->AddCircleFilled(at, r, kIn);

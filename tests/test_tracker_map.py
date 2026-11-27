@@ -41,6 +41,10 @@ def main():
           "the whole game's row does not show the map")
     check("if (bar_top - 12 * s - end >= 150 * s) tracker_area_map(c, hx0, hx1, end + 10 * s, bar_top - 12 * s, selr.tracker);" in menu,
           "an area's row does not show its checks' map under its list")
+    # (2026-11-26: a box of the overview says one number, the checks to get now, else those left: not both)
+    world = menu[menu.index("float tracker_world_map(ui::Ctx& c,"):menu.index("/// An area's checks as marks where they are")]
+    check('snprintf(line, sizeof line, n.in ? "%d now" : "%d left", n.in ? n.in : n.left);' in world and '", %d left"' not in world,
+          "an area's box of the overview says two counts")
     check("top + std::max(room * 0.55f, room - 420 * s)" in menu, "the list can take the whole panel, leaving the map no room")
     body = menu[menu.index("void tracker_area_map(ui::Ctx& c,"):]
     body = body[:body.index("\n}\n")]
@@ -61,8 +65,16 @@ def main():
     check(len(mini_areas) >= 11 and all(a in names for a, _, _, _ in mini_areas) and
           all(-0.5 < float(u) < 0 and 0.3 < float(v) < 1 and 0.0003 < float(a) < 0.005 for _, u, v, a in mini_areas),
           "the minimaps' areas are not the field areas the map has, or a measured fit is off the corner")
-    check(not any(a in ("Hyrule Castle", "Gerudo's Fortress") for a, _, _, _ in mini_areas),
+    # (Hyrule Castle measured 2026-11-26. Never: Ganon's Castle's grounds, where the game shows no minimap; Gerudo's Fortress and
+    #  the Sacred Forest Meadow, whose minimaps scroll with Link)
+    check(not any(a in ("Ganon's Castle (outside)", "Gerudo's Fortress", "Sacred Forest Meadow") for a, _, _, _ in mini_areas),
           "an area not measured has dots (they would be in the wrong place)")
+    castle = [(float(u), float(v), float(a)) for area, u, v, a in mini_areas if area == "Hyrule Castle"]
+    check(len(castle) == 1 and abs(castle[0][2] - 1 / (2.245 * 242)) < 2e-6, "Hyrule Castle's minimap is not the size its capture says (Height 242)")
+    # (Link at 23.7 -62.0 stood 895.9 462.1 on a 960 x 540 picture: the fit puts him within a pixel and a half of it)
+    check(abs((960 + (castle[0][0] + castle[0][2] * 23.7) * 540) - 895.9) < 1.5 and abs((castle[0][1] + castle[0][2] * -62.0) * 540 - 462.1) < 1.5,
+          "Hyrule Castle's fit does not put Link where his arrow was seen")
+    check("at.x > c.w ||" in menu, "a check off the screen's right edge is drawn on the minimap's corner")
     draw = menu[menu.index("void draw_minimap_checks(ui::Ctx& c) {"):]
     draw = draw[:draw.index("\n}\n")]
     check("c.w + (m->u + m->a * k.pos[0]) * c.h, (m->v + m->a * k.pos[2]) * c.h" in draw and
