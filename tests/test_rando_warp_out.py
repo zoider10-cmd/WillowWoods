@@ -47,14 +47,22 @@ def main():
           "if (!strcmp(oot_doors[i].dungeon, room)) door = oot_doors[i].door;" in door and "door = room;" in door,
           "the door Link came in by is not the boss's room's dungeon's door (Boss shuffle, then Dungeon entrances)")
     out = body("static void oot_warp_out(Ctx *c, uint64_t actor, const char *map, int64_t now) {")
-    check("if (!oot_door_n && !oot_boss_door_n) {" in out, "with neither setting the warp's way out is still looked at")
+    # (the owner's run, 2026-11-28: an adult sent into the Deku Tree beat Gohma, and the warp's scenes, the child's forest's,
+    #  made him a child. The age he rode the warp at is put back with the move, his own door's outside too then; so the look
+    #  is made in every randomizer game, not only with the doors or the bosses moved)
+    check("if (!oot_door_n && !oot_boss_door_n) {" not in out and "if (oot_link_child >= 0) rode_child = oot_link_child;" in out and
+          "pending_child = rode_child;" in out and
+          "const int aged = pending_child >= 0 && oot_link_child >= 0 && oot_link_child != pending_child;" in out and
+          "if (aged && !oot_gamedata_set_bool(c, 0xcea220d3u, pending_child)) {" in out and "if (aged) oot_teleport_child = pending_child;" in out and
+          "if (aged) oot_gamedata_set_bool(c, 0xcea220d3u, !pending_child);" in out,
+          "Link is not made the age he rode the warp at again once its scenes are over")
     check('rode = at_boss >= 0 && oot_event_playing(c) && strcmp(oot_warp_event, "DmF_SY_GameOver");' in out and
           "at_boss = oot_boss_room_near(oot_boss_rooms[dungeon].folder) ? dungeon : -1;" in out and
-          "if (at_boss >= 0 && rode) pending = at_boss, pending_since = now, settled = 0;" in out,
+          "if (at_boss >= 0 && rode) pending = at_boss, pending_since = now, settled = 0, pending_child = rode_child;" in out,
           "a warp is not told from a death in the boss's room, or from leaving the dungeon another way")
     check("if (oot_event_playing(c) || (oot_gamedata_bool(c, 0xef2b60c2u, &loading) && loading)) {" in out and "if (++settled < 3) return;" in out and
           "if (now - pending_since > 300000000000LL) {" in out, "Link is moved while the warp's scenes play, or waited for without end")
-    check("if (!strcmp(door, boss)) {" in out and "if (oot_teleport(c, actor, OOT_OWN_DESTINATION)) {" in out and "} else settled = 0;" in out,
+    check("if (!strcmp(door, boss) && !aged) {" in out and "const int sent = oot_teleport(c, actor, OOT_OWN_DESTINATION);" in out and "settled = 0;" in out,
           "the boss's own door is not left as the game has it, or a move not taken is not tried again")
     check("oot_warp_out(c, actor, oot_link_map, now);" in host and "if (is_new && hos_rando_on()) oot_warp_out_event(name);" in host and
           "const OotDestination *d = index == OOT_OWN_DESTINATION ? &oot_own_destination : &oot_destinations[index];" in host,

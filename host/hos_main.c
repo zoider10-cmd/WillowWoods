@@ -2364,7 +2364,14 @@ static void oot_boss_doors_save(void) {
    in the owner's log before the map changed: Demo_SageOfFire_ClearEvent); a death there, the Title Screen, the room's
    door back into the dungeon are none of it. The scenes after it are events and map changes (the sage's room, the
    medallion, the arrival's), so the move waits for three looks in a row, a second apart, with no event and no map
-   loading, outside every dungeon; five minutes without, and it is let go. */
+   loading, outside every dungeon; five minutes without, and it is let go.
+   And his age (the owner's run, 2026-11-28: an adult sent into the Deku Tree beat Gohma, and after the warp "the game
+   forced adult link into child link"). A warp's scenes are in the map of the age the game made the dungeon for
+   (KokiriForest_WarpFromInsideTheDekuTree and the Deku Tree's last words: the child's forest), and a map of an age makes
+   Link that age. So the age he rode the warp at is kept, and when the scenes are over and he is the other age he is made
+   the age he was again, with the same move: to the outside of the door he came in by, his own dungeon's too then, in
+   that age's map. The other way round as well: a child out of an adult's temple (Mix child and adult dungeons). So the
+   look is made in every randomizer game, not only with the doors or the bosses moved. */
 static const struct { const char *door, *adult, *child, *start, *boot; } oot_door_outside[] = {
     {"InsideTheDekuTree", "KokiriForest_Adult", "KokiriForest_Child", "FrontDekuTree", "Dm_SY_BancChangeArrive_KokiriForest_01"},
     {"DodongoCavern", "DeathMountainTrail_Adult", "DeathMountainTrail_Child", "MountainTrail_DodongoCavernSide", "Dm_SY_BancChangeArrive_DeathMountainTrail_03"},
@@ -2393,14 +2400,12 @@ static const char *oot_warp_out_door(const char *boss) {
 }
 static int oot_teleport(Ctx *c, uint64_t actor, unsigned index);
 static int oot_event_playing(Ctx *c);
+static int oot_gamedata_set_bool(Ctx *c, uint32_t hash, int value);
+static int oot_link_child;   /* (below: Link's age at the last look, -1 not known) */
 /* A look, each second: map, the map Link is in ("" none yet). See above */
 static void oot_warp_out(Ctx *c, uint64_t actor, const char *map, int64_t now) {
-    static int at_boss = -1, rode = 0, pending = -1, settled = 0;
+    static int at_boss = -1, rode = 0, pending = -1, settled = 0, rode_child = -1, pending_child = -1;
     static int64_t pending_since;
-    if (!oot_door_n && !oot_boss_door_n) {
-        at_boss = pending = -1;
-        return;
-    }
     if (!map[0]) return;
     int dungeon = -1;
     for (unsigned i = 0; i < OOT_BOSS_ROOMS && dungeon < 0; i++)
@@ -2408,10 +2413,11 @@ static void oot_warp_out(Ctx *c, uint64_t actor, const char *map, int64_t now) {
     if (dungeon >= 0) {   /* (in a boss's dungeon: whether he stands in the boss's room, and rides) */
         at_boss = oot_boss_room_near(oot_boss_rooms[dungeon].folder) ? dungeon : -1;
         rode = at_boss >= 0 && oot_event_playing(c) && strcmp(oot_warp_event, "DmF_SY_GameOver");
+        if (oot_link_child >= 0) rode_child = oot_link_child;   /* (his age in the dungeon: the one he is to be after its warp) */
         pending = -1;
         return;
     }
-    if (at_boss >= 0 && rode) pending = at_boss, pending_since = now, settled = 0;
+    if (at_boss >= 0 && rode) pending = at_boss, pending_since = now, settled = 0, pending_child = rode_child;
     at_boss = -1, rode = 0;
     if (pending < 0) return;
     int loading = 0;
@@ -2426,7 +2432,8 @@ static void oot_warp_out(Ctx *c, uint64_t actor, const char *map, int64_t now) {
     }
     if (++settled < 3) return;
     const char *boss = oot_boss_rooms[pending].folder, *door = oot_warp_out_door(boss);
-    if (!strcmp(door, boss)) {   /* (his own door: the game's own place) */
+    const int aged = pending_child >= 0 && oot_link_child >= 0 && oot_link_child != pending_child;   /* (the scenes' map made him the other age) */
+    if (!strcmp(door, boss) && !aged) {   /* (his own door, at his own age: the game's own place) */
         pending = -1;
         return;
     }
@@ -2434,10 +2441,23 @@ static void oot_warp_out(Ctx *c, uint64_t actor, const char *map, int64_t now) {
         if (strcmp(oot_door_outside[i].door, door)) continue;
         oot_own_destination = (OotDestination){oot_door_outside[i].child, oot_door_outside[i].start, oot_door_outside[i].boot,
                                                oot_door_outside[i].adult, oot_door_outside[i].start, oot_door_outside[i].boot};
-        if (oot_teleport(c, actor, OOT_OWN_DESTINATION)) {
-            hos_log("rando: blue warp: %s's boss was fought by the door of %s: Link is taken to that door's outside (%s)", boss, door, oot_door_outside[i].start);
+        if (aged && !oot_gamedata_set_bool(c, 0xcea220d3u, pending_child)) {   /* (Sequence_IsChildhood, as the age switch sets it) */
+            hos_log("rando: blue warp: Link's age could not be put back");
             pending = -1;
-        } else settled = 0;   /* (not taken yet: a look later) */
+            return;
+        }
+        if (aged) oot_teleport_child = pending_child;   /* (the age just set: the setter's write is queued, oot_teleport_child) */
+        const int sent = oot_teleport(c, actor, OOT_OWN_DESTINATION);
+        oot_teleport_child = -1;
+        if (sent) {
+            hos_log("rando: blue warp: %s's boss was fought by the door of %s%s: Link is taken to that door's outside (%s)", boss, door,
+                    !aged ? "" : pending_child ? ", as a child, and the warp's scenes made him an adult: a child again" : ", as an adult, and the warp's scenes made him a child: an adult again",
+                    oot_door_outside[i].start);
+            pending = -1;
+        } else {
+            if (aged) oot_gamedata_set_bool(c, 0xcea220d3u, !pending_child);   /* (not taken yet: the age as the game has it, a look later) */
+            settled = 0;
+        }
         return;
     }
     hos_log("rando: blue warp: no outside known for the door of %s: Link is left where he is", door);
