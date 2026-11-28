@@ -2759,8 +2759,9 @@ class DarkMenu : ToolStripProfessionalRenderer {
 // Wide (the owner, 2026-11-27: "more detailed", on a second screen most of the time), it is three panes: on the left what to
 // look at (In logic now, Dungeon items, Doors and bosses, Hints heard, then the areas), in the middle that, and on the right
 // the map the game's Tracker uses ("i want the right most side to show the map the tracker uses. clicking the check in
-// the middle pane should highlight where it is on the map"): the overview of Hyrule, or an area's checks as dots over the
-// game's own map picture, the one clicked ringed, Link where he stands. The pictures are the game folder's (maps\index.txt,
+// the middle pane should highlight where it is on the map"): an area's checks as dots over the game's own map picture,
+// the one clicked ringed, Link where he stands; the area open, else the one Link is in (no overview of Hyrule: taken out
+// at the owner's word the same day). The pictures are the game folder's (maps\index.txt,
 // made at a build); the game decodes them for this window once it asks (maps\view\wanted.txt: gpu/vk/vk_map_pictures.cpp
 // map_export_wanted writes <name>.raw there, and the window makes a .png of each). Link's place: rando\tracker_link.txt.
 // Narrow, one list and a box that chooses which, no map.
@@ -2772,34 +2773,6 @@ class TrackerForm : Form {
     class Picture {
         public string Folder, Ages, Floor, Name; public float X0, Z0, X1, Z1;
     }
-    // (the overview of Hyrule, as the menu's: gpu/vk/vk_menu.cpp kWorldMap and kWorldEdges; tests/test_tracker_window.py)
-    public static readonly string[][] World = {
-        new[] { "Desert Colossus", "Desert Colossus", "0.10", "0.08", "" }, new[] { "Haunted Wasteland", "Wasteland", "0.10", "0.25", "" },
-        new[] { "Gerudo's Fortress", "Gerudo's Fortress", "0.12", "0.42", "" }, new[] { "Gerudo Valley", "Gerudo Valley", "0.20", "0.60", "" },
-        new[] { "Ganon's Castle (outside)", "Ganon's Castle", "0.31", "0.08", "" }, new[] { "Hyrule Castle", "Hyrule Castle", "0.48", "0.08", "" },
-        new[] { "Market", "Market", "0.44", "0.27", "" }, new[] { "Hyrule Field", "Hyrule Field", "0.44", "0.56", "" },
-        new[] { "Kakariko Village", "Kakariko", "0.64", "0.38", "" }, new[] { "Graveyard", "Graveyard", "0.76", "0.29", "" },
-        new[] { "Death Mountain Trail", "DM Trail", "0.64", "0.21", "" }, new[] { "Death Mountain Crater", "DM Crater", "0.64", "0.05", "" },
-        new[] { "Goron City", "Goron City", "0.80", "0.13", "" }, new[] { "Zora's River", "Zora's River", "0.82", "0.50", "" },
-        new[] { "Zora's Domain", "Zora's Domain", "0.92", "0.38", "" }, new[] { "Zora's Fountain", "Zora's Fountain", "0.92", "0.24", "" },
-        new[] { "Lost Woods", "Lost Woods", "0.70", "0.66", "" }, new[] { "Sacred Forest Meadow", "Forest Meadow", "0.56", "0.78", "" },
-        new[] { "Kokiri Forest", "Kokiri Forest", "0.84", "0.80", "" },
-        new[] { "Inside the Deku Tree", "Deku Tree", "0.84", "0.93", "Kokiri Forest" }, new[] { "Forest Temple", "Forest Temple", "0.56", "0.91", "Sacred Forest Meadow" },
-        new[] { "Dodongo's Cavern", "Dodongo's Cavern", "0.52", "0.155", "Death Mountain Trail" }, new[] { "Fire Temple", "Fire Temple", "0.77", "0.02", "Death Mountain Crater" },
-        new[] { "Inside Jabu-Jabu's Belly", "Jabu-Jabu", "0.96", "0.13", "Zora's Fountain" }, new[] { "Ice Cavern", "Ice Cavern", "0.92", "0.04", "Zora's Fountain" },
-        new[] { "Water Temple", "Water Temple", "0.32", "0.72", "Hyrule Field" }, new[] { "Bottom of the Well", "the Well", "0.66", "0.50", "Kakariko Village" },
-        new[] { "Shadow Temple", "Shadow Temple", "0.77", "0.405", "Graveyard" }, new[] { "Spirit Temple", "Spirit Temple", "0.12", "0.165", "Desert Colossus" },
-        new[] { "Gerudo Training Ground", "Training Ground", "0.22", "0.30", "Gerudo's Fortress" },
-        new[] { "Inside Ganon's Castle", "Ganon's Tower", "0.29", "0.17", "Ganon's Castle (outside)" },
-    };
-    public static readonly string[][] WorldEdges = {
-        new[] { "Hyrule Field", "Market" }, new[] { "Market", "Hyrule Castle" }, new[] { "Market", "Ganon's Castle (outside)" }, new[] { "Hyrule Field", "Kakariko Village" },
-        new[] { "Kakariko Village", "Graveyard" }, new[] { "Kakariko Village", "Death Mountain Trail" }, new[] { "Death Mountain Trail", "Goron City" },
-        new[] { "Death Mountain Trail", "Death Mountain Crater" }, new[] { "Goron City", "Death Mountain Crater" }, new[] { "Goron City", "Lost Woods" },
-        new[] { "Hyrule Field", "Zora's River" }, new[] { "Zora's River", "Zora's Domain" }, new[] { "Zora's Domain", "Zora's Fountain" }, new[] { "Zora's River", "Lost Woods" },
-        new[] { "Hyrule Field", "Lost Woods" }, new[] { "Lost Woods", "Kokiri Forest" }, new[] { "Lost Woods", "Sacred Forest Meadow" }, new[] { "Hyrule Field", "Gerudo Valley" },
-        new[] { "Gerudo Valley", "Gerudo's Fortress" }, new[] { "Gerudo's Fortress", "Haunted Wasteland" }, new[] { "Haunted Wasteland", "Desert Colossus" },
-    };
     // (the left pane's own rows, before the areas: what a click on one opens. "" In logic now)
     const string OpenDungeons = "*dungeons", OpenDoors = "*doors", OpenHints = "*hints";
     class Row {
@@ -2842,7 +2815,6 @@ class TrackerForm : Form {
     readonly Dictionary<string, Bitmap> loaded = new Dictionary<string, Bitmap>();   // (the map's pictures read, by name: null one not there yet)
     readonly Dictionary<string, Dictionary<int, string>> floorOf = new Dictionary<string, Dictionary<int, string>>();   // (a dungeon's checks' floors, by its folder)
     readonly List<KeyValuePair<RectangleF, int>> dots = new List<KeyValuePair<RectangleF, int>>();   // (the map as drawn: a check's dot, for a click)
-    readonly List<KeyValuePair<RectangleF, string>> boxes = new List<KeyValuePair<RectangleF, string>>();   // (and the overview's areas)
     int picked = -1, converting;   // (the check clicked: its place in the seed's checks)
     float linkX, linkZ, linkY; int linkAge = -1; bool linkKnown; string linkSeen = "";
     readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
@@ -3176,7 +3148,7 @@ class TrackerForm : Form {
     public string MapWords(int pick) {
         picked = pick >= 0 && pick < checks.Count ? pick : -1;
         string area = MapArea();
-        if (area == null) return "Hyrule|||";
+        if (area == null) return "|||";
         string floor = picked >= 0 ? Floor(checks[picked]) : "";
         var names = new List<string>();
         foreach (var p in MapPictures(area, floor)) names.Add(p.Name);
@@ -3332,10 +3304,12 @@ class TrackerForm : Form {
     }
 
     // ---- the map ----
-    /// The area the map shows: the check's clicked, else the one open; null the overview of Hyrule
+    /// The area the map shows: the check's clicked, else the one open, else the one Link is in (the owner, 2026-11-27: no
+    /// overview of Hyrule there, "make the map for whatever area you in"); null: none known yet
     string MapArea() {
         if (picked >= 0 && picked < checks.Count) return checks[picked].Area;
-        return openArea != null && !openArea.StartsWith("*") ? openArea : null;
+        if (openArea != null && !openArea.StartsWith("*")) return openArea;
+        return here.Length > 0 ? here : null;
     }
     /// The age whose pictures are drawn: the check's clicked when it is one age's, else Link's (the child's when not known)
     int MapAge() {
@@ -3417,9 +3391,13 @@ class TrackerForm : Form {
         var r = map.ClientRectangle;
         g.Clear(Theme.Card);
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        dots.Clear(); boxes.Clear();
+        dots.Clear();
         string area = MapArea();
-        if (area == null) { DrawWorld(g, r); return; }
+        if (area == null) {   // (Link nowhere known: the game has not run with this seed)
+            TextRenderer.DrawText(g, "The map of the area Link is in shows here while the game runs. Or choose an area on the left.", Font,
+                                  new Rectangle(r.X + 12, r.Y + 10, r.Width - 24, 60), Theme.Dim, TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
+            return;
+        }
         var mine = new List<Check>();
         foreach (var k in checks) if (k.Area == area) mine.Add(k);
         if (mine.Count == 0) return;
@@ -3486,46 +3464,9 @@ class TrackerForm : Form {
         TextRenderer.DrawText(g, under, Font, new Rectangle(r.X + 8, r.Bottom - 68, r.Width - 16, 64), ring != null ? Theme.Text : Theme.Dim,
                               TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
     }
-    // (the overview of Hyrule, as the menu's first row: each area a box where it lies, joined to the ones it leads to, its
-    //  dungeons smaller beside it; green with something in logic, grey with checks left, dim when done; a click opens one)
-    void DrawWorld(Graphics g, Rectangle r) {
-        using (var bold = new Font(Font, FontStyle.Bold))
-            TextRenderer.DrawText(g, "Hyrule", bold, new Rectangle(r.X + 8, r.Y + 6, r.Width - 16, 24), Theme.Cyan, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
-        var box = new RectangleF(r.X + 8, r.Y + 40, r.Width - 16, r.Height - 40 - 30);
-        float bw = Math.Max(54, box.Width * 0.15f), bh = 34;
-        Func<string[], PointF> mid = a => new PointF(box.X + bw / 2 + Num(a[2]) * (box.Width - bw), box.Y + bh / 2 + Num(a[3]) * (box.Height - bh));
-        Func<string, string[]> find = name => { foreach (var a in World) if (a[0] == name) return a; return null; };
-        using (var line = new Pen(Theme.Line, 2f)) {
-            foreach (var e in WorldEdges) g.DrawLine(line, mid(find(e[0])), mid(find(e[1])));
-            foreach (var a in World) if (a[4].Length > 0) g.DrawLine(line, mid(a), mid(find(a[4])));
-        }
-        using (var small = new Font(Font.FontFamily, 7.5f))
-            foreach (var a in World) {
-                int all = 0, left = 0, can = 0;
-                foreach (var k in checks) if (k.Area == a[0]) { all++; if (k.State != 'c' && k.State != 'j') left++; if (k.State == 'i') can++; }
-                bool dungeon = a[4].Length > 0;
-                PointF m = mid(a);
-                float w = dungeon ? bw * 0.86f : bw, h = dungeon ? bh - 6 : bh;
-                var rect = new RectangleF(m.X - w / 2, m.Y - h / 2, w, h);
-                Color edge = !live || all == 0 ? Theme.Line : can > 0 ? Theme.Green : left > 0 ? Theme.Dim : Theme.Faint;
-                using (var path = Theme.Round(rect, 5)) {
-                    using (var br = new SolidBrush(a[0] == here ? Theme.CardHi : Theme.Bg1)) g.FillPath(br, path);
-                    using (var pen = new Pen(a[0] == here ? Theme.Cyan : edge, a[0] == here ? 2f : 1.4f)) g.DrawPath(pen, path);
-                }
-                string count = !live ? "" : can > 0 ? can + " now" : left > 0 ? left + " left" : all > 0 ? "done" : "";
-                var ir = Rectangle.Round(rect);
-                TextRenderer.DrawText(g, a[1], small, new Rectangle(ir.X, ir.Y + 1, ir.Width, ir.Height / 2), live && left == 0 && all > 0 ? Theme.Faint : Theme.Text,
-                                      TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
-                TextRenderer.DrawText(g, count, small, new Rectangle(ir.X, ir.Y + ir.Height / 2 - 1, ir.Width, ir.Height / 2), edge,
-                                      TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
-                boxes.Add(new KeyValuePair<RectangleF, string>(rect, a[0]));
-            }
-        TextRenderer.DrawText(g, "Click an area to open it.", Font, new Rectangle(r.X + 8, r.Bottom - 28, r.Width - 16, 22), Theme.Dim, TextFormatFlags.Left | TextFormatFlags.NoPrefix);
-    }
+    // (a click on the map: a check's dot rings it and lights its row)
     // (a click on the map: a check's dot rings it and lights its row; an area's box of the overview opens it)
     void MapClick(object sender, MouseEventArgs e) {
-        foreach (var b in boxes)
-            if (b.Key.Contains(e.Location)) { openArea = b.Value; picked = -1; Fill(); return; }
         int best = -1; float nearest = float.MaxValue;
         foreach (var d in dots) {
             if (!d.Key.Contains(e.Location)) continue;

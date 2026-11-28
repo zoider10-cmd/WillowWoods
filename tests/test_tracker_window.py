@@ -164,13 +164,15 @@ def main():
         # (the owner, 2026-11-27: the dungeons' items, the doors and bosses and the hints "there own selectable pane")
         check(rows(exe, game, -1, "*dungeons")[1:] == left + items + [""] and rows(exe, game, -1, "*doors")[1:] == left + doors + [""]
               and rows(exe, game, -1, "*hints")[1:] == left + hints + [""], "wide, the other views are not shown in the middle when chosen on the left")
-        # (and the right pane the map: Hyrule's overview, or the area of what is open or clicked, its pictures as the menu
+        # (and the right pane the map: the area of what is open or clicked, else the one Link is in, its pictures as the menu
         #  picks them: an outdoor map's of the check's age, a dungeon's shape and the floor)
         (game / "maps").mkdir()
         (game / "maps" / "index.txt").write_text("# map pictures 1\nKokiriForest|A||Kokiri_Adult|0|0|100|2000|1440\nKokiriForest|C||Kokiri_Child|0|0|100|2000|1440\n"
                                                  "ForestTemple|CA|All|Forest_All|0|0|100|2000|1440\nForestTemple|CA|1F|Forest_1F|0|0|100|2000|1440\n", encoding="utf-8")
         say = lambda *a: subprocess.run([str(exe), "--tracker-map", str(game)] + list(a), capture_output=True, timeout=60).stdout.decode("utf-8").strip()
-        check(say("", "-1") == "Hyrule|||", "with nothing open the map is not the overview of Hyrule: %r" % say("", "-1"))
+        # (the owner, 2026-11-27: no overview of Hyrule; with nothing open or clicked, the map of the area Link is in)
+        check(say("", "-1") == "Kokiri Forest|Kokiri_Child||", "with nothing open the map is not the area's Link is in: %r" % say("", "-1"))
+        check(say("*doors", "-1") == "Kokiri Forest|Kokiri_Child||", "with another view open the map is not the area's Link is in")
         check(say("Kokiri Forest", "-1") == "Kokiri Forest|Kokiri_Child||" and say("Kokiri Forest", "1") == "Kokiri Forest|Kokiri_Child|Chest B|",
               "an area's map is not its picture of the age, or the check clicked is not the one ringed: %r" % say("Kokiri Forest", "1"))
         check(say("", "2") == "Forest Temple|Forest_All|Chest C|", "a check clicked in In logic now does not take the map to its area: %r" % say("", "2"))
