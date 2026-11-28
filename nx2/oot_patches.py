@@ -1778,6 +1778,39 @@ def patch_equip_name(source):
     return source, 1
 
 
+# (Either age's tunics, the owner's test 2026-11-28: "tried equipping goron tunic on child link, nothing happened") The
+# Equipment page's Equip, f_833da470: it looks the chosen item up in the list of pouch actors (f_805aed10), reads its
+# category (f_8015fdd0), and for a child (x25) whose item's category is 4, Armor, does nothing: no age is asked of the
+# player there, so none of the boots' answers reached it. Traced the same day without a window, the page driven by button
+# presses: a child's press went from L_833da660 straight to L_833da6a8, an adult's on to L_833da6c8 and the write of the
+# tunic worn (f_80a9acd0). The child there is asked of hos_oot_boots_child with the tunics' kind, 8: no child with Either
+# age's tunics on. x25 itself is left as it is for the rest of the function. And before the look-up, the chosen item's
+# name in the page's own copy (the text at sp+16) is given to hos_oot_menu_tunic, which makes a child's tunic his own
+# actor's (host/hos_main.c), and the function's word for the item (x29-16: the place of the slot's own name, which every
+# later call is given) pointed at that copy: the page's figure and the name written are that one's, not the adult's model.
+TUNIC_MENU_NAME_AT = "c->x[30] = 0x833da680ULL; f_805aed10(c);\n"
+TUNIC_MENU_NAME_HOOK = "    hos_oot_menu_tunic(c, recomp_load64(c, c->x[31] + 16), c->x[29] - 16);   /* (nx2/oot_patches.py patch_tunic_menu) */\n"
+TUNIC_MENU_AT = ("c->x[30] = 0x833da698ULL; f_8015fdd0(c);\n    c->x[1]=recomp_load32(c,c->x[31] + 12);\n"
+                 "if ((uint32_t)c->x[25] == 0) { goto L_833da6c8; }\n")
+TUNIC_MENU_TO = ("c->x[30] = 0x833da698ULL; f_8015fdd0(c);\n    c->x[1]=recomp_load32(c,c->x[31] + 12);\n"
+                 "if ((uint32_t)hos_oot_boots_child(c->x[25], 8) == 0) { goto L_833da6c8; }   /* (nx2/oot_patches.py patch_tunic_menu) */\n")
+
+
+def patch_tunic_menu(source):
+    """the child asked of the game's side where the Equipment page refuses him a tunic; (the source, 1), or None when this
+    file has not the place"""
+    if TUNIC_MENU_TO in source and TUNIC_MENU_NAME_HOOK + TUNIC_MENU_NAME_AT in source:
+        return source, 1
+    if source.count(TUNIC_MENU_AT) != 1 or source.count(TUNIC_MENU_NAME_AT) != 1:
+        return None
+    source = source.replace(TUNIC_MENU_AT, TUNIC_MENU_TO).replace(TUNIC_MENU_NAME_AT, TUNIC_MENU_NAME_HOOK + TUNIC_MENU_NAME_AT)
+    if "extern void hos_oot_menu_tunic(" not in source:
+        source = source.replace('#include "a64.h"\n', '#include "a64.h"\nextern void hos_oot_menu_tunic(Ctx *c, unsigned long long name, unsigned long long slot);\n', 1)
+    if "extern unsigned long long hos_oot_boots_child(" not in source:
+        source = source.replace('#include "a64.h"\n', '#include "a64.h"\nextern unsigned long long hos_oot_boots_child(unsigned long long is_child, unsigned long long kind);\n', 1)
+    return source, 1
+
+
 def patch_boots_child(source):
     """the IsChild answers above; (the source, how many hooked), or None when this file has neither call"""
     hooked = 0
@@ -2017,6 +2050,12 @@ def patch_file(s, name, protect_hearts=False):
             lines.append("oot_patches: young Link's boots (%d IsChild answers) in %s" % (boots[1], name))
         out = boots[0]
         counts["boots child answers"] += boots[1]
+    menu = patch_tunic_menu(out) if protect_hearts else None   # (Either age's tunics: the Equipment page's Equip, for a child)
+    if menu is not None:
+        if menu[0] != out:
+            lines.append("oot_patches: the Equipment page's tunic for a child in %s" % name)
+        out = menu[0]
+        counts["tunic menu"] += menu[1]
     equip = patch_equip_name(out) if protect_hearts else None   # (Either age's tunics: the tunic worn, the age's own actor)
     if equip is not None:
         if equip[0] != out:
@@ -2263,6 +2302,8 @@ def report(paths, counts, protect_hearts=False):
     if protect_hearts and total["shelf actor hook"] != len(SHELF_ACTOR_SITES):   # (bug 69: a shelf's tier for what Link has now)
         print("oot_patches: WARNING: the map actors' name readers were hooked %d times, not %d: a shelf of a family may show "
               "an old tier" % (total["shelf actor hook"], len(SHELF_ACTOR_SITES)))
+    if protect_hearts and total["tunic menu"] != 1:   # (Either age's tunics: the Equipment page's Equip, for a child)
+        print("oot_patches: WARNING: the Equipment page's tunic for a child was hooked %d times, not 1: young Link cannot put a tunic on there" % total["tunic menu"])
     if protect_hearts and total["equip name"] != 1:   # (Either age's tunics: young Link's own actor of a tunic)
         print("oot_patches: WARNING: the worn tunic's name was hooked %d times, not 1: young Link wears the adult's tunic's model" % total["equip name"])
     if protect_hearts and total["boots child answers"] != len(BOOTS_CHILD_CALLS):   # (Either age's items: young Link's boots)
