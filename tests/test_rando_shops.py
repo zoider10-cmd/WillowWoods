@@ -426,7 +426,7 @@ def main():
           'oot_game_file(path, sizeof path, "mods/rando-seed/shelf_flags.txt")' in host and "const int changed = oot_shelf_flags(c);" in host and
           "const char *tail = oot_checks[i].shelf && oot_checks[i].done != 1 && (shop || !oot_tracker_shop_on) &&" in host and "new, count = shelf_actors(data, on_shelf, lifts, scales, turns)" in script and
           "text = shop_caption(text, name) or text" in script and "list(shop_files.items())" in script and
-          'new_tables["System/Resource/" + n] = shop_table(' in script,
+          'return shop_table(size_table_update(size_table_add(size_table_raise(size_table_update(' in script and 'new_tables = {"System/Resource/" + n: made[n] for n in made}' in script,
           "a shelf actor's pack, its rows, the goods lists, the map's shelves or the words are not written with the seed, or the size table does not know them")
     check('roll = random.Random("shop prices:%d:%d" % (seed, a.shops))' in script and "price = shop_price(roll, a.shops, placement)" in script and
           "shop_need(shop, placement, a.open_forest) | wallet_need(price), \"shops\", None)" in script and "PROGRESSION = PROGRESSION | SHOP_GATES" in script and

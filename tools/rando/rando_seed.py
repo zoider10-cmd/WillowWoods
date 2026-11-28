@@ -7055,6 +7055,24 @@ def size_table_add_each(tbl, entries):
         "<%dI" % (len(rows) * 2), *(w for r in rows for w in r)) + bytes(tbl[end:])
 
 
+def size_tables_made(names, make):
+    """Each of a game folder's size tables made anew by make(name): ({name: the new table}, [(name, why)] the ones left as
+    they are). A dump of the game with an update put over it can keep the older version's table beside the one the game
+    reads (a player's, 2026-11-27: ResourceSizeTable.Product.100 beside Product.111, and "GameData/GameDataList.Product.110.byml
+    is not in the size table" of the old one stopped every seed). The game reads the newest, the last by name: that one
+    must be made (its error is raised); an older one that cannot be is left as the game has it, and said."""
+    names = sorted(names)
+    made, left = {}, []
+    for n in names:
+        try:
+            made[n] = make(n)
+        except Exception as e:
+            if n == names[-1]:
+                raise
+            left.append((n, e))
+    return made, left
+
+
 def unpack(data, zs, dicts):
     if data[:4] != ZSTD:
         return data
@@ -12305,16 +12323,19 @@ def main():
     tables = sorted(n for n in (os.listdir(folder) if os.path.isdir(folder) else []) if "rsizetable" in n.lower())
     if not tables:
         sys.exit("no size table in %s: the grown map files would not load. Nothing written." % folder)
-    new_tables = {}
-    for n in tables:
-        try:
-            first = unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
-            first = size_table_add_each(first, [(path, size_entry(size, PACK_EXTRA)) for path, size in pack_added.items()])   # (a pack of our own: MASTER_PICKUP)
-            new_tables["System/Resource/" + n] = shop_table(size_table_update(size_table_add(size_table_raise(size_table_update(
-                size_table_update(first, sizes), pack_sizes, PACK_EXTRA),
-                pack_parts - pack_new), pack_new | gift_new), gift_sizes, FLOW_EXTRA))
-        except Exception as e:
-            sys.exit("the size table %s could not be updated (%s). Nothing written." % (n, e))
+    def table_made(n):
+        first = unpack(open(os.path.join(folder, n), "rb").read(), zs, dicts)
+        first = size_table_add_each(first, [(path, size_entry(size, PACK_EXTRA)) for path, size in pack_added.items()])   # (a pack of our own: MASTER_PICKUP)
+        return shop_table(size_table_update(size_table_add(size_table_raise(size_table_update(
+            size_table_update(first, sizes), pack_sizes, PACK_EXTRA),
+            pack_parts - pack_new), pack_new | gift_new), gift_sizes, FLOW_EXTRA))
+    try:
+        made, left = size_tables_made(tables, table_made)
+    except Exception as e:
+        sys.exit("the size table %s could not be updated (%s). Nothing written." % (tables[-1], e))
+    new_tables = {"System/Resource/" + n: made[n] for n in made}
+    for n, why in left:   # (an older version's table, left in the dump by an update: the game does not read it)
+        print("the size table %s is an older version's and is left as it is (%s): the game reads %s" % (n, why, tables[-1]))
 
     spoiler = []
     if logic:
