@@ -8825,7 +8825,12 @@ void menu_tick() {
                         hit.side != 0)
                         press[hit.side < 0 ? 3 : 4] = true;   // (a tool's choice: its halves as Left and Right)
                     else if (d.tracker >= 0) {   // (a Tracker row: its value's halves step its checks, its name goes to the one shown)
-                        if (hit.side != 0) press[hit.side < 0 ? 3 : 4] = true;
+                        // (the owner, 2026-11-27: a click on Tracker window's "Open it beside the game" did nothing. The rows
+                        //  that only confirm, with no checks to step: a click anywhere on them is the confirm. Return home
+                        //  still asks twice)
+                        if (d.tracker == kTrackerWindowRow || d.tracker == kTrackerHomeRow || (d.tracker >= kTrackerFirstArea && tracker_kind[d.tracker] == 'D'))
+                            press[7] = true;
+                        else if (hit.side != 0) press[hit.side < 0 ? 3 : 4] = true;
                         else if (tracker_pick[d.tracker]) press[7] = true;   // (the first row's name does nothing: the record is not forgotten by a click)
                     } else if (!d.value) press[7] = true;   // (a page, a tool: as Enter)
                     else switch (menu_hit::row_click(true, d.hi - d.lo == d.step, hit.side, *d.value == d.hi)) {

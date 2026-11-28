@@ -74,6 +74,11 @@ def main():
           "the game does not start the launcher as the Tracker's window, by wide paths")
     check("constexpr int kTrackerWindowRow = 7;" in menu and "tracker_window_started = tracker_window_open();" in menu
           and '"Tracker window"};' in menu, "the Tracker tab has no Tracker window row that starts it")
+    # (the owner, 2026-11-27: a click on the row's "Open it beside the game" did nothing: a Tracker row's value took a click
+    #  as Left or Right, which this row has not. The rows that only confirm take a click anywhere as the confirm)
+    check("if (d.tracker == kTrackerWindowRow || d.tracker == kTrackerHomeRow || (d.tracker >= kTrackerFirstArea && tracker_kind[d.tracker] == 'D'))\n"
+          "                            press[7] = true;\n                        else if (hit.side != 0) press[hit.side < 0 ? 3 : 4] = true;" in menu,
+          "a click on the Tracker window row (or Return home, or Finished areas) is not its confirm")
     # ---- the launcher's side ----
     check('Path.Combine(dir, "rando", name)' in src and 'Rando("tracker_live.txt")' in src and 'mine = stamp.Length > 0 && line.Substring(5) == stamp;' in src
           and "live = mine && states.Length == checks.Count && checks.Count > 0;" in src, "the window takes a live file of another seed, or of other checks")
