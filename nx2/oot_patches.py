@@ -1758,6 +1758,26 @@ def patch_slots_item(source):
     return source, hooked
 
 
+# (Either age's tunics, bug 107) Young Link's tunics: the tunic worn is a name in a table of the player's, read by
+# f_80a9a860 (x3 the name's hash, the text's place written to x1's; both ways out of it found meet at L_80a9a8f4, x19 the
+# place and x20 the hash there). The game's side makes the name the age's own actor's as it is read (host/hos_main.c
+# hos_oot_equip_name: the seed's Armor_Child_Goron and Armor_Child_Zora for a child, the adult's body's model left out).
+EQUIP_NAME_AT = "L_80a9a8f4:;\n"
+EQUIP_NAME_HOOK = "    hos_oot_equip_name(c, c->x[19], c->x[20]);   /* (nx2/oot_patches.py patch_equip_name) */\n"
+
+
+def patch_equip_name(source):
+    """the call above; (the source, 1), or None when this file has not the place"""
+    if EQUIP_NAME_AT + EQUIP_NAME_HOOK in source:
+        return source, 1
+    if source.count(EQUIP_NAME_AT) != 1 or "void f_80a9a860(Ctx *__restrict" not in source:
+        return None
+    source = source.replace(EQUIP_NAME_AT, EQUIP_NAME_AT + EQUIP_NAME_HOOK)
+    if "extern void hos_oot_equip_name(" not in source:
+        source = source.replace('#include "a64.h"\n', '#include "a64.h"\nextern void hos_oot_equip_name(Ctx *c, unsigned long long out, unsigned long long hash);\n', 1)
+    return source, 1
+
+
 def patch_boots_child(source):
     """the IsChild answers above; (the source, how many hooked), or None when this file has neither call"""
     hooked = 0
@@ -1997,6 +2017,12 @@ def patch_file(s, name, protect_hearts=False):
             lines.append("oot_patches: young Link's boots (%d IsChild answers) in %s" % (boots[1], name))
         out = boots[0]
         counts["boots child answers"] += boots[1]
+    equip = patch_equip_name(out) if protect_hearts else None   # (Either age's tunics: the tunic worn, the age's own actor)
+    if equip is not None:
+        if equip[0] != out:
+            lines.append("oot_patches: the tunic worn by its age's name in %s" % name)
+        out = equip[0]
+        counts["equip name"] += equip[1]
     slots = patch_slots_item(out)   # (Item buttons: a forced Slingshot's or Bow's ammunition)
     if slots is not None:
         if slots[0] != out:
@@ -2237,6 +2263,8 @@ def report(paths, counts, protect_hearts=False):
     if protect_hearts and total["shelf actor hook"] != len(SHELF_ACTOR_SITES):   # (bug 69: a shelf's tier for what Link has now)
         print("oot_patches: WARNING: the map actors' name readers were hooked %d times, not %d: a shelf of a family may show "
               "an old tier" % (total["shelf actor hook"], len(SHELF_ACTOR_SITES)))
+    if protect_hearts and total["equip name"] != 1:   # (Either age's tunics: young Link's own actor of a tunic)
+        print("oot_patches: WARNING: the worn tunic's name was hooked %d times, not 1: young Link wears the adult's tunic's model" % total["equip name"])
     if protect_hearts and total["boots child answers"] != len(BOOTS_CHILD_CALLS):   # (Either age's items: young Link's boots)
         print("oot_patches: WARNING: the boots' IsChild answers were hooked %d times, not %d: young Link's boots do nothing"
               % (total["boots child answers"], len(BOOTS_CHILD_CALLS)))

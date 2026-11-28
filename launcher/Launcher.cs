@@ -3724,7 +3724,7 @@ class LauncherForm : Form {
         new object[] { "rando_ocarinas", "Shuffle the ocarinas", new[] { "Off", "On" }, new[] { 0, 1 },
             "Saria's Fairy Ocarina (her goodbye on the bridge) and Zelda's Ocarina of Time (at the moat) are items of the shuffle, found anywhere; every check that needs a song then needs the Fairy Ocarina too. Needs Songs on (Song spots or Anywhere): with the songs off it does nothing." },
         new object[] { "rando_ageless_tunics", "Either age's tunics", new[] { "Off", "On" }, new[] { 0, 1 },
-            "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. The logic does not count on it. Moves no item." },
+            "Young Link can wear the Goron and Zora Tunics: equip them from the Equipment screen; the Goron Tunic keeps the heat off, the Zora Tunic lets him breathe underwater. He keeps his own clothes: a tunic does not show on him. The logic does not count on it. Moves no item." },
         new object[] { "rando_water_gate", "Water Temple gate", new[] { "Shut", "Open" }, new[] { 0, 1 },
             "The gate in front of the Water Temple, at the bottom of Lake Hylia. Shut (the default): it is closed as the game has it; with the Iron Boots on, fire the Hookshot or Longshot at the ring above the door to open it (the Ice Cavern is not needed). Open: it is open from the start. The logic asks for the Iron Boots, the Longshot and the Bow to enter either way. A save whose gate is already open keeps it open. Moves no item." },
         new object[] { "rando_any_fish", "Any fish wins", new[] { "Off", "On" }, new[] { 0, 1 },

@@ -1541,6 +1541,62 @@ void hos_trace_label(Ctx *c, unsigned long long fn, unsigned long long at) {
 }
 
 /* (Willow Woods) Where a game-data string's text lives (its getter's answer, f_80cd0ea0): 0 when it is not there. */
+/* (Either age's tunics, bug 107; the owner, 2026-11-27: "keep his own clothes") Young Link's tunics. The tunic worn is a
+   name in a table of the player's (EquipArmor: Armor_Adult_Goron, Armor_Adult_Zora, or none; not the game data's
+   strings: f_80a9a860 reads it, x3 the name's hash, the text's place written to x1's, as the boots' EquipBoot), and
+   the game makes the actor of that name on Link. The adult's on a child was the adult's body's model on bones he has
+   not: red spikes and a blue lump over his head and body (seen without a window, 2026-11-27), though the tunic's effect
+   was there. The seed makes an actor of each tunic for him (tools/rando/rando_seed.py TUNIC_CHILD: Armor_Child_Goron,
+   Armor_Child_Zora: the tunic's model with every material of it hidden, his own clothes kept, the effect the same),
+   and here, where that reader answers
+   (nx2/oot_patches.py patch_equip_name), the name follows Link's age: a child's "Armor_Adult_..." is made
+   "Armor_Child_...", and an adult's the other way (the names are as long: five letters written where the text is).
+   With the setting off, or a seed that has not made the actors (one written before), a child's name left in a save is
+   made the adult's again, so nothing asks for an actor that is not there. The pouch's item is the adult's for both:
+   one tunic. */
+#define OOT_EQUIP_ARMOR 0xb5f9aac7u   /* (EquipArmor) */
+int hos_rando_ageless_tunics(void);
+void hos_oot_equip_name(Ctx *c, unsigned long long out, unsigned long long hash) {
+    const uint64_t text = out ? recomp_load64(c, out) : 0;
+    if (!text) return;
+    if ((uint32_t)hash != OOT_EQUIP_ARMOR) return;
+    char now[20];
+    for (int i = 0; i < 19; i++) now[i] = (char)recomp_load8(c, text + (uint64_t)i);
+    now[19] = 0;
+    {   /* (a test's: HOS_OOT_TEST_TUNIC=Goron, Zora or None is the tunic worn, whatever the save says, written where the
+           name is: the Goron Tunic's heat tried without the Equipment page. Goron's name is a letter longer than Zora's) */
+        static const char *test;
+        static int asked;
+        if (!asked) asked = 1, test = getenv("HOS_OOT_TEST_TUNIC");
+        if (test && *test && (now[0] == 0 || !strncmp(now, "Armor_", 6))) {
+            char want[20] = "";
+            if (!strcmp(test, "Goron") || !strcmp(test, "Zora")) snprintf(want, sizeof want, "Armor_%.5s_%s", now[0] && !strncmp(now + 6, "Child", 5) ? "Child" : "Adult", test);
+            if (strcmp(want, now)) {
+                for (size_t i = 0; i <= strlen(want); i++) recomp_store8(c, text + i, (uint8_t)want[i]);
+                hos_log("test: the tunic worn \"%s\" written \"%s\"", now, want);
+                snprintf(now, sizeof now, "%s", want);
+            }
+        }
+    }
+    const int adults = !strcmp(now, "Armor_Adult_Goron") || !strcmp(now, "Armor_Adult_Zora");
+    const int childs = !strcmp(now, "Armor_Child_Goron") || !strcmp(now, "Armor_Child_Zora");
+    if (!adults && !childs) return;
+    static int made = -1;   /* (the seed's actors for him, looked for once) */
+    if (made < 0) {
+        char path[MAX_PATH];
+        FILE *f = oot_game_file(path, sizeof path, "mods/rando-seed/romfs/Pack/Actor/Armor_Child_Zora.pack.zs") ? fopen(path, "rb") : NULL;
+        made = f != NULL;
+        if (f) fclose(f);
+    }
+    int child = 0;
+    if (!oot_gamedata_bool(c, 0xcea220d3u, &child)) return;   /* (Sequence_IsChildhood, asked now: the name is read as a save loads) */
+    const int his_own = child && made && hos_rando_ageless_tunics();   /* (the name it is to be: his own actor's, else the adult's) */
+    if (his_own == childs) return;
+    const char *word = his_own ? "Child" : "Adult";
+    for (int i = 0; i < 5; i++) recomp_store8(c, text + 6 + (uint64_t)i, (uint8_t)word[i]);
+    hos_log("rando: the tunic worn: %s made Armor_%s%s (%s)", now, word, now + 11,
+            his_own ? "young Link's own actor of it: his clothes stay" : child ? "this seed has no actor of young Link's for it" : "the adult's");
+}
 static uint64_t oot_gamedata_string_at(Ctx *c, uint32_t hash) {
     const uint64_t mgr = oot_singleton(c, OOT_GAMEDATA_SLOT);
     A64Fn get = a64_lookup(0x80cd0ea0ULL);
