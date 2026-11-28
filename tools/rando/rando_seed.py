@@ -5889,7 +5889,9 @@ def shop_bottle_flow(raw):
 # Key's cap. Without the Nocturne as an item the Shadow Temple's door waits for the Forest, Fire and Water Temples
 # done, so none of those three goes behind it and its access asks for their doors' too. The child's dungeons are
 # not in it yet: being an adult stands for the three stones in the rules (ADULT), and each stone's dungeon would have
-# to be told its door in every rule that names an adult. A blue warp is the boss's own, where the game sends it.
+# to be told its door in every rule that names an adult. A blue warp's scenes are the boss's own, where the game
+# plays them; after them the game's side takes Link out by the door he came in by (the owner, 2026-11-28:
+# host/hos_main.c oot_warp_out). No rule goes by where a warp leads.
 #
 # The child's dungeons (rando_entrances 2, and 3 with the adult's; 2026-11-27 later): the Deku Tree, Dodongo's Cavern and
 # the Bottom of the Well among their three doors, each only where the rules stay true (entrance_child_pool):
@@ -6146,7 +6148,8 @@ def entrance_files(behind, read):
 # with the same action), with an entry for each door; its events' rows in the two event tables are copies of a rematch's
 # (as EPONA_OWN's). The Fire and Water Temples' entry scenes, not played, walk Link back to the entrance from the boss's
 # room (the game's side's own finding): their played flag is set before the change. Everything after the fight is X's own:
-# its Heart Container, its blue warp, its ending and reward, and where the warp puts Link.
+# its Heart Container, its blue warp, its ending and reward, and where the warp's scenes play (then Link is taken out by
+# the door of the dungeon he walked into: host/hos_main.c oot_warp_out).
 # The room Link arrives in has a request of its own, which asks for our event of that room: seen without a window, the
 # first way, Gohma's room sent him to King Dodongo's, whose scene played, and that room's request sent him on to Gohma's.
 # So an event of ours asks a flag first (a flag the game has and a randomizer game has no use for, the next of the

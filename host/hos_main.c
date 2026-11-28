@@ -1836,9 +1836,13 @@ static void oot_time_door(Ctx *c, int64_t now, uint64_t actor) {
    play, 2026-11-15) */
 static int oot_teleport_child = -1;
 
+/* (a destination that is not of the table: OOT_OWN_DESTINATION, whatever oot_own_destination says then. The blue warp's
+   way out, oot_warp_out) */
+#define OOT_OWN_DESTINATION ((unsigned)OOT_DESTINATIONS)
+static OotDestination oot_own_destination;
 static int oot_teleport(Ctx *c, uint64_t actor, unsigned index) {
     teleport.why = "no such destination", teleport.banc = NULL;
-    if (index >= sizeof oot_destinations / sizeof oot_destinations[0]) return 0;
+    if (index > OOT_OWN_DESTINATION || (index == OOT_OWN_DESTINATION && !oot_own_destination.child_banc)) return 0;
     const int64_t now = hos_now_ns();
     if (teleport.requested_at && now - teleport.requested_at < 8000000000LL) {
         hos_log("cheats: teleport ignored, a request is still in progress");
@@ -1866,7 +1870,7 @@ static int oot_teleport(Ctx *c, uint64_t actor, unsigned index) {
     }
     if (oot_teleport_child >= 0) child = oot_teleport_child;
     else if (!oot_gamedata_bool(c, 0xcea220d3u, &child)) hos_log("cheats: Sequence_IsChildhood not found, using child maps");
-    const OotDestination *d = &oot_destinations[index];
+    const OotDestination *d = index == OOT_OWN_DESTINATION ? &oot_own_destination : &oot_destinations[index];
     const char *banc = child ? d->child_banc : d->adult_banc;
     const char *start = child ? d->child_start : d->adult_start;
     const char *boot = child ? d->child_boot : d->adult_boot;
@@ -2346,6 +2350,99 @@ static void oot_boss_doors_save(void) {
 }
 /* (oot_checks_lock held) map: where Link is, left: the map he was in before it, since: how long ago he left it (ns),
    place: where he stands; near(folder): he stands in that dungeon's boss's room. 1 when a room was found just now */
+/* (the owner, 2026-11-28, after Volvagia beaten from the Forest Temple's boss's room: "have it send to the actual dungeon
+   you entered") A boss's blue warp, with Dungeon entrances or Boss shuffle. Everything after a fight is the boss's own:
+   its scenes, its reward, and where its warp puts Link, in front of the boss's own dungeon as the game has it. That is
+   not where he came in: he walked through a door (Dungeon entrances: maybe another dungeon's) into a dungeon and into its
+   boss's room (Boss shuffle: maybe another boss's). So once the warp's scenes are over he is taken on to the outside of
+   the door he came in by: the boss's room's dungeon (the room whose boss this is, oot_boss_doors), then the door that
+   dungeon is behind (oot_doors), then where that door's own dungeon's way out leads in the game's files (oot_door_outside:
+   each dungeon's Entrance actor's NextBancParamName, NextStartPosName and NextEventName, read from the maps 2026-11-28).
+   The same place, the game's own: nothing is done.
+   A warp is told from any other way out of a boss's dungeon by where Link last stood in it and what played: in the
+   boss's room (oot_boss_room_near), an event playing that is not the game over's (the ride is an event, the last one seen
+   in the owner's log before the map changed: Demo_SageOfFire_ClearEvent); a death there, the Title Screen, the room's
+   door back into the dungeon are none of it. The scenes after it are events and map changes (the sage's room, the
+   medallion, the arrival's), so the move waits for three looks in a row, a second apart, with no event and no map
+   loading, outside every dungeon; five minutes without, and it is let go. */
+static const struct { const char *door, *adult, *child, *start, *boot; } oot_door_outside[] = {
+    {"InsideTheDekuTree", "KokiriForest_Adult", "KokiriForest_Child", "FrontDekuTree", "Dm_SY_BancChangeArrive_KokiriForest_01"},
+    {"DodongoCavern", "DeathMountainTrail_Adult", "DeathMountainTrail_Child", "MountainTrail_DodongoCavernSide", "Dm_SY_BancChangeArrive_DeathMountainTrail_03"},
+    {"InsideJabuJabuBelly", "ZoraFountain_Adult", "ZoraFountain_Child", "ZoraFountain_FromInsideJabuJabuBelly", "Dm_SY_BancChangeArrive_ZoraFountain_01"},
+    {"BottomOfTheWell", "KakarikoVillage_Adult", "KakarikoVillage_Child", "Kakariko_WellSide", "Dm_SY_BancChangeArrive"},
+    {"ForestTemple", "SacredForestMeadow_Adult", "SacredForestMeadow_Child", "OutsideOfForestTemple", "Dm_SY_BancChangeArrive_SacredForestMeadow_01"},
+    {"FireTemple", "DeathMountainCrater_Adult", "DeathMountainCrater_Child", "OutsideOfFireTemple", "Dm_SY_BancChangeArrive_DeathMountainCrater_02"},
+    {"IceCavern", "ZoraFountain_Adult", "ZoraFountain_Child", "ZoraFountain_FromIceCavern", "Dm_SY_BancChangeArrive_IceCaven_02"},
+    {"WaterTemple", "HyruleField_Adult", "HyruleField_Child", "OutsideOfWaterTemple", "Dm_SY_BancChangeArrive"},
+    {"ShadowTemple", "Graveyard_Adult", "Graveyard_Child", "GraveYard_ShadowTempleSide", "Dm_SY_BancChangeArrive_ShadowTemple_01"},
+    {"SpiritTemple", "DesertColossus_Adult", "DesertColossus_Child", "DesertColossus_FromSpiritTempleEntrance", "FromSpiritTemple_ArriveColossus"},
+    {"GerudoTrainingGround", "GerudoFortress_Adult", "GerudoFortress_Adult", "GerudoFortress_FromGerudoTrainingGround", "Dm_SY_BancChangeArrive_GerudoFortress_01"},
+};
+static char oot_warp_event[64];   /* (the last event started, by its name: oot_warp_out_event) */
+static void oot_warp_out_event(const char *name) { snprintf(oot_warp_event, sizeof oot_warp_event, "%s", name); }
+/* The door Link came in by to fight the boss of `boss`'s dungeon: (the door's own dungeon, by the seed's two files; `boss`
+   itself with neither setting) */
+static const char *oot_warp_out_door(const char *boss) {
+    const char *room = boss, *door;
+    for (int i = 0; i < oot_boss_door_n; i++)
+        if (!strcmp(oot_boss_doors[i].boss, boss)) room = oot_boss_doors[i].room;
+    door = room;
+    for (int i = 0; i < oot_door_n; i++)
+        if (!strcmp(oot_doors[i].dungeon, room)) door = oot_doors[i].door;
+    return door;
+}
+static int oot_teleport(Ctx *c, uint64_t actor, unsigned index);
+static int oot_event_playing(Ctx *c);
+/* A look, each second: map, the map Link is in ("" none yet). See above */
+static void oot_warp_out(Ctx *c, uint64_t actor, const char *map, int64_t now) {
+    static int at_boss = -1, rode = 0, pending = -1, settled = 0;
+    static int64_t pending_since;
+    if (!oot_door_n && !oot_boss_door_n) {
+        at_boss = pending = -1;
+        return;
+    }
+    if (!map[0]) return;
+    int dungeon = -1;
+    for (unsigned i = 0; i < OOT_BOSS_ROOMS && dungeon < 0; i++)
+        if (oot_banc_in_folder(map, oot_boss_rooms[i].folder)) dungeon = (int)i;
+    if (dungeon >= 0) {   /* (in a boss's dungeon: whether he stands in the boss's room, and rides) */
+        at_boss = oot_boss_room_near(oot_boss_rooms[dungeon].folder) ? dungeon : -1;
+        rode = at_boss >= 0 && oot_event_playing(c) && strcmp(oot_warp_event, "DmF_SY_GameOver");
+        pending = -1;
+        return;
+    }
+    if (at_boss >= 0 && rode) pending = at_boss, pending_since = now, settled = 0;
+    at_boss = -1, rode = 0;
+    if (pending < 0) return;
+    int loading = 0;
+    if (now - pending_since > 300000000000LL) {
+        hos_log("rando: blue warp: %s's boss's warp's scenes did not end in five minutes: Link is left where he is", oot_boss_rooms[pending].folder);
+        pending = -1;
+        return;
+    }
+    if (oot_event_playing(c) || (oot_gamedata_bool(c, 0xef2b60c2u, &loading) && loading)) {   /* (Sequence_IsLoadingBanc) */
+        settled = 0;
+        return;
+    }
+    if (++settled < 3) return;
+    const char *boss = oot_boss_rooms[pending].folder, *door = oot_warp_out_door(boss);
+    if (!strcmp(door, boss)) {   /* (his own door: the game's own place) */
+        pending = -1;
+        return;
+    }
+    for (unsigned i = 0; i < sizeof oot_door_outside / sizeof oot_door_outside[0]; i++) {
+        if (strcmp(oot_door_outside[i].door, door)) continue;
+        oot_own_destination = (OotDestination){oot_door_outside[i].child, oot_door_outside[i].start, oot_door_outside[i].boot,
+                                               oot_door_outside[i].adult, oot_door_outside[i].start, oot_door_outside[i].boot};
+        if (oot_teleport(c, actor, OOT_OWN_DESTINATION)) {
+            hos_log("rando: blue warp: %s's boss was fought by the door of %s: Link is taken to that door's outside (%s)", boss, door, oot_door_outside[i].start);
+            pending = -1;
+        } else settled = 0;   /* (not taken yet: a look later) */
+        return;
+    }
+    hos_log("rando: blue warp: no outside known for the door of %s: Link is left where he is", door);
+    pending = -1;
+}
 static int oot_boss_doors_note(const char *map, const char *left, int64_t since, int (*near)(const char *folder)) {
     int found = 0;
     for (int i = 0; i < oot_boss_door_n; i++) {
@@ -3948,6 +4045,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     }
     oot_doors_note(oot_link_map);   /* (Dungeon entrances: the door of the dungeon Link is in is found) */
     oot_boss_doors_note(oot_link_map, oot_left_map, now - oot_left_at, oot_boss_room_near);   /* (Boss shuffle: the room he was sent from) */
+    oot_warp_out(c, actor, oot_link_map, now);   /* (a boss's blue warp: out by the door Link came in by) */
     for (int i = 0; i < oot_check_count; i++) rx_option_set(OOT_TRACKER_BASE + i, oot_checks[i].done == 1);
     {   /* (where Link is, for the Tracker tab's order: a check of the map he is in, the first of the file) */
         int here = -1;
@@ -4409,6 +4507,7 @@ static void oot_skip_cutscene(Ctx *c) {
     ReleaseSRWLockExclusive(&lock);
 }
 static void oot_stats_event(const char *name);
+static void oot_warp_out_event(const char *name);
 static void oot_skip_cutscene_locked(Ctx *c) {
     static uint64_t was_event, was_player;
     static int64_t asked_at;
@@ -4449,6 +4548,7 @@ static void oot_skip_cutscene_locked(Ctx *c) {
     }
     was_event = event, was_player = player;
     if (is_new && hos_rando_on()) oot_stats_event(name);
+    if (is_new && hos_rando_on()) oot_warp_out_event(name);   /* (the blue warp's way out: the last event's name) */
     if (!skipping) return;
     /* (Willow Woods, asked 2026-11-18: the big chest's long opening. Link's heave of the lid is his own sequence for a big
        chest (Dm_SY_Treasurebox; a small chest's is Dm_SY_TreasureboxSmall), not the chest's, and no step of its flowchart
