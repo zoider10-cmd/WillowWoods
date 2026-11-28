@@ -2443,6 +2443,86 @@ static void oot_warp_out(Ctx *c, uint64_t actor, const char *map, int64_t now) {
     hos_log("rando: blue warp: no outside known for the door of %s: Link is left where he is", door);
     pending = -1;
 }
+/* (the owner, 2026-11-28: "look into a way to make bottom of the well and deku tree accessable as an adult") The two doors
+   an adult cannot walk through. Their door actors are in the adult's maps too, with the same fields; what stops him is
+   the way to the trigger: the Deku Tree's mouth is behind vines and rocks in the adult's forest, and the well's is past
+   the hole under its door, which only a child crawls through. The trigger is not the actor's place (the actor moved in
+   the map, a test's, changed nothing: seen without a window on the owner's two saves): it is baked with the map.
+   So an adult who walks up to where he is stopped (oot_adult_doors: where he stood on those saves, pushed forward) is
+   sent through by the game's side, the request the door itself makes: the map change to the dungeon behind that door
+   (the seed's entrances.txt, else its own), at the dungeon's entrance, with its first scene the first time
+   (oot_door_inside: each door's NextBancParamName, NextStartPosName, NextEventName, InitEventName and the scene's played
+   flag, read from the maps). Armed only once he has stood OOT_ADULT_DOOR_ARM away from the place in this map: the way
+   out of the dungeon puts him near it. */
+static const struct { const char *dungeon, *banc, *start, *next, *init; uint32_t init_flag; } oot_door_inside[] = {
+    {"InsideTheDekuTree", "InsideTheDekuTree", "Entrance", "Dm_SY_BancChangeArrive_InsideTheDekuTree_01", "InsideTheDekuTree_Arrive", 0x520f5421u},
+    {"DodongoCavern", "DodongoCavern", "DodongoCavern_MountainTrailSide", "Dm_SY_BancChangeArrive", "", 0},
+    {"InsideJabuJabuBelly", "InsideJabuJabuBelly", "InsideJabuJabuBelly_FromZoraFountain", "Dm_SY_BancChangeArrive", "Get_StoneOfWater_ArriveJabuJabuBelly", 0x543721f7u},
+    {"BottomOfTheWell", "BottomOfTheWell", "Well_KakarikoSide", "Dm_SY_BancChangeArrive", "Goto_KakarikoWells", 0x8b591e04u},
+    {"ForestTemple", "ForestTemple", "ForestTemple", "Dm_SY_BancChangeArrive", "Dm_ForestTemple_0000", 0x6dde323fu},
+    {"FireTemple", "FireTemple", "FireTemple", "Dm_SY_BancChangeArrive", "Goto_FireTemple", 0xde8666fau},
+    {"IceCavern", "IceCavern", "IceCavern_FromZoraFountain", "SageOfWater_Arrival_IceCavern", "", 0},
+    {"WaterTemple", "WaterTemple", "WaterTemple_FromLakeHylia", "SageOfWater_Arrival_WaterTemple", "", 0},
+    {"ShadowTemple", "ShadowTemple", "Entrance", "ShadowTemple_Arrive", "", 0},
+    {"SpiritTemple", "SpiritTemple", "SpiritTemple_Entrance", "FromColossus_ArriveSpiritTemple", "Goto_SpritTemple", 0x5ef2693au},
+    {"GerudoTrainingGround", "GerudoTrainingGround", "GerudoTrainingGround_FromGerudoFortress", "FromGerudoFortress_ArriveTrainingGround", "FromGerudoFortress_ArriveTrainingGround", 0xd76c2b35u},
+};
+/* (and the way out. The dungeon's own way out puts Link where the door's start point is, which is past the obstacle: behind
+   the vines at the Deku Tree (seen: 90.0 115.5 -27.9, and walking on, the door's trigger again), behind the well's door
+   (-6.5 85.2 44.2, a wall with the child's hole in it before him). An adult found there (within `within` of `inside`) is
+   put on the open side (`outside`, where the owner's saves stood), as the Tracker's Go there puts Link: oot_put_place) */
+static const struct { const char *door, *folder; float at[3], inside[3], within, outside[3]; } oot_adult_doors[] = {
+    {"InsideTheDekuTree", "KokiriForest", {87.63f, 115.29f, -30.44f}, {96.0f, 119.0f, -29.0f}, 7.0f, {83.62f, 114.91f, -31.82f}},
+    {"BottomOfTheWell", "KakarikoVillage", {-13.30f, 86.21f, 43.80f}, {-4.0f, 85.2f, 44.2f}, 5.5f, {-17.30f, 85.19f, 43.59f}},
+};
+static float oot_put_place[3];   /* (a place Link is to be put at in the map he is in, and held a moment: asked for here, */
+static int oot_put_asked;        /*  taken where the Go there's mark is kept) */
+#define OOT_ADULT_DOOR_NEAR 1.5f
+static int oot_link_child;   /* (below: Link's age at the last look) */
+#define OOT_ADULT_DOOR_ARM 3.5f
+static void oot_adult_door(Ctx *c, uint64_t actor, const char *map) {
+    static char was[80];
+    static int armed[sizeof oot_adult_doors / sizeof oot_adult_doors[0]];
+    if (strcmp(was, map)) {   /* (another map: no door armed until he has stood away from it) */
+        snprintf(was, sizeof was, "%s", map);
+        memset(armed, 0, sizeof armed);
+    }
+    if (!map[0] || oot_link_child != 0 || !strstr(map, "_Adult")) return;
+    for (unsigned i = 0; i < sizeof oot_adult_doors / sizeof oot_adult_doors[0]; i++) {
+        if (!oot_banc_in_folder(map, oot_adult_doors[i].folder)) continue;
+        const float dx = oot_link_place[0] - oot_adult_doors[i].at[0], dy = oot_link_place[1] - oot_adult_doors[i].at[1],
+                    dz = oot_link_place[2] - oot_adult_doors[i].at[2], away = sqrtf(dx * dx + dy * dy + dz * dz);   /* (not far: windows.h has that name) */
+        {   /* (past the obstacle, where a dungeon's way out left him: to the open side) */
+            const float ix = oot_link_place[0] - oot_adult_doors[i].inside[0], iy = oot_link_place[1] - oot_adult_doors[i].inside[1],
+                        iz = oot_link_place[2] - oot_adult_doors[i].inside[2];
+            int loading = 0;
+            if (ix * ix + iy * iy + iz * iz < oot_adult_doors[i].within * oot_adult_doors[i].within && !oot_put_asked && !oot_event_playing(c) &&
+                !(oot_gamedata_bool(c, 0xef2b60c2u, &loading) && loading)) {
+                memcpy(oot_put_place, oot_adult_doors[i].outside, sizeof oot_put_place);
+                oot_put_asked = 1, armed[i] = 0;
+                hos_log("rando: an adult past the door of %s (%.1f %.1f %.1f): put on its open side", oot_adult_doors[i].door, oot_link_place[0], oot_link_place[1], oot_link_place[2]);
+                return;
+            }
+        }
+        if (away > OOT_ADULT_DOOR_ARM) armed[i] = 1;
+        if (!armed[i] || away > OOT_ADULT_DOOR_NEAR) continue;
+        const char *dungeon = oot_adult_doors[i].door;
+        for (int k = 0; k < oot_door_n; k++)
+            if (!strcmp(oot_doors[k].door, oot_adult_doors[i].door)) dungeon = oot_doors[k].dungeon;
+        for (unsigned k = 0; k < sizeof oot_door_inside / sizeof oot_door_inside[0]; k++) {
+            if (strcmp(oot_door_inside[k].dungeon, dungeon)) continue;
+            int played = 1;
+            const char *boot = oot_door_inside[k].next;
+            if (oot_door_inside[k].init[0] && oot_gamedata_bool(c, oot_door_inside[k].init_flag, &played) && !played) boot = oot_door_inside[k].init;
+            oot_own_destination = (OotDestination){oot_door_inside[k].banc, oot_door_inside[k].start, boot, oot_door_inside[k].banc, oot_door_inside[k].start, boot};
+            if (oot_teleport(c, actor, OOT_OWN_DESTINATION)) {
+                armed[i] = 0;
+                hos_log("rando: an adult at the door of %s: sent through to %s (%s, %s)", oot_adult_doors[i].door, dungeon, oot_door_inside[k].start, boot);
+            }
+            return;
+        }
+    }
+}
 static int oot_boss_doors_note(const char *map, const char *left, int64_t since, int (*near)(const char *folder)) {
     int found = 0;
     for (int i = 0; i < oot_boss_door_n; i++) {
@@ -4046,6 +4126,7 @@ static void oot_tracker_refresh(Ctx *c, int64_t now, uint64_t actor) {
     oot_doors_note(oot_link_map);   /* (Dungeon entrances: the door of the dungeon Link is in is found) */
     oot_boss_doors_note(oot_link_map, oot_left_map, now - oot_left_at, oot_boss_room_near);   /* (Boss shuffle: the room he was sent from) */
     oot_warp_out(c, actor, oot_link_map, now);   /* (a boss's blue warp: out by the door Link came in by) */
+    oot_adult_door(c, actor, oot_link_map);   /* (the Deku Tree's and the well's doors, for an adult) */
     for (int i = 0; i < oot_check_count; i++) rx_option_set(OOT_TRACKER_BASE + i, oot_checks[i].done == 1);
     {   /* (where Link is, for the Tracker tab's order: a check of the map he is in, the first of the file) */
         int here = -1;
@@ -4938,7 +5019,7 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
     static float fly_y;
     static int64_t fly_last;
     if (!fly) fly_last = 0;
-    if (!flying && !fly && action != 2 && action != 3 && !go && now >= hold_until) return;
+    if (!flying && !fly && action != 2 && action != 3 && !go && !oot_put_asked && now >= hold_until) return;
 
     // Follow OneShotPhysicsCctChangePosition to Link's controller.
     const uint64_t controller = oot_player_controller(c, components);
@@ -4983,6 +5064,14 @@ static void oot_update_player_cheats(Ctx *c, uint64_t actor, uint64_t components
             }
             fclose(f);
         }
+    }
+    if (oot_put_asked) {   /* (a place asked for by the game's side itself: an adult's way out of the Deku Tree and the well) */
+        oot_put_asked = 0;
+        memcpy(mark, oot_put_place, sizeof mark);
+        marked_actor = actor;
+        marked_controller = controller;
+        hold_until = now + 1500000000LL;
+        trace_until = hold_until + 4000000000LL, trace_next = 0;
     }
     if (go) {   /* (the check's place is the mark, and Link is held there as at a go-to) */
         memcpy(mark, check.place, sizeof mark);

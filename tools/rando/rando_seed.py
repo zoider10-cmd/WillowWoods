@@ -5938,6 +5938,9 @@ ENTRANCE_WAYS = 3   # (the ways through a door kept: the fewest-item ones; one l
 # The rules are as for the groups apart: a check's own and its new door's. NOT SEEN: a child in the rooms of an adult's
 # temple (a block to push, a ledge to climb), and a child's blue warp out of one (the owner: by glitches people beat the
 # Spirit Temple as a child and the adult's scene plays, Link's model wrong).
+# (2026-11-28: an adult is sent through the Deku Tree's and the well's doors by the game's side now, host/hos_main.c
+#  oot_adult_door: the owner's ask. The rules do not count on it: these stay a child's doors here, too much asked,
+#  never too little. The door's actor moved in the adult's map did not move its trigger, which is baked with the map)
 ENTRANCE_CHILD_DOORS = ("InsideTheDekuTree", "BottomOfTheWell", "InsideJabuJabuBelly")   # (the doors only a child gets through, and the dungeons only he can do)
 ENTRANCE_TUNICS = ("FireTemple", "WaterTemple")
 ENTRANCE_NO_CHILD = ("GerudoTrainingGround",)
