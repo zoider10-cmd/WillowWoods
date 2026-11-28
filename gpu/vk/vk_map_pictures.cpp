@@ -1,7 +1,8 @@
 // (Willow Woods, asked 2026-11-26) The Tracker's map pictures: the game's own (UI/CustomTex/Map), made from the player's
 // RomFS at a build into <game folder>/maps by nx2/map_assets.py (index.txt and a .hmap a picture: the game's ASTC blocks,
 // zstd), read here on a thread of their own, decoded by suyu's decoder, halved and handed to the menu as pictures.
-// They are the game's: they stay in the game folder, and nothing here writes anything.
+// They are the game's: they stay in the game folder. What is written is written there too: the decoded pictures the
+// launcher's Tracker window asks for (map_export_wanted, maps/view).
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -289,6 +290,43 @@ int map_floors(const char* folder, const char* names[kMapFloors]) {
     if (!f->ready) return -1;
     for (size_t i = 0; i < f->names.size(); i++) names[i] = f->names[i].c_str();
     return (int)f->names.size();
+}
+
+void map_export_wanted() {
+    static bool started = false;
+    if (started) return;
+    const std::string view = maps_folder() + "view/";
+    if (GetFileAttributesA((view + "wanted.txt").c_str()) == INVALID_FILE_ATTRIBUTES) return;
+    started = true;
+    std::vector<MapRow> all;
+    {
+        std::unique_lock<std::mutex> hold(lock);
+        index_load();
+        all = rows;
+    }
+    std::thread([all, view] {
+#ifdef _WIN32
+        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);   // (behind the game: a few seconds of decoding, once)
+#endif
+        const auto there = [](const std::string& path) { return GetFileAttributesA(path.c_str()) != INVALID_FILE_ATTRIBUTES; };
+        int made = 0;
+        for (const MapRow& row : all) {
+            const std::string to = view + row.name;
+            if (there(to + ".png") || there(to + ".raw")) continue;
+            Decoded d;
+            if (!picture_read(row, &d) || d.w <= 0 || d.h <= 0) continue;
+            FILE* f = fopen((to + ".new").c_str(), "wb");
+            if (!f) continue;
+            const uint32_t size[2] = {(uint32_t)d.w, (uint32_t)d.h};
+            const bool ok = fwrite("HWRV", 1, 4, f) == 4 && fwrite(size, 4, 2, f) == 2 && fwrite(d.rgba.data(), 1, d.rgba.size(), f) == d.rgba.size();
+            if (fclose(f) != 0 || !ok) {
+                remove((to + ".new").c_str());
+                continue;
+            }
+            if (!rename((to + ".new").c_str(), (to + ".raw").c_str())) made++;
+        }
+        if (made) logf("map pictures: %d handed to the Tracker's window (maps/view)", made);
+    }).detach();
 }
 
 unsigned map_floors_at(const char* folder, float x, float z) {

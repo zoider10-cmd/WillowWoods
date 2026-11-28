@@ -8241,7 +8241,28 @@ void tracker_live_write() {
     }
     if (const int64_t took = prof_now() - began; took > slowest && took > 300000)
         slowest = took, logf("menu: tracker: a frame's share of the window's file (%s) took %.2f ms", share, took / 1e6);
-    if (!whole || words == last) return;
+    if (!whole) return;
+    mkwvk::map_export_wanted();   // (the map's pictures, once the window has asked for them)
+    {   // (where Link is, for the window's map: rando\tracker_link.txt, "<x> <z> <y> <age: 0 the child, 1 the adult>" in
+        //  metres, a file of its own: it changes at every step, the big one seldom. Written when it says something else)
+        static std::string link_last;
+        const int lx = link_place[0].load(std::memory_order_relaxed), lz = link_place[1].load(std::memory_order_relaxed);
+        const int ly = link_place[3].load(std::memory_order_relaxed);
+        char place[96] = "";
+        if (lx != INT_MIN && lz != INT_MIN)
+            snprintf(place, sizeof place, "%.1f %.1f %.1f %d\n", lx * 0.01, lz * 0.01, ly == INT_MIN ? 0.0 : ly * 0.01, link_age.load(std::memory_order_relaxed));
+        if (link_last != place) {
+            link_last = place;
+            std::thread([text = link_last, path = game_folder_path() + "rando\\tracker_link.txt"] {
+                if (FILE* f = fopen((path + ".new").c_str(), "wb")) {
+                    const bool ok = fwrite(text.data(), 1, text.size(), f) == text.size();
+                    std::error_code ec;
+                    if (fclose(f) == 0 && ok) std::filesystem::rename(path + ".new", path, ec);
+                }
+            }).detach();
+        }
+    }
+    if (words == last) return;
     last = words;
     // (written by a thread of its own, the words its own copy: a disk's wait is not the frame's. To a file beside it that
     //  then takes its name)

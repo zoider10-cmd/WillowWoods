@@ -27,6 +27,14 @@ int map_layers(const char* folder, int age, const char* floor, MapLayer out[kMap
 /// they are being read (it starts reading them)
 int map_floors(const char* folder, const char* names[kMapFloors]);
 
+/// (the owner, 2026-11-27: the Tracker's window "to show the map the tracker uses") The pictures handed to the launcher's
+/// Tracker window, which cannot decode them: once it has asked (it makes <game folder>/maps/view/wanted.txt), every
+/// picture of the index that has neither a .png nor a .raw in maps/view is decoded as the menu's are (halved) and written
+/// there as <name>.raw ("HWRV", u32 width, u32 height, then RGBA, straight alpha); the window makes a .png of each and
+/// takes the .raw away. On a thread of its own at the lowest priority, started once a session; this call only looks for
+/// the file (call it seldom). Made from the game: they stay in the game folder
+void map_export_wanted();
+
 /// The floors whose picture is drawn on at a place (bit n: map_floors' n-th), 0 none or not read yet
 unsigned map_floors_at(const char* folder, float x, float z);
 

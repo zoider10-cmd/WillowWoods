@@ -2756,14 +2756,56 @@ class DarkMenu : ToolStripProfessionalRenderer {
 // check, the checks in logic nearest first, the dungeons' keys and items, what each check gave or still lacks:
 // gpu/vk/vk_menu.cpp tracker_live_write), rando\doors_seen.txt, boss_rooms_seen.txt and hints_heard.txt. Read again a
 // second after any of them changes. A live file of another seed is not taken: the window says to start the game.
-// Wide (the owner, 2026-11-27: "more detailed", on a second screen most of the time), it is three lists at once: the areas,
-// the checks of the one chosen (or all that is in logic now), and the dungeons' items, the doors and bosses and the hints.
-// Narrow, one list and a box that chooses which.
+// Wide (the owner, 2026-11-27: "more detailed", on a second screen most of the time), it is three panes: on the left what to
+// look at (In logic now, Dungeon items, Doors and bosses, Hints heard, then the areas), in the middle that, and on the right
+// the map the game's Tracker uses ("i want the right most side to show the map the tracker uses. clicking the check in
+// the middle pane should highlight where it is on the map"): the overview of Hyrule, or an area's checks as dots over the
+// game's own map picture, the one clicked ringed, Link where he stands. The pictures are the game folder's (maps\index.txt,
+// made at a build); the game decodes them for this window once it asks (maps\view\wanted.txt: gpu/vk/vk_map_pictures.cpp
+// map_export_wanted writes <name>.raw there, and the window makes a .png of each). Link's place: rando\tracker_link.txt.
+// Narrow, one list and a box that chooses which, no map.
 class TrackerForm : Form {
-    class Check { public string Area, Kind, Ages, Gives, Note = ""; public char State = '?'; }
+    class Check { public string Area, Kind, Ages, Gives, Folder, Note = ""; public char State = '?'; public int Index; public float X, Y, Z; }
+    class Canvas : Panel { public Canvas() { DoubleBuffered = true; ResizeRedraw = true; } }
+    // (a picture of maps\index.txt: "<folder>|<ages>|<floor>|<name>|<camera x>|<camera z>|<height>|<width px>|<height px>"; where it lies
+    //  in the world as gpu/vk/vk_map_pictures.cpp map_row_rect has it: its middle the camera's, its width the height in metres)
+    class Picture {
+        public string Folder, Ages, Floor, Name; public float X0, Z0, X1, Z1;
+    }
+    // (the overview of Hyrule, as the menu's: gpu/vk/vk_menu.cpp kWorldMap and kWorldEdges; tests/test_tracker_window.py)
+    public static readonly string[][] World = {
+        new[] { "Desert Colossus", "Desert Colossus", "0.10", "0.08", "" }, new[] { "Haunted Wasteland", "Wasteland", "0.10", "0.25", "" },
+        new[] { "Gerudo's Fortress", "Gerudo's Fortress", "0.12", "0.42", "" }, new[] { "Gerudo Valley", "Gerudo Valley", "0.20", "0.60", "" },
+        new[] { "Ganon's Castle (outside)", "Ganon's Castle", "0.31", "0.08", "" }, new[] { "Hyrule Castle", "Hyrule Castle", "0.48", "0.08", "" },
+        new[] { "Market", "Market", "0.44", "0.27", "" }, new[] { "Hyrule Field", "Hyrule Field", "0.44", "0.56", "" },
+        new[] { "Kakariko Village", "Kakariko", "0.64", "0.38", "" }, new[] { "Graveyard", "Graveyard", "0.76", "0.29", "" },
+        new[] { "Death Mountain Trail", "DM Trail", "0.64", "0.21", "" }, new[] { "Death Mountain Crater", "DM Crater", "0.64", "0.05", "" },
+        new[] { "Goron City", "Goron City", "0.80", "0.13", "" }, new[] { "Zora's River", "Zora's River", "0.82", "0.50", "" },
+        new[] { "Zora's Domain", "Zora's Domain", "0.92", "0.38", "" }, new[] { "Zora's Fountain", "Zora's Fountain", "0.92", "0.24", "" },
+        new[] { "Lost Woods", "Lost Woods", "0.70", "0.66", "" }, new[] { "Sacred Forest Meadow", "Forest Meadow", "0.56", "0.78", "" },
+        new[] { "Kokiri Forest", "Kokiri Forest", "0.84", "0.80", "" },
+        new[] { "Inside the Deku Tree", "Deku Tree", "0.84", "0.93", "Kokiri Forest" }, new[] { "Forest Temple", "Forest Temple", "0.56", "0.91", "Sacred Forest Meadow" },
+        new[] { "Dodongo's Cavern", "Dodongo's Cavern", "0.52", "0.155", "Death Mountain Trail" }, new[] { "Fire Temple", "Fire Temple", "0.77", "0.02", "Death Mountain Crater" },
+        new[] { "Inside Jabu-Jabu's Belly", "Jabu-Jabu", "0.96", "0.13", "Zora's Fountain" }, new[] { "Ice Cavern", "Ice Cavern", "0.92", "0.04", "Zora's Fountain" },
+        new[] { "Water Temple", "Water Temple", "0.32", "0.72", "Hyrule Field" }, new[] { "Bottom of the Well", "the Well", "0.66", "0.50", "Kakariko Village" },
+        new[] { "Shadow Temple", "Shadow Temple", "0.77", "0.405", "Graveyard" }, new[] { "Spirit Temple", "Spirit Temple", "0.12", "0.165", "Desert Colossus" },
+        new[] { "Gerudo Training Ground", "Training Ground", "0.22", "0.30", "Gerudo's Fortress" },
+        new[] { "Inside Ganon's Castle", "Ganon's Tower", "0.29", "0.17", "Ganon's Castle (outside)" },
+    };
+    public static readonly string[][] WorldEdges = {
+        new[] { "Hyrule Field", "Market" }, new[] { "Market", "Hyrule Castle" }, new[] { "Market", "Ganon's Castle (outside)" }, new[] { "Hyrule Field", "Kakariko Village" },
+        new[] { "Kakariko Village", "Graveyard" }, new[] { "Kakariko Village", "Death Mountain Trail" }, new[] { "Death Mountain Trail", "Goron City" },
+        new[] { "Death Mountain Trail", "Death Mountain Crater" }, new[] { "Goron City", "Death Mountain Crater" }, new[] { "Goron City", "Lost Woods" },
+        new[] { "Hyrule Field", "Zora's River" }, new[] { "Zora's River", "Zora's Domain" }, new[] { "Zora's Domain", "Zora's Fountain" }, new[] { "Zora's River", "Lost Woods" },
+        new[] { "Hyrule Field", "Lost Woods" }, new[] { "Lost Woods", "Kokiri Forest" }, new[] { "Lost Woods", "Sacred Forest Meadow" }, new[] { "Hyrule Field", "Gerudo Valley" },
+        new[] { "Gerudo Valley", "Gerudo's Fortress" }, new[] { "Gerudo's Fortress", "Haunted Wasteland" }, new[] { "Haunted Wasteland", "Desert Colossus" },
+    };
+    // (the left pane's own rows, before the areas: what a click on one opens. "" In logic now)
+    const string OpenDungeons = "*dungeons", OpenDoors = "*doors", OpenHints = "*hints";
     class Row {
         public string Left = "", Right = "", Below = ""; public Color Ink = Theme.Text, RightInk = Theme.Dim, BelowInk = Theme.Amber;
         public bool Head, Wrap, Lit; public char Mark = ' '; public string Open;   // (Open: an area a click opens, "" back: the areas, or In logic now)
+        public int Pick = -1;   // (a check's row: its place in the seed's checks; a click rings it on the map)
         // (Below: a second line under the row, whole and wrapped: what a check lacks, a dungeon's items)
     }
     // (the dungeons among the areas, as the menu's map has them: gpu/vk/vk_menu.cpp kWorldMap; tests/test_tracker_window.py)
@@ -2794,7 +2836,15 @@ class TrackerForm : Form {
     readonly Label top = new Label();
     readonly ComboBox view = new ComboBox();
     readonly CheckBox onTop = new CheckBox();
-    readonly ListBox list = new ListBox(), areas = new ListBox(), side = new ListBox();   // (the checks; wide: the areas left of them, the rest right)
+    readonly ListBox list = new ListBox(), areas = new ListBox();   // (the checks, or another view; wide: what to look at, left of them)
+    readonly Canvas map = new Canvas();   // (wide: the map, right of them)
+    readonly List<Picture> pictures = new List<Picture>();
+    readonly Dictionary<string, Bitmap> loaded = new Dictionary<string, Bitmap>();   // (the map's pictures read, by name: null one not there yet)
+    readonly Dictionary<string, Dictionary<int, string>> floorOf = new Dictionary<string, Dictionary<int, string>>();   // (a dungeon's checks' floors, by its folder)
+    readonly List<KeyValuePair<RectangleF, int>> dots = new List<KeyValuePair<RectangleF, int>>();   // (the map as drawn: a check's dot, for a click)
+    readonly List<KeyValuePair<RectangleF, string>> boxes = new List<KeyValuePair<RectangleF, string>>();   // (and the overview's areas)
+    int picked = -1, converting;   // (the check clicked: its place in the seed's checks)
+    float linkX, linkZ, linkY; int linkAge = -1; bool linkKnown; string linkSeen = "";
     readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
     readonly List<Check> checks = new List<Check>();
     readonly List<int> near = new List<int>();
@@ -2822,7 +2872,11 @@ class TrackerForm : Form {
         view.Items.AddRange(Views); view.SelectedIndex = 0;
         onTop.Text = "Stay on top"; onTop.Checked = true; onTop.ForeColor = Theme.Dim; onTop.BackColor = Theme.Bg1;
         Controls.Add(top); Controls.Add(view); Controls.Add(onTop);
-        foreach (var l in new[] { list, areas, side }) {
+        map.BackColor = Theme.Card;
+        map.Paint += DrawMap;
+        map.MouseClick += MapClick;
+        Controls.Add(map);
+        foreach (var l in new[] { list, areas }) {
             l.DrawMode = DrawMode.OwnerDrawVariable; l.IntegralHeight = false; l.BorderStyle = BorderStyle.None;
             l.BackColor = Theme.Card; l.ForeColor = Theme.Text; l.Font = Font;
             l.MeasureItem += Measure;
@@ -2835,10 +2889,14 @@ class TrackerForm : Form {
         view.SelectedIndexChanged += (o, e) => { if (!filling) { openArea = null; Fill(); } };
         EventHandler open = (o, e) => {
             var row = ((ListBox)o).SelectedItem as Row;
-            if (row == null || row.Open == null) return;
+            if (row == null) return;
+            if (row.Pick >= 0) { picked = row.Pick == picked ? -1 : row.Pick; Fill(); return; }   // (a check: ringed on the map; again, not)
+            if (row.Open == null) return;
             openArea = row.Open.Length > 0 ? row.Open : null;
+            picked = -1;
             Fill();
         };
+        ReadPictures();
         list.Click += open;
         areas.Click += open;
         Resize += (o, e) => { Arrange(); Fill(); };   // (the wrapped lines measured again)
@@ -2855,13 +2913,13 @@ class TrackerForm : Form {
         int w = ClientSize.Width, h = ClientSize.Height;
         bool wide = Wide;
         top.SetBounds(10, 8, Math.Max(100, w - (wide ? 150 : 20)), 40);
-        view.Visible = !wide; areas.Visible = wide; side.Visible = wide;
+        view.Visible = !wide; areas.Visible = wide; map.Visible = wide;
         if (wide) {
             onTop.SetBounds(w - 130, 14, 120, 22);
-            int y = 54, gap = 8, lw = (w - 20 - 2 * gap) * 28 / 100, rw = (w - 20 - 2 * gap) * 32 / 100, mw = w - 20 - 2 * gap - lw - rw;
+            int y = 54, gap = 8, lw = Math.Min(330, (w - 20 - 2 * gap) * 27 / 100), mw = Math.Min(440, (w - 20 - 2 * gap) * 33 / 100), rw = w - 20 - 2 * gap - lw - mw;
             areas.SetBounds(10, y, lw, h - y - 10);
             list.SetBounds(10 + lw + gap, y, mw, h - y - 10);
-            side.SetBounds(10 + lw + gap + mw + gap, y, rw, h - y - 10);
+            map.SetBounds(10 + lw + gap + mw + gap, y, rw, h - y - 10);
         } else {
             view.SetBounds(10, 52, Math.Min(200, w - 140), 26);
             onTop.SetBounds(view.Right + 12, 54, 120, 22);
@@ -2910,10 +2968,88 @@ class TrackerForm : Form {
         }
         bool now = LauncherForm.GameRunning();
         s.Append(now);
+        LookLink();
+        Convert();
         if (s.ToString() == signature) return;
         signature = s.ToString(); running = now;
         Read();
         Fill();
+    }
+
+    // (where Link is: rando\tracker_link.txt, "<x> <z> <y> <age>", read when it changed; the map alone drawn again)
+    void LookLink() {
+        string path = Rando("tracker_link.txt"), seen;
+        try { seen = File.Exists(path) ? File.GetLastWriteTimeUtc(path).Ticks.ToString() : ""; } catch { return; }
+        if (seen == linkSeen) return;
+        linkSeen = seen; linkKnown = false;
+        var lines = ReadLines(path);
+        var p = lines.Length > 0 ? lines[0].Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries) : new string[0];
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        if (p.Length >= 4 && float.TryParse(p[0], System.Globalization.NumberStyles.Float, inv, out linkX) && float.TryParse(p[1], System.Globalization.NumberStyles.Float, inv, out linkZ)
+            && float.TryParse(p[2], System.Globalization.NumberStyles.Float, inv, out linkY) && int.TryParse(p[3], out linkAge)) linkKnown = true;
+        map.Invalidate();
+    }
+    static float Num(string s) { float v; float.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v); return v; }
+    string Maps(string name) { return Path.Combine(dir, "maps", name); }
+    // (the pictures there are, and the game asked to decode them for this window: maps\view\wanted.txt)
+    void ReadPictures() {
+        foreach (var line in ReadLines(Maps("index.txt"))) {
+            var f = line.Split('|');
+            float height, w, h;
+            if (line.StartsWith("#") || f.Length != 9 || (height = Num(f[6])) <= 0 || (w = Num(f[7])) <= 0 || (h = Num(f[8])) <= 0) continue;
+            float halfW = height * 0.5f, halfH = height * 0.5f * h / w, x = Num(f[4]), z = Num(f[5]);
+            pictures.Add(new Picture { Folder = f[0], Ages = f[1], Floor = f[2], Name = f[3], X0 = x - halfW, Z0 = z - halfH, X1 = x + halfW, Z1 = z + halfH });
+        }
+        if (pictures.Count == 0) return;
+        try {
+            Directory.CreateDirectory(Maps("view"));
+            if (!File.Exists(Maps("view\\wanted.txt"))) File.WriteAllText(Maps("view\\wanted.txt"), "The Tracker's window asked the game for its map pictures: the game writes them here as it runs.\n");
+        } catch { }
+    }
+    /// A picture the game decoded (maps\view\<name>.raw: "HWRV", width, height, RGBA) made a .png beside it and taken away: whether it was
+    public static bool RawToPng(string rawPath) {
+        try {
+            byte[] all = File.ReadAllBytes(rawPath);
+            if (all.Length < 12 || all[0] != 'H' || all[1] != 'W' || all[2] != 'R' || all[3] != 'V') return false;
+            int w = BitConverter.ToInt32(all, 4), h = BitConverter.ToInt32(all, 8);
+            if (w <= 0 || h <= 0 || w > 8192 || h > 8192 || all.Length != 12 + (long)w * h * 4) return false;
+            for (int i = 12; i < all.Length; i += 4) { byte r = all[i]; all[i] = all[i + 2]; all[i + 2] = r; }   // (RGBA to the bitmap's BGRA)
+            string png = Path.ChangeExtension(rawPath, ".png");
+            using (var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb)) {
+                var bits = bmp.LockBits(new Rectangle(0, 0, w, h), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                for (int y = 0; y < h; y++) Marshal.Copy(all, 12 + y * w * 4, new IntPtr(bits.Scan0.ToInt64() + (long)y * bits.Stride), w * 4);
+                bmp.UnlockBits(bits);
+                bmp.Save(png + ".new", System.Drawing.Imaging.ImageFormat.Png);
+            }
+            if (File.Exists(png)) File.Delete(png);
+            File.Move(png + ".new", png);
+            File.Delete(rawPath);
+            return true;
+        } catch { return false; }
+    }
+    // (the pictures the game has handed over since the last look, made .png on a thread of the pool; the map drawn again after)
+    void Convert() {
+        if (pictures.Count == 0 || Interlocked.CompareExchange(ref converting, 1, 0) != 0) return;
+        string[] raws;
+        try { raws = Directory.GetFiles(Maps("view"), "*.raw"); } catch { raws = new string[0]; }
+        if (raws.Length == 0) { converting = 0; return; }
+        ThreadPool.QueueUserWorkItem(_ => {
+            foreach (var raw in raws) RawToPng(raw);
+            converting = 0;
+            try { BeginInvoke((Action)(() => { loaded.Clear(); floorOf.Clear(); map.Invalidate(); })); } catch { }
+        });
+    }
+    // (a picture by its name: read once, null while the game has not handed it over)
+    Bitmap Loaded(string name) {
+        Bitmap bmp;
+        if (loaded.TryGetValue(name, out bmp)) return bmp;
+        if (loaded.Count > 24) { foreach (var old in loaded.Values) if (old != null) old.Dispose(); loaded.Clear(); floorOf.Clear(); }
+        try {
+            string path = Maps("view\\" + name + ".png");
+            if (File.Exists(path)) using (var ms = new MemoryStream(File.ReadAllBytes(path))) using (var read = new Bitmap(ms)) bmp = new Bitmap(read);
+        } catch { bmp = null; }
+        loaded[name] = bmp;
+        return bmp;
     }
 
     /// The seed's stamp as the menu reads it: the first line, its first 511 characters
@@ -2960,8 +3096,14 @@ class TrackerForm : Form {
         checks.Clear(); near.Clear(); dungeons.Clear(); doors.Clear(); bosses.Clear(); hints.Clear();
         here = ""; live = false; hintsAll = 0;
         string stamp = Stamp(ReadLines(Seed("rando_stamp.txt")));
-        foreach (var f in CheckLines(ReadLines(Seed("checks.txt"))))
-            checks.Add(new Check { Area = f[0], Kind = f[1], Ages = f[3], Gives = f.Length > 7 && f[7] != "-" ? ItemName(f[7].Trim()) : "" });
+        foreach (var f in CheckLines(ReadLines(Seed("checks.txt")))) {
+            // (where it is on the map: its own place, or its grotto's hole's, the line's last field when it has one)
+            var at = (f.Length > 9 && f[9].Trim().Split(' ').Length == 3 ? f[9].Trim() : f[4]).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            checks.Add(new Check { Area = f[0], Kind = f[1], Folder = f[2], Ages = f[3], Gives = f.Length > 7 && f[7] != "-" ? ItemName(f[7].Trim()) : "",
+                                   Index = checks.Count, X = Num(at[0]), Y = Num(at[1]), Z = Num(at[2]) });
+        }
+        if (picked >= checks.Count) picked = -1;
+        floorOf.Clear();
         var liveLines = ReadLines(Rando("tracker_live.txt"));
         string states = "";
         bool mine = false;
@@ -3021,12 +3163,24 @@ class TrackerForm : Form {
         Arrange();
         Fill();
         var s = new StringBuilder(top.Text.Replace("\n", " / ") + "\n");
-        foreach (var l in which >= 0 ? new[] { list } : new[] { areas, list, side }) {
-            if (l != list && l != areas || (l == list && which < 0)) s.Append("--\n");
+        foreach (var l in which >= 0 ? new[] { list } : new[] { areas, list }) {
+            if (l == list && which < 0) s.Append("--\n");
             foreach (Row r in l.Items)
                 s.Append(r.Head ? '#' : r.Mark).Append('|').Append(r.Left).Append('|').Append(r.Right).Append(r.Below.Length > 0 ? "|" + r.Below : "").Append("\n");
         }
         return s.ToString();
+    }
+    /// A check clicked (its place in the seed's checks, -1 none), and what the map shows then: "<the area, or Hyrule>|<the
+    /// pictures drawn, in order>|<the check ringed>|<its floor>"
+    public void Pick(int pick) { picked = pick >= 0 && pick < checks.Count ? pick : -1; Fill(); }
+    public string MapWords(int pick) {
+        picked = pick >= 0 && pick < checks.Count ? pick : -1;
+        string area = MapArea();
+        if (area == null) return "Hyrule|||";
+        string floor = picked >= 0 ? Floor(checks[picked]) : "";
+        var names = new List<string>();
+        foreach (var p in MapPictures(area, floor)) names.Add(p.Name);
+        return area + "|" + string.Join(",", names.ToArray()) + "|" + (picked >= 0 ? checks[picked].Kind : "") + "|" + floor;
     }
     static string Count(int n, string one) { return n + " " + one + (n == 1 ? "" : "s"); }
     static Row Head(string text, string right = "") { return new Row { Left = text, Right = right, Head = true, Ink = Theme.Cyan }; }
@@ -3040,13 +3194,13 @@ class TrackerForm : Form {
         else top.Text = done + " of " + checks.Count + " collected" + (junk > 0 ? ", " + junk + " junk" : "") + ", " + inLogic + " in logic now\n" +
                         (here.Length > 0 ? "Link is in: " + here : "") + (running ? "" : (here.Length > 0 ? "   " : "") + "(game closed: as it was last)");
         filling = true;
-        if (Wide) {   // (the areas, the checks of the one chosen or all in logic now, and the rest)
+        if (Wide) {   // (what to look at, that, and the map)
             Put(areas, "areas", AreaRows(true));
-            Put(list, openArea ?? "", openArea != null ? CheckRows(openArea, false) : NowRows());
-            var rest = DungeonRows();
-            rest.AddRange(DoorRows());
-            rest.AddRange(HintRows());
-            Put(side, "side", rest);
+            Put(list, openArea ?? "", openArea == null ? NowRows() : openArea == OpenDungeons ? DungeonRows() : openArea == OpenDoors ? DoorRows()
+                                      : openArea == OpenHints ? HintRows() : CheckRows(openArea, false));
+            for (int i = 0; i < list.Items.Count; i++)   // (the check clicked on the map: brought into view)
+                if (((Row)list.Items[i]).Lit && (i < list.TopIndex || i > list.TopIndex + Math.Max(1, list.ClientSize.Height / 24 - 2))) list.TopIndex = Math.Max(0, i - 3);
+            map.Invalidate();
         } else {
             int which = view.SelectedIndex;
             Put(list, which + "|" + openArea, which == 0 ? NowRows() : which == 1 && openArea != null ? CheckRows(openArea, true) : which == 1 ? AreaRows(false)
@@ -3098,6 +3252,15 @@ class TrackerForm : Form {
             int n = 0;
             foreach (var k in checks) if (k.State == 'i') n++;
             rows.Add(new Row { Left = "In logic now", Right = live ? Count(n, "check") : "", Open = "", Lit = openArea == null, Mark = live && n > 0 ? 'i' : ' ' });
+            // (the other views, each a row of its own: the owner, 2026-11-27)
+            int keys = 0, found = 0, seen = 0;
+            foreach (var d in dungeons) { int k; if (int.TryParse(d[1], out k)) keys += k; for (int i = 3; i < 6; i++) if (d[i] == "1") found++; }
+            foreach (var d in doors) if (d[2] == "1") seen++;
+            foreach (var b in bosses) if (b[2] == "1") seen++;
+            rows.Add(new Row { Left = "Dungeon items", Right = live ? Count(keys, "key") + ", " + Count(found, "item") : "", Open = OpenDungeons, Lit = openArea == OpenDungeons });
+            rows.Add(new Row { Left = "Doors and bosses", Right = doors.Count + bosses.Count > 0 ? seen + " of " + (doors.Count + bosses.Count) + " found" : "not shuffled",
+                               Open = OpenDoors, Lit = openArea == OpenDoors });
+            rows.Add(new Row { Left = "Hints heard", Right = hints.Count + " of " + hintsAll, Open = OpenHints, Lit = openArea == OpenHints });
         }
         var names = new List<string>();
         foreach (var k in checks) if (!names.Contains(k.Area)) names.Add(k.Area);
@@ -3112,7 +3275,7 @@ class TrackerForm : Form {
                 var row = new Row { Left = name, Open = name, Lit = wide && name == openArea };
                 if (!live) row.Right = Count(all, "check");
                 else if (left == 0) { row.Right = "all collected"; row.Ink = Theme.Faint; row.RightInk = Theme.Faint; }
-                else { row.Right = left + " left" + (can > 0 ? ", " + can + " in logic" : ""); row.Mark = can > 0 ? 'i' : 'o'; }
+                else { row.Right = left + " left" + (can > 0 ? ", " + can + (wide ? " now" : " in logic") : ""); row.Mark = can > 0 ? 'i' : 'o'; }   // (a narrow column: a short word)
                 if (name == here && wide) row.Ink = Theme.Cyan;   // (a narrow column: no room for a word after the name; the top says where Link is)
                 else if (name == here) row.Left = name + "  (here)";
                 if (live && left == 0) { finished.Add(row); continue; }
@@ -3156,7 +3319,7 @@ class TrackerForm : Form {
     }
     Row CheckRow(Check k) {
         string what = k.Kind + (k.Ages == "C" ? " (child)" : k.Ages == "A" ? " (adult)" : "");
-        var row = new Row { Left = what, Mark = k.State };
+        var row = new Row { Left = what, Mark = k.State, Pick = k.Index, Lit = k.Index == picked };
         if (k.State == 'c') { row.Ink = Theme.Faint; row.Right = k.Gives; }
         else if (k.State == 'j') { row.Ink = Theme.Faint; row.Right = "junk"; row.RightInk = Theme.Faint; }
         else if (k.State == 'o') { row.Ink = Theme.Dim; row.Below = k.Note; }
@@ -3166,6 +3329,213 @@ class TrackerForm : Form {
         bool seen = pair[2] == "1";
         return new Row { Left = pair[0], Right = !seen ? "?" : pair[0] == pair[1] ? own : pair[1],
                          RightInk = !seen ? Theme.Faint : pair[0] == pair[1] ? Theme.Dim : Theme.Amber };
+    }
+
+    // ---- the map ----
+    /// The area the map shows: the check's clicked, else the one open; null the overview of Hyrule
+    string MapArea() {
+        if (picked >= 0 && picked < checks.Count) return checks[picked].Area;
+        return openArea != null && !openArea.StartsWith("*") ? openArea : null;
+    }
+    /// The age whose pictures are drawn: the check's clicked when it is one age's, else Link's (the child's when not known)
+    int MapAge() {
+        if (picked >= 0 && picked < checks.Count && checks[picked].Ages == "A") return 1;
+        if (picked >= 0 && picked < checks.Count && checks[picked].Ages == "C") return 0;
+        return linkKnown && linkAge == 1 ? 1 : 0;
+    }
+    string FolderOf(string area) { foreach (var k in checks) if (k.Area == area) return k.Folder; return ""; }
+    /// The pictures to draw for an area, in the index's order, as the menu picks them (gpu/vk/vk_map_pictures.cpp
+    /// map_rows_pick): an outdoor map's of the age, any age's when it has none of that age; a dungeon's shape ("All") and,
+    /// with a floor named, that floor's
+    List<Picture> MapPictures(string area, string floor) {
+        string folder = FolderOf(area);
+        char want = MapAge() == 1 ? 'A' : 'C';
+        bool ofAge = false;
+        foreach (var p in pictures) if (p.Folder == folder && p.Floor.Length == 0 && p.Ages.IndexOf(want) >= 0) ofAge = true;
+        var picks = new List<Picture>();
+        foreach (var p in pictures) {
+            if (p.Folder != folder) continue;
+            if (p.Floor.Length == 0 ? (!ofAge || p.Ages.IndexOf(want) >= 0) : (p.Floor == "All" || (floor.Length > 0 && p.Floor == floor))) picks.Add(p);
+        }
+        return picks;
+    }
+    /// A dungeon check's floor: the floor whose picture is drawn on where the check is; where rooms lie over each other
+    /// (several) or the place is on none, the floor nearest in height, a floor's height being the middle one of the checks
+    /// that are on its picture alone (as the menu's: tracker_floors_assign). "" outdoors, or the pictures not here yet
+    string Floor(Check k) {
+        Dictionary<int, string> floors;
+        if (!floorOf.TryGetValue(k.Folder, out floors)) {
+            floors = new Dictionary<int, string>();
+            var rows = new List<Picture>();
+            foreach (var p in pictures) if (p.Folder == k.Folder && p.Floor.Length > 0 && p.Floor != "All") rows.Add(p);
+            bool all = rows.Count > 0;
+            foreach (var p in rows) if (Loaded(p.Name) == null) all = false;
+            if (!all) return "";   // (not kept: asked again when the pictures are here)
+            var on = new Dictionary<int, List<int>>();   // (a check: the floors drawn on at its place)
+            var heights = new List<float>[rows.Count];
+            for (int f = 0; f < rows.Count; f++) heights[f] = new List<float>();
+            foreach (var c in checks) {
+                if (c.Folder != k.Folder) continue;
+                var at = new List<int>();
+                for (int f = 0; f < rows.Count; f++) {
+                    var bmp = Loaded(rows[f].Name); var p = rows[f];
+                    int px = (int)((c.X - p.X0) / (p.X1 - p.X0) * bmp.Width), pz = (int)((c.Z - p.Z0) / (p.Z1 - p.Z0) * bmp.Height);
+                    bool drawn = false;   // (the place and the pixels around it: a chest against a wall is on the wall's line)
+                    for (int dz = -4; dz <= 4 && !drawn; dz += 4)
+                        for (int dx = -4; dx <= 4 && !drawn; dx += 4)
+                            drawn = px + dx >= 0 && px + dx < bmp.Width && pz + dz >= 0 && pz + dz < bmp.Height && bmp.GetPixel(px + dx, pz + dz).A > 32;
+                    if (drawn) at.Add(f);
+                }
+                on[c.Index] = at;
+                if (at.Count == 1) heights[at[0]].Add(c.Y);
+            }
+            var middle = new float?[rows.Count];
+            for (int f = 0; f < rows.Count; f++) if (heights[f].Count > 0) { heights[f].Sort(); middle[f] = heights[f][heights[f].Count / 2]; }
+            foreach (var c in checks) {
+                if (c.Folder != k.Folder) continue;
+                var at = on[c.Index];
+                int best = at.Count == 1 ? at[0] : -1;
+                if (best < 0) {
+                    float nearest = float.MaxValue;
+                    for (int f = 0; f < rows.Count; f++) {
+                        if (middle[f] == null || (at.Count > 1 && !at.Contains(f))) continue;
+                        float far = Math.Abs(middle[f].Value - c.Y);
+                        if (far < nearest) { nearest = far; best = f; }
+                    }
+                }
+                floors[c.Index] = best >= 0 ? rows[best].Floor : "";
+            }
+            floorOf[k.Folder] = floors;
+        }
+        string floor;
+        return floors.TryGetValue(k.Index, out floor) ? floor : "";
+    }
+    static Color StateInk(char state) { return state == 'i' ? Theme.Green : state == 'o' || state == '?' ? Theme.Dim : Theme.Faint; }
+
+    void DrawMap(object sender, PaintEventArgs e) {
+        var g = e.Graphics;
+        var r = map.ClientRectangle;
+        g.Clear(Theme.Card);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        dots.Clear(); boxes.Clear();
+        string area = MapArea();
+        if (area == null) { DrawWorld(g, r); return; }
+        var mine = new List<Check>();
+        foreach (var k in checks) if (k.Area == area) mine.Add(k);
+        if (mine.Count == 0) return;
+        Check ring = picked >= 0 && picked < checks.Count ? checks[picked] : null;
+        bool linkHere = linkKnown && here == area;
+        // (a dungeon: the floor looked at, the check's clicked, else Link's by the check nearest him in height)
+        string floor = "";
+        if (Array.IndexOf(Dungeons, area) >= 0) {
+            if (ring != null) floor = Floor(ring);
+            else if (linkHere) { Check near = null; foreach (var k in mine) if (near == null || Math.Abs(k.Y - linkY) < Math.Abs(near.Y - linkY)) near = k; floor = Floor(near); }
+        }
+        // (what the map takes in: the area's checks, and Link when he is there; x to the right, z down: north up)
+        float x0 = float.MaxValue, z0 = float.MaxValue, x1 = float.MinValue, z1 = float.MinValue;
+        foreach (var k in mine) { x0 = Math.Min(x0, k.X); x1 = Math.Max(x1, k.X); z0 = Math.Min(z0, k.Z); z1 = Math.Max(z1, k.Z); }
+        if (linkHere) { x0 = Math.Min(x0, linkX); x1 = Math.Max(x1, linkX); z0 = Math.Min(z0, linkZ); z1 = Math.Max(z1, linkZ); }
+        float spanX = Math.Max(30, x1 - x0) * 1.2f, spanZ = Math.Max(30, z1 - z0) * 1.2f, midX = (x0 + x1) / 2, midZ = (z0 + z1) / 2;
+        var box = new RectangleF(r.X + 8, r.Y + 34, r.Width - 16, r.Height - 34 - 72);
+        float scale = Math.Min(box.Width / spanX, box.Height / spanZ);
+        Func<float, float, PointF> at = (x, z) => new PointF(box.X + box.Width / 2 + (x - midX) * scale, box.Y + box.Height / 2 + (z - midZ) * scale);
+        g.SetClip(box);
+        g.InterpolationMode = InterpolationMode.HighQualityBilinear;
+        bool any = false;
+        foreach (var p in MapPictures(area, floor)) {
+            var bmp = Loaded(p.Name);
+            if (bmp == null) continue;
+            any = true;
+            PointF a = at(p.X0, p.Z0), b = at(p.X1, p.Z1);
+            g.DrawImage(bmp, new RectangleF(a.X, a.Y, b.X - a.X, b.Y - a.Y));
+        }
+        // (the checks: the other floors' faint; the ones left over the ones collected)
+        foreach (string pass in new[] { "cj", "o?", "i" })
+            foreach (var k in mine) {
+                if (pass.IndexOf(k.State) < 0) continue;
+                PointF p = at(k.X, k.Z);
+                bool other = floor.Length > 0 && Floor(k) != floor;
+                var ink = Theme.A(StateInk(k.State), other ? 70 : 255);
+                float size = k.State == 'i' ? 5 : 4;
+                using (var br = new SolidBrush(ink)) using (var edge = new Pen(Theme.A(Color.Black, other ? 60 : 200), 1.5f)) {
+                    if (k.State == 'i') { g.FillEllipse(br, p.X - size, p.Y - size, size * 2, size * 2); g.DrawEllipse(edge, p.X - size, p.Y - size, size * 2, size * 2); }
+                    else using (var pen = new Pen(ink, 2f)) { g.DrawEllipse(edge, p.X - size - 1, p.Y - size - 1, size * 2 + 2, size * 2 + 2); g.DrawEllipse(pen, p.X - size, p.Y - size, size * 2, size * 2); }
+                }
+                dots.Add(new KeyValuePair<RectangleF, int>(new RectangleF(p.X - 9, p.Y - 9, 18, 18), k.Index));
+            }
+        if (linkHere) {   // (Link: a cyan mark)
+            PointF p = at(linkX, linkZ);
+            using (var br = new SolidBrush(Theme.Cyan)) using (var edge = new Pen(Color.Black, 2f)) {
+                var tri = new[] { new PointF(p.X, p.Y - 8), new PointF(p.X + 7, p.Y + 6), new PointF(p.X - 7, p.Y + 6) };
+                g.FillPolygon(br, tri); g.DrawPolygon(edge, tri);
+            }
+        }
+        if (ring != null) {   // (the check clicked: ringed in gold, over all)
+            PointF p = at(ring.X, ring.Z);
+            using (var dark = new Pen(Color.Black, 6f)) g.DrawEllipse(dark, p.X - 13, p.Y - 13, 26, 26);
+            using (var gold = new Pen(SaveCopiesForm.Gold, 3f)) g.DrawEllipse(gold, p.X - 13, p.Y - 13, 26, 26);
+            using (var br = new SolidBrush(StateInk(ring.State))) g.FillEllipse(br, p.X - 5, p.Y - 5, 10, 10);
+        }
+        g.ResetClip();
+        using (var bold = new Font(Font, FontStyle.Bold))
+            TextRenderer.DrawText(g, area + (floor.Length > 0 ? "  " + floor : ""), bold, new Rectangle(r.X + 8, r.Y + 6, r.Width - 16, 24), Theme.Cyan,
+                                  TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+        string under = ring != null ? ring.Kind + (ring.Ages == "C" ? " (child)" : ring.Ages == "A" ? " (adult)" : "") +
+                                      (ring.State == 'i' ? ": in logic" : ring.State == 'c' ? ": collected" : ring.State == 'j' ? ": junk" : ring.Note.Length > 0 ? ": " + ring.Note : "")
+                       : "Click a check in the list, or a dot here, to ring it." + (any || pictures.Count == 0 ? "" : " The map's picture comes once the game has run.");
+        TextRenderer.DrawText(g, under, Font, new Rectangle(r.X + 8, r.Bottom - 68, r.Width - 16, 64), ring != null ? Theme.Text : Theme.Dim,
+                              TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+    }
+    // (the overview of Hyrule, as the menu's first row: each area a box where it lies, joined to the ones it leads to, its
+    //  dungeons smaller beside it; green with something in logic, grey with checks left, dim when done; a click opens one)
+    void DrawWorld(Graphics g, Rectangle r) {
+        using (var bold = new Font(Font, FontStyle.Bold))
+            TextRenderer.DrawText(g, "Hyrule", bold, new Rectangle(r.X + 8, r.Y + 6, r.Width - 16, 24), Theme.Cyan, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+        var box = new RectangleF(r.X + 8, r.Y + 40, r.Width - 16, r.Height - 40 - 30);
+        float bw = Math.Max(54, box.Width * 0.15f), bh = 34;
+        Func<string[], PointF> mid = a => new PointF(box.X + bw / 2 + Num(a[2]) * (box.Width - bw), box.Y + bh / 2 + Num(a[3]) * (box.Height - bh));
+        Func<string, string[]> find = name => { foreach (var a in World) if (a[0] == name) return a; return null; };
+        using (var line = new Pen(Theme.Line, 2f)) {
+            foreach (var e in WorldEdges) g.DrawLine(line, mid(find(e[0])), mid(find(e[1])));
+            foreach (var a in World) if (a[4].Length > 0) g.DrawLine(line, mid(a), mid(find(a[4])));
+        }
+        using (var small = new Font(Font.FontFamily, 7.5f))
+            foreach (var a in World) {
+                int all = 0, left = 0, can = 0;
+                foreach (var k in checks) if (k.Area == a[0]) { all++; if (k.State != 'c' && k.State != 'j') left++; if (k.State == 'i') can++; }
+                bool dungeon = a[4].Length > 0;
+                PointF m = mid(a);
+                float w = dungeon ? bw * 0.86f : bw, h = dungeon ? bh - 6 : bh;
+                var rect = new RectangleF(m.X - w / 2, m.Y - h / 2, w, h);
+                Color edge = !live || all == 0 ? Theme.Line : can > 0 ? Theme.Green : left > 0 ? Theme.Dim : Theme.Faint;
+                using (var path = Theme.Round(rect, 5)) {
+                    using (var br = new SolidBrush(a[0] == here ? Theme.CardHi : Theme.Bg1)) g.FillPath(br, path);
+                    using (var pen = new Pen(a[0] == here ? Theme.Cyan : edge, a[0] == here ? 2f : 1.4f)) g.DrawPath(pen, path);
+                }
+                string count = !live ? "" : can > 0 ? can + " now" : left > 0 ? left + " left" : all > 0 ? "done" : "";
+                var ir = Rectangle.Round(rect);
+                TextRenderer.DrawText(g, a[1], small, new Rectangle(ir.X, ir.Y + 1, ir.Width, ir.Height / 2), live && left == 0 && all > 0 ? Theme.Faint : Theme.Text,
+                                      TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(g, count, small, new Rectangle(ir.X, ir.Y + ir.Height / 2 - 1, ir.Width, ir.Height / 2), edge,
+                                      TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding);
+                boxes.Add(new KeyValuePair<RectangleF, string>(rect, a[0]));
+            }
+        TextRenderer.DrawText(g, "Click an area to open it.", Font, new Rectangle(r.X + 8, r.Bottom - 28, r.Width - 16, 22), Theme.Dim, TextFormatFlags.Left | TextFormatFlags.NoPrefix);
+    }
+    // (a click on the map: a check's dot rings it and lights its row; an area's box of the overview opens it)
+    void MapClick(object sender, MouseEventArgs e) {
+        foreach (var b in boxes)
+            if (b.Key.Contains(e.Location)) { openArea = b.Value; picked = -1; Fill(); return; }
+        int best = -1; float nearest = float.MaxValue;
+        foreach (var d in dots) {
+            if (!d.Key.Contains(e.Location)) continue;
+            float dx = d.Key.X + 9 - e.X, dy = d.Key.Y + 9 - e.Y, far = dx * dx + dy * dy;
+            if (far < nearest) { nearest = far; best = d.Value; }
+        }
+        if (best < 0) return;
+        picked = best;
+        if (openArea == null || openArea.StartsWith("*") || openArea != checks[best].Area) openArea = checks[best].Area;
+        Fill();
     }
 
     void Measure(object sender, MeasureItemEventArgs e) {
@@ -5895,13 +6265,28 @@ class LauncherForm : Form {
             }
             return;
         }
+        // ("--tracker-map <game folder> <area, or ""> <a check's place, or -1> [convert]": what the wide window's map shows with
+        //  that open and that check clicked, TrackerForm.MapWords; convert: the pictures the game handed over made .png first)
+        if (args.Length >= 4 && args[0] == "--tracker-map") {
+            string folder = Path.GetFullPath(args[1]);
+            if (args.Length > 4 && args[4] == "convert")
+                try { foreach (var raw in Directory.GetFiles(Path.Combine(folder, "maps", "view"), "*.raw")) TrackerForm.RawToPng(raw); } catch { }
+            using (var f = new TrackerForm(folder))
+            using (var o = Console.OpenStandardOutput()) {
+                f.Rows(-1, args[2].Length > 0 ? args[2] : null);
+                var bytes = Encoding.UTF8.GetBytes(f.MapWords(int.Parse(args[3])) + "\n");
+                o.Write(bytes, 0, bytes.Length);
+            }
+            return;
+        }
         if (args.Length >= 4 && args[0] == "--tracker-shot") {   // (and the window as a picture: <game folder> <png> <view> [area])
             Application.EnableVisualStyles();
             using (var f = new TrackerForm(Path.GetFullPath(args[1]))) {
                 int which = int.Parse(args[3]);
                 f.Show(); Application.DoEvents();
                 if (which >= 0) f.ClientSize = new Size(430, 640);   // (a view: the window narrow; -1: wide, its three lists)
-                f.Rows(which, args.Length > 4 ? args[4] : null);
+                f.Rows(which, args.Length > 4 && args[4].Length > 0 ? args[4] : null);
+                if (args.Length > 5) f.Pick(int.Parse(args[5]));   // (and a check clicked: its place in the seed's checks)
                 Application.DoEvents();
                 using (var bmp = new Bitmap(f.Width, f.Height)) { f.DrawToBitmap(bmp, new Rectangle(0, 0, f.Width, f.Height)); bmp.Save(args[2]); }
             }

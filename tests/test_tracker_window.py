@@ -56,7 +56,9 @@ def main():
     check("next = now + 2000;" in write and "if (!tracker_on.load(std::memory_order_relaxed)) return;" in write
           and "for (int n = 0; n < kLiveSlice && at < count; n++, at++) tracker_live_check(at, live);" in write
           and re.search(r"constexpr int kLiveSlice = (\d+);", menu) and int(re.search(r"constexpr int kLiveSlice = (\d+);", menu).group(1)) <= 16
-          and "if (count != tracker_check_count) {" in write and "if (!whole || words == last) return;" in write
+          and "if (count != tracker_check_count) {" in write and "if (words == last) return;" in write
+          # (and with it: the map's pictures handed over once the window has asked, and Link's place in a small file of its own)
+          and "mkwvk::map_export_wanted();" in write and 'path = game_folder_path() + "rando\\\\tracker_link.txt"] {' in write
           and 'std::thread([words, path = game_folder_path() + "rando\\\\tracker_live.txt"] {' in write
           and "std::filesystem::rename(fresh, path, ec);" in write and "if (!tracker_check_count) tracker_load(false);" in write,
           "the live file is not made a few checks a frame, or not written only when it changed, whole, off the frame's thread")
@@ -150,18 +152,37 @@ def main():
         check(rows(exe, game, 3)[1:] == items + [""], "the dungeons' keys and items are not the live file's")
         check(rows(exe, game, 4)[1:] == hints + [""], "the hints heard are not listed, or one not heard is")
         # (wide, on a second screen: the areas, the checks of the one chosen or all in logic now, and the rest, at once)
-        got = rows(exe, game, -1)
-        check(got[1:] == ["i|In logic now|1 check", "#|Overworld|", "i|Kokiri Forest|1 left, 1 in logic", "#|Dungeons|", "o|Forest Temple|1 left",
-                          "#|Finished areas|", " |Market|all collected", "--"] + now + ["--"] + items + doors + hints + [""],
-              "wide, the window is not its three lists at once: %r" % got[1:])
-        got = rows(exe, game, -1, "Kokiri Forest")
-        check(got[got.index("--") + 1:got.index("--", got.index("--") + 1)] == forest, "wide, an area chosen does not show its checks in the middle: %r" % got)
+        left = ["i|In logic now|1 check", " |Dungeon items|2 keys, 4 items", " |Doors and bosses|2 of 3 found", " |Hints heard|1 of 2", "#|Overworld|",
+                "i|Kokiri Forest|1 left, 1 now", "#|Dungeons|", "o|Forest Temple|1 left", "#|Finished areas|", " |Market|all collected", "--"]
+        check(rows(exe, game, -1)[1:] == left + now + [""], "wide, the left pane is not what to look at, or the middle not what is in logic now: %r" % rows(exe, game, -1)[1:])
+        check(rows(exe, game, -1, "Kokiri Forest")[1:] == left + forest + [""], "wide, an area chosen does not show its checks in the middle")
+        # (the owner, 2026-11-27: the dungeons' items, the doors and bosses and the hints "there own selectable pane")
+        check(rows(exe, game, -1, "*dungeons")[1:] == left + items + [""] and rows(exe, game, -1, "*doors")[1:] == left + doors + [""]
+              and rows(exe, game, -1, "*hints")[1:] == left + hints + [""], "wide, the other views are not shown in the middle when chosen on the left")
+        # (and the right pane the map: Hyrule's overview, or the area of what is open or clicked, its pictures as the menu
+        #  picks them: an outdoor map's of the check's age, a dungeon's shape and the floor)
+        (game / "maps").mkdir()
+        (game / "maps" / "index.txt").write_text("# map pictures 1\nKokiriForest|A||Kokiri_Adult|0|0|100|2000|1440\nKokiriForest|C||Kokiri_Child|0|0|100|2000|1440\n"
+                                                 "ForestTemple|CA|All|Forest_All|0|0|100|2000|1440\nForestTemple|CA|1F|Forest_1F|0|0|100|2000|1440\n", encoding="utf-8")
+        say = lambda *a: subprocess.run([str(exe), "--tracker-map", str(game)] + list(a), capture_output=True, timeout=60).stdout.decode("utf-8").strip()
+        check(say("", "-1") == "Hyrule|||", "with nothing open the map is not the overview of Hyrule: %r" % say("", "-1"))
+        check(say("Kokiri Forest", "-1") == "Kokiri Forest|Kokiri_Child||" and say("Kokiri Forest", "1") == "Kokiri Forest|Kokiri_Child|Chest B|",
+              "an area's map is not its picture of the age, or the check clicked is not the one ringed: %r" % say("Kokiri Forest", "1"))
+        check(say("", "2") == "Forest Temple|Forest_All|Chest C|", "a check clicked in In logic now does not take the map to its area: %r" % say("", "2"))
+        check((game / "maps" / "view" / "wanted.txt").is_file(), "the window does not ask the game for the map's pictures")
         # (another seed's live file, and one of other checks: not taken)
         (rando / "tracker_live.txt").write_text(live.replace("seed 7", "seed 8"), encoding="utf-8")
         check(rows(exe, game, 0)[1:] == nothing, "another seed's live file is shown")
         (rando / "tracker_live.txt").write_text(live.replace("states cioj", "states cio"), encoding="utf-8")
         check(rows(exe, game, 0)[1:] == nothing, "a live file of fewer checks is shown")
         check(not (rando / "tracker_window.txt").exists(), "a window never shown wrote its place")
+        # (a picture the game handed over: made a .png, the .raw taken away)
+        raw = game / "maps" / "view" / "Kokiri_Child.raw"
+        raw.write_bytes(b"HWRV" + (2).to_bytes(4, "little") + (1).to_bytes(4, "little") + bytes([255, 0, 0, 255, 0, 0, 255, 128]))
+        subprocess.run([str(exe), "--tracker-map", str(game), "Kokiri Forest", "-1", "convert"], capture_output=True, timeout=60)
+        png = raw.with_suffix(".png")
+        check(png.is_file() and not raw.exists() and png.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n" and int.from_bytes(png.read_bytes()[16:20], "big") == 2,
+              "a picture handed over by the game is not made a .png")
     print("PASS: the Tracker's window, and the file the game writes for it")
 
 

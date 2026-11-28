@@ -49,7 +49,7 @@ rm -f "$WORK"/shots/*.png "$WORK"/named/"${label}"_*.png; : > "$WORK/live.txt"; 
 #  every run until then))
 # (2026-11-27: and the run's stats, which a test run's seconds were added to, and the pop-out Tracker's file, which a test
 #  run's save would fill in)
-kept="collected.txt junk.txt goto_check.txt run_stats.txt tracker_live.txt"
+kept="collected.txt junk.txt goto_check.txt run_stats.txt tracker_live.txt tracker_link.txt"
 rm -rf "$WORK/keep"; mkdir -p "$WORK/keep/logs"
 for f in $kept; do [ -f "$GAME/rando/$f" ] && cp -p "$GAME/rando/$f" "$WORK/keep/$f"; done
 for f in "$GAME"/logs/hookshot_log*.txt "$GAME"/logs/hookshot_frames.csv; do [ -f "$f" ] && cp -p "$f" "$WORK/keep/logs/"; done
